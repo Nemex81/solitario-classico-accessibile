@@ -1,6 +1,6 @@
 """
 	file solitario_accessibile.py
-	percorso: https://github.com/Nemex81/solitario-classico-accessibile/blob/main
+	percorso: https://github.com/Nemex81/solitario-classico-accessibile/blob/main/solitario_accessibile.py
 
 	Solitario Accessibile con pygame
 """
@@ -20,20 +20,18 @@ class SolitarioAccessibile:
 	menu = None
 
 	def __init__(self):
-		self.speack = ScreenReader()
-		self.dialog_box = DialogBox()
-		self.game_engine = EngineSolitario()
+		self.speack = ScreenReader() # gestore screen reader per le vocalizzazioni delle stringhe
+		self.dialog_box = DialogBox() # gestore dialog box
+		self.game_engine = EngineSolitario() # motore di gioco
 		self.is_running = True # boleanan per tenere il ciclo principale degli eventi aperto
 		self.build_commands_list() # inizializzo la lista dei comandi di gioco
 
-		self.schermo = pygame.display.set_mode((800, 600))
+		# impostazioni della finestra dell'app		self.schermo = pygame.display.set_mode((800, 600))
 		pygame.display.set_caption("Solitario Accessibile")
-		
 		self.schermo.fill((255, 255, 255))  # Sfondo bianco
-		
 		# Aggiungi qui i tuoi elementi grafici come testo, pulsanti e immagini
 		# oppure disegnali direttamente sullo schermo utilizzando i metodi di Pygame
-		
+
 		pygame.display.flip()  # Aggiorna il display
 
 	def vocalizza(self, string):
@@ -61,15 +59,35 @@ class SolitarioAccessibile:
 		if result:
 			self.is_running = False
 
-	def esc_press(self):
-		self.quit_app()
-
 	def gioca(self):
 		# Aggiungi qui il codice per la logica del gioco
 		pass
 		
 	def mostra_messaggio(self, testo):
 		# Aggiungi qui il codice per mostrare un messaggio all'utente attraverso un output vocale
+		pass
+
+	#@@# sezione comandi di gioco
+
+	def esc_press(self):
+		self.quit_app()
+
+	def enter_press(self):
+		pass
+
+	def space_press(self):
+		pass
+
+	def key_up_press(self):
+		pass
+
+	def key_dn_press(self):
+		pass
+
+	def key_left_press(self):
+		pass
+
+	def key_right_press(self):
 		pass
 
 	def build_commands_list(self):
