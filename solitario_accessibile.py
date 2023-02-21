@@ -16,6 +16,8 @@ from my_lib.dialog_box import DialogBox
 #import pdb
 
 class SolitarioAccessibile:
+	menu = None
+
 	def __init__(self):
 		self.speack = ScreenReader()
 		self.dialog_box = DialogBox()
@@ -40,12 +42,23 @@ class SolitarioAccessibile:
 
 		self.speack.vocalizza(string)
 
+	def crea_menu(cls):
+		cls.menu = Menu(cls.screenreader)
+		cls.menu.aggiungi_voce("Nuova partita", cls.nuova_partita)
+		cls.menu.aggiungi_voce("Esci", cls.esc_press)
+
+	@classmethod
+	def avvia_menu(cls):
+		cls.crea_menu()
+		cls.menu.avvia()
+		cls.menu.chiudi()
+
 	def quit_app(self):
 		self.vocalizza("chiusura in corso.  ")
 		time.sleep(.3)
 		result = self.dialog_box.create_question_box("Sei sicuro di voler uscire?")
-		#if result:
-		self.is_running = False
+		if result:
+			self.is_running = False
 
 	def esc_press(self):
 		self.quit_app()
