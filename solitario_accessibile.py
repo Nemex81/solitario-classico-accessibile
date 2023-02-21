@@ -1,6 +1,7 @@
 """
-	parte 1
-	nome file: solitario_accessibile.py
+	file solitario_accessibile.py
+	percorso: https://github.com/Nemex81/solitario-classico-accessibile/blob/main
+
 	Solitario Accessibile con pygame
 """
 
@@ -126,3 +127,4 @@ class SolitarioAccessibile:
 #@@@# start del modulo
 if __name__ == "__main__":
 	SolitarioAccessibile().run()
+

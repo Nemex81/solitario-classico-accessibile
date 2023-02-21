@@ -1,3 +1,8 @@
+"""
+	file pygame_menu.py
+	percorso: https://github.com/Nemex81/solitario-classico-accessibile/blob/main/scr
+
+"""
 class PyMenu:
     def __init__(self, items, callback, screen_reader):
         self.items = items

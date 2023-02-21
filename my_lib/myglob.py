@@ -1,3 +1,7 @@
+"""
+	file myglob.py
+	percorso: https://github.com/Nemex81/solitario-classico-accessibile/blob/main/my_lib
+""""
 from enum import Enum
 #import pdb
 

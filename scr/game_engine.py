@@ -1,6 +1,7 @@
 """
-	parte 1
-	nome file: solitario_accessibile.py
+	file game_engine.py
+	percorso: https://github.com/Nemex81/solitario-classico-accessibile/blob/main/scr
+
 	Modulo per l'implementazione del gioco del solitario accessibile
 """
 

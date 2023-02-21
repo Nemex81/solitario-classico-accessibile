@@ -1,3 +1,7 @@
+"""
+	file myutyls.py
+	percorso: https://github.com/Nemex81/solitario-classico-accessibile/blob/main/my_lib
+"""
 import sys, random
 from gtts import gTTS
 #import pdb

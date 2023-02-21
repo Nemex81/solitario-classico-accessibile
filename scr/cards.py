@@ -1,4 +1,6 @@
 """
+	file cards.py
+	percorso: https://github.com/Nemex81/solitario-classico-accessibile/blob/main/scr
 	Modulo per la gestione delle carte di gioco
 """
 
