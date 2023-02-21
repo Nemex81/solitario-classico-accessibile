@@ -15,17 +15,13 @@ from scr.pygame_menu import PyMenu
 from my_lib.dialog_box import DialogBox
 #import pdb
 
+pygame.init()
+pygame.font.init()
+
 class SolitarioAccessibile:
 	menu = None
 
 	def __init__(self):
-		self.speack = ScreenReader() # gestore screen reader per le vocalizzazioni delle stringhe
-		self.dialog_box = DialogBox() # gestore dialog box
-		self.game_engine = EngineSolitario() # motore di gioco
-		self.is_running = True # boleanan per tenere il ciclo principale degli eventi aperto
-		#self.main_menu = PyMenu() # inizializzo il menù principale
-		self.build_commands_list() # inizializzo la lista dei comandi di gioco
-
 		# impostazioni della finestra dell'app		self.schermo = pygame.display.set_mode((800, 600))
 		pygame.display.set_caption("Solitario Accessibile")
 		self.schermo.fill((255, 255, 255))  # Sfondo bianco
@@ -34,15 +30,43 @@ class SolitarioAccessibile:
 
 		pygame.display.flip()  # Aggiorna il display
 
+		self.screen_reader = ScreenReader() # gestore screen reader per le vocalizzazioni delle stringhe
+		self.dialog_box = DialogBox() # gestore dialog box
+		self.game_engine = EngineSolitario() # motore di gioco
+		self.menu = PyMenu(["Nuova partita", "Esci dal gioco"], self.schermo, self.handle_menu_selection, self.screen_reader)
+		self.build_commands_list() # inizializzo la lista dei comandi di gioco
+		self.is_menu_open = True
+		self.selected_menu_item = 0
+		self.is_running = True # boleanan per tenere il ciclo principale degli eventi aperto
+
 	def vocalizza(self, string):
 		"""
 			chiamata al metodo vocalizza del modulo screen_reader
 		"""
 
-		self.speack.vocalizza(string)
+		self.screen_reader.vocalizza(string)
+
+	def handle_menu_selection(self, selected_item):
+		if selected_item == 0:
+			self.is_menu_open = False
+		else:
+			pygame.quit()
+			sys.exit()
+
+	def run(self):
+		while self.is_running:
+			if self.is_menu_open:
+				self.menu.handle_keyboard_EVENTS(pygame.event.get())
+			else:
+				self.handle_gameplay_events(pygame.event.get())
+
+	def handle_gameplay_events(self, event):
+		# implementazione della gestione degli eventi del gioco
+		pass
+
 
 	def crea_menu(cls):
-		cls.menu = Menu(cls.screenreader)
+		cls.menu = Menu(cls.screen_reader)
 		cls.menu.aggiungi_voce("Nuova partita", cls.nuova_partita)
 		cls.menu.aggiungi_voce("Esci", cls.esc_press)
 
@@ -101,7 +125,7 @@ class SolitarioAccessibile:
 		# quando il tasto viene rilasciato
 		self.EVENTS_UP = {}
 
-	def handle_keyboard_EVENTS(self):
+	def last_handle_keyboard_EVENTS(self):
 		""" metodo per la gestione degli eventi da tastiera """
 		for event in pygame.event.get():
 			# processa gli eventi in coda
@@ -120,7 +144,7 @@ class SolitarioAccessibile:
 				else:
 					self.vocalizza("Comando non supportato!\n")
 
-	def run(self):
+	def last_run(self):
 		""" metodo per il ciclo principale dell'applicazione """
 		while self.is_running:
 			# in ascolto sugli eventi da tastiera
