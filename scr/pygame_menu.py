@@ -75,7 +75,7 @@ class PyMenu:
 		pygame.display.flip()
 
 	def quit_app(self):
-		self.vocalizza("chiusura in corso.  ")
+		self.screen_reader.vocalizza("chiusura in corso.  ")
 		time.sleep(.3)
 		result = self.dialog_box.create_question_box("Sei sicuro di voler uscire?")
 		if result:
