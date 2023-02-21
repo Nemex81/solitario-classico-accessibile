@@ -1,5 +1,5 @@
 """
-	file myutyls.py
+	file my_utyls.py
 	percorso: https://github.com/Nemex81/solitario-classico-accessibile/blob/main/my_lib
 """
 import sys, random
