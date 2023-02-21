@@ -25,3 +25,9 @@ class Mazzo:
 
 	def crea_mazzo(self):
 		random.shuffle(self.mazzo)
+
+#@@@# start del modulo
+if __name__ == "__main__":
+	print("compilazione completata di %s" % __name__)
+else:
+	print("Carico: %s" % __name__)

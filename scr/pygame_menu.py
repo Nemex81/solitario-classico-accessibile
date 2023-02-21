@@ -17,7 +17,7 @@ class PyMenu:
 		self.screen = screen
 		self.screen_reader = screen_reader
 		self.font = pygame.font.Font(None, 36)
-
+		# assemblo il dizionario dei comandi
 		self.build_commands_list()
 
 	def build_commands_list(self):
@@ -85,3 +85,8 @@ class PyMenu:
 		self.quit_app()
 
 
+#@@@# start del modulo
+if __name__ == "__main__":
+	print("compilazione completata di %s" % __name__)
+else:
+	print("Carico: %s" % __name__)

@@ -323,3 +323,8 @@ class EngineSolitario:
 
 		return True
 
+#@@@# start del modulo
+if __name__ == "__main__":
+	print("compilazione completata di %s" % __name__)
+else:
+	print("Carico: %s" % __name__)
