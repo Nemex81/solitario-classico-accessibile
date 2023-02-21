@@ -1,6 +1,6 @@
 """
-	file my_utyls.py
-	percorso: https://github.com/Nemex81/solitario-classico-accessibile/blob/main/my_lib
+	file myutyls.py
+	percorso: https://github.com/Nemex81/solitario-classico-accessibile/blob/main/my_lib/myutyls.py
 """
 import sys, random
 from gtts import gTTS

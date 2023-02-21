@@ -1,6 +1,6 @@
 """
 	file screen_reader.py
-	percorso: https://github.com/Nemex81/solitario-classico-accessibile/blob/main/scr
+	percorso: https://github.com/Nemex81/solitario-classico-accessibile/blob/main/scr/screen_reader.py
 	Modulo per la Classe ScreenReader per la gestione delle sintesi vocali.
 
 	Questa classe si occupa della gestione degli screen reader, utilizzati per vocalizzare messaggi all'utente.

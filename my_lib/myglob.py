@@ -1,6 +1,6 @@
 """
-	file my_glob.py
-	percorso: https://github.com/Nemex81/solitario-classico-accessibile/blob/main/my_lib
+	file myglob.py
+	percorso: https://github.com/Nemex81/solitario-classico-accessibile/blob/main/my_lib/myglob.py
 """
 from enum import Enum
 #import pdb

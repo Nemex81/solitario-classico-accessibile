@@ -1,6 +1,6 @@
 """
 	file game_engine.py
-	percorso: https://github.com/Nemex81/solitario-classico-accessibile/blob/main/scr
+	percorso: https://github.com/Nemex81/solitario-classico-accessibile/blob/main/scr/game_engine.py
 
 	Modulo per l'implementazione del gioco del solitario accessibile
 """
@@ -17,7 +17,6 @@ from my_lib.myglob import *
 import my_lib.myutyls as mu
 from scr.cards import Carta, Mazzo
 
-#@@# inizio parte 3
 class EngineSolitario:
 	def __init__(self):
 		self.primo_giro = True

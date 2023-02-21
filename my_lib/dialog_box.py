@@ -1,6 +1,6 @@
 """
 	file dialog_box.py
-	percorso: https://github.com/Nemex81/solitario-classico-accessibile/blob/main/my_lib
+	percorso: https://github.com/Nemex81/solitario-classico-accessibile/blob/main/my_lib/dialog_box.py
 
 	Modulo per la gestione delle dialog box
 """
