@@ -6,8 +6,7 @@
 """
 
 #import accessible_output2.outputs.auto
-import random, time
-import pygame
+import os, sys, random, time, pygame
 from pygame.locals import *
 # moduli personali
 from scr.screen_reader import ScreenReader
@@ -24,6 +23,7 @@ class SolitarioAccessibile:
 		self.dialog_box = DialogBox() # gestore dialog box
 		self.game_engine = EngineSolitario() # motore di gioco
 		self.is_running = True # boleanan per tenere il ciclo principale degli eventi aperto
+		#self.main_menu = PyMenu() # inizializzo il menù principale
 		self.build_commands_list() # inizializzo la lista dei comandi di gioco
 
 		# impostazioni della finestra dell'app		self.schermo = pygame.display.set_mode((800, 600))
@@ -111,11 +111,11 @@ class SolitarioAccessibile:
 				sys.exit()
 
 			elif event.type == KEYDOWN:
-				if event.key in self.EVENTS_DN:
+				if self.EVENTS_DN.get(event.key):
 					self.EVENTS_DN[event.key]()
 
 			elif event.type == KEYUP:
-				if event.key in self.EVENTS_UP:
+				if self.EVENTS_UP.get(event.key):
 					self.EVENTS_UP[event.key]()
 				else:
 					self.vocalizza("Comando non supportato!\n")

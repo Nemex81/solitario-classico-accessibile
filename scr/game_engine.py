@@ -42,7 +42,6 @@ M_TITOLO = "Solitario Accessibile"
 
 #@@# end parte 2
 
-
 #@@# inizio parte 3
 class EngineSolitario:
 	def __init__(self):
@@ -210,7 +209,7 @@ class EngineSolitario:
 
 		raise ValueError("Non è possibile muovere la carta selezionata in nessuna pila semi.")
 
-	def muovi_su_foundation(self, pila_gioco, pila_semi):
+	def muovi_da_gioco_su_foundation(self, pila_gioco, pila_semi):
 		"""Muove una carta specifica dalla pila di gioco ad una pila semi specifica."""
 		if not pila_gioco:
 			raise ValueError("La pila di gioco selezionata è vuota.")
@@ -259,7 +258,7 @@ class EngineSolitario:
 			else:
 				self._pile[n_pila].append(self._scarti.pop(-n_carta))
 
-	def muovi_su_foundation(self, n_carta):
+	def muovi_da_scarti_su_foundation(self, n_carta):
 		"""Muove la carta selezionata dalla pila degli scarti ad una pila semi"""
 		carta = self._scarti[-n_carta]
 		semi = {'cuori': 0, 'quadri': 1, 'fiori': 2, 'picche': 3}
