@@ -1,13 +1,11 @@
 """
 	file my_glob.py
 	percorso: https://github.com/Nemex81/solitario-classico-accessibile/blob/main/my_lib
-""""
+"""
 from enum import Enum
 #import pdb
 
 # colori rgb
-from enum import Enum
-
 class Colors(Enum):
     BLACK = (0, 0, 0)
     WHITE = (255, 255, 255)
@@ -40,7 +38,6 @@ debug_mode = False
 tavolo = [[] for i in range(M_TAV)]
 riserva = [[] for i in range(M_RIS)]
 mazzo = []
-dialog_box = DialogBox()
 
 #@@@# inizio parte 2
 # costanti
