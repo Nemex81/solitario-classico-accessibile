@@ -11,6 +11,7 @@ from pygame.locals import *
 # moduli personali
 from scr.screen_reader import ScreenReader
 from scr.game_engine import EngineSolitario
+from scr.pygame_menu import PyMenu
 from my_lib.dialog_box import DialogBox
 #import pdb
 

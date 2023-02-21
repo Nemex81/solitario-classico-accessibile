@@ -1,4 +1,4 @@
-class Menu:
+class PyMenu:
     def __init__(self, options_dict, menu_title, escape_text):
         self.options_dict = options_dict
         self.menu_title = menu_title

@@ -44,32 +44,32 @@ M_TITOLO = "Solitario Accessibile"
 
 #@@# inizio parte 3
 class EngineSolitario:
-    def __init__(self):
-        self.primo_giro = True
-        self.situazione_attuale = []
+	def __init__(self):
+		self.primo_giro = True
+		self.situazione_attuale = []
 		self._scarti = []
 		self._pile = [[] for _ in range(7)]
 		self._inizio_pile = [1, 2, 3, 4, 5, 6, 7]
 		self._fine_pile = [7, 7, 7, 7, 7, 7, 6]
 
 
-    def crea_mazzo(self):
-        random.shuffle(mazzo)
+	def crea_mazzo(self):
+		random.shuffle(mazzo)
 
-    def crea_gioco(self):
-        global tavolo, riserva, mazzo
-        mazzo = Mazzo().mazzo
-        self.crea_mazzo()
-        tavolo = [[] for i in range(M_TAV)]
-        riserva = [[] for i in range(M_RIS)]
-        for t in range(M_TAV):
-            for i in range(t+1):
-                carta = mazzo.pop(0)
-                if i == t:
-                    carta.aperta = True
-                tavolo[t].append(carta)
-        for r in range(M_RIS):
-            riserva[r] = [mazzo.pop(0)]
+	def crea_gioco(self):
+		global tavolo, riserva, mazzo
+		mazzo = Mazzo().mazzo
+		self.crea_mazzo()
+		tavolo = [[] for i in range(M_TAV)]
+		riserva = [[] for i in range(M_RIS)]
+		for t in range(M_TAV):
+			for i in range(t+1):
+				carta = mazzo.pop(0)
+				if i == t:
+					carta.aperta = True
+				tavolo[t].append(carta)
+		for r in range(M_RIS):
+			riserva[r] = [mazzo.pop(0)]
 
 	def distribuisci_carte(self):
 		"""Distribuisce le carte inizialmente sul tavolo da gioco."""
