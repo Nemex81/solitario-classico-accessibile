@@ -37,8 +37,6 @@ class PyMenu:
 		if event.type == KEYDOWN:
 			if self.EVENTS_DN.get(event.key):
 				self.EVENTS_DN[event.key]()
-		#if self.EVENTS_DN.get(event.key):
-			#return self.EVENTS_DN[event.key]()
 
 	def next_item(self):
 		self.selected_item = (self.selected_item + 1) % len(self.items)

@@ -14,19 +14,9 @@ from my_lib.dialog_box import DialogBox
 pygame.init()
 pygame.font.init()
 
-callback_dict = {
-	pygame.K_ESCAPE: "quit_game",
-	pygame.K_LEFT: "move_cursor_left",
-	pygame.K_RIGHT: "move_cursor_right",
-	pygame.K_UP: "move_cursor_up",
-	pygame.K_DOWN: "move_cursor_down",
-	pygame.K_RETURN: "select_card",
-	pygame.K_SPACE: "move_card",
-}
-
 class GamePlay:
 	def __init__(self, screen, screen_reader):
-		self.callback = callback_dict
+		#self.callback = callback_dict
 		self.engine = EngineSolitario()
 		self.screen = screen
 		self.screen_reader = screen_reader
@@ -37,6 +27,9 @@ class GamePlay:
 		self.cursor_pos = [0, 0]  # posizione iniziale del cursore sul tableau
 		self.selected_card = None  # carta selezionata dal cursore
 		self.selected_card_index = 0  # indice della carta selezionata nella pila di tableau
+		self.build_commands_list()
+		#self.new_game()
+		self.engine.crea_gioco()
 
 	def create_tableau(self):
 		deck = self.engine.crea_mazzo() # crea un mazzo ordinato
@@ -54,6 +47,7 @@ class GamePlay:
 		self.foundations = [[] for _ in range(4)] # svuota le fondazioni
 
 	def draw_table(self):
+		"""
 		# disegna le pile di tableau
 		for i in range(7):
 			for j, card in enumerate(self.tableau[i]):
@@ -85,8 +79,12 @@ class GamePlay:
 
 		pygame.display.flip()
 
+		"""
+		pass
+
+
 	def new_game(self):
-		self.engine.create_tableau() # crea il tavolo di gioco
+		self.create_tableau() # crea il tavolo di gioco
 		self.engine.distribuisci_carte()# distribuisci le carte sul tableau
 		self.draw_table() # disegna il tableau
 
@@ -152,10 +150,6 @@ class GamePlay:
 		
 		return False
 
-	def quit_game(self):
-		self.quit()
-		sys.exit()
-
 	def move_cursor_left(self):
 		if self.cursor_pos[0] > 0:
 			self.cursor_pos[0] -= 1
@@ -176,6 +170,9 @@ class GamePlay:
 		self.selected_card = self.tableau[self.cursor_pos[0]][self.cursor_pos[1]]
 
 	def move_card(self):
+		self.engine.move_card()
+
+	def LAST_move_card(self):
 		if self.selected_card is None:
 			return
 
@@ -191,8 +188,50 @@ class GamePlay:
 			self.selected_card = None
 			self.destination_pile = None
 
+	def quit_app(self):
+		self.screen_reader.vocalizza("chiusura in corso.  ")
+		time.sleep(.5)
+		result = self.dialog_box.create_question_box("Sei sicuro di voler uscire?")
+		if result:
+			self.is_running = False
 
+	def last_handle_keyboard_EVENTS(self, event):
+		#for event in pygame.event.get():
+		if event.type == pygame.QUIT:
+			self.running = False
 
+		elif event.type == pygame.KEYDOWN:
+			if event.key == pygame.K_ESCAPE:
+				self.running = False
+
+			elif event.key == pygame.K_LEFT:
+				self.selected_pile_index = (self.selected_pile_index - 1) % 7
+
+			elif event.key == pygame.K_RIGHT:
+				self.selected_pile_index = (self.selected_pile_index + 1) % 7
+
+			elif event.key == pygame.K_UP:
+				#self.gameplay.selected_card_index = (self.selected_card_index - 1) % len(self.game_engine.tableau[self.selected_pile_index])
+				if len(self.tableau[self.selected_pile_index]) > 0:
+					self.selected_card_index = (self.selected_card_index - 1) % len(self.tableau[self.selected_pile_index])
+				else:
+					self.selected_card_index = 0
+
+	def build_commands_list(self):
+		self.callback_dict = {
+			pygame.K_LEFT: self.move_cursor_left,
+			pygame.K_RIGHT: self.move_cursor_right,
+			pygame.K_UP: self.move_cursor_up,
+			pygame.K_DOWN: self.move_cursor_down,
+			pygame.K_RETURN: self.select_card,
+			pygame.K_SPACE: self.move_card,
+			pygame.K_ESCAPE: self.quit_app,
+		}
+
+	def handle_keyboard_EVENTS(self, event):
+		if event.type == KEYDOWN:
+			if self.EVENTS_DN.get(event.key):
+				self.EVENTS_DN[event.key]()
 
 #@@@# start del modulo
 if __name__ == "__main__":

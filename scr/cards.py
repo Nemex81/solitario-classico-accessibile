@@ -17,6 +17,16 @@ class Carta:
 		self.valore = valore
 		self.seme = seme
 
+class Carta:
+	def __init__(self, valore, seme, coperta=True):
+		self.valore = valore
+		self.seme = seme
+		self.coperta = coperta
+	
+	def flip(self):
+		self.coperta = not self.coperta
+
+
 class Mazzo:
 	def __init__(self):
 		self.semi = ["Cuori", "Quadri", "Fiori", "Picche"]

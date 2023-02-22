@@ -41,6 +41,7 @@ class SolitarioAccessibile:
 		self.is_menu_open = True
 		self.selected_menu_item = 0
 		self.selected_pile_index = 0
+		self.selected_card_index = 0
 		self.is_running = True  # boolean per tenere il ciclo principale degli eventi aperto
 
 	def vocalizza(self, string):
@@ -63,13 +64,7 @@ class SolitarioAccessibile:
 			if result:
 				self.is_running = False
 
-	def handle_menu_selection(self, selected_item):
-		if selected_item == self.exit_menu_index:
-			result = self.menu.quit_app()
-			if result:
-				self.is_running = False
-		else:
-			self.is_menu_open = False
+
 
 	def last_handle_keyboard_events(self, event):
 		"""
@@ -120,7 +115,7 @@ class SolitarioAccessibile:
 				if self.is_menu_open:
 					self.menu.handle_keyboard_EVENTS(event)
 				else:
-					self.handle_gameplay_events(event)
+					self.gameplay.handle_keyboard_EVENTS(event)
 
 			elif event.type == KEYUP:
 				pass
@@ -134,22 +129,30 @@ class SolitarioAccessibile:
 				self.running = False
 
 			elif event.key == pygame.K_LEFT:
-				self.selected_pile_index = (self.selected_pile_index - 1) % 7
+				self.gameplay.selected_pile_index = (self.selected_pile_index - 1) % 7
 
 			elif event.key == pygame.K_RIGHT:
-				self.selected_pile_index = (self.selected_pile_index + 1) % 7
+				self.gameplay.selected_pile_index = (self.selected_pile_index + 1) % 7
 
 			elif event.key == pygame.K_UP:
-				self.selected_card_index = (self.selected_card_index - 1) % len(self.game_engine.tableau[self.selected_pile_index])
+				#self.gameplay.selected_card_index = (self.selected_card_index - 1) % len(self.game_engine.tableau[self.selected_pile_index])
+				if len(self.game_engine.tableau[self.selected_pile_index]) > 0:
+					self.gameplay.selected_card_index = (self.gameplay.selected_card_index - 1) % len(self.game_engine.tableau[self.selected_pile_index])
+				else:
+					self.gameplay.selected_card_index = 0
+
 
 			elif event.key == pygame.K_DOWN:
 				self.gameplay.selected_card_index = (self.gameplay.selected_card_index + 1) % len(self.gameplay.tableau[self.selected_pile_index])
 
 			elif event.key == pygame.K_RETURN:
-				self.game_engine.select_card(self.selected_pile_index, self.selected_card_index)
+				self.gameplay.select_card(self.selected_pile_index, self.selected_card_index)
 
 			elif event.key == pygame.K_SPACE:
-				self.game_engine.move_selected_card()
+				self.gameplay.move_selected_card()
+
+			elif event.key == pygame.K_ESCAPE:
+				self.gameplay.quit_app()
 
 	def run(self):
 		while self.is_running:
@@ -169,6 +172,13 @@ class SolitarioAccessibile:
 				pass
 
 			pygame.display.update()
+
+	def quit_app(self):
+		self.screen_reader.vocalizza("chiusura in corso.  ")
+		time.sleep(.5)
+		result = self.dialog_box.create_question_box("Sei sicuro di voler uscire?")
+		if result:
+			self.is_running = False
 
 
 
