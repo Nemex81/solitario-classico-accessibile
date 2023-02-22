@@ -4,8 +4,10 @@
 
 """
 
-import pygame
+import sys, os, time, pygame
 from pygame.locals import *
+from my_lib.dialog_box import DialogBox
+# inizializzo pygame
 pygame.init()
 pygame.font.init()
 
@@ -16,6 +18,7 @@ class PyMenu:
 		self.callback = callback
 		self.screen = screen
 		self.screen_reader = screen_reader
+		self.dialog_box = DialogBox()
 		self.font = pygame.font.Font(None, 36)
 		# assemblo il dizionario dei comandi
 		self.build_commands_list()
@@ -73,16 +76,18 @@ class PyMenu:
 			self.screen.blit(text, text_rect)
 
 		pygame.display.flip()
+		pygame.display.update()
 
 	def quit_app(self):
 		self.screen_reader.vocalizza("chiusura in corso.  ")
 		time.sleep(.3)
 		result = self.dialog_box.create_question_box("Sei sicuro di voler uscire?")
 		if result:
-			self.is_running = False
+			sys.exit()
 
 	def esc_press(self):
 		self.quit_app()
+
 
 
 #@@@# start del modulo
