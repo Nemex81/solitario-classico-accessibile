@@ -88,6 +88,13 @@ class GamePlay:
 		
 		return False
 
+	def create_tableau(self):
+		# create piles for tableau
+		self.tableau = [[] for _ in range(7)]
+		# create waste pile
+		self.waste_pile = []
+		# create foundations piles
+		self.foundations = [[] for _ in range(4)]
 
 
 
