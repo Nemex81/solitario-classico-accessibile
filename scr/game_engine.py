@@ -25,6 +25,8 @@ class EngineSolitario:
 		self._pile = [[] for _ in range(7)]
 		self._inizio_pile = [1, 2, 3, 4, 5, 6, 7]
 		self._fine_pile = [7, 7, 7, 7, 7, 7, 6]
+		self.tableau = [[], [], [], [], [], [], []]
+		self.waste_pile = []
 
 
 	def crea_mazzo(self):
