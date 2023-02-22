@@ -54,21 +54,21 @@ class GamePlay:
         if card is not None:
             self.selected_card = card
 
-	def move_card(self, from_pile_idx, to_pile_idx):
-		from_pile = self.tableau[from_pile_idx]
-		to_pile = self.tableau[to_pile_idx]
+	def move_card(self):
+		if self.selected_pile is None or self.destination_pile is None:
+			return
 
-		if from_pile.is_empty():
-			self.screen_reader.vocalizza("La pila di partenza è vuota")
-			return False
+		# Verifica se la mossa è valida
+		if self.game_engine.is_valid_card_move(self.selected_pile, self.destination_pile):
+			# Sposta la carta dalla pila di origine alla pila di destinazione
+			self.game_engine.move_card(self.selected_pile, self.destination_pile)
 
-		card = from_pile.peek()
-		if not to_pile.can_add_card(card):
-			self.screen_reader.vocalizza("Non è possibile spostare la carta nella pila di destinazione")
-			return False
+			# Aggiorna lo stato del tavolo di gioco
+			self.update_game_state()
 
-		to_pile.add_card(from_pile.pop())
-		return True
+			# Resetta le pile selezionate
+			self.selected_pile = None
+			self.destination_pile = None
 
 	def is_valid_move(self, origin_pile, dest_pile):
 		# Check if origin and destination piles are valid
