@@ -362,6 +362,31 @@ class EngineSolitario:
 
 		return self.piles[pile][-1]
 
+	def is_valid_card_move(self, start_pile, end_pile):
+		"""Verifica se il movimento di una carta da una pila all'altra è valido"""
+		start_pile_cards = self.get_pile_cards(start_pile)
+		end_pile_cards = self.get_pile_cards(end_pile)
+
+		# Verifica che la pila di partenza contenga almeno una carta
+		if len(start_pile_cards) == 0:
+			return False
+
+		# Verifica se la carta da spostare è l'ultima carta della pila di partenza
+		card_to_move = start_pile_cards[-1]
+		if card_to_move not in self.get_top_cards(start_pile):
+			return False
+
+		# Verifica che la carta da spostare possa essere posizionata sulla pila di destinazione
+		if not self.is_valid_pile(end_pile, card_to_move):
+			return False
+
+		# Verifica che il valore della carta da spostare sia uno in meno rispetto alla carta in cima alla pila di destinazione
+		if len(end_pile_cards) > 0 and card_to_move.value != end_pile_cards[-1].value - 1:
+			return False
+
+		return True
+
+
 
 
 #@@@# start del modulo
