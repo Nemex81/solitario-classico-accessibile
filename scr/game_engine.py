@@ -325,6 +325,44 @@ class EngineSolitario:
 
 		return True
 
+	#@@@# sezione metodi per convalidare lo spsotamento di una carta
+
+	def is_valid_pile(self, pile_index: int, card_index: int) -> bool:
+		"""
+		Verifica se l'indice della pila e della carta sono validi.
+		"""
+		if 0 <= pile_index < 7 and 0 <= card_index < len(self.tableau[pile_index]):
+			return True
+
+		return False
+
+	def is_empty_pile(self, pile: str) -> bool:
+		"""
+		Verifica se una pila è vuota
+		:param pile: Il nome della pila da verificare
+		:return: True se la pila è vuota, False altrimenti
+		"""
+		return len(getattr(self, pile)) == 0
+
+	def get_top_card(self, pile):
+		"""
+		Restituisce la carta in cima a una pila.
+
+		Args:
+			pile (str): il nome della pila
+
+		Returns:
+			object: la carta in cima alla pila o None se la pila è vuota
+		"""
+		if pile not in self.piles:
+			raise ValueError(f"Pila '{pile}' non valida")
+
+		if len(self.piles[pile]) == 0:
+			return None
+
+		return self.piles[pile][-1]
+
+
 #@@@# start del modulo
 if __name__ == "__main__":
 	print("compilazione completata di %s" % __name__)
