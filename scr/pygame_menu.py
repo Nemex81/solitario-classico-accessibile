@@ -2,6 +2,8 @@
 	file pygame_menu.py
 	percorso: https://github.com/Nemex81/solitario-classico-accessibile/blob/main/scr/pygame_menu.py
 
+	Modulo per la gestione dei menù di gioco
+
 """
 
 import sys, os, time, pygame

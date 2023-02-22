@@ -28,7 +28,6 @@ class GamePlay:
 	def __init__(self, screen, screen_reader):
 		self.callback = callback_dict
 		self.engine = EngineSolitario()
-		#self.create_tableau()  # distribuisce le carte sul tavolo
 		self.screen = screen
 		self.screen_reader = screen_reader
 		self.dialog_box = DialogBox()
@@ -37,6 +36,7 @@ class GamePlay:
 		self.waste_pile = self.engine.waste_pile
 		self.cursor_pos = [0, 0]  # posizione iniziale del cursore sul tableau
 		self.selected_card = None  # carta selezionata dal cursore
+		self.selected_card_index = 0  # indice della carta selezionata nella pila di tableau
 
 	def create_tableau(self):
 		deck = self.engine.crea_mazzo() # crea un mazzo ordinato
