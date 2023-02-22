@@ -363,6 +363,7 @@ class EngineSolitario:
 		return self.piles[pile][-1]
 
 
+
 #@@@# start del modulo
 if __name__ == "__main__":
 	print("compilazione completata di %s" % __name__)
