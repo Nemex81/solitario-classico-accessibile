@@ -33,6 +33,7 @@ class SolitarioAccessibile:
 		self.screen_reader = ScreenReader()  # gestore screen reader per le vocalizzazioni delle stringhe
 		self.dialog_box = DialogBox()  # gestore dialog box
 		self.game_engine = EngineSolitario()  # motore di gioco
+		#self.menu = PyMenu(["Nuova partita", "Esci dal gioco"], self.handle_menu_selection, self.schermo, self.screen_reader)
 		self.menu = PyMenu(["Nuova partita", "Esci dal gioco"], self.handle_menu_selection, self.schermo, self.screen_reader)
 
 		self.EVENTS_DN = self.menu.build_commands_list()  # inizializzo la lista dei comandi di gioco
@@ -60,7 +61,15 @@ class SolitarioAccessibile:
 			if result:
 				self.is_running = False
 
-	def handle_keyboard_events(self, event):
+	def handle_menu_selection(self, selected_item):
+		if selected_item == self.exit_menu_index:
+			result = self.menu.quit_app()
+			if result:
+				self.is_running = False
+		else:
+			self.is_menu_open = False
+
+	def last_handle_keyboard_events(self, event):
 		"""
 		Metodo per la gestione degli eventi da tastiera.
 		"""
@@ -92,10 +101,10 @@ class SolitarioAccessibile:
 		self.menu.execute()
 
 	def handle_menu_selection(self, selected_item):
-		if selected_item == 0:
-			self.is_menu_open = False
-		elif selected_item == 1:
+		if selected_item == len(self.menu.items) - 1:
 			self.quit_app()
+		else:
+			self.is_menu_open = False
 
 	def handle_keyboard_events(self, event):
 		"""

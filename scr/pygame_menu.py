@@ -15,6 +15,7 @@ class PyMenu:
 	def __init__(self, items, callback, screen, screen_reader):
 		self.items = items
 		self.selected_item = 0
+		self.exit_menu_index = self.items.index("Esci dal gioco")
 		self.callback = callback
 		self.screen = screen
 		self.screen_reader = screen_reader
@@ -46,8 +47,13 @@ class PyMenu:
 		self.screen_reader.vocalizza(self.items[self.selected_item])
 
 	def execute(self):
-		self.screen_reader.vocalizza("Hai selezionato " + self.items[self.selected_item])
-		self.callback(self.selected_item)
+		#self.screen_reader.vocalizza("Hai selezionato " + self.items[self.selected_item])
+		#self.callback(self.selected_item)
+		if self.selected_item == self.exit_menu_index:
+			self.quit_app()
+		else:
+			self.screen_reader.vocalizza("Hai selezionato " + self.items[self.selected_item])
+			self.callback(self.selected_item)
 
 	def draw_menu(self):
 		self.screen.fill((255, 255, 255))
