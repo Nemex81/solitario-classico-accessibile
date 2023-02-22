@@ -25,6 +25,7 @@ class Mazzo:
 
 	def crea_mazzo(self):
 		random.shuffle(self.mazzo)
+		return self.mazzo
 
 #@@@# start del modulo
 if __name__ == "__main__":

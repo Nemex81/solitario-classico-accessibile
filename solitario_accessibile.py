@@ -14,6 +14,7 @@ import pygame
 from pygame.locals import *
 from scr.screen_reader import ScreenReader
 from scr.game_engine import EngineSolitario
+from scr.game_play import GamePlay
 from scr.pygame_menu import PyMenu
 from my_lib.dialog_box import DialogBox
 
@@ -33,7 +34,7 @@ class SolitarioAccessibile:
 		self.screen_reader = ScreenReader()  # gestore screen reader per le vocalizzazioni delle stringhe
 		self.dialog_box = DialogBox()  # gestore dialog box
 		self.game_engine = EngineSolitario()  # motore di gioco
-		#self.menu = PyMenu(["Nuova partita", "Esci dal gioco"], self.handle_menu_selection, self.schermo, self.screen_reader)
+		gameplay = GamePlay(self.schermo, self.screen_reader)
 		self.menu = PyMenu(["Nuova partita", "Esci dal gioco"], self.handle_menu_selection, self.schermo, self.screen_reader)
 
 		self.EVENTS_DN = self.menu.build_commands_list()  # inizializzo la lista dei comandi di gioco
@@ -122,6 +123,32 @@ class SolitarioAccessibile:
 
 			elif event.type == KEYUP:
 				pass
+
+	def handle_gameplay_events(self, event):
+		#for event in pygame.event.get():
+		if event.type == pygame.QUIT:
+			self.running = False
+		elif event.type == pygame.KEYDOWN:
+			if event.key == pygame.K_ESCAPE:
+				self.running = False
+
+			elif event.key == pygame.K_LEFT:
+				self.selected_pile_index = (self.selected_pile_index - 1) % 7
+
+			elif event.key == pygame.K_RIGHT:
+				self.selected_pile_index = (self.selected_pile_index + 1) % 7
+
+			elif event.key == pygame.K_UP:
+				self.selected_card_index = (self.selected_card_index - 1) % len(self.game_engine.tableau[self.selected_pile_index])
+
+			elif event.key == pygame.K_DOWN:
+				self.gameplay.selected_card_index = (self.gameplay.selected_card_index + 1) % len(self.gameplay.tableau[self.selected_pile_index])
+
+			elif event.key == pygame.K_RETURN:
+				self.game_engine.select_card(self.selected_pile_index, self.selected_card_index)
+
+			elif event.key == pygame.K_SPACE:
+				self.game_engine.move_selected_card()
 
 	def run(self):
 		while self.is_running:

@@ -19,6 +19,7 @@ from scr.cards import Carta, Mazzo
 
 class EngineSolitario:
 	def __init__(self):
+		self.dek = Mazzo()
 		self.primo_giro = True
 		self.situazione_attuale = []
 		self._scarti = []
@@ -37,7 +38,8 @@ class EngineSolitario:
 				self.cards.append(card)
 
 	def crea_mazzo(self):
-		random.shuffle(mazzo)
+		dek = self.dek.crea_mazzo()
+		return dek
 
 	def mischia_carte(self):
 		random.shuffle(self.cards)

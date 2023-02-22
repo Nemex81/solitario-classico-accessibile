@@ -4,9 +4,9 @@
 
 """
 
-import sys, os, time, pygame
+import sys, os, time, random, pygame
 from pygame.locals import *
-from my_lib.dialog_box import DialogBox
+from scr.game_engine import EngineSolitario
 from scr.pygame_menu import PyMenu
 from my_lib.dialog_box import DialogBox
 
@@ -14,10 +14,21 @@ from my_lib.dialog_box import DialogBox
 pygame.init()
 pygame.font.init()
 
+callback_dict = {
+	pygame.K_ESCAPE: "quit_game",
+	pygame.K_LEFT: "move_cursor_left",
+	pygame.K_RIGHT: "move_cursor_right",
+	pygame.K_UP: "move_cursor_up",
+	pygame.K_DOWN: "move_cursor_down",
+	pygame.K_RETURN: "select_card",
+	pygame.K_SPACE: "move_card",
+}
+
 class GamePlay:
-	def __init__(self, items, callback, screen, screen_reader):
+	def __init__(self, screen, screen_reader):
+		self.callback = callback_dict
 		self.engine = EngineSolitario()
-		self.create_tableau()  # distribuisce le carte sul tavolo
+		#self.create_tableau()  # distribuisce le carte sul tavolo
 		self.screen = screen
 		self.screen_reader = screen_reader
 		self.dialog_box = DialogBox()
@@ -79,13 +90,13 @@ class GamePlay:
 		self.engine.distribuisci_carte()# distribuisci le carte sul tableau
 		self.draw_table() # disegna il tableau
 
-	def move_cursor_up(self):
+	def last_move_cursor_up(self):
 		if self.current_index > 0:
 			self.current_index -= 1
 		else:
 			self.current_index = len(self.menu_items) - 1
 
-	def move_cursor_dn(self):
+	def last_move_cursor_dn(self):
 		if self.selected_card is not None:
 			# Check if selected card is last in tableau
 			last_card = self.tableau[self.selected_card[0]][-1]
@@ -100,14 +111,14 @@ class GamePlay:
 				self.selected_card = (self.selected_card[0], self.selected_card[1]+1)
 			self.draw_table()
 
-	def select_card(self):
+	def last_select_card(self):
 		row, col = self.cursor_pos
 		card = self.tableau[row][col]
 
 		if card is not None:
 			self.selected_card = card
 
-	def move_card(self):
+	def last_move_card(self):
 		if self.selected_pile is None or self.destination_pile is None:
 			return
 
@@ -140,6 +151,46 @@ class GamePlay:
 			return True
 		
 		return False
+
+	def quit_game(self):
+		self.quit()
+		sys.exit()
+
+	def move_cursor_left(self):
+		if self.cursor_pos[0] > 0:
+			self.cursor_pos[0] -= 1
+
+	def move_cursor_right(self):
+		if self.cursor_pos[0] < len(self.tableau) - 1:
+			self.cursor_pos[0] += 1
+
+	def move_cursor_up(self):
+		if self.cursor_pos[1] > 0:
+			self.cursor_pos[1] -= 1
+
+	def move_cursor_down(self):
+		if self.cursor_pos[1] < len(self.tableau[self.cursor_pos[0]]) - 1:
+			self.cursor_pos[1] += 1
+
+	def select_card(self):
+		self.selected_card = self.tableau[self.cursor_pos[0]][self.cursor_pos[1]]
+
+	def move_card(self):
+		if self.selected_card is None:
+			return
+
+		# Check if the move is valid
+		if self.engine.is_valid_card_move(self.selected_card, self.destination_pile):
+			# Move the card from the source pile to the destination pile
+			self.engine.move_card(self.selected_card, self.destination_pile)
+
+			# Update the game state
+			self.update_game_state()
+
+			# Reset the selected and destination piles
+			self.selected_card = None
+			self.destination_pile = None
+
 
 
 
