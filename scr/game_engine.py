@@ -25,14 +25,28 @@ class EngineSolitario:
 		self._pile = [[] for _ in range(7)]
 		self._inizio_pile = [1, 2, 3, 4, 5, 6, 7]
 		self._fine_pile = [7, 7, 7, 7, 7, 7, 6]
-		self.tableau = [[], [], [], [], [], [], []]
+		self.tableau = [[] for _ in range(7)]
+		self.foundations = [[] for _ in range(4)]
 		self.waste_pile = []
+		self.stock_pile = []
 
+		self.cards = []
+		for s in ["cuori", "quadri", "fiori", "picche"]:
+			for v in range(1, 14):
+				card = (s, v)
+				self.cards.append(card)
 
 	def crea_mazzo(self):
 		random.shuffle(mazzo)
 
+	def mischia_carte(self):
+		random.shuffle(self.cards)
+
 	def crea_gioco(self):
+		self.mischia_carte()
+		self.distribuisci_carte()
+
+	def last_crea_gioco(self):
 		global tavolo, riserva, mazzo
 		mazzo = Mazzo().mazzo
 		self.crea_mazzo()
@@ -48,6 +62,21 @@ class EngineSolitario:
 			riserva[r] = [mazzo.pop(0)]
 
 	def distribuisci_carte(self):
+		# Distribuisce le carte sul tableau
+		n_carte = 0
+		for i in range(7):
+			for j in range(i+1):
+				carta = self.cards[n_carte]
+				if j == i:
+					self.tableau[j].append(carta)
+				else:
+					self.tableau[j].append(None)
+				n_carte += 1
+
+		# Mette le rimanenti carte nel stock pile
+		self.stock_pile = self.cards[n_carte:]
+
+	def last_distribuisci_carte(self):
 		"""Distribuisce le carte inizialmente sul tavolo da gioco."""
 		# Crea il mazzo di 52 carte e lo mischia
 		mazzo = Mazzo()
@@ -96,6 +125,65 @@ class EngineSolitario:
 		# Aggiorna il conteggio delle carte
 		self.numero_carte_mazzo = len(mazzo)
 		self.numero_carte_scarti = 0
+
+	def move_card(self, origin_pile, dest_pile):
+		# Sposta la carta dalla pila di origine alla pila di destinazione
+		card = origin_pile.pop()
+		dest_pile.append(card)
+
+	def is_valid_pile(self, pile):
+		if pile in (self.tableau, self.foundations, self.waste_pile, self.stock_pile):
+			return True
+		else:
+			return False
+
+	def is_empty_pile(self, pile):
+		if not pile:
+			return True
+		else:
+			return False
+
+	def last_get_top_card(self, pile):
+		"""
+		Restituisce la carta in cima a una pila.
+
+		Args:
+			pile (str): il nome della pila
+
+		Returns:
+			object: la carta in cima alla pila o None se la pila è vuota
+		"""
+		if pile not in self.piles:
+			raise ValueError(f"Pila '{pile}' non valida")
+
+		if len(self.piles[pile]) == 0:
+			return None
+
+		return self.piles[pile][-1]
+
+	def get_top_card(self, pile):
+		if not self.is_empty_pile(pile):
+			return pile[-1]
+		else:
+			return None
+
+	def is_valid_card_move(self, origin_pile, dest_pile):
+		# Check if origin and destination piles are valid
+		if not self.is_valid_pile(origin_pile) or not self.is_valid_pile(dest_pile):
+			return False
+		
+		# Check if the origin pile is empty
+		if self.is_empty_pile(origin_pile):
+			return False
+		
+		# Get the top card of the origin pile
+		top_card = self.get_top_card(origin_pile)
+		
+		# Check if the top card can be moved to the destination pile
+		if self.is_valid_card_move(top_card, dest_pile):
+			return True
+		
+		return False
 
 	def muovi_carte(self, from_colonna, to_colonna, quanti):
 		"""
@@ -343,24 +431,6 @@ class EngineSolitario:
 		:return: True se la pila è vuota, False altrimenti
 		"""
 		return len(getattr(self, pile)) == 0
-
-	def get_top_card(self, pile):
-		"""
-		Restituisce la carta in cima a una pila.
-
-		Args:
-			pile (str): il nome della pila
-
-		Returns:
-			object: la carta in cima alla pila o None se la pila è vuota
-		"""
-		if pile not in self.piles:
-			raise ValueError(f"Pila '{pile}' non valida")
-
-		if len(self.piles[pile]) == 0:
-			return None
-
-		return self.piles[pile][-1]
 
 	def is_valid_card_move(self, start_pile, end_pile):
 		"""Verifica se il movimento di una carta da una pila all'altra è valido"""

@@ -17,6 +17,7 @@ pygame.font.init()
 class GamePlay:
 	def __init__(self, items, callback, screen, screen_reader):
 		self.engine = EngineSolitario()
+		self.create_tableau()  # distribuisce le carte sul tavolo
 		self.screen = screen
 		self.screen_reader = screen_reader
 		self.dialog_box = DialogBox()
@@ -25,6 +26,26 @@ class GamePlay:
 		self.waste_pile = self.engine.waste_pile
 		self.cursor_pos = [0, 0]  # posizione iniziale del cursore sul tableau
 		self.selected_card = None  # carta selezionata dal cursore
+
+	def create_tableau(self):
+		deck = self.engine.crea_mazzo() # crea un mazzo ordinato
+		random.shuffle(deck) # mescola il mazzo
+
+		# distribuisci le carte sul tableau
+		for i, row in enumerate(self.tableau):
+			for j in range(i+1):
+				card = deck.pop()
+				if j == i:
+					card.flip() # scopri l'ultima carta di ogni colonna
+				row.append(card)
+
+		self.waste_pile = [] # svuota la pila di scarti
+		self.foundations = [[] for _ in range(4)] # svuota le fondazioni
+
+	def new_game(self):
+		self.engine.create_tableau() # crea il tavolo di gioco
+		self.engine.distribuisci_carte()# distribuisci le carte sul tableau
+		self.draw_table() # disegna il tableau
 
 	def move_cursor_up(self):
 		if self.current_index > 0:
@@ -47,12 +68,12 @@ class GamePlay:
 				self.selected_card = (self.selected_card[0], self.selected_card[1]+1)
 			self.draw_table()
 
-    def select_card(self):
-        row, col = self.cursor_pos
-        card = self.tableau[row][col]
+	def select_card(self):
+		row, col = self.cursor_pos
+		card = self.tableau[row][col]
 
-        if card is not None:
-            self.selected_card = card
+		if card is not None:
+			self.selected_card = card
 
 	def move_card(self):
 		if self.selected_pile is None or self.destination_pile is None:
@@ -87,14 +108,6 @@ class GamePlay:
 			return True
 		
 		return False
-
-	def create_tableau(self):
-		# create piles for tableau
-		self.tableau = [[] for _ in range(7)]
-		# create waste pile
-		self.waste_pile = []
-		# create foundations piles
-		self.foundations = [[] for _ in range(4)]
 
 
 
