@@ -20,13 +20,9 @@ class PyMenu:
 		self.screen_reader = screen_reader
 		self.dialog_box = DialogBox()
 		self.font = pygame.font.Font(None, 36)
-		# assemblo il dizionario dei comandi
 		self.build_commands_list()
 
 	def build_commands_list(self):
-		#@@# sezione dizionari per la gestione del comandi di gioco
-
-		# quando il tasto viene premuto
 		self.EVENTS_DN = {
 			pygame.K_ESCAPE: self.esc_press,
 			pygame.K_RETURN: self.execute,
@@ -34,21 +30,12 @@ class PyMenu:
 			pygame.K_DOWN: self.next_item
 		}
 
-		# quando il tasto viene rilasciato
-		self.EVENTS_UP = {}
-
 	def handle_keyboard_EVENTS(self, event):
-		""" metodo per la gestione degli eventi da tastiera """
-		for event in pygame.event.get():
-			# processa gli eventi in coda
-			pygame.event.pump()
-			if event.type == QUIT:
-				pygame.quit()
-				sys.exit()
-
-			elif event.type == KEYDOWN:
-				if self.EVENTS_DN.get(event.key):
-					self.EVENTS_DN[event.key]()
+		if event.type == KEYDOWN:
+			if self.EVENTS_DN.get(event.key):
+				self.EVENTS_DN[event.key]()
+		#if self.EVENTS_DN.get(event.key):
+			#return self.EVENTS_DN[event.key]()
 
 	def next_item(self):
 		self.selected_item = (self.selected_item + 1) % len(self.items)
@@ -76,7 +63,6 @@ class PyMenu:
 			self.screen.blit(text, text_rect)
 
 		pygame.display.flip()
-		pygame.display.update()
 
 	def quit_app(self):
 		self.screen_reader.vocalizza("chiusura in corso.  ")
