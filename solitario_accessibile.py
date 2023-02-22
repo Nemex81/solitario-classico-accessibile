@@ -137,7 +137,8 @@ class SolitarioAccessibile:
 			if self.is_menu_open:
 				self.menu.draw_menu()
 			else:
-				self.game_engine.render(self.schermo)
+				#self.game_engine.render(self.schermo)
+				pass
 
 			pygame.display.update()
 

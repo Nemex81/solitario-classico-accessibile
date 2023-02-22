@@ -42,6 +42,38 @@ class GamePlay:
 		self.waste_pile = [] # svuota la pila di scarti
 		self.foundations = [[] for _ in range(4)] # svuota le fondazioni
 
+	def draw_table(self):
+		# disegna le pile di tableau
+		for i in range(7):
+			for j, card in enumerate(self.tableau[i]):
+				if card is not None:
+					img = self.get_card_image(card)
+					self.screen.blit(img, (self.tableau_x_pos[i], self.tableau_y_pos + self.card_height*j))
+				else:
+					img = self.get_card_back_image()
+					self.screen.blit(img, (self.tableau_x_pos[i], self.tableau_y_pos + self.card_height*j))
+
+		# disegna le pile di fondazione
+		for i in range(4):
+			if len(self.foundations[i]) > 0:
+				top_card = self.foundations[i][-1]
+				img = self.get_card_image(top_card)
+				self.screen.blit(img, (self.foundations_x_pos[i], self.foundations_y_pos))
+			else:
+				img = self.get_card_back_image()
+				self.screen.blit(img, (self.foundations_x_pos[i], self.foundations_y_pos))
+
+		# disegna la pila di scarto
+		if len(self.waste_pile) > 0:
+			top_card = self.waste_pile[-1]
+			img = self.get_card_image(top_card)
+			self.screen.blit(img, (self.waste_pile_x_pos, self.waste_pile_y_pos))
+		else:
+			img = self.get_card_back_image()
+			self.screen.blit(img, (self.waste_pile_x_pos, self.waste_pile_y_pos))
+
+		pygame.display.flip()
+
 	def new_game(self):
 		self.engine.create_tableau() # crea il tavolo di gioco
 		self.engine.distribuisci_carte()# distribuisci le carte sul tableau

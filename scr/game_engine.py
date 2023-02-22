@@ -43,6 +43,7 @@ class EngineSolitario:
 		random.shuffle(self.cards)
 
 	def crea_gioco(self):
+		self.crea_mazzo()
 		self.mischia_carte()
 		self.distribuisci_carte()
 
@@ -455,6 +456,21 @@ class EngineSolitario:
 			return False
 
 		return True
+
+	def render(self, screen):
+		self.draw_background(screen)
+		self.tableau.render(screen)
+		self.foundation_piles.render(screen)
+		self.stock_pile[-1].render(screen) # render only the top card of stock pile
+		self.waste_pile[-1].render(screen) # render only the top card of waste pile
+
+		if self.message_box:
+			self.message_box.render(screen)
+
+		if self.is_win():
+			self.vittoria()
+
+		pygame.display.flip()
 
 
 
