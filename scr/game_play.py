@@ -123,6 +123,13 @@ class GamePlay:
 			self.cursor_pos[1] += 1
 
 	def select_card(self):
+		row, col = self.cursor_pos
+		card = self.engine.get_card_at_position(row, col)
+
+		if card is not None:
+			self.selected_card = card
+
+	def last_select_card(self):
 		self.selected_card = self.engine.get_card(self.cursor_pos[0], self.cursor_pos[1])
 
 	def move_card(self):
@@ -131,7 +138,7 @@ class GamePlay:
 			dest_col = len(self.engine.tableau[dest_row])
 			self.engine.move_card(self.selected_card, dest_row, dest_col)
 			self.selected_card = None
-			self.update_game_state()
+			#self.update_game_state()
 
 	def update_game_state(self):
 		# Aggiorna lo stato del tavolo di gioco
@@ -140,20 +147,26 @@ class GamePlay:
 		self.engine.update_foundations()
 		self.engine.update_waste_pile()
 
-	def handle_keyboard_events(self, event):
+	def handle_keyboard_EVENTS(self, event):
 		if event.type == KEYDOWN:
 			if event.key == K_ESCAPE:
-				self.running = False
+				self.quit_app()
+
 			elif event.key == K_LEFT:
 				self.move_cursor_left()
+
 			elif event.key == K_RIGHT:
 				self.move_cursor_right()
+
 			elif event.key == K_UP:
 				self.move_cursor_up()
+
 			elif event.key == K_DOWN:
 				self.move_cursor_down()
+
 			elif event.key == K_RETURN:
 				self.select_card()
+
 			elif event.key == K_SPACE:
 				self.move_card()
 

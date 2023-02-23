@@ -64,8 +64,6 @@ class SolitarioAccessibile:
 			if result:
 				self.is_running = False
 
-
-
 	def last_handle_keyboard_events(self, event):
 		"""
 		Metodo per la gestione degli eventi da tastiera.
@@ -107,52 +105,18 @@ class SolitarioAccessibile:
 		"""
 		Metodo per la gestione degli eventi da tastiera.
 		"""
-		for event in pygame.event.get():
-			if event.type == QUIT:
-				self.menu.quit()
-
-			elif event.type == KEYDOWN:
-				if self.is_menu_open:
-					self.menu.handle_keyboard_EVENTS(event)
-				else:
-					self.gameplay.handle_keyboard_EVENTS(event)
-
-			elif event.type == KEYUP:
-				pass
-
-	def handle_gameplay_events(self, event):
 		#for event in pygame.event.get():
-		if event.type == pygame.QUIT:
-			self.running = False
-		elif event.type == pygame.KEYDOWN:
-			if event.key == pygame.K_ESCAPE:
-				self.running = False
+		if event.type == QUIT:
+			self.menu.quit()
 
-			elif event.key == pygame.K_LEFT:
-				self.gameplay.selected_pile_index = (self.selected_pile_index - 1) % 7
+		elif event.type == KEYDOWN:
+			if self.is_menu_open:
+				self.menu.handle_keyboard_EVENTS(event)
+			else:
+				self.gameplay.handle_keyboard_EVENTS(event)
 
-			elif event.key == pygame.K_RIGHT:
-				self.gameplay.selected_pile_index = (self.selected_pile_index + 1) % 7
-
-			elif event.key == pygame.K_UP:
-				#self.gameplay.selected_card_index = (self.selected_card_index - 1) % len(self.game_engine.tableau[self.selected_pile_index])
-				if len(self.game_engine.tableau[self.selected_pile_index]) > 0:
-					self.gameplay.selected_card_index = (self.gameplay.selected_card_index - 1) % len(self.game_engine.tableau[self.selected_pile_index])
-				else:
-					self.gameplay.selected_card_index = 0
-
-
-			elif event.key == pygame.K_DOWN:
-				self.gameplay.selected_card_index = (self.gameplay.selected_card_index + 1) % len(self.gameplay.tableau[self.selected_pile_index])
-
-			elif event.key == pygame.K_RETURN:
-				self.gameplay.select_card(self.selected_pile_index, self.selected_card_index)
-
-			elif event.key == pygame.K_SPACE:
-				self.gameplay.move_selected_card()
-
-			elif event.key == pygame.K_ESCAPE:
-				self.gameplay.quit_app()
+		elif event.type == KEYUP:
+			pass
 
 	def run(self):
 		while self.is_running:
@@ -160,13 +124,14 @@ class SolitarioAccessibile:
 				if event.type == QUIT:
 					self.quit_app()
 
-				elif self.is_menu_open:
-					self.menu.handle_keyboard_EVENTS(event)
-				else:
-					self.handle_gameplay_events(event)
+				self.handle_keyboard_events(event)
+				#elif self.is_menu_open:
+					#self.menu.handle_keyboard_EVENTS(event)
+				#else:
+					#self.gameplay.handle_keyboard_EVENTS(event)
 
-			if self.is_menu_open:
-				self.menu.draw_menu()
+			#if self.is_menu_open:
+				#self.menu.draw_menu()
 			else:
 				#self.game_engine.render(self.schermo)
 				pass
