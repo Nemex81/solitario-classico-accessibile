@@ -13,7 +13,6 @@ import time
 import pygame
 from pygame.locals import *
 from scr.screen_reader import ScreenReader
-from scr.game_engine import EngineSolitario
 from scr.game_play import GamePlay
 from scr.pygame_menu import PyMenu
 from my_lib.dialog_box import DialogBox
@@ -21,22 +20,21 @@ from my_lib.dialog_box import DialogBox
 pygame.init()
 pygame.font.init()
 
-class SolitarioAccessibile:
+class SolitarioAccessibile(DialogBox):
 	menu = None
 
 	def __init__(self):
+		super().__init__()
 		# Impostazioni della finestra dell'app
 		self.schermo = pygame.display.set_mode((800, 600))
 		pygame.display.set_caption("Solitario Accessibile")
 		self.schermo.fill((255, 255, 255))  # Sfondo bianco
 		pygame.display.flip()  # Aggiorna il display
-
+		# impostazioni funzionalità extra
 		self.screen_reader = ScreenReader()  # gestore screen reader per le vocalizzazioni delle stringhe
-		self.dialog_box = DialogBox()  # gestore dialog box
-		self.game_engine = EngineSolitario()  # motore di gioco
+		#self.dialog_box = DialogBox()  # gestore dialog box
 		self.gameplay = GamePlay(self.schermo, self.screen_reader)
 		self.menu = PyMenu(["Nuova partita", "Esci dal gioco"], self.handle_menu_selection, self.schermo, self.screen_reader)
-
 		self.EVENTS_DN = self.menu.build_commands_list()  # inizializzo la lista dei comandi di gioco
 		self.is_menu_open = True
 		self.selected_menu_item = 0
@@ -55,36 +53,6 @@ class SolitarioAccessibile:
 		Metodo per disegnare la finestra di gioco.
 		"""
 		self.game_engine.render(self.schermo)
-
-	def handle_menu_selection(self, selected_item):
-		if selected_item < 0:
-			self.is_menu_open = False
-		else:
-			result = self.menu.quit_app()
-			if result:
-				self.is_running = False
-
-	def last_handle_keyboard_events(self, event):
-		"""
-		Metodo per la gestione degli eventi da tastiera.
-		"""
-		for event in pygame.event.get():
-			if event.type == QUIT:
-				pygame.quit()
-				sys.exit()
-
-			elif event.type == KEYDOWN:
-				if self.is_menu_open:
-					self.menu.handle_keyboard_EVENTS(event)
-					if event.key == K_RETURN:
-						self.execute()
-					elif event.key == K_UP:
-						self.prev_item()
-					elif event.key == K_DOWN:
-						self.next_item()
-
-			elif event.type == KEYUP:
-				pass
 
 	def next_item(self):
 		self.menu.next_item()
@@ -107,7 +75,7 @@ class SolitarioAccessibile:
 		"""
 		#for event in pygame.event.get():
 		if event.type == QUIT:
-			self.menu.quit()
+			self.quit_app()
 
 		elif event.type == KEYDOWN:
 			if self.is_menu_open:
@@ -121,29 +89,27 @@ class SolitarioAccessibile:
 	def run(self):
 		while self.is_running:
 			for event in pygame.event.get():
-				if event.type == QUIT:
-					self.quit_app()
+				#if event.type == QUIT:
+					#self.quit_app()
 
 				self.handle_keyboard_events(event)
-				#elif self.is_menu_open:
-					#self.menu.handle_keyboard_EVENTS(event)
-				#else:
-					#self.gameplay.handle_keyboard_EVENTS(event)
 
 			#if self.is_menu_open:
 				#self.menu.draw_menu()
-			else:
+			#else:
 				#self.game_engine.render(self.schermo)
-				pass
 
 			pygame.display.update()
 
 	def quit_app(self):
 		self.screen_reader.vocalizza("chiusura in corso.  ")
-		time.sleep(.5)
-		result = self.dialog_box.create_question_box("Sei sicuro di voler uscire?")
+		pygame.time.wait(500)
+		self.create_question_box("Sei sicuro di voler uscire?")
+		result = self.answare
 		if result:
 			self.is_running = False
+			pygame.quit()
+			sys.exit()
 
 
 

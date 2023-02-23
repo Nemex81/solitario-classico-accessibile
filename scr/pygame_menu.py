@@ -13,15 +13,16 @@ from my_lib.dialog_box import DialogBox
 pygame.init()
 pygame.font.init()
 
-class PyMenu:
+class PyMenu(DialogBox):
 	def __init__(self, items, callback, screen, screen_reader):
+		super().__init__()
 		self.items = items
 		self.selected_item = 0
 		self.exit_menu_index = self.items.index("Esci dal gioco")
 		self.callback = callback
 		self.screen = screen
 		self.screen_reader = screen_reader
-		self.dialog_box = DialogBox()
+		#self.dialog_box = DialogBox()
 		self.font = pygame.font.Font(None, 36)
 		self.build_commands_list()
 
@@ -72,9 +73,11 @@ class PyMenu:
 
 	def quit_app(self):
 		self.screen_reader.vocalizza("chiusura in corso.  ")
-		time.sleep(.3)
-		result = self.dialog_box.create_question_box("Sei sicuro di voler uscire?")
+		pygame.time.wait(500)
+		self.create_question_box("Sei sicuro di voler uscire?")
+		result = self.answare
 		if result:
+			pygame.quit()
 			sys.exit()
 
 	def esc_press(self):

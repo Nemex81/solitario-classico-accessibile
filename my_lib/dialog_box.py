@@ -9,21 +9,29 @@ import wx
 #from my_lib.pygame_dialog_box import PygameDialogBox
 from my_lib.wx_dialog_box import WxDialogBox
 
-class DialogBox(WxDialogBox):
+class DialogBox:
 	def __init__(self):
 		super().__init__()
+		self.dialog_box = WxDialogBox()  # gestore dialog box
+		self.question = ""
+		self.answare = ""
 
-	#def create_question_box(self, question):
-		#pass
+	def create_question_box(self, question):
+		self.dialog_box.create_question_box(question)
+		self.answare = self.dialog_box.answare
 
-	#def create_alert_box(self, message, title):
-		#pass
+	def create_alert_box(self, message, title):
+		self.dialog_box.create_alert_box(message, title)
 
-	#def create_input_box(self, question, title):
-		#pass
+	def create_input_box(self, question, title):
+		answare = self.dialog_box.create_input_box(question, title)
+		self.answare = self.dialog_box.answare
 
-	#def create_duble_input_box(self):
-		#pass
+	def create_duble_input_box(self):
+		answare = self.dialog_box.create_duble_input_box()
+		self.answare = self.dialog_box.answare
+
+
 
 #@@@# Start del modulo
 if __name__ == "__main__":

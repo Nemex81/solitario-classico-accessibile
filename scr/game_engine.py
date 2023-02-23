@@ -19,11 +19,8 @@ from scr.cards import Carta, Mazzo
 
 class EngineSolitario:
 	def __init__(self):
-		self.dek = Mazzo()
+		self.mazzo = Mazzo()
 		self.primo_giro = True
-		self.tableau = [[] for _ in range(7)]
-		self.foundations = [[] for _ in range(4)]
-		self.waste_pile = []
 		self.valid_positions = [(i, j) for i in range(7) for j in range(20)]
 		self.situazione_attuale = []
 		self._scarti = []
@@ -34,7 +31,6 @@ class EngineSolitario:
 		self.foundations = [[] for _ in range(4)]
 		self.waste_pile = []
 		self.stock_pile = []
-
 		self.cards = []
 		for s in ["cuori", "quadri", "fiori", "picche"]:
 			for v in range(1, 14):
@@ -43,14 +39,14 @@ class EngineSolitario:
 				self.tableau.append(card)
 
 	def crea_mazzo(self):
-		dek = self.dek.crea_mazzo()
+		dek = self.mazzo.crea_mazzo()
 		return dek
 
 	def mischia_carte(self):
-		random.shuffle(self.cards)
+		random.shuffle(self.mazzo)
 
 	def crea_gioco(self):
-		self.crea_mazzo()
+		self.mazzo = self.crea_mazzo()
 		self.mischia_carte()
 		self.distribuisci_carte()
 
@@ -75,10 +71,30 @@ class EngineSolitario:
 		self.selected_card = None
 		self.update_game_state()
 
-	def last_move_card(self, origin_pile, dest_pile):
-		# Sposta la carta dalla pila di origine alla pila di destinazione
-		card = origin_pile.pop()
-		dest_pile.append(card)
+	def get_pile_name(self, row, col):
+		pile_name = ""
+		if col < 7:
+			pile_name = f"Tableau colonna {col + 1}"
+
+		elif col < 11:
+			pile_name = f"Foundations {col - 6}"
+
+		else:
+			pile_name = "Waste pile"
+
+		return pile_name
+
+	def get_card_name(self, current_card):
+		"""
+		Restituisce il nome della carta data la riga e la colonna della pila di tableau.
+		"""
+		card = current_card
+		if card is None:
+			return "Nessuna carta presente"
+		elif card.coperta:
+			return "Carta coperta"
+		else:
+			return card.nome
 
 	def get_top_card(self, pile):
 		if not self.is_empty_pile(pile):

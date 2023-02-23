@@ -100,6 +100,7 @@ class WxDialogBox:
 		result = dialog.ShowModal()
 		if result == wx.ID_OK:
 			self.answare = dialog.answare
+			return self.answare
 
 		dialog.Destroy()
 		wx.Yield()
@@ -116,7 +117,6 @@ class WxDialogBox:
 
 		dlg.Destroy()
 		wx.Yield()
-		return self.answare
 
 	def create_alert_box(self, message, title):
 		self.clean_answare()

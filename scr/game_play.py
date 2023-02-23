@@ -14,13 +14,14 @@ from my_lib.dialog_box import DialogBox
 pygame.init()
 pygame.font.init()
 
-class GamePlay:
+class GamePlay(DialogBox):
 	def __init__(self, screen, screen_reader):
+		super().__init__()
 		#self.callback = callback_dict
 		self.engine = EngineSolitario()
 		self.screen = screen
 		self.screen_reader = screen_reader
-		self.dialog_box = DialogBox()
+		#self.dialog_box = DialogBox()
 		self.tableau = self.engine.tableau
 		self.foundations = self.engine.foundations
 		self.waste_pile = self.engine.waste_pile
@@ -184,6 +185,15 @@ class GamePlay:
 			self.selected_card = None
 			#self.update_game_state()
 
+	def vocalizza_selezioni(self):
+		row, col = self.cursor_pos
+		card = self.engine.get_card_at_position(row, col)
+		if card is not None:
+			card_name = self.engine.mazzo.get_card_name(card.valore + (card.seme * 13))
+			pile_name = self.get_pile_name(row, col)
+			message = f"Carta selezionata: {card_name}. Pila selezionata: {pile_name}."
+			self.screen_reader.vocalizza(message)
+
 	def update_game_state(self):
 		# Aggiorna lo stato del tavolo di gioco
 		self.engine.check_for_win()
@@ -214,12 +224,43 @@ class GamePlay:
 			elif event.key == K_SPACE:
 				self.move_card()
 
+		row, col = self.cursor_pos
+		current_card = self.engine.get_card_at_position(row, col)
+		current_pile = self.engine.get_pile_name(row, col)
+		card_name = self.engine.get_card_name(current_card) if current_card else "carta coperta"
+		self.screen_reader.vocalizza(f"Cursore spostato a colonna {col}, riga {row}. {card_name} nella pila {current_pile}")
+
+
+	def last_handle_keyboard_EVENTS(self, event):
+		if event.type == KEYDOWN:
+			if event.key == K_ESCAPE:
+				self.quit_app()
+
+			elif event.key == K_LEFT:
+				self.move_cursor_left()
+
+			elif event.key == K_RIGHT:
+				self.move_cursor_right()
+
+			elif event.key == K_UP:
+				self.move_cursor_up()
+
+			elif event.key == K_DOWN:
+				self.move_cursor_down()
+
+			elif event.key == K_RETURN:
+				self.select_card()
+
+			elif event.key == K_SPACE:
+				self.move_card()
+
 		self.screen_reader.vocalizza(f"Cursore spostato a colonna {self.cursor_pos[1]}, riga {self.cursor_pos[0]}")
 
 	def quit_app(self):
 		self.screen_reader.vocalizza("chiusura in corso.  ")
-		time.sleep(.5)
-		result = self.dialog_box.create_question_box("Sei sicuro di voler uscire?")
+		pygame.time.wait(500)
+		self.dialog_box.create_question_box("Sei sicuro di voler uscire?")
+		result = self.answare
 		if result:
 			pygame.quit()
 			sys.exit()

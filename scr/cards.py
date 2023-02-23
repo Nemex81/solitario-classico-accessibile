@@ -34,14 +34,12 @@ class Mazzo:
 		random.shuffle(self.mazzo)
 		return self.mazzo
 
-	def get_card_name(self, card_id):
+	def get_card_name(self, card):
 		"""
-		Restituisce il nome della carta a partire dall'id.
+		Restituisce il nome della carta.
 		"""
-		card_value = card_id % 13
-		card_suite = card_id // 13
-		name = Mazzo.VALUES[card_value]
-		return f"{name} di {Mazzo.SUITES[card_suite]}"
+		name = Mazzo.VALUES[card.valore - 1] + " di " + card.seme
+		return name
 
 
 
