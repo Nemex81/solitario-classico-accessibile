@@ -92,6 +92,7 @@ class WxDialogBox:
 	def __init__(self):
 		self.answare = ""
 		self.question = ""
+		self.title = ""
 
 	def create_dialog_box(self, question):
 		self.clean_answare()
@@ -117,6 +118,14 @@ class WxDialogBox:
 
 		dlg.Destroy()
 		wx.Yield()
+
+	def create_yes_or_no_box(self, question, title):
+		self.clean_answare()
+		app = wx.App()
+		dialog = wx.MessageDialog(None, question, title, style=wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
+		result = dialog.ShowModal() == wx.ID_YES
+		dialog.Destroy()
+		self.answare = result
 
 	def create_alert_box(self, message, title):
 		self.clean_answare()

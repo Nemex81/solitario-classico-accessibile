@@ -102,9 +102,11 @@ class SolitarioAccessibile(DialogBox):
 			pygame.display.update()
 
 	def quit_app(self):
+		question = "Sei sicuro di voler uscire?"
+		title = "Conferma Uscita"
 		self.screen_reader.vocalizza("chiusura in corso.  ")
 		pygame.time.wait(500)
-		self.create_question_box("Sei sicuro di voler uscire?")
+		self.create_yes_or_no_box(question, title)
 		result = self.answare
 		if result:
 			self.is_running = False

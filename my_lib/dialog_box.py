@@ -20,6 +20,10 @@ class DialogBox:
 		self.dialog_box.create_question_box(question)
 		self.answare = self.dialog_box.answare
 
+	def create_yes_or_no_box(self, questionm, title):
+		self.dialog_box.create_yes_or_no_box(question, title)
+		self.answare = self.dialog_box.answare
+
 	def create_alert_box(self, message, title):
 		self.dialog_box.create_alert_box(message, title)
 
