@@ -25,6 +25,10 @@ class GamePlay:
 		self.foundations = self.engine.foundations
 		self.waste_pile = self.engine.waste_pile
 		self.cursor_pos = [0, 0]  # posizione iniziale del cursore sul tableau
+		self.min_row = 0
+		self.max_row = len(self.engine.tableau) - 1
+		self.min_col = 0
+		self.max_col = max([len(col) for col in self.engine.tableau])
 		self.selected_card = None  # carta selezionata dal cursore
 		self.selected_card_index = 0  # indice della carta selezionata nella pila di tableau
 		self.build_commands_list()
@@ -106,13 +110,38 @@ class GamePlay:
 		
 		return False
 
+	def last_move_cursor_left(self):
+		if self.cursor_pos[0] > 0:
+			self.cursor_pos[0] -= 1
+
+	#def move_cursor_left(self):
+		#if self.cursor_pos[0] > 0:
+			#self.cursor_pos[0] -= 1
+		#else:
+			# Aggiungi qui la logica per gestire il limite di movimento sinistro
+			#pass
+
+	def last_move_cursor_right(self):
+		if self.cursor_pos[0] < len(self.engine.tableau) - 1:
+			self.cursor_pos[0] += 1
+
+	def last_move_cursor_up(self):
+		if self.cursor_pos[1] > 0:
+			self.cursor_pos[1] -= 1
+
+	def last_move_cursor_down(self):
+		if self.cursor_pos[1] < len(self.engine.tableau[self.cursor_pos[0]]) - 1:
+			self.cursor_pos[1] += 1
+
 	def move_cursor_left(self):
 		if self.cursor_pos[0] > 0:
 			self.cursor_pos[0] -= 1
+			self.cursor_pos[1] = min(self.cursor_pos[1], len(self.engine.tableau[self.cursor_pos[0]])-1)
 
 	def move_cursor_right(self):
 		if self.cursor_pos[0] < len(self.engine.tableau) - 1:
 			self.cursor_pos[0] += 1
+			self.cursor_pos[1] = min(self.cursor_pos[1], len(self.engine.tableau[self.cursor_pos[0]])-1)
 
 	def move_cursor_up(self):
 		if self.cursor_pos[1] > 0:
@@ -121,6 +150,21 @@ class GamePlay:
 	def move_cursor_down(self):
 		if self.cursor_pos[1] < len(self.engine.tableau[self.cursor_pos[0]]) - 1:
 			self.cursor_pos[1] += 1
+
+	def move_cursor(self, direction):
+		if direction == "up":
+			if self.cursor_pos[0] > self.min_row:
+				self.cursor_pos[0] -= 1
+		elif direction == "down":
+			if self.cursor_pos[0] < self.max_row:
+				self.cursor_pos[0] += 1
+		elif direction == "left":
+			if self.cursor_pos[1] > self.min_col:
+				self.cursor_pos[1] -= 1
+		elif direction == "right":
+			if self.cursor_pos[1] < self.max_col:
+				self.cursor_pos[1] += 1
+
 
 	def select_card(self):
 		row, col = self.cursor_pos
@@ -170,12 +214,15 @@ class GamePlay:
 			elif event.key == K_SPACE:
 				self.move_card()
 
+		self.screen_reader.vocalizza(f"Cursore spostato a colonna {self.cursor_pos[1]}, riga {self.cursor_pos[0]}")
+
 	def quit_app(self):
 		self.screen_reader.vocalizza("chiusura in corso.  ")
 		time.sleep(.5)
 		result = self.dialog_box.create_question_box("Sei sicuro di voler uscire?")
 		if result:
-			self.is_running = False
+			pygame.quit()
+			sys.exit()
 
 	def build_commands_list(self):
 		self.callback_dict = {
