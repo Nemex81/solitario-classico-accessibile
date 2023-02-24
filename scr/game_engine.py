@@ -20,6 +20,9 @@ from scr.cards import Carta, Mazzo
 class EngineSolitario:
 	def __init__(self):
 		self.mazzo = Mazzo()
+		self.cards = []
+		##self.mazzo = Mazzo()
+		super().__init__()
 		self.primo_giro = True
 		self.valid_positions = [(i, j) for i in range(7) for j in range(20)]
 		self.situazione_attuale = []
@@ -31,31 +34,13 @@ class EngineSolitario:
 		self.foundations = [[] for _ in range(4)]
 		self.waste_pile = []
 		self.stock_pile = []
-		self.cards = []
-		for s in ["cuori", "quadri", "fiori", "picche"]:
-			for v in range(1, 14):
-				card = (s, v)
-				self.cards.append(card)
-				self.tableau.append(card)
-
-	def crea_mazzo(self):
-		dek = self.mazzo.crea_mazzo()
-		return dek
-
-	def mischia_carte(self):
-		random.shuffle(self.mazzo)
-
-	def crea_gioco(self):
-		self.mazzo = self.crea_mazzo()
-		self.mischia_carte()
-		self.distribuisci_carte()
 
 	def distribuisci_carte(self):
 		# Distribuisce le carte sul tableau
 		n_carte = 0
 		for i in range(7):
 			for j in range(i+1):
-				carta = self.cards[n_carte]
+				carta = self.mazzo.get_carta(n_carte)
 				if j == i:
 					self.tableau[j].append(carta)
 				else:
@@ -63,7 +48,16 @@ class EngineSolitario:
 				n_carte += 1
 
 		# Mette le rimanenti carte nel stock pile
-		self.stock_pile = self.cards[n_carte:]
+		self.stock_pile = [self.mazzo.get_carta(i) for i in range(n_carte, len(self.mazzo.carte))]
+
+	def crea_gioco(self):
+		self.cards = self.mazzo.crea_mazzo()
+		self.mazzo.mischia_carte(self.cards)
+		self.distribuisci_carte()
+
+	def get_card(self, row, col):
+		card = self.tableau[row][col]
+		return card
 
 	def move_card(self, card, src_row, src_col, dest_row, dest_col):
 		self.tableau[dest_row].append(card)
@@ -84,18 +78,6 @@ class EngineSolitario:
 
 		return pile_name
 
-	def get_card_name(self, current_card):
-		"""
-		Restituisce il nome della carta data la riga e la colonna della pila di tableau.
-		"""
-		card = current_card
-		if card is None:
-			return "Nessuna carta presente"
-		elif card.coperta:
-			return "Carta coperta"
-		else:
-			return card.nome
-
 	def get_top_card(self, pile):
 		if not self.is_empty_pile(pile):
 			return pile[-1]
@@ -106,12 +88,24 @@ class EngineSolitario:
 		"""
 		Ritorna la carta nella posizione specificata, o None se la posizione è vuota o non valida.
 		"""
-		if self.is_valid_position(row, col):
-			try:
-				return self.tableau[row][col]
-			except IndexError:
-				pass
-		return None
+		if len(self.tableau[row]) > col:
+			return self.tableau[row][col]
+		else:
+			return None
+
+	def get_card_name(self, current_card):
+		"""
+		Restituisce il nome della carta data la riga e la colonna della pila di tableau.
+		"""
+		card = current_card
+		if card is None:
+			return "Nessuna carta presente"
+
+		elif card.coperta:
+			return "Carta coperta"
+
+		else:
+			return card.nome
 
 	def muovi_carte(self, from_colonna, to_colonna, quanti):
 		"""

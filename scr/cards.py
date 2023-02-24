@@ -18,6 +18,8 @@ class Carta:
 		self.seme = seme
 		self.nome = None
 		self.coperta = coperta
+		self.colun = None
+		self.row = None
 
 	def flip(self):
 		self.coperta = not self.coperta
@@ -28,18 +30,25 @@ class Mazzo:
 	VALUES = ["Asso", "2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Regina", "Re"]
 
 	def __init__(self):
-		self.mazzo = [Carta(valore, seme) for seme in self.SUITES for valore in self.VALUES]
+		self.carte = []  # lista delle carte nel mazzo
+		self.carte = self.crea_mazzo()
 
 	def crea_mazzo(self):
-		random.shuffle(self.mazzo)
-		return self.mazzo
+		semi = ['Cuori', 'Quadri', 'Fiori', 'Picche']
+		valori = ['Asso', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Regina', 'Re']
+		mazzo = [Carta(seme, valore) for seme in semi for valore in valori]
+		return mazzo
 
-	def get_card_name(self, card):
-		"""
-		Restituisce il nome della carta.
-		"""
-		name = Mazzo.VALUES[card.valore - 1] + " di " + card.seme
-		return name
+	def mischia_carte(self, mazzo):
+		random.shuffle(mazzo)
+		return mazzo
+
+	def pesca(self):
+		carta_pescata = self.carte.pop(0)
+		return carta_pescata
+
+	def get_carta(self, i):
+		return self.carte[i]
 
 
 

@@ -25,6 +25,7 @@ class PyMenu(DialogBox):
 		#self.dialog_box = DialogBox()
 		self.font = pygame.font.Font(None, 36)
 		self.build_commands_list()
+		self.draw_menu()
 
 	def build_commands_list(self):
 		self.EVENTS_DN = {
@@ -38,6 +39,7 @@ class PyMenu(DialogBox):
 		if event.type == KEYDOWN:
 			if self.EVENTS_DN.get(event.key):
 				self.EVENTS_DN[event.key]()
+				self.draw_menu()
 
 	def next_item(self):
 		self.selected_item = (self.selected_item + 1) % len(self.items)

@@ -21,10 +21,6 @@ class GamePlay(DialogBox):
 		self.engine = EngineSolitario()
 		self.screen = screen
 		self.screen_reader = screen_reader
-		#self.dialog_box = DialogBox()
-		self.tableau = self.engine.tableau
-		self.foundations = self.engine.foundations
-		self.waste_pile = self.engine.waste_pile
 		self.cursor_pos = [0, 0]  # posizione iniziale del cursore sul tableau
 		self.min_row = 0
 		self.max_row = len(self.engine.tableau) - 1
@@ -35,63 +31,8 @@ class GamePlay(DialogBox):
 		self.build_commands_list()
 		self.new_game()
 
-	def create_tableau(self):
-		deck = self.crea_mazzo() # crea un mazzo ordinato
-		random.shuffle(deck) # mescola il mazzo
-
-		# distribuisci le carte sul tableau
-		for i, row in enumerate(self.tableau):
-			for j in range(i+1):
-				card = deck.pop()
-				#if j == i:
-					#card.flip() # scopri l'ultima carta di ogni colonna
-				row.append(card)
-
-		self.waste_pile = [] # svuota la pila di scarti
-		self.foundations = [[] for _ in range(4)] # svuota le fondazioni
-
-	def draw_table(self):
-		"""
-		# disegna le pile di tableau
-		for i in range(7):
-			for j, card in enumerate(self.tableau[i]):
-				if card is not None:
-					img = self.get_card_image(card)
-					self.screen.blit(img, (self.tableau_x_pos[i], self.tableau_y_pos + self.card_height*j))
-				else:
-					img = self.get_card_back_image()
-					self.screen.blit(img, (self.tableau_x_pos[i], self.tableau_y_pos + self.card_height*j))
-
-		# disegna le pile di fondazione
-		for i in range(4):
-			if len(self.foundations[i]) > 0:
-				top_card = self.foundations[i][-1]
-				img = self.get_card_image(top_card)
-				self.screen.blit(img, (self.foundations_x_pos[i], self.foundations_y_pos))
-			else:
-				img = self.get_card_back_image()
-				self.screen.blit(img, (self.foundations_x_pos[i], self.foundations_y_pos))
-
-		# disegna la pila di scarto
-		if len(self.waste_pile) > 0:
-			top_card = self.waste_pile[-1]
-			img = self.get_card_image(top_card)
-			self.screen.blit(img, (self.waste_pile_x_pos, self.waste_pile_y_pos))
-		else:
-			img = self.get_card_back_image()
-			self.screen.blit(img, (self.waste_pile_x_pos, self.waste_pile_y_pos))
-
-		pygame.display.flip()
-
-		"""
-		pass
-
-
 	def new_game(self):
-		#self.engine.create_tableau() # crea il tavolo di gioco
 		self.engine.crea_gioco()
-		#self.engine.distribuisci_carte()# distribuisci le carte sul tableau
-		#self.draw_table() # disegna il tableau
 
 	def is_valid_move(self, origin_pile, dest_pile):
 		# Check if origin and destination piles are valid
@@ -111,29 +52,6 @@ class GamePlay(DialogBox):
 		
 		return False
 
-	def last_move_cursor_left(self):
-		if self.cursor_pos[0] > 0:
-			self.cursor_pos[0] -= 1
-
-	#def move_cursor_left(self):
-		#if self.cursor_pos[0] > 0:
-			#self.cursor_pos[0] -= 1
-		#else:
-			# Aggiungi qui la logica per gestire il limite di movimento sinistro
-			#pass
-
-	def last_move_cursor_right(self):
-		if self.cursor_pos[0] < len(self.engine.tableau) - 1:
-			self.cursor_pos[0] += 1
-
-	def last_move_cursor_up(self):
-		if self.cursor_pos[1] > 0:
-			self.cursor_pos[1] -= 1
-
-	def last_move_cursor_down(self):
-		if self.cursor_pos[1] < len(self.engine.tableau[self.cursor_pos[0]]) - 1:
-			self.cursor_pos[1] += 1
-
 	def move_cursor_left(self):
 		if self.cursor_pos[0] > 0:
 			self.cursor_pos[0] -= 1
@@ -152,21 +70,6 @@ class GamePlay(DialogBox):
 		if self.cursor_pos[1] < len(self.engine.tableau[self.cursor_pos[0]]) - 1:
 			self.cursor_pos[1] += 1
 
-	def move_cursor(self, direction):
-		if direction == "up":
-			if self.cursor_pos[0] > self.min_row:
-				self.cursor_pos[0] -= 1
-		elif direction == "down":
-			if self.cursor_pos[0] < self.max_row:
-				self.cursor_pos[0] += 1
-		elif direction == "left":
-			if self.cursor_pos[1] > self.min_col:
-				self.cursor_pos[1] -= 1
-		elif direction == "right":
-			if self.cursor_pos[1] < self.max_col:
-				self.cursor_pos[1] += 1
-
-
 	def select_card(self):
 		row, col = self.cursor_pos
 		card = self.engine.get_card_at_position(row, col)
@@ -174,16 +77,13 @@ class GamePlay(DialogBox):
 		if card is not None:
 			self.selected_card = card
 
-	def last_select_card(self):
-		self.selected_card = self.engine.get_card(self.cursor_pos[0], self.cursor_pos[1])
-
 	def move_card(self):
 		if self.selected_card is not None:
 			dest_row = self.cursor_pos[0]
 			dest_col = len(self.engine.tableau[dest_row])
 			self.engine.move_card(self.selected_card, dest_row, dest_col)
 			self.selected_card = None
-			#self.update_game_state()
+			self.update_game_state()
 
 	def vocalizza_selezioni(self):
 		row, col = self.cursor_pos
@@ -201,60 +101,30 @@ class GamePlay(DialogBox):
 		self.engine.update_foundations()
 		self.engine.update_waste_pile()
 
+	def build_commands_list(self):
+		self.callback_dict = {
+			pygame.K_UP: self.move_cursor_left,
+			pygame.K_DOWN: self.move_cursor_right,
+			pygame.K_LEFT: self.move_cursor_up,
+			pygame.K_RIGHT: self.move_cursor_down,
+			pygame.K_RETURN: self.select_card,
+			pygame.K_SPACE: self.move_card,
+			pygame.K_ESCAPE: self.quit_app,
+		}
+
 	def handle_keyboard_EVENTS(self, event):
 		if event.type == KEYDOWN:
 			if event.key == K_ESCAPE:
 				self.quit_app()
 
-			elif event.key == K_LEFT:
-				self.move_cursor_left()
-
-			elif event.key == K_RIGHT:
-				self.move_cursor_right()
-
-			elif event.key == K_UP:
-				self.move_cursor_up()
-
-			elif event.key == K_DOWN:
-				self.move_cursor_down()
-
-			elif event.key == K_RETURN:
-				self.select_card()
-
-			elif event.key == K_SPACE:
-				self.move_card()
+			if self.callback_dict.get(event.key):
+				self.callback_dict[event.key]()
 
 		row, col = self.cursor_pos
-		current_card = self.engine.get_card_at_position(row, col)
+		current_card = self.engine.get_card(row, col)
 		current_pile = self.engine.get_pile_name(row, col)
 		card_name = self.engine.get_card_name(current_card) if current_card else "carta coperta"
 		self.screen_reader.vocalizza(f"Cursore spostato a colonna {col}, riga {row}. {card_name} nella pila {current_pile}")
-
-
-	def last_handle_keyboard_EVENTS(self, event):
-		if event.type == KEYDOWN:
-			if event.key == K_ESCAPE:
-				self.quit_app()
-
-			elif event.key == K_LEFT:
-				self.move_cursor_left()
-
-			elif event.key == K_RIGHT:
-				self.move_cursor_right()
-
-			elif event.key == K_UP:
-				self.move_cursor_up()
-
-			elif event.key == K_DOWN:
-				self.move_cursor_down()
-
-			elif event.key == K_RETURN:
-				self.select_card()
-
-			elif event.key == K_SPACE:
-				self.move_card()
-
-		self.screen_reader.vocalizza(f"Cursore spostato a colonna {self.cursor_pos[1]}, riga {self.cursor_pos[0]}")
 
 	def quit_app(self):
 		self.screen_reader.vocalizza("chiusura in corso.  ")
@@ -264,22 +134,6 @@ class GamePlay(DialogBox):
 		if result:
 			pygame.quit()
 			sys.exit()
-
-	def build_commands_list(self):
-		self.callback_dict = {
-			pygame.K_LEFT: self.move_cursor_left,
-			pygame.K_RIGHT: self.move_cursor_right,
-			pygame.K_UP: self.move_cursor_up,
-			pygame.K_DOWN: self.move_cursor_down,
-			pygame.K_RETURN: self.select_card,
-			pygame.K_SPACE: self.move_card,
-			pygame.K_ESCAPE: self.quit_app,
-		}
-
-	def last_handle_keyboard_EVENTS(self, event):
-		if event.type == KEYDOWN:
-			if self.EVENTS_DN.get(event.key):
-				self.EVENTS_DN[event.key]()
 
 
 
