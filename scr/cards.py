@@ -6,7 +6,8 @@
 """
 
 #lib
-import random, time
+import random
+from itertools import product
 # moduli personali
 from my_lib.dialog_box import DialogBox
 import my_lib.myutyls as mu
@@ -18,25 +19,23 @@ class Carta:
 		self.seme = seme
 		self.nome = None
 		self.coperta = coperta
-		self.colun = None
-		self.row = None
 
 	def flip(self):
 		self.coperta = not self.coperta
 
+	def get_nome(self):
+		nome = f"{self.valore} di {self.seme}"
+		return nome
 
 class Mazzo:
 	SUITES = ["Cuori", "Quadri", "Fiori", "Picche"]
 	VALUES = ["Asso", "2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Regina", "Re"]
 
 	def __init__(self):
-		self.carte = []  # lista delle carte nel mazzo
 		self.carte = self.crea_mazzo()
 
 	def crea_mazzo(self):
-		semi = ['Cuori', 'Quadri', 'Fiori', 'Picche']
-		valori = ['Asso', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Regina', 'Re']
-		mazzo = [Carta(seme, valore) for seme in semi for valore in valori]
+		mazzo = [Carta(valore, seme) for valore, seme in product(Mazzo.VALUES, Mazzo.SUITES)]
 		return mazzo
 
 	def mischia_carte(self, mazzo):
@@ -46,6 +45,9 @@ class Mazzo:
 	def pesca(self):
 		carta_pescata = self.carte.pop(0)
 		return carta_pescata
+
+	def get_carta(self, i):
+		return self.carte[i]
 
 	def get_carta(self, i):
 		return self.carte[i]

@@ -16,6 +16,7 @@ from my_lib.dialog_box import DialogBox
 from my_lib.myglob import *
 import my_lib.myutyls as mu
 from scr.cards import Carta, Mazzo
+from scr.pile import PileGioco
 
 class EngineSolitario:
 	def __init__(self):
@@ -34,6 +35,7 @@ class EngineSolitario:
 		self.foundations = [[] for _ in range(4)]
 		self.waste_pile = []
 		self.stock_pile = []
+		self.pile = PileGioco()
 
 	def distribuisci_carte(self):
 		# Distribuisce le carte sul tableau
@@ -54,6 +56,8 @@ class EngineSolitario:
 		self.cards = self.mazzo.crea_mazzo()
 		self.mazzo.mischia_carte(self.cards)
 		self.distribuisci_carte()
+		self.pile.reset()
+		self.pile.distribuisci_carte()
 
 	def get_card(self, row, col):
 		card = self.tableau[row][col]
