@@ -39,14 +39,14 @@ class GamePlay(DialogBox):
 		if not self.is_valid_pile(origin_pile) or not self.is_valid_pile(dest_pile):
 			return False
 		
-		# Check if the origin pile is empty
+		# Controlla se la pila di origine è vuota
 		if self.is_empty_pile(origin_pile):
 			return False
 		
-		# Get the top card of the origin pile
+		# Prendi la carta in cima al mazzo delle origini
 		top_card = self.get_top_card(origin_pile)
 		
-		# Check if the top card can be moved to the destination pile
+		# Controlla se la prima carta può essere spostata nella pila di destinazione
 		if self.is_valid_card_move(top_card, dest_pile):
 			return True
 		
