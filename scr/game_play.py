@@ -2,12 +2,13 @@
 	file game_play.py
 	percorso: https://github.com/Nemex81/solitario-classico-accessibile/blob/main/scr/game_play.py
 
+	Modulo per la gestione dellinterfaccia utente durante la partita al solitario
+
 """
 
 import sys, os, time, random, pygame
 from pygame.locals import *
 from scr.game_engine import EngineSolitario
-from scr.pygame_menu import PyMenu
 from my_lib.dialog_box import DialogBox
 #import pdb #pdb.set_trace() da impostare dove si vuol far partire il debugger
 
@@ -40,23 +41,25 @@ class GamePlay(DialogBox):
 	def new_game(self):
 		self.engine.crea_gioco()
 
-	def is_valid_move(self, origin_pile, dest_pile):
-		# Controlla se le pile di origine e destinazione sono valide
-		if not self.is_valid_pile(origin_pile) or not self.is_valid_pile(dest_pile):
-			return False
-		
-		# Controlla se la pila di origine è vuota
-		if self.is_empty_pile(origin_pile):
-			return False
-		
-		# Prendi la carta in cima al mazzo delle origini
-		top_card = self.get_top_card(origin_pile)
-		
-		# Controlla se la prima carta può essere spostata nella pila di destinazione
-		if self.is_valid_card_move(top_card, dest_pile):
-			return True
-		
-		return False
+	def vocalizza_selezioni(self):
+		row, col = self.cursor_pos
+		card = self.engine.get_card_at_position(row, col)
+		if card is not None:
+			card_name = self.engine.mazzo.get_card_name(card.valore + (card.seme * 13))
+			pile_name = self.get_pile_name(row, col)
+			message = f"Carta selezionata: {card_name}. Pila selezionata: {pile_name}."
+			self.screen_reader.vocalizza(message)
+			self.update_game_state()
+
+	def check_for_win(self):
+		"""
+		Verifica se il gioco è stato vinto.
+		"""
+		# implementazione del metodo check_for_win
+		if self.engine.controlla_vittoria():
+			pass
+
+	#@@@# sezione comandi utente per il game play
 
 	def move_cursor_up(self):
 		if self.cursor_pos[0] > 0:
@@ -76,7 +79,6 @@ class GamePlay(DialogBox):
 		if self.cursor_pos[1] < len(self.engine.tableau[self.cursor_pos[0]]) - 1:
 			self.cursor_pos[1] += 1
 
-
 	def select_card(self):
 		row, col = self.cursor_pos
 		card = self.engine.get_card_at_position(row, col)
@@ -86,27 +88,29 @@ class GamePlay(DialogBox):
 
 	def move_card(self):
 		if self.selected_card is not None:
-			dest_row = self.cursor_pos[0]
-			dest_col = len(self.engine.tableau[dest_row])
-			self.engine.move_card(self.selected_card, dest_row, dest_col)
-			self.selected_card = None
-			self.update_game_state()
+			from_row, from_col = self.get_card_indices_at_position(*self.cursor_pos)
+			to_col = self.selected_card_index
+			if self.engine.move_card(from_col, to_col, len(self.engine.tableau[from_col])-from_row):
+				self.selected_card = None
+				self.update_game_state()
 
-	def vocalizza_selezioni(self):
-		row, col = self.cursor_pos
-		card = self.engine.get_card_at_position(row, col)
-		if card is not None:
-			card_name = self.engine.mazzo.get_card_name(card.valore + (card.seme * 13))
-			pile_name = self.get_pile_name(row, col)
-			message = f"Carta selezionata: {card_name}. Pila selezionata: {pile_name}."
-			self.screen_reader.vocalizza(message)
+	def last_move_card(self):
+		if self.selected_card is not None:
+			from_col = self.cursor_pos[1]
+			to_col = self.selected_card_index
+			num_cards = len(self.engine.tableau[from_col]) - self.cursor_pos[0]
+			if self.engine.move_card(from_col, to_col, num_cards):
+				self.selected_card = None
+				#self.update_game_state()
 
-	def update_game_state(self):
-		# Aggiorna lo stato del tavolo di gioco
-		self.engine.check_for_win()
-		self.engine.update_tableau()
-		self.engine.update_foundations()
-		self.engine.update_waste_pile()
+	def quit_app(self):
+		self.screen_reader.vocalizza("chiusura in corso.  ")
+		pygame.time.wait(500)
+		self.create_question_box("Sei sicuro di voler uscire?")
+		result = self.answare
+		if result:
+			pygame.quit()
+			sys.exit()
 
 	def build_commands_list(self):
 		self.callback_dict = {
@@ -130,14 +134,7 @@ class GamePlay(DialogBox):
 				#card_name = current_card.get_name()
 				self.screen_reader.vocalizza(f"Cursore spostato a colonna {col}, riga {row}. {card_name} nella pila {current_pile}")
 
-	def quit_app(self):
-		self.screen_reader.vocalizza("chiusura in corso.  ")
-		pygame.time.wait(500)
-		self.create_question_box("Sei sicuro di voler uscire?")
-		result = self.answare
-		if result:
-			pygame.quit()
-			sys.exit()
+
 
 
 
