@@ -95,7 +95,7 @@ class PileGioco(Mazzo):
 		else:
 			return card.nome
 
-	def move_card(self):
+	def move_card(self, from_col, to_col, tot_cards):
 		pass
 
 

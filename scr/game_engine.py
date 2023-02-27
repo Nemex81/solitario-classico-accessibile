@@ -63,10 +63,13 @@ class EngineSolitario(PileGioco):
 		"""
 		if row < 0 or row >= 7:
 			return False
+
 		if col < 0 or col >= len(self.tableau[row]):
 			return False
+
 		if (row, col) not in self.valid_positions:
 			return False
+
 		return True
 
 	def is_valid_pile(self, pile_index: int, card_index: int = None) -> bool:

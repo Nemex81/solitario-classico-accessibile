@@ -6,11 +6,7 @@
 """
 
 # lib
-import os
-import sys
-import random
-import time
-import pygame
+import os, sys, random, time, pygame
 from pygame.locals import *
 from scr.screen_reader import ScreenReader
 from scr.game_play import GamePlay
@@ -45,8 +41,6 @@ class SolitarioAccessibile(DialogBox):
 		self.EVENTS_DN = self.menu.build_commands_list()  # inizializzo la lista dei comandi di gioco
 		self.is_menu_open = True
 		self.selected_menu_item = 0
-		self.selected_pile_index = 0
-		self.selected_card_index = 0
 		self.is_running = True  # boolean per tenere il ciclo principale degli eventi aperto
 
 	def vocalizza(self, string):
@@ -93,6 +87,18 @@ class SolitarioAccessibile(DialogBox):
 		elif event.type == KEYUP:
 			pass
 
+	def quit_app(self):
+		question = "Sei sicuro di voler uscire?"
+		title = "Conferma Uscita"
+		self.screen_reader.vocalizza("chiusura in corso.  ")
+		pygame.time.wait(500)
+		self.create_yes_or_no_box(question, title)
+		result = self.answare
+		if result:
+			self.is_running = False
+			pygame.quit()
+			sys.exit()
+
 	def run(self):
 		while self.is_running:
 			for event in pygame.event.get():
@@ -107,18 +113,6 @@ class SolitarioAccessibile(DialogBox):
 				#self.game_engine.render(self.schermo)
 
 			pygame.display.update()
-
-	def quit_app(self):
-		question = "Sei sicuro di voler uscire?"
-		title = "Conferma Uscita"
-		self.screen_reader.vocalizza("chiusura in corso.  ")
-		pygame.time.wait(500)
-		self.create_yes_or_no_box(question, title)
-		result = self.answare
-		if result:
-			self.is_running = False
-			pygame.quit()
-			sys.exit()
 
 
 
