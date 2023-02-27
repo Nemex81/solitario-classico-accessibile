@@ -16,54 +16,61 @@ from my_lib.dialog_box import DialogBox
 from my_lib.myglob import *
 import my_lib.myutyls as mu
 from scr.cards import Carta, Mazzo
+#import pdb #pdb.set_trace() da impostare dove si vuol far partire il debugger
 
-class EngineSolitario:
+# Imposta la configurazione del logger
+#logging.basicConfig(filename='log.txt', level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
+#logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+#logger.setLevel(logging.DEBUG)
+
+class EngineSolitario(Mazzo):
 	def __init__(self):
-		self.mazzo = Mazzo()
-		self.cards = []
-		##self.mazzo = Mazzo()
 		super().__init__()
+		#self.mazzo = Mazzo()
+		#self.cards = []
 		self.primo_giro = True
+		self.conta_giri = 0
 		self.valid_positions = [(i, j) for i in range(7) for j in range(20)]
 		self.situazione_attuale = []
-		self._scarti = []
-		self._pile = [[] for _ in range(7)]
-		self._inizio_pile = [1, 2, 3, 4, 5, 6, 7]
-		self._fine_pile = [7, 7, 7, 7, 7, 7, 6]
 		self.tableau = [[] for _ in range(7)]
 		self.foundations = [[] for _ in range(4)]
 		self.waste_pile = []
 		self.stock_pile = []
 
+	def crea_gioco(self):
+		self.crea_mazzo()
+		self.mischia_carte()
+		self.distribuisci_carte()
+
 	def distribuisci_carte(self):
 		# Distribuisce le carte sul tableau
 		n_carte = 0
 		for i in range(7):
-			for j in range(i+1):
-				carta = self.mazzo.get_carta(n_carte)
-				if j == i:
-					self.tableau[j].append(carta)
-				else:
-					self.tableau[j].append(None)
+			for j in range(i + 1):
+				carta = self.pesca()
+				carta.coperta = True
+				self.tableau[j].append(carta)
+				carta.colun = j
+				carta.row = len(self.tableau[j]) - 1
+				#if len(self.tableau[j]) - 1 == carta.row:
+					#carta.flip()  # Scopre l'ultima carta della colonna
+
 				n_carte += 1
 
-		# Mette le rimanenti carte nel stock pile
-		self.stock_pile = [self.mazzo.get_carta(i) for i in range(n_carte, len(self.mazzo.carte))]
+		# imposto l'ultima carta di ogni colonna come scoperta
+		for c in range(7):
+			carta = self.tableau[c][-1]
+			carta.flip()
 
-	def crea_gioco(self):
-		self.cards = self.mazzo.crea_mazzo()
-		self.mazzo.mischia_carte(self.cards)
-		self.distribuisci_carte()
+		# Mette le rimanenti carte nel stock pile
+		self.stock_pile = [self.mazzo.get_carta(i) for i in range(n_carte, len(self.cards))]
 
 	def get_card(self, row, col):
 		card = self.tableau[row][col]
 		return card
 
-	def move_card(self, card, src_row, src_col, dest_row, dest_col):
-		self.tableau[dest_row].append(card)
-		self.tableau[src_row].pop(src_col)
-		self.selected_card = None
-		self.update_game_state()
+	def move_card(self):
+		pass
 
 	def get_pile_name(self, row, col):
 		pile_name = ""
@@ -88,10 +95,10 @@ class EngineSolitario:
 		"""
 		Ritorna la carta nella posizione specificata, o None se la posizione è vuota o non valida.
 		"""
-		if len(self.tableau[row]) > col:
-			return self.tableau[row][col]
-		else:
-			return None
+		#if len(self.tableau[row]) > col:
+		return self.tableau[row][col]
+		#else:
+			#return None
 
 	def get_card_name(self, current_card):
 		"""
@@ -335,7 +342,7 @@ class EngineSolitario:
 
 		return True
 
-	#@@@# sezione metodi per convalidare lo spsotamento di una carta
+	#@@@# sezione metodi per convalidare lo spostamento di una carta
 
 	def is_valid_position(self, row, col):
 		"""

@@ -1,9 +1,14 @@
+"""
+	Modulo per test vari
+"""
+
 # lib
 import os, sys, glob, random, math, copy, logging, time, pygame
 from enum import Enum
 #from pygame.locals import *
 # moduli personali
-from solitario_accessibile import SolitarioAccessibile
+from scr.solitario_accessibile import SolitarioAccessibile
+from scr.screen_reader import ScreenReader
 from scr.game_engine import EngineSolitario
 from scr.game_play import GamePlay
 from my_lib.dialog_box import DialogBox
@@ -16,25 +21,18 @@ logging.basicConfig(filename='log.txt', level=logging.DEBUG, format='%(asctime)s
 #logger.setLevel(logging.DEBUG)
 
 
+solitario = EngineSolitario()
+carte = solitario.mazzo.crea_mazzo()
+#for carta in carte:
+	#carta.set_name()
+	#nome = carta.get_name()
+	#print(nome)
 
-class NewEngineSolitario(EngineSolitario):
-	def __init__(self):
-		super().__init__()
+solitario.mazzo.mischia_carte(carte)
+#for c in range(10):
+	#carta = solitario.mazzo.pesca(carte)
+	#carta.set_name()
+	#string = f"{carta.nome}, vale {carta.valore_numerico} punti."
+	#print(string)
 
-
-class NewGamePlay(GamePlay):
-	def __init__(self):
-		super().__init__()
-
-
-class Test(SolitarioAccessibile):
-	def __init__(self):
-		super().__init__()
-		self.is_working = True
-		self.is_betatesting = True
-
-
-
-
-#@@@# start del modulo
-Test().run()
+solitario.distribuisci_carte()

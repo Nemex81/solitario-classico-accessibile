@@ -25,7 +25,12 @@ import os, sys, random, time, pygame
 from enum import Enum
 import accessible_output2.outputs.auto
 import  my_lib.myutyls as mu
-#import pdb
+#import pdb #pdb.set_trace() da impostare dove si vuol far partire il debugger
+
+# Imposta la configurazione del logger
+#logging.basicConfig(filename='log.txt', level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
+#logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+#logger.setLevel(logging.DEBUG)
 
 # inizializzo l'engine per la vocalizzazione
 engine = accessible_output2.outputs.auto.Auto()

@@ -16,7 +16,14 @@ from scr.screen_reader import ScreenReader
 from scr.game_play import GamePlay
 from scr.pygame_menu import PyMenu
 from my_lib.dialog_box import DialogBox
+#import pdb #pdb.set_trace() da impostare dove si vuol far partire il debugger
 
+# Imposta la configurazione del logger
+#logging.basicConfig(filename='log.txt', level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
+#logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+#logger.setLevel(logging.DEBUG)
+
+# inizializzo pygame
 pygame.init()
 pygame.font.init()
 
@@ -117,4 +124,7 @@ class SolitarioAccessibile(DialogBox):
 
 #@@@# avvio del modulo
 if __name__ == '__main__':
+	print("compilazione di %s completata." % __name__)
 	SolitarioAccessibile().run()
+else:
+	print("Carico: %s" % __name__)
