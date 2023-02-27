@@ -34,7 +34,7 @@ class GamePlay(DialogBox):
 		self.min_col = 0
 		self.max_col = max([len(col) for col in self.engine.tableau])
 		self.selected_card = None  # carta selezionata dal cursore
-		self.selected_card_index = 0  # indice della carta selezionata nella pila di tableau
+		self.engine.selected_card_index = 0  # indice della carta selezionata nella pila di tableau
 		self.build_commands_list()
 		self.new_game()
 
@@ -82,26 +82,16 @@ class GamePlay(DialogBox):
 	def select_card(self):
 		row, col = self.cursor_pos
 		card = self.engine.get_card_at_position(row, col)
-
 		if card is not None:
 			self.selected_card = card
 
 	def move_card(self):
 		if self.selected_card is not None:
-			from_row, from_col = self.get_card_indices_at_position(*self.cursor_pos)
-			to_col = self.selected_card_index
+			from_row, from_col = self.engine.get_card_indices_at_position(*self.cursor_pos)
+			to_col = self.engine.selected_card_index
 			if self.engine.move_card(from_col, to_col, len(self.engine.tableau[from_col])-from_row):
 				self.selected_card = None
 				self.update_game_state()
-
-	def last_move_card(self):
-		if self.selected_card is not None:
-			from_col = self.cursor_pos[1]
-			to_col = self.selected_card_index
-			num_cards = len(self.engine.tableau[from_col]) - self.cursor_pos[0]
-			if self.engine.move_card(from_col, to_col, num_cards):
-				self.selected_card = None
-				#self.update_game_state()
 
 	def quit_app(self):
 		self.screen_reader.vocalizza("chiusura in corso.  ")

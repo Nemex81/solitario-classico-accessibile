@@ -96,7 +96,8 @@ class PileGioco(Mazzo):
 			return card.nome
 
 	def move_card(self, from_col, to_col, tot_cards):
-		pass
+		self.tableau[to_col].extend(tot_cards)
+		return True
 
 
 #@@@# start del modulo
