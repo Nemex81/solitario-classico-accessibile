@@ -121,10 +121,7 @@ class GamePlay(DialogBox):
 				current_card = self.engine.get_card(row, col)
 				current_pile = self.engine.get_pile_name(row, col)
 				card_name = self.engine.get_card_name(current_card)
-				#card_name = current_card.get_name()
-				self.screen_reader.vocalizza(f"Cursore spostato a colonna {col}, riga {row}. {card_name} nella pila {current_pile}")
-
-
+				self.screen_reader.vocalizza(f"Cursore spostato a colonna {col+1}, riga {row+1}. {card_name} nella pila {current_pile}")
 
 
 

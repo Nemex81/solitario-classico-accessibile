@@ -80,6 +80,7 @@ class EngineSolitario(PileGioco):
 		if 0 <= pile_index < 7:
 			if card_index is not None and 0 <= card_index < len(self.tableau[pile_index]):
 				return True
+
 			elif card_index is None:
 				return True
 

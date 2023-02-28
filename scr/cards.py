@@ -54,12 +54,12 @@ class Mazzo:
 			for valore in valori:
 				carta = Carta(valore, seme)
 				carta.set_name()
-				carta.id = i
 				if valore in ["Jack", "Regina", "Re", "Asso"]:
 					carta.valore_numerico = int(self.FIGURE_VALUES[valore])
 				else:
 					carta.valore_numerico = int(valore)
 
+				carta.id = i
 				mazzo.append(carta)
 				i += 1
 

@@ -18,16 +18,9 @@ from scr.cards import Carta, Mazzo
 #logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 #logger.setLevel(logging.DEBUG)
 
-class Pila:
-	def __init__(self, nome, carte=[]):
-		self.nome = nome
-		self.carte = carte
-
-
 class PileGioco(Mazzo):
 	def __init__(self):
 		super().__init__()
-		#self.tavolo = []
 		self.tableau = [ [] for _ in range(7)]
 		self.foundations = [ [] for _ in range(4)]
 		self.waste_pile = []
@@ -49,19 +42,9 @@ class PileGioco(Mazzo):
 		for c in range(7):
 			carta = self.tableau[c][-1]
 			carta.flip()
-			# provo ad accodare tutte le liste al nuovo tavolo
-			#self.tavolo.append(self.tableau[c])
-
-		# provo ad accodare la lista semi
-		#for s in self.foundations:
-			#self.tavolo.append(s)
 
 		# Mette le rimanenti carte nel stock pile
 		self.stock_pile = [self.mazzo.get_carta(i) for i in range(n_carte, len(self.cards))]
-		# provo ad accodare anche queste liste al nuovo tavolo
-		#self.tavolo.append(self.waste_pile)
-		#self.tavolo.append(self.stock_pile)
-		#self.tavolo.append(self.stock_pile)
 
 	def get_card(self, row, col):
 		card = self.tableau[row][col]
@@ -70,13 +53,13 @@ class PileGioco(Mazzo):
 	def get_pile_name(self, row, col):
 		pile_name = ""
 		if col < 7:
-			pile_name = f"Tableau colonna {col + 1}"
+			pile_name = f"pile base colonna {col + 1}"
 
 		elif col < 11:
-			pile_name = f"Foundations {col - 6}"
+			pile_name = f"pile semi {col - 6}"
 
 		else:
-			pile_name = "Waste pile"
+			pile_name = "pila scarti"
 
 		return pile_name
 
