@@ -98,9 +98,38 @@ class GamePlay(DialogBox):
 			return
 
 		dest_row, dest_col = self.cursor_pos
+		dest_pile = self.engine.pile[dest_col]
+		dest_pile_type = dest_pile.get_pile_type()
+
+		# Utilizziamo get_card_pile per ottenere l'oggetto Pila di provenienza delle carte selezionate
+		source_pile = self.engine.get_card_pile(self.selected_card[0])
+
+		if not self.engine.check_legal_move(source_pile.id, dest_col):
+			self.screen_reader.vocalizza("Mossa non valida.\n")
+			return
+
+		if dest_pile_type == "semi":
+			if len(self.selected_card) != 1:
+				self.screen_reader.vocalizza("Puoi spostare solo una carta alla volta in questa pila.\n")
+				return
+
+			card = self.selected_card[0]
+			if card.valore_numerico != 1:
+				self.screen_reader.vocalizza("Solo l'asso può essere spostato in questa pila.\n")
+				return
+
+		self.engine.sposta_carte(source_pile.id, dest_col, self.selected_card)
+		self.selected_card = []
+		self.screen_reader.vocalizza("spostamento completato!\n")
+
+	def last_set_destination_pile(self):
+		if not self.selected_card:
+			self.screen_reader.vocalizza("Nessuna carta selezionata.\n")
+			return
+
+		dest_row, dest_col = self.cursor_pos
 		pila = self.engine.pile[dest_col]
 		dest_pile_type = pila.get_pile_type()#(dest_col)
-
 		if dest_pile_type not in ["semi", "gioco"]:
 			self.screen_reader.vocalizza("La carta non può essere spostata in questa pila.\n")
 			return
@@ -116,14 +145,15 @@ class GamePlay(DialogBox):
 			if len(self.selected_card) != 1:
 				self.screen_reader.vocalizza("Puoi spostare solo una carta alla volta in questa pila.\n")
 				return
+
 			card = self.selected_card[0]
-			if card.valore != 1:
+			if card.valore_numerico != 1:
 				self.screen_reader.vocalizza("Solo l'asso può essere spostato in questa pila.\n")
 				return
 
 		self.engine.sposta_carte(source_row, source_col, dest_row, dest_col, self.selected_card)
 		self.selected_card = []
-		self.vocalizza_colonna()
+		self.screen_reader.vocalizza("spostamento completato!\n")
 
 	def last_set_destination_pile(self):
 		if not self.selected_card:
@@ -144,8 +174,12 @@ class GamePlay(DialogBox):
 		else:
 			self.screen_reader.vocalizza("Spostamento non valido, seleziona una pila vuota o una carta di valore inferiore!\n")
 
-	def move_card(self):
-		pass
+	def cancel_selected_cards(self):
+		if self.selected_card:
+			self.selected_card = []
+			self.screen_reader.vocalizza("Carte selezionate annullate.\n")
+		else:
+			self.screen_reader.vocalizza("Non ci sono carte selezionate da annullare.\n")
 
 	def vocalizza_colonna(self):
 		row, col = self.cursor_pos
@@ -196,6 +230,7 @@ class GamePlay(DialogBox):
 			pygame.K_DOWN: self.move_cursor_down,
 			pygame.K_RETURN: self.select_card,
 			pygame.K_SPACE: self.set_destination_pile,
+			pygame.K_DELETE: self.cancel_selected_cards,
 			pygame.K_ESCAPE: self.quit_app,
 		}
 

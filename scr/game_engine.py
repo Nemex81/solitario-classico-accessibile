@@ -62,14 +62,29 @@ class EngineSolitario(Tavolo):
 		dest_pile = self.pile[dest_pile_index]
 
 		# Verifica se la pila di destinazione è vuota e la carta spostata è un re
-		if not dest_pile.carte and source_pile.carte[-1].valore == 13:
+		if not dest_pile.carte and source_pile.carte[-1].valore_numerico == 13:
 			return True
 
 		# Verifica se la pila di destinazione non è vuota e la carta spostata è di un valore inferiore rispetto all'ultima carta della pila di destinazione
-		if dest_pile.carte and source_pile.carte[-1].valore == dest_pile.carte[-1].valore - 1 and source_pile.carte[-1].seme != dest_pile.carte[-1].seme:
+		if dest_pile.carte and source_pile.carte[-1].valore_numerico == dest_pile.carte[-1].valore_numerico - 1 and source_pile.carte[-1].seme != dest_pile.carte[-1].seme:
 			return True
 
 		return False
+
+	def new_sposta_carte(self, source_row, source_col, dest_row, dest_col, cards):
+		# Ottieni la pila di partenza e quella di destinazione
+		source_pile = self.tavolo.pile[source_col]
+		dest_pile = self.tavolo.pile[dest_col]
+
+		# Verifica se lo spostamento delle carte è consentito
+		if not self.verifica_spostamento_carte(source_pile, dest_pile, cards):
+			return False
+
+		# Rimuovi le carte dalla pila di partenza e aggiungile alla pila di destinazione
+		carte_rimosse = source_pile.rimuovi_carte(source_row, source_row+len(cards)-1)
+		dest_pile.aggiungi_carta(carte_rimosse)
+
+		return True
 
 	def sposta_carte(self, carte_da_spostare, pila_destinazione=None):
 		"""
@@ -78,7 +93,7 @@ class EngineSolitario(Tavolo):
 		"""
 		if pila_destinazione is not None:
 			# Verifica se le carte possono essere spostate nella pila di destinazione
-			if not self.check_mossa_valida(carte_da_spostare, pila_destinazione):
+			if not self.check_legal_move(carte_da_spostare, pila_destinazione):
 				return False
 			
 			# Sposta le carte nella pila di destinazione
@@ -91,6 +106,16 @@ class EngineSolitario(Tavolo):
 				pila.aggiungi_carte(carte_da_spostare)
 				return True
 		return False
+
+	def get_card_pile(self, card):
+		"""
+		Restituisce l'oggetto Pila a cui appartiene la carta passata come parametro
+		"""
+		for pila in self.pile:
+			if card in pila.carte:
+				return pila
+		return None
+
 
 
 

@@ -18,7 +18,8 @@ import my_lib.myutyls as mu
 # logger.setLevel(logging.DEBUG)
 
 class Pila:
-	def __init__(self, tipo_pila):
+	def __init__(self, id, tipo_pila):
+		self.id = id
 		self.nome = None
 		self.tipo = tipo_pila
 		self.carte = []
@@ -49,18 +50,9 @@ class Pila:
 		return len(self.carte)
 
 	def get_pile_type(self):
-		"""
-		Restituisce il tipo di pila, ovvero:
-		- "base": per le pile di gioco principali
-		- "riserva": per la pila di mazzo riserve
-		- "semi": per le pile di semi
-		"""
-		if len(self.carte) == 0:
-			return "riserva"
-		elif self.carte[-1].valore == 1:
-			return "semi"
-		else:
-			return "base"
+		""" Restituisce il tipo di pila """
+		return self.tipo
+
 
 
 class Tavolo:
@@ -71,24 +63,28 @@ class Tavolo:
 	def crea_pile_gioco(self):
 		# crea le sette pile base
 		self.pile = [] # resettiamo tutte le pile di gioco a 0
+		id = 0
 		for i in range(7):
-			pile_base = Pila("base")
+			pile_base = Pila(id, "base")
 			pile_base.nome = f"pila {i+1}"
 			self.pile.append(pile_base)
+			id += 1
 
 		# crea le quattro pile semi
 		for i in range(4):
-			pile_semi = Pila("semi")
+			pile_semi = Pila(id, "semi")
 			pile_semi.nome = f"pila {self.semi[i]}"
 			self.pile.append(pile_semi)
+			id += 1
 
 		# crea la pila di scarti
-		pila_scarti = Pila("scarti")
+		pila_scarti = Pila(id, "scarti")
 		pila_scarti.nome = "pila scarti"
 		self.pile.append(pila_scarti)
+		id += 1
 
 		# crea la pila di mazzo riserve
-		pila_mazzo_riserve = Pila("mazzo_riserve")
+		pila_mazzo_riserve = Pila(id, "mazzo_riserve")
 		pila_mazzo_riserve.nome = "pila riserve"
 		self.pile.append(pila_mazzo_riserve)
 
