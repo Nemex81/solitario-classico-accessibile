@@ -18,11 +18,18 @@ from scr.cards import Carta, Mazzo
 #logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 #logger.setLevel(logging.DEBUG)
 
+class Pila:
+	def __init__(self, nome, carte=[]):
+		self.nome = nome
+		self.carte = carte
+
+
 class PileGioco(Mazzo):
 	def __init__(self):
 		super().__init__()
-		self.tableau = [[] for _ in range(7)]
-		self.foundations = [[] for _ in range(4)]
+		#self.tavolo = []
+		self.tableau = [ [] for _ in range(7)]
+		self.foundations = [ [] for _ in range(4)]
 		self.waste_pile = []
 		self.stock_pile = []
 
@@ -36,18 +43,25 @@ class PileGioco(Mazzo):
 				self.tableau[j].append(carta)
 				carta.colun = j
 				carta.row = len(self.tableau[j]) - 1
-				#if len(self.tableau[j]) - 1 == carta.row:
-					#carta.flip()  # Scopre l'ultima carta della colonna
-
 				n_carte += 1
 
 		# imposto l'ultima carta di ogni colonna come scoperta
 		for c in range(7):
 			carta = self.tableau[c][-1]
 			carta.flip()
+			# provo ad accodare tutte le liste al nuovo tavolo
+			#self.tavolo.append(self.tableau[c])
+
+		# provo ad accodare la lista semi
+		#for s in self.foundations:
+			#self.tavolo.append(s)
 
 		# Mette le rimanenti carte nel stock pile
 		self.stock_pile = [self.mazzo.get_carta(i) for i in range(n_carte, len(self.cards))]
+		# provo ad accodare anche queste liste al nuovo tavolo
+		#self.tavolo.append(self.waste_pile)
+		#self.tavolo.append(self.stock_pile)
+		#self.tavolo.append(self.stock_pile)
 
 	def get_card(self, row, col):
 		card = self.tableau[row][col]
