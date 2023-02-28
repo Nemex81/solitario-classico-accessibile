@@ -29,6 +29,12 @@ class Carta:
 		self.coperta = not self.coperta
 
 	def get_name(self):
+		if self.nome is None:
+			return "nessuna carta"
+
+		if self.coperta:
+			return "carta coperta"
+
 		return self.nome
 
 	def set_name(self):
@@ -43,9 +49,9 @@ class Mazzo:
 
 	def __init__(self):
 		self.cards = []  # lista delle carte nel mazzo
-		#self.cards = self.crea_mazzo()
+		#self.cards = self.crea()
 
-	def crea_mazzo(self):
+	def crea(self):
 		semi = self.SUITES
 		valori = self.VALUES
 		mazzo = []
@@ -66,7 +72,7 @@ class Mazzo:
 		self.cards = mazzo
 		return mazzo
 
-	def mischia_carte(self):
+	def mischia(self):
 		random.shuffle(self.cards)
 
 	def pesca(self):
@@ -75,6 +81,11 @@ class Mazzo:
 
 	def get_carta(self, i):
 		return self.cards[i]
+
+	def reset(self):
+		self.cards = []
+		self.crea()
+		self.mischia()
 
 
 

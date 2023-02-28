@@ -28,70 +28,83 @@ class GamePlay(DialogBox):
 		self.engine = EngineSolitario()
 		self.screen = screen
 		self.screen_reader = screen_reader
-		self.cursor_pos = [0, 0]  # posizione iniziale del cursore sul tableau
-		self.min_row = 0
-		self.max_row = len(self.engine.tableau) - 1
-		self.min_col = 0
-		self.max_col = max([len(col) for col in self.engine.tableau])
+		self.cursor_pos = [0, 0]  # posizione iniziale del cursore sul tavolo
 		self.selected_card = None  # carta selezionata dal cursore
-		self.engine.selected_card_index = 0  # indice della carta selezionata nella pila di tableau
 		self.build_commands_list()
 		self.new_game()
 
 	def new_game(self):
 		self.engine.crea_gioco()
 
-	def vocalizza_selezioni(self):
-		row, col = self.cursor_pos
-		card = self.engine.get_card_at_position(row, col)
-		if card is not None:
-			card_name = self.engine.mazzo.get_card_name(card.valore + (card.seme * 13))
-			pile_name = self.get_pile_name(row, col)
-			message = f"Carta selezionata: {card_name}. Pila selezionata: {pile_name}."
-			self.screen_reader.vocalizza(message)
-			self.update_game_state()
-
 	def check_for_win(self):
 		"""
 		Verifica se il gioco è stato vinto.
 		"""
 		# implementazione del metodo check_for_win
-		if self.engine.controlla_vittoria():
-			pass
+		pass
 
 	#@@@# sezione comandi utente per il game play
 
 	def move_cursor_up(self):
 		if self.cursor_pos[0] > 0:
 			self.cursor_pos[0] -= 1
-			self.cursor_pos[1] = min(self.cursor_pos[1], len(self.engine.tableau[self.cursor_pos[0]])-1)
+			self.vocalizza_riga()
 
 	def move_cursor_down(self):
-		if self.cursor_pos[0] < len(self.engine.tableau) - 1:
+		pila = self.engine.pile[self.cursor_pos[1]]
+		if self.cursor_pos[0] < len(pila.carte) - 1:
 			self.cursor_pos[0] += 1
-			self.cursor_pos[1] = min(self.cursor_pos[1], len(self.engine.tableau[self.cursor_pos[0]])-1)
+			self.vocalizza_riga()
 
 	def move_cursor_left(self):
 		if self.cursor_pos[1] > 0:
 			self.cursor_pos[1] -= 1
+			self.cursor_pos[0] = 0
+			self.vocalizza_colonna()
 
 	def move_cursor_right(self):
-		if self.cursor_pos[1] < len(self.engine.tableau[self.cursor_pos[0]]) - 1:
+		pile = self.engine.pile
+		if self.cursor_pos[1] < len(pile) - 1:
 			self.cursor_pos[1] += 1
+			self.cursor_pos[0] = 0
+			self.vocalizza_colonna()
 
 	def select_card(self):
-		row, col = self.cursor_pos
-		card = self.engine.get_card_at_position(row, col)
-		if card is not None:
-			self.selected_card = card
+		self.vocalizza_focus()
 
 	def move_card(self):
-		if self.selected_card is not None:
-			from_row, from_col = self.engine.get_card_indices_at_position(*self.cursor_pos)
-			to_col = self.engine.selected_card_index
-			if self.engine.move_card(from_col, to_col, len(self.engine.tableau[from_col])-from_row):
-				self.selected_card = None
-				self.update_game_state()
+		pass
+
+	def vocalizza_colonna(self):
+		row, col = self.cursor_pos
+		current_pile = self.engine.get_pile_name(col)
+		string = current_pile
+		self.screen_reader.vocalizza(string)
+
+	def vocalizza_riga(self):
+		row, col = self.cursor_pos
+		current_card = self.engine.get_card(row, col)
+		card_name = current_card.get_name()
+		string_carta = f"{row+1}: {card_name}"
+		string = string_carta
+		self.screen_reader.vocalizza(string)
+
+	def vocalizza_focus(self):
+		# vocalizziamo lo spostamento
+		row, col = self.cursor_pos
+		current_card = self.engine.get_card(row, col)
+		current_pile = self.engine.get_pile_name(col)
+		#string_cursore = f"Cursore spostato a colonna {col+1}, riga {row+1}. "
+		try:
+			card_name = current_card.get_name()
+			string_carta = f"{current_pile}.  "
+			string_carta += f"{row+1}: {card_name}"
+			string = string_carta
+
+		except AttributeError:
+			string = current_pile
+
+		self.screen_reader.vocalizza(string)
 
 	def quit_app(self):
 		self.screen_reader.vocalizza("chiusura in corso.  ")
@@ -116,12 +129,7 @@ class GamePlay(DialogBox):
 	def handle_keyboard_EVENTS(self, event):
 			if self.callback_dict.get(event.key):
 				self.callback_dict[event.key]()
-				# vocalizziamo lo spostamento
-				row, col = self.cursor_pos
-				current_card = self.engine.get_card(row, col)
-				current_pile = self.engine.get_pile_name(row, col)
-				card_name = self.engine.get_card_name(current_card)
-				self.screen_reader.vocalizza(f"Cursore spostato a colonna {col+1}, riga {row+1}. {card_name} nella pila {current_pile}")
+				#self.vocalizza_focus()
 
 
 

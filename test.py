@@ -9,6 +9,8 @@ from enum import Enum
 # moduli personali
 from scr.solitario_accessibile import SolitarioAccessibile
 from scr.screen_reader import ScreenReader
+from scr.cards import Carta, Mazzo
+from scr.pile import Pila, Tavolo
 from scr.game_engine import EngineSolitario
 from scr.game_play import GamePlay
 from my_lib.dialog_box import DialogBox
@@ -21,18 +23,36 @@ logging.basicConfig(filename='log.txt', level=logging.DEBUG, format='%(asctime)s
 #logger.setLevel(logging.DEBUG)
 
 
-solitario = EngineSolitario()
-carte = solitario.mazzo.crea_mazzo()
-#for carta in carte:
-	#carta.set_name()
-	#nome = carta.get_name()
-	#print(nome)
+# test_cards.py
+from scr.cards import Carta, Mazzo
 
-solitario.mazzo.mischia_carte(carte)
-#for c in range(10):
-	#carta = solitario.mazzo.pesca(carte)
-	#carta.set_name()
-	#string = f"{carta.nome}, vale {carta.valore_numerico} punti."
-	#print(string)
+# Crea un mazzo di carte e mescola le carte
+mazzo = Mazzo()
+mazzo.crea()
+mazzo.mischia()
 
-solitario.distribuisci_carte()
+# Stampa il numero di carte nel mazzo
+print("Numero di carte nel mazzo:", len(mazzo.cards))
+
+# Pesca alcune carte dal mazzo
+carta1 = mazzo.pesca()
+carta2 = mazzo.pesca()
+
+# Stampa le carte pescate
+#print("Carta 1:", carta1.get_name())
+#print("Carta 2:", carta2.get_name())
+#print("Numero di carte nel mazzo:", len(mazzo.cards))
+mazzo.reset()
+print("mazzo ripristinato.\nNumero di carte nel mazzo:", len(mazzo.cards))
+tavolo = Tavolo()
+tavolo.crea_pile_gioco()
+tavolo.distribuisci_carte(mazzo)
+for p in tavolo.pile:
+	print(p.nome)
+	print(p.numero_carte())
+	carte = p.get_carte()
+	for c in carte:
+		print(c.nome)
+
+
+print("tavolo di gioco allestito.\n Numero di carte nel mazzo:", len(mazzo.cards))
