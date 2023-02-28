@@ -29,7 +29,7 @@ class GamePlay(DialogBox):
 		self.screen = screen
 		self.screen_reader = screen_reader
 		self.cursor_pos = [0, 0]  # posizione iniziale del cursore sul tavolo
-		self.selected_card = None  # carta selezionata dal cursore
+		self.selected_card = []  # lista delle carte selezionate dal giocatore
 		self.build_commands_list()
 		self.new_game()
 
@@ -70,7 +70,79 @@ class GamePlay(DialogBox):
 			self.vocalizza_colonna()
 
 	def select_card(self):
-		self.vocalizza_focus()
+		row, colun = self.cursor_pos
+		card = self.engine.get_card(row, colun)
+		if not card:
+			self.screen_reader.vocalizza("la pila è vuota!\n")
+			return
+
+		if card.coperta:
+			self.screen_reader.vocalizza("non puoi selezionare una carta coperta!\n")
+			return
+		pila = self.engine.pile[colun]
+		if row == len(pila.carte) - 1:
+			self.selected_card.append(card)
+		else:
+			maxcarte = len(pila.carte) -1
+			for c in range(row, maxcarte):
+				card = self.engine.get_card(c, colun)
+				self.selected_card.append(card)
+
+		tot = len(self.selected_card)
+		string = f"carte selezionate: {tot}\n"
+		self.screen_reader.vocalizza(string)
+
+	def set_destination_pile(self):
+		if not self.selected_card:
+			self.screen_reader.vocalizza("Nessuna carta selezionata.\n")
+			return
+
+		dest_row, dest_col = self.cursor_pos
+		pila = self.engine.pile[dest_col]
+		dest_pile_type = pila.get_pile_type()#(dest_col)
+
+		if dest_pile_type not in ["semi", "gioco"]:
+			self.screen_reader.vocalizza("La carta non può essere spostata in questa pila.\n")
+			return
+
+		source_pile = self.engine.get_card_pile(self.selected_card[0])
+		source_row, source_col = source_pile.get_card_position(self.selected_card[0])
+
+		if not self.engine.check_legal_move(source_col, dest_col):
+			self.screen_reader.vocalizza("Mossa non valida.\n")
+			return
+
+		if dest_pile_type == "semi":
+			if len(self.selected_card) != 1:
+				self.screen_reader.vocalizza("Puoi spostare solo una carta alla volta in questa pila.\n")
+				return
+			card = self.selected_card[0]
+			if card.valore != 1:
+				self.screen_reader.vocalizza("Solo l'asso può essere spostato in questa pila.\n")
+				return
+
+		self.engine.sposta_carte(source_row, source_col, dest_row, dest_col, self.selected_card)
+		self.selected_card = []
+		self.vocalizza_colonna()
+
+	def last_set_destination_pile(self):
+		if not self.selected_card:
+			self.screen_reader.vocalizza("Non hai selezionato alcuna carta!\n")
+			return
+
+		row, col = self.cursor_pos
+		card = self.engine.get_card(row, col)
+		if card and card.valore_numerico > 12:
+			self.screen_reader.vocalizza("Devi spostare le carte selezionate su una pila vuota!\n")
+			return
+		if self.engine.check_legal_move(self.selected_card, col):
+			self.engine.sposta_carte(self.selected_card, col)
+			self.selected_card.clear()
+			self.cursor_pos = [0, 0]
+			#self.vocalizza_riga()
+			#self.vocalizza_colonna()
+		else:
+			self.screen_reader.vocalizza("Spostamento non valido, seleziona una pila vuota o una carta di valore inferiore!\n")
 
 	def move_card(self):
 		pass
@@ -117,19 +189,19 @@ class GamePlay(DialogBox):
 
 	def build_commands_list(self):
 		self.callback_dict = {
+			pygame.K_f: self.vocalizza_focus,
 			pygame.K_LEFT: self.move_cursor_left,
 			pygame.K_RIGHT: self.move_cursor_right,
 			pygame.K_UP: self.move_cursor_up,
 			pygame.K_DOWN: self.move_cursor_down,
 			pygame.K_RETURN: self.select_card,
-			pygame.K_SPACE: self.move_card,
+			pygame.K_SPACE: self.set_destination_pile,
 			pygame.K_ESCAPE: self.quit_app,
 		}
 
 	def handle_keyboard_EVENTS(self, event):
 			if self.callback_dict.get(event.key):
 				self.callback_dict[event.key]()
-				#self.vocalizza_focus()
 
 
 

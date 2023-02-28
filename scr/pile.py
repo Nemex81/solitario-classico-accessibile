@@ -10,7 +10,6 @@ import random
 # moduli personali
 from my_lib.myglob import *
 import my_lib.myutyls as mu
-from scr.cards import Carta, Mazzo
 # import pdb #pdb.set_trace() da impostare dove si vuol far partire il debugger
 
 # Imposta la configurazione del logger
@@ -49,18 +48,29 @@ class Pila:
 	def numero_carte(self):
 		return len(self.carte)
 
-
+	def get_pile_type(self):
+		"""
+		Restituisce il tipo di pila, ovvero:
+		- "base": per le pile di gioco principali
+		- "riserva": per la pila di mazzo riserve
+		- "semi": per le pile di semi
+		"""
+		if len(self.carte) == 0:
+			return "riserva"
+		elif self.carte[-1].valore == 1:
+			return "semi"
+		else:
+			return "base"
 
 
 class Tavolo:
 	semi = ["cuori", "quadri", "picche", "fiori"]
 	def __init__(self):
-		self.mazzo = Mazzo()
 		self.pile = []  # lista di pile di gioco
-		#self.crea_pile_gioco()
 
 	def crea_pile_gioco(self):
 		# crea le sette pile base
+		self.pile = [] # resettiamo tutte le pile di gioco a 0
 		for i in range(7):
 			pile_base = Pila("base")
 			pile_base.nome = f"pila {i+1}"
@@ -82,32 +92,6 @@ class Tavolo:
 		pila_mazzo_riserve.nome = "pila riserve"
 		self.pile.append(pila_mazzo_riserve)
 
-	def distribuisci_carte(self):
-		# distribuisci le carte alle pile base
-		for i in range(7):
-			for j in range(i+1):
-				carta = self.mazzo.pesca()
-				carta.coperta = True #if j < i else False
-				self.pile[i].aggiungi_carta(carta)
-
-		# distribuisci le restanti carte alla pila mazzo riserve
-		for i in range(24):
-			carta = self.mazzo.pesca()
-			carta.coperta = True
-			self.pile[12].aggiungi_carta(carta)
-
-		# Inizializza le pile semi
-		for i in range(4):
-			pile_semi = self.pile[7+i] # Ottieni la pila di semi corrente
-			carta_seme = Carta("", self.mazzo.SUITES[i], coperta=True) # Crea la carta con il seme corrispondente
-			pile_semi.aggiungi_carta(carta_seme) # Aggiungi la carta vuota alla pila di semi
-
-		# scopro l'ultima carta di ogni pila
-		for i in range(7):
-			pila = self.pile[i]
-			carta = pila.carte[-1]
-			carta.flip()#coperta = False
-
 	def get_pile_name(self, col):
 		pila = self.pile[col]
 		return pila.nome
@@ -128,6 +112,8 @@ class Tavolo:
 
 		# Restituisci la carta corrispondente
 		return self.pile[pila_index].carte[row]
+
+
 
 
 

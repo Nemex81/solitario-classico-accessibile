@@ -29,9 +29,68 @@ class EngineSolitario(Tavolo):
 		#self.situazione_attuale = []
 
 	def crea_gioco(self):
+		"""Crea un nuovo gioco di solitario."""
 		self.mazzo.reset()
 		self.crea_pile_gioco()
 		self.distribuisci_carte()
+
+	def distribuisci_carte(self):
+		# distribuisci le carte alle pile base
+		for i in range(7):
+			for j in range(i+1):
+				carta = self.mazzo.pesca()
+				carta.coperta = True #if j < i else False
+				self.pile[i].aggiungi_carta(carta)
+
+		# distribuisci le restanti carte alla pila mazzo riserve
+		for i in range(24):
+			carta = self.mazzo.pesca()
+			carta.coperta = True
+			self.pile[12].aggiungi_carta(carta)
+
+		# scopro l'ultima carta di ogni pila
+		for i in range(7):
+			pila = self.pile[i]
+			carta = pila.carte[-1]
+			carta.flip()#coperta = False
+
+	def check_legal_move(self, source_pile_index, dest_pile_index):
+		"""
+		Verifica se lo spostamento di una o più carte dalla pila sorgente a quella destinazione è legale.
+		"""
+		source_pile = self.pile[source_pile_index]
+		dest_pile = self.pile[dest_pile_index]
+
+		# Verifica se la pila di destinazione è vuota e la carta spostata è un re
+		if not dest_pile.carte and source_pile.carte[-1].valore == 13:
+			return True
+
+		# Verifica se la pila di destinazione non è vuota e la carta spostata è di un valore inferiore rispetto all'ultima carta della pila di destinazione
+		if dest_pile.carte and source_pile.carte[-1].valore == dest_pile.carte[-1].valore - 1 and source_pile.carte[-1].seme != dest_pile.carte[-1].seme:
+			return True
+
+		return False
+
+	def sposta_carte(self, carte_da_spostare, pila_destinazione=None):
+		"""
+		Sposta le carte indicate nella pila di destinazione. Se la pila di destinazione
+		non è specificata, cerca la prima pila disponibile e sposta le carte in quella.
+		"""
+		if pila_destinazione is not None:
+			# Verifica se le carte possono essere spostate nella pila di destinazione
+			if not self.check_mossa_valida(carte_da_spostare, pila_destinazione):
+				return False
+			
+			# Sposta le carte nella pila di destinazione
+			pila_destinazione.aggiungi_carte(carte_da_spostare)
+			return True
+
+		# Cerca la prima pila disponibile e sposta le carte in quella
+		for pila in self.pile:
+			if pila.is_empty() or pila.check_mossa_valida(carte_da_spostare):
+				pila.aggiungi_carte(carte_da_spostare)
+				return True
+		return False
 
 
 
