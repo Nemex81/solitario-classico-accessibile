@@ -72,21 +72,21 @@ class GamePlay(DialogBox):
 
 	def select_card(self):
 		if len(self.selected_card) == 1:
-			self.screen_reader.vocalizza("Hai già selezionato la carta da spostare!  premi canc per annullare la selezione.\n")
+			self.vocalizza("Hai già selezionato la carta da spostare!  premi canc per annullare la selezione.\n")
 			return
 
 		elif len(self.selected_card) > 1:
-			self.screen_reader.vocalizza("Hai già selezionato le carte da spostare!  premi canc per annullare la selezione.\n")
+			self.vocalizza("Hai già selezionato le carte da spostare!  premi canc per annullare la selezione.\n")
 			return
 
 		row, colun = self.cursor_pos
 		card = self.engine.get_card(row, colun)
 		if not card:
-			self.screen_reader.vocalizza("la pila è vuota!\n")
+			self.vocalizza("la pila è vuota!\n")
 			return
 
 		if card.coperta:
-			self.screen_reader.vocalizza("non puoi selezionare una carta coperta!\n")
+			self.vocalizza("non puoi selezionare una carta coperta!\n")
 			return
 
 		self.id_row_origine = row
@@ -101,12 +101,13 @@ class GamePlay(DialogBox):
 				self.selected_card.append(card)
 
 		tot = len(self.selected_card)
-		string = f"carte selezionate: {tot}\n"
-		self.screen_reader.vocalizza(string)
+		nome_carta = card.get_name()
+		string = f"carte selezionate: {tot}: {nome_carta}\n"
+		self.vocalizza(string)
 
 	def set_destination_pile(self):
 		if not self.selected_card:
-			self.screen_reader.vocalizza("Nessuna carta selezionata.\n")
+			self.vocalizza("Nessuna carta selezionata.\n")
 			return
 
 		dest_row, dest_col = self.cursor_pos
@@ -117,34 +118,34 @@ class GamePlay(DialogBox):
 		source_pile = self.engine.get_card_pile(self.selected_card[0])
 
 		if not self.engine.check_legal_move(source_pile.id, dest_col):
-			self.screen_reader.vocalizza("Mossa non valida.\n")
+			self.vocalizza("Mossa non valida.\n")
 			return
 
 		if dest_pile_type == "semi":
 			if len(self.selected_card) != 1:
-				self.screen_reader.vocalizza("Puoi spostare solo una carta alla volta in questa pila.\n")
+				self.vocalizza("Puoi spostare solo una carta alla volta in questa pila.\n")
 				return
 
 			card = self.selected_card[0]
 			if card.valore_numerico != 1 and source_pile.carte:
-				self.screen_reader.vocalizza("Solo l'asso può essere spostato in questa pila.\n")
+				self.vocalizza("Solo l'asso può essere spostato in questa pila.\n")
 				return
 
 		self.engine.sposta_carte(self.id_row_origine, self.id_col_origine, dest_row, dest_col, self.selected_card)
 		#self.engine.sposta_carte(source_pile, dest_col, self.selected_card)
 		self.selected_card = []
-		self.screen_reader.vocalizza("spostamento completato!\n")
+		self.vocalizza("spostamento completato!\n")
 
 	def cancel_selected_cards(self):
 		if self.selected_card:
 			self.selected_card = []
-			self.screen_reader.vocalizza("Carte selezionate annullate.\n")
+			self.vocalizza("Carte selezionate annullate.\n")
 		else:
-			self.screen_reader.vocalizza("Non ci sono carte selezionate da annullare.\n")
+			self.vocalizza("Non ci sono carte selezionate da annullare.\n")
 
 	def pesca(self):
 		if not self.engine.pescata():
-			self.screen_reader.vocalizza("qualcosa è andato storto!")
+			self.vocalizza("qualcosa è andato storto!")
 			return
 
 		string = ""
@@ -152,15 +153,18 @@ class GamePlay(DialogBox):
 			card_name = self.target_card.get_name()
 			string = f"Hai pescato: {card_name}"
 
+		self.vocalizza(string)
 
+	#@@# sezione metodi per vocalizzare informazioni
 
+	def vocalizza(self, string):
 		self.screen_reader.vocalizza(string)
 
 	def vocalizza_colonna(self):
 		row, col = self.cursor_pos
 		current_pile = self.engine.get_pile_name(col)
 		string = current_pile
-		self.screen_reader.vocalizza(string)
+		self.vocalizza(string)
 
 	def vocalizza_riga(self):
 		row, col = self.cursor_pos
@@ -168,7 +172,7 @@ class GamePlay(DialogBox):
 		card_name = current_card.get_name()
 		string_carta = f"{row+1}: {card_name}"
 		string = string_carta
-		self.screen_reader.vocalizza(string)
+		self.vocalizza(string)
 
 	def vocalizza_focus(self):
 		# vocalizziamo lo spostamento
@@ -185,10 +189,10 @@ class GamePlay(DialogBox):
 		except AttributeError:
 			string = current_pile
 
-		self.screen_reader.vocalizza(string)
+		self.vocalizza(string)
 
 	def quit_app(self):
-		self.screen_reader.vocalizza("chiusura in corso.  ")
+		self.vocalizza("chiusura in corso.  ")
 		pygame.time.wait(500)
 		self.create_question_box("Sei sicuro di voler uscire?")
 		result = self.answare

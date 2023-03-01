@@ -27,7 +27,6 @@ class EngineSolitario(TavoloSolitario):
 	def __init__(self):
 		super().__init__()
 		self.difficulty_level = 1
-		self.livello_difficolta = 1
 		self.mazzo = Mazzo()
 		#self.primo_giro = True
 		#self.conta_giri = 0
@@ -133,25 +132,10 @@ class EngineSolitario(TavoloSolitario):
 				return pila
 		return None
 
-	def prendi_carte(self, num_carte=1):
-		"""
-		Metodo per prendere un certo numero di carte dal mazzo riserve.
-		Il numero di carte prese dipende dal livello di difficoltà impostato.
-		"""
-		if num_carte < 1:
-			return []
-
-		riserva = self.pile[12]
-		if len(riserva.carte) < num_carte:
-			num_carte = len(riserva.carte)
-
-		carte_pescate = riserva.rimuovi_carte(-num_carte, -1)
-		return carte_pescate
-
 	def pescata(self):
 			# Definiamo il numero di carte da pescare in base al livello di difficoltà impostato
 			logger.debug("inizio fase di pecata carte da riserve.")
-			num_cards = self.livello_difficolta
+			num_cards = self.difficulty_level
 			# Controllo se ci sono ancora carte nel mazzo riserve
 			if len(self.pile[12].carte) < num_cards:
 				# Non ci sono abbastanza carte nel mazzo riserve, gestire l'errore come si preferisce
@@ -177,7 +161,6 @@ class EngineSolitario(TavoloSolitario):
 				logger.debug("carta in target: %s", self.target_card.get_name())
 
 			return True
-
 
 
 
