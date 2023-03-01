@@ -36,6 +36,16 @@ class Pila:
 		self.carte = self.carte[:pos_iniziale] + self.carte[pos_finale+1:]
 		return carte_rimosse
 
+	def prendi_carte(self, num_carte):
+		carte_pescate = []
+		for i in range(num_carte):
+			if len(self.carte) == 0:
+				break
+
+			carta = self.rimuovi_carta(-1)
+			carte_pescate.insert(0, carta)
+		return carte_pescate
+
 	def get_carte(self):
 		return self.carte
 
@@ -53,9 +63,20 @@ class Pila:
 		""" Restituisce il tipo di pila """
 		return self.tipo
 
+	def get_card_index(self, row, col):
+		"""
+		Restituisce l'indice della carta alla posizione (row, col) nella pila.
+		"""
+		try:
+			if col != self.id:
+				return None
+			return row
+		except IndexError:
+			return None
 
 
-class Tavolo:
+
+class TavoloSolitario:
 	semi = ["cuori", "quadri", "picche", "fiori"]
 	def __init__(self):
 		self.pile = []  # lista di pile di gioco
@@ -93,7 +114,7 @@ class Tavolo:
 		return pila.nome
 
 	def get_card(self, row, col):
-		"""Restituisce la carta corrispondente alla colonna e riga specificate."""
+		""" Restituisce la carta corrispondente alla colonna e riga specificate."""
 		# Calcola l'indice della pila corrispondente alla colonna
 		pila_index = col 
 
@@ -108,8 +129,6 @@ class Tavolo:
 
 		# Restituisci la carta corrispondente
 		return self.pile[pila_index].carte[row]
-
-
 
 
 
