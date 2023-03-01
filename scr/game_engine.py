@@ -102,23 +102,6 @@ class EngineSolitario(TavoloSolitario):
 
 		return True
 
-	def last_check_legal_move(self, source_pile_index, dest_pile_index):
-		"""
-		Verifica se lo spostamento di una o più carte dalla pila sorgente a quella destinazione è legale.
-		"""
-		source_pile = self.pile[source_pile_index]
-		dest_pile = self.pile[dest_pile_index]
-
-		# Verifica se la pila di destinazione è vuota e la carta spostata è un re
-		if not dest_pile.carte and source_pile.carte[-1].valore_numerico == 13:
-			return True
-
-		# Verifica se la pila di destinazione non è vuota e la carta spostata è di un valore inferiore rispetto all'ultima carta della pila di destinazione
-		if dest_pile.carte and source_pile.carte[-1].valore_numerico == dest_pile.carte[-1].valore_numerico - 1 and source_pile.carte[-1].seme != dest_pile.carte[-1].seme:
-			return True
-
-		return False
-
 	def sposta_carte(self, source_row, source_col, dest_row, dest_col, cards):
 		# Ottieni la pila di partenza e quella di destinazione
 		source_pile = self.pile[source_col]
