@@ -6,7 +6,7 @@
 """
 
 # lib
-import random
+import logging, random
 # moduli personali
 from my_lib.myglob import *
 import my_lib.myutyls as mu
@@ -14,9 +14,10 @@ from scr.cards import Carta, Mazzo
 # import pdb #pdb.set_trace() da impostare dove si vuol far partire il debugger
 
 # Imposta la configurazione del logger
-# logging.basicConfig(filename='log.txt', level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
+logging.basicConfig(filename='log.txt', level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
+logger = logging.getLogger()
 # logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-# logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.DEBUG)
 
 class Pila:
 	def __init__(self, id, tipo_pila):
@@ -86,6 +87,7 @@ class PileSolitario:
 		self.pile = []  # lista delle pile di gioco
 
 	def crea_pile_gioco(self):
+		logger.debug("creazione delle pile di gioco")
 		# crea le sette pile base
 		self.pile = [] # resettiamo tutte le pile di gioco a 0
 		id = 0
@@ -113,14 +115,42 @@ class PileSolitario:
 		pila_mazzo_riserve.nome = "pila riserve"
 		self.pile.append(pila_mazzo_riserve)
 
-	def distribuisci_carte(self):
+	def alternativo_distribuisci_carte(self):
 		# distribuisci le carte alle pile base
+		if not self.mazzo.carte:
+			self.mazzo.reset()
+
+		for i, pila in enumerate(self.pile[:7]):
+			for j in range(i+1):
+				carta = self.mazzo.pesca()
+				carta.coperta = True if j < i else False
+				pila.aggiungi_carta(carta)
+
+		# distribuisci le restanti carte alla pila mazzo riserve
+		for i in range(24):
+			carta = self.mazzo.pesca()
+			carta.coperta = True
+			self.pile[12].aggiungi_carta(carta)
+
+		# scopro l'ultima carta di ogni pila
+		for pila in self.pile[:7]:
+			carta = pila.get_carte()[-1]
+			carta.scoperta = True
+
+
+	def distribuisci_carte(self):
+		logger.debug("inizio distribuzione delle carte nelle pile di gioco")
+		# distribuisci le carte alle pile base
+		if len(self.mazzo.cards) < 1:
+			self.mazzo.reset()
+
 		for i in range(7):
 			for j in range(i+1):
 				carta = self.mazzo.pesca()
 				carta.coperta = True #if j < i else False
 				self.pile[i].aggiungi_carta(carta)
 
+		logger.debug("carte distribuite in pile base. carte restanti in mazzo: %s", len(self.mazzo.cards))
 		# distribuisci le restanti carte alla pila mazzo riserve
 		for i in range(24):
 			carta = self.mazzo.pesca()
@@ -160,6 +190,40 @@ class PileSolitario:
 		# Restituisci la carta corrispondente
 		return self.pile[pila_index].carte[row]
 
+	def check_legal_move(self, source_pile_index, dest_pile_index):
+		"""
+		Verifica se lo spostamento di una o più carte dalla pila sorgente a quella destinazione è legale.
+		"""
+		source_pile = self.pile[source_pile_index]
+		dest_pile = self.pile[dest_pile_index]
+
+		if not dest_pile.carte and source_pile.carte[-1].valore_numerico == 13:
+			return True
+
+		top_card = source_pile.carte[-1]
+		if self.can_stack_card_on_top(dest_pile_index, top_card):
+			return True
+
+		return False
+
+	def can_stack_card_on_top(self, pile_index, card):
+		pile = self.pile[pile_index]
+		if not pile.carte:
+			# la pila è vuota, quindi la carta deve essere un Re
+			return card.valore_numerico == 13
+
+		top_card = pile.carte[-1]
+		return (top_card.valore_numerico - card.valore_numerico == 1) and (top_card.colore != card.colore)
+
+	def get_valid_destinations(self, source_pile_index, card):
+		valid_destinations = []
+		for i, pile in enumerate(self.pile):
+			if i == source_pile_index:
+				continue
+			if self.can_stack_card_on_top(i, card):
+				valid_destinations.append(i)
+
+		return valid_destinations
 
 
 #@@@# start del modulo

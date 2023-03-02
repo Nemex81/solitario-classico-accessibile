@@ -31,12 +31,50 @@ class Carta:
 
 	def get_name(self):
 		if self.nome is None:
-			return "nessuna carta"
+			return "nessuna nome"
 
 		if self.coperta:
 			return "carta coperta"
 
 		return self.nome
+
+	def get_suit(self):
+		if self.seme is None:
+			return "nessuna seme"
+
+		if self.coperta:
+			return "carta coperta"
+
+		return self.seme
+
+	def get_value(self):
+		if self.valore_numerico is None:
+			return "nessun valore"
+
+		if self.coperta:
+			return "carta coperta"
+
+		return self.valore_numerico
+
+	def get_color(self):
+		if self.colore is None:
+			return "nessuna colore"
+
+		if self.coperta:
+			return "carta coperta"
+
+		return self.colore
+
+	def get_info_card(self):
+		nome = self.get_name()
+		seme = self.get_suit()
+		valore = self.get_value()
+		colore = self.get_color()
+		details = f"nome: {nome}\n"
+		details += f"seme: {seme}\n"
+		details += f"valore: {valore}\n"
+		details += f"colore: {colore}\n"
+		return details
 
 	def set_name(self):
 		self.nome = f"{self.valore} di {self.seme}"
@@ -57,7 +95,7 @@ class Carta:
 
 
 class Mazzo:
-	SUITES = ["Cuori", "Quadri", "Fiori", "Picche"]
+	SUITES = ["cuori", "quadri", "fiori", "picche"]
 	VALUES = ["Asso", "2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Regina", "Re"]
 	FIGURE_VALUES = {"Jack": 11, "Regina": 12, "Re": 13, "Asso" : 1}
 

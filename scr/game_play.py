@@ -48,7 +48,9 @@ class GamePlay(DialogBox):
 	#@@# sezione comandi utente
 
 	def f1_press(self):
-		self.engine.crea_gioco()
+		#self.engine.crea_gioco()
+		string = self.engine.prova()
+		self.vocalizza(string)
 
 	def up_press(self):
 		string = self.engine.move_cursor_up()
@@ -107,6 +109,7 @@ class GamePlay(DialogBox):
 		self.callback_dict = {
 			pygame.K_d: self.d_press,
 			pygame.K_f: self.f_press,
+			pygame.K_F1: self.f1_press,
 			pygame.K_p: self.p_press,
 			pygame.K_LEFT: self.left_press,
 			pygame.K_RIGHT: self.right_press,
