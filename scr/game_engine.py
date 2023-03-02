@@ -11,7 +11,7 @@ import os, sys, random, logging
 from my_lib.myglob import *
 import my_lib.myutyls as mu
 from scr.cards import Carta, Mazzo
-from scr.pile import TavoloSolitario
+from scr.pile import PileSolitario
 #import pdb #pdb.set_trace() da impostare dove si vuol far partire il debugger
 
 # Imposta la configurazione del logger
@@ -23,20 +23,20 @@ logger = logging.getLogger()
 #logger.debug("Il mio messaggio di debug")
 #logging.debug("Esempio di stringa di log")
 
-class EngineSolitario(TavoloSolitario):
+class EngineSolitario(PileSolitario):
 	def __init__(self):
 		super().__init__()
-		self.difficulty_level = 1
 		self.mazzo = Mazzo()
-		#self.primo_giro = True
-		#self.conta_giri = 0
-		#self.valid_positions = [(i, j) for i in range(7) for j in range(20)]
-		#self.situazione_attuale = []
+		self.tavolo = PileSolitario()
+		self.difficulty_level = 1
+		self.primo_giro = True
+		self.conta_giri = 0
 
 	def crea_gioco(self):
 		"""Crea un nuovo gioco di solitario."""
 		self.mazzo.reset()
 		self.crea_pile_gioco()
+		self.tavolo.crea_pile_gioco()
 		self.distribuisci_carte()
 
 	def distribuisci_carte(self):

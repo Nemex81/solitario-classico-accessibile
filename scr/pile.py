@@ -76,7 +76,7 @@ class Pila:
 
 
 
-class TavoloSolitario:
+class PileSolitario:
 	semi = ["cuori", "quadri", "picche", "fiori"]
 	def __init__(self):
 		self.pile = []  # lista di pile di gioco
