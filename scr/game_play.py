@@ -29,22 +29,15 @@ class GamePlay(DialogBox):
 		self.screen = screen
 		self.screen_reader = screen_reader
 		self.cursor_pos = [0, 0]  # posizione iniziale del cursore sul tavolo
-		self.target_card = None
 		self.selected_card = []  # lista delle carte selezionate dal giocatore
+		self.target_card = None # oggetto carta nel focus
 		self.build_commands_list()
 		self.new_game()
 
+	#@@# sezione metodi di supporto per comandi utente
+
 	def new_game(self):
 		self.engine.crea_gioco()
-
-	def check_for_win(self):
-		"""
-		Verifica se il gioco è stato vinto.
-		"""
-		# implementazione del metodo check_for_win
-		pass
-
-	#@@@# sezione comandi utente per il game play
 
 	def move_cursor_up(self):
 		if self.cursor_pos[0] > 0:
@@ -71,6 +64,8 @@ class GamePlay(DialogBox):
 			self.vocalizza_colonna()
 
 	def select_card(self):
+		""" seleziona le carte che il giocatore intende tentare di spostare """
+		carteprese = []
 		if len(self.selected_card) == 1:
 			self.vocalizza("Hai già selezionato la carta da spostare!  premi canc per annullare la selezione.\n")
 			return
@@ -79,8 +74,8 @@ class GamePlay(DialogBox):
 			self.vocalizza("Hai già selezionato le carte da spostare!  premi canc per annullare la selezione.\n")
 			return
 
-		row, colun = self.cursor_pos
-		card = self.engine.get_card(row, colun)
+		row , col = self.cursor_pos
+		card = self.engine.get_card_position(row, col)
 		if not card:
 			self.vocalizza("la pila è vuota!\n")
 			return
@@ -90,15 +85,18 @@ class GamePlay(DialogBox):
 			return
 
 		self.id_row_origine = row
-		self.id_col_origine = colun
-		pila = self.engine.pile[colun]
+		self.id_col_origine = col
+		pila = self.engine.pile[col]
 		if row == len(pila.carte) - 1:
 			self.selected_card.append(card)
-		else:
-			maxcarte = len(pila.carte) -1
-			for c in range(row, maxcarte):
-				card = self.engine.get_card(c, colun)
-				self.selected_card.append(card)
+
+		elif row < len(pila.carte) - 1:
+			max_carte = len(pila.carte) - 1
+			tot_carte = max_carte - row
+			self.selected_card = pila.prendi_carte(tot_carte)
+			#for c in range(row, maxcarte):
+				#card = self.engine.get_card_position(c, colun)
+				#self.selected_card.append(card)
 
 		tot = len(self.selected_card)
 		nome_carta = card.get_name()
@@ -114,15 +112,15 @@ class GamePlay(DialogBox):
 		dest_pile = self.engine.pile[dest_col]
 		dest_pile_type = dest_pile.get_pile_type()
 
-		# Utilizziamo get_card_pile per ottenere l'oggetto Pila di provenienza delle carte selezionate
-		source_pile = self.engine.get_card_pile(self.selected_card[0])
+		# Utilizziamo get_card_parent per ottenere l'oggetto Pila di provenienza delle carte selezionate
+		source_pile = self.engine.get_card_parent(self.selected_card[0])
 
 		if not self.engine.check_legal_move(source_pile.id, dest_col):
 			self.vocalizza("Mossa non valida.\n")
 			return
 
 		if dest_pile_type == "semi":
-			if len(self.selected_card) != 1:
+			if len(self.selected_card) > 1:
 				self.vocalizza("Puoi spostare solo una carta alla volta in questa pila.\n")
 				return
 
@@ -132,7 +130,6 @@ class GamePlay(DialogBox):
 				return
 
 		self.engine.sposta_carte(self.id_row_origine, self.id_col_origine, dest_row, dest_col, self.selected_card)
-		#self.engine.sposta_carte(source_pile, dest_col, self.selected_card)
 		self.selected_card = []
 		self.vocalizza("spostamento completato!\n")
 
@@ -149,11 +146,21 @@ class GamePlay(DialogBox):
 			return
 
 		string = ""
+		self.target_card = self.engine.pile[11].carte[-1]
 		if self.target_card:
 			card_name = self.target_card.get_name()
 			string = f"Hai pescato: {card_name}"
 
 		self.vocalizza(string)
+
+	def quit_app(self):
+		self.vocalizza("chiusura in corso.  ")
+		pygame.time.wait(500)
+		self.create_question_box("Sei sicuro di voler uscire?")
+		result = self.answare
+		if result:
+			pygame.quit()
+			sys.exit()
 
 	#@@# sezione metodi per vocalizzare informazioni
 
@@ -168,7 +175,7 @@ class GamePlay(DialogBox):
 
 	def vocalizza_riga(self):
 		row, col = self.cursor_pos
-		current_card = self.engine.get_card(row, col)
+		current_card = self.engine.get_card_position(row, col)
 		card_name = current_card.get_name()
 		string_carta = f"{row+1}: {card_name}"
 		string = string_carta
@@ -177,7 +184,7 @@ class GamePlay(DialogBox):
 	def vocalizza_focus(self):
 		# vocalizziamo lo spostamento
 		row, col = self.cursor_pos
-		current_card = self.engine.get_card(row, col)
+		current_card = self.engine.get_card_position(row, col)
 		current_pile = self.engine.get_pile_name(col)
 		#string_cursore = f"Cursore spostato a colonna {col+1}, riga {row+1}. "
 		try:
@@ -191,14 +198,7 @@ class GamePlay(DialogBox):
 
 		self.vocalizza(string)
 
-	def quit_app(self):
-		self.vocalizza("chiusura in corso.  ")
-		pygame.time.wait(500)
-		self.create_question_box("Sei sicuro di voler uscire?")
-		result = self.answare
-		if result:
-			pygame.quit()
-			sys.exit()
+	#@@# sezione comandi utente
 
 	def build_commands_list(self):
 		self.callback_dict = {
@@ -215,8 +215,9 @@ class GamePlay(DialogBox):
 		}
 
 	def handle_keyboard_EVENTS(self, event):
-			if self.callback_dict.get(event.key):
-				self.callback_dict[event.key]()
+		""" gestione ciclo eventi """
+		if self.callback_dict.get(event.key):
+			self.callback_dict[event.key]()
 
 
 

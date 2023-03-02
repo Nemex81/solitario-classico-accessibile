@@ -10,6 +10,7 @@ import random
 # moduli personali
 from my_lib.myglob import *
 import my_lib.myutyls as mu
+from scr.cards import Carta, Mazzo
 # import pdb #pdb.set_trace() da impostare dove si vuol far partire il debugger
 
 # Imposta la configurazione del logger
@@ -71,6 +72,7 @@ class Pila:
 			if col != self.id:
 				return None
 			return row
+
 		except IndexError:
 			return None
 
@@ -79,7 +81,9 @@ class Pila:
 class PileSolitario:
 	semi = ["cuori", "quadri", "picche", "fiori"]
 	def __init__(self):
-		self.pile = []  # lista di pile di gioco
+		self.mazzo = Mazzo()
+		self.mazzo.reset()
+		self.pile = []  # lista delle pile di gioco
 
 	def crea_pile_gioco(self):
 		# crea le sette pile base
@@ -109,11 +113,37 @@ class PileSolitario:
 		pila_mazzo_riserve.nome = "pila riserve"
 		self.pile.append(pila_mazzo_riserve)
 
+	def distribuisci_carte(self):
+		# distribuisci le carte alle pile base
+		for i in range(7):
+			for j in range(i+1):
+				carta = self.mazzo.pesca()
+				carta.coperta = True #if j < i else False
+				self.pile[i].aggiungi_carta(carta)
+
+		# distribuisci le restanti carte alla pila mazzo riserve
+		for i in range(24):
+			carta = self.mazzo.pesca()
+			carta.coperta = True
+			self.pile[12].aggiungi_carta(carta)
+
+		# scopro l'ultima carta di ogni pila
+		for i in range(7):
+			pila = self.pile[i]
+			carta = pila.carte[-1]
+			carta.flip()#coperta = False
+
 	def get_pile_name(self, col):
 		pila = self.pile[col]
 		return pila.nome
 
-	def get_card(self, row, col):
+	def get_card_parent(self, card):
+		""" Restituisce l'oggetto Pila a cui appartiene la carta passata come parametro """
+		for pila in self.pile:
+			if card in pila.carte:
+				return pila
+
+	def get_card_position(self, row, col):
 		""" Restituisce la carta corrispondente alla colonna e riga specificate."""
 		# Calcola l'indice della pila corrispondente alla colonna
 		pila_index = col 

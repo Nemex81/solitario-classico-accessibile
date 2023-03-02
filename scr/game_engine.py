@@ -28,15 +28,16 @@ class EngineSolitario(PileSolitario):
 		super().__init__()
 		self.mazzo = Mazzo()
 		self.tavolo = PileSolitario()
-		self.difficulty_level = 1
+		self.difficulty_level = 3
 		self.primo_giro = True
 		self.conta_giri = 0
 
 	def crea_gioco(self):
-		"""Crea un nuovo gioco di solitario."""
+		"""Crea un nuovo gioco del solitario."""
 		self.mazzo.reset()
-		self.crea_pile_gioco()
 		self.tavolo.crea_pile_gioco()
+		self.tavolo.distribuisci_carte()
+		self.crea_pile_gioco()
 		self.distribuisci_carte()
 
 	def distribuisci_carte(self):
@@ -58,13 +59,6 @@ class EngineSolitario(PileSolitario):
 			pila = self.pile[i]
 			carta = pila.carte[-1]
 			carta.flip()#coperta = False
-
-	def get_top_card(self, pile_index):
-		pile = self.pile[pile_index]
-		if not pile.carte:
-			return None
-
-		return pile.carte[-1]
 
 	def can_stack_card_on_top(self, pile_index, card):
 		pile = self.pile[pile_index]
@@ -123,18 +117,18 @@ class EngineSolitario(PileSolitario):
 		self.cursor_pos = [dest_row, dest_col]
 		return True
 
-	def get_card_pile(self, card):
+	def get_card_parent(self, card):
 		"""
 		Restituisce l'oggetto Pila a cui appartiene la carta passata come parametro
 		"""
 		for pila in self.pile:
 			if card in pila.carte:
 				return pila
+
 		return None
 
 	def pescata(self):
 			# Definiamo il numero di carte da pescare in base al livello di difficoltà impostato
-			logger.debug("inizio fase di pecata carte da riserve.")
 			num_cards = self.difficulty_level
 			# Controllo se ci sono ancora carte nel mazzo riserve
 			if len(self.pile[12].carte) < num_cards:
@@ -143,22 +137,17 @@ class EngineSolitario(PileSolitario):
 
 			# Pesco le carte dal mazzo riserve
 			cards = self.pile[12].prendi_carte(num_cards)
-			logger.debug("carta pescata: %s", cards[0].nome)
 			# Sposto le carte pescate sulla pila scoperta (numero 11)
 			if len(self.pile[11].carte) > 0:
 				self.pile[11].carte.extend(cards)
 			else:
 				self.pile[11].carte = cards
 
-			logger.debug("%s", self.pile[11].carte[-1].nome)
 			# Aggiorno la posizione del cursore
 			self.cursor_position = len(self.pile[11].carte) - 1
 			# Aggiorno lo stato della pila scoperta
-			logger.debug("carte presenti in scarti: %s", len(self.pile[11].carte))
-			if len(self.pile[11].carte) > 0:
-				self.pile[11].carte[-1].coperta = False
-				self.target_card = self.pile[11].carte[-1]
-				logger.debug("carta in target: %s", self.target_card.get_name())
+			for c in self.pile[11].carte:
+				c.coperta = False
 
 			return True
 
