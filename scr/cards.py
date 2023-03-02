@@ -20,6 +20,7 @@ class Carta:
 	def __init__(self, valore, seme, coperta=True):
 		self.valore = valore
 		self.seme = seme
+		self.colore = None
 		self.id = None
 		self.nome = None
 		self.valore_numerico = None
@@ -40,6 +41,19 @@ class Carta:
 	def set_name(self):
 		self.nome = f"{self.valore} di {self.seme}"
 
+	def set_color(self):
+		seme = self.seme
+		colore = ""
+		if seme == "cuori" or seme == "quadri":
+			colore = "rosso"
+
+		elif seme == "picche" or seme == "fiori":
+			colore = "blu"
+
+		else:
+			colore = "indefinito"
+
+		self.colore = colore
 
 
 class Mazzo:
@@ -60,6 +74,7 @@ class Mazzo:
 			for valore in valori:
 				carta = Carta(valore, seme)
 				carta.set_name()
+				carta.set_color()
 				if valore in ["Jack", "Regina", "Re", "Asso"]:
 					carta.valore_numerico = int(self.FIGURE_VALUES[valore])
 				else:

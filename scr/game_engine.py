@@ -31,6 +31,158 @@ class EngineSolitario(PileSolitario):
 		self.difficulty_level = 3
 		self.primo_giro = True
 		self.conta_giri = 0
+		self.cursor_pos = [0, 0]  # posizione iniziale del cursore sul tavolo
+		self.selected_card = []  # lista delle carte selezionate dal giocatore
+		self.target_card = None # oggetto carta nel focus
+
+	#@@# sezione vocalizza info
+
+	def vocalizza_colonna(self):
+		row, col = self.cursor_pos
+		current_pile = self.get_pile_name(col)
+		string = current_pile
+		return string
+
+	def vocalizza_riga(self):
+		row, col = self.cursor_pos
+		current_card = self.get_card_position(row, col)
+		card_name = current_card.get_name()
+		string_carta = f"{row+1}: {card_name}"
+		string = string_carta
+		return string
+
+	def vocalizza_focus(self):
+		# vocalizziamo lo spostamento
+		row, col = self.cursor_pos
+		current_card = self.get_card_position(row, col)
+		current_pile = self.get_pile_name(col)
+		#string_cursore = f"Cursore spostato a colonna {col+1}, riga {row+1}. "
+		try:
+			card_name = current_card.get_name()
+			string_carta = f"{current_pile}.  "
+			string_carta += f"{row+1}: {card_name}"
+			string = string_carta
+
+		except AttributeError:
+			string = current_pile
+
+		return string
+
+	#@@# sezione metodi supporto comandi  utente
+
+	def move_cursor_up(self):
+		if self.cursor_pos[0] > 0:
+			self.cursor_pos[0] -= 1
+			speack =self.vocalizza_riga()
+			return speack
+
+	def move_cursor_down(self):
+		pila = self.pile[self.cursor_pos[1]]
+		if self.cursor_pos[0] < len(pila.carte) - 1:
+			self.cursor_pos[0] += 1
+			speack =self.vocalizza_riga()
+			return speack
+
+	def move_cursor_left(self):
+		if self.cursor_pos[1] > 0:
+			self.cursor_pos[1] -= 1
+			self.cursor_pos[0] = 0
+			speack = self.vocalizza_colonna()
+			return speack
+
+	def move_cursor_right(self):
+		pile = self.pile
+		if self.cursor_pos[1] < len(pile) - 1:
+			self.cursor_pos[1] += 1
+			self.cursor_pos[0] = 0
+			speack = self.vocalizza_colonna()
+			return speack
+
+	def select_card(self):
+		""" seleziona le carte che il giocatore intende tentare di spostare """
+		carteprese = []
+		if len(self.selected_card) == 1:
+			return "Hai già selezionato la carta da spostare!  premi canc per annullare la selezione.\n"
+
+		elif len(self.selected_card) > 1:
+			return "Hai già selezionato le carte da spostare!  premi canc per annullare la selezione.\n"
+
+		row , col = self.cursor_pos
+		card = self.get_card_position(row, col)
+		if not card:
+			return "la pila è vuota!\n"
+
+		if card.coperta:
+			return "non puoi selezionare una carta coperta!\n"
+
+		self.id_row_origine = row
+		self.id_col_origine = col
+		pila = self.pile[col]
+		if row == len(pila.carte) - 1:
+			self.selected_card.append(card)
+
+		elif row < len(pila.carte) - 1:
+			max_carte = len(pila.carte) - 1
+			tot_carte = max_carte - row
+			self.selected_card = pila.prendi_carte(tot_carte)
+			#for c in range(row, maxcarte):
+				#card = self.get_card_position(c, colun)
+				#self.selected_card.append(card)
+
+		tot = len(self.selected_card)
+		nome_carta = card.get_name()
+		string = f"carte selezionate: {tot}: {nome_carta}\n"
+		return string
+
+	def set_destination_pile(self):
+		if not self.selected_card:
+			return "Nessuna carta selezionata.\n"
+
+		dest_row, dest_col = self.cursor_pos
+		dest_pile = self.pile[dest_col]
+		dest_pile_type = dest_pile.get_pile_type()
+
+		# Utilizziamo get_card_parent per ottenere l'oggetto Pila di provenienza delle carte selezionate
+		source_pile = self.get_card_parent(self.selected_card[0])
+
+		if not self.check_legal_move(source_pile.id, dest_col):
+			return "Mossa non valida.\n"
+
+		if dest_pile_type == "semi":
+			if len(self.selected_card) > 1:
+				return "Puoi spostare solo una carta alla volta in questa pila.\n"
+
+			card = self.selected_card[0]
+			if card.valore_numerico != 1 and source_pile.carte:
+				return "Solo l'asso può essere spostato in questa pila.\n"
+
+		self.sposta_carte(self.id_row_origine, self.id_col_origine, dest_row, dest_col, self.selected_card)
+		self.selected_card = []
+		return "spostamento completato!\n"
+
+	def cancel_selected_cards(self):
+		string = ""
+		if self.selected_card:
+			self.selected_card = []
+			string = "Carte selezionate annullate.\n"
+		else:
+			string = "Non ci sono carte selezionate da annullare.\n"
+
+		return string
+
+	def pesca(self):
+		if not self.pescata():
+			return "qualcosa è andato storto!"
+
+		string = ""
+		self.target_card = self.pile[11].carte[-1]
+		if self.target_card:
+			card_name = self.target_card.get_name()
+			string = f"Hai pescato: {card_name}"
+		else:
+			string = "evento da verificare"
+
+		return string
 
 	def crea_gioco(self):
 		"""Crea un nuovo gioco del solitario."""
@@ -90,10 +242,10 @@ class EngineSolitario(PileSolitario):
 			return True
 
 		top_card = source_pile.carte[-1]
-		if not self.can_stack_card_on_top(dest_pile_index, top_card):
-			return False
+		if self.can_stack_card_on_top(dest_pile_index, top_card):
+			return True
 
-		return True
+		return False
 
 	def sposta_carte(self, source_row, source_col, dest_row, dest_col, cards):
 		# Ottieni la pila di partenza e quella di destinazione
