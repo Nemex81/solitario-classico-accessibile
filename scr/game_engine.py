@@ -154,7 +154,7 @@ class EngineSolitario(PileSolitario):
 
 		dest_row, dest_col = self.cursor_pos
 		dest_pile = self.tavolo.pile[dest_col]
-		dest_pile_type = dest_pile.tavolo.get_pile_type()
+		dest_pile_type = dest_pile.get_pile_type()
 
 		# Utilizziamo get_card_parent per ottenere l'oggetto Pila di provenienza delle carte selezionate
 		source_pile = self.tavolo.get_card_parent(self.selected_card[0])
