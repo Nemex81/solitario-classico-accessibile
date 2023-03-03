@@ -35,6 +35,33 @@ class EngineSolitario(PileSolitario):
 		self.selected_card = []  # lista delle carte selezionate dal giocatore
 		self.target_card = None # oggetto carta nel focus
 
+	def crea_gioco(self):
+		"""Crea un nuovo gioco del solitario."""
+		self.tavolo.crea_pile_gioco()
+		self.tavolo.distribuisci_carte()
+
+	def sposta_carte(self, source_row, source_col, dest_row, dest_col, cards):
+		# Ottieni la pila di partenza e quella di destinazione
+		source_pile = self.tavolo.pile[source_col]
+		dest_pile = self.tavolo.pile[dest_col]
+
+		# Verifica se lo spostamento delle carte è consentito
+		if not self.tavolo.check_legal_move(source_col, dest_col):
+			return False
+
+		# Rimuovi le carte dalla pila di partenza e aggiungile alla pila di destinazione
+		carte_rimosse = source_pile.rimuovi_carte(source_row, source_row+len(cards)-1)
+		for c in carte_rimosse:
+			dest_pile.aggiungi_carta(c)
+
+		# scopri l'ultima carta della pila di origine
+		if len(self.tavolo.pile[source_col].carte) > 0:
+			self.tavolo.pile[source_col].carte[-1].flip()
+
+		# aggiorniamo le coordinate memorizzate nel cursore di navigazione
+		self.cursor_pos = [dest_row, dest_col]
+		return True
+
 	#@@# sezione prepara stringhe per il vocalizza info
 
 	def prova(self):
@@ -82,7 +109,7 @@ class EngineSolitario(PileSolitario):
 
 		return string
 
-	#@@# sezione metodi supporto comandi  utente
+	#@@# sezione metodi per il movimento del cursore di navigazione
 
 	def move_cursor_up(self):
 		if self.cursor_pos[0] > 0:
@@ -111,6 +138,18 @@ class EngineSolitario(PileSolitario):
 			self.cursor_pos[0] = 0
 			speack = self.vocalizza_colonna()
 			return speack
+
+	#@@# sezione metodi per selezionare e deselezionare le carte
+
+	def cancel_selected_cards(self):
+		string = ""
+		if self.selected_card:
+			self.selected_card = []
+			string = "Carte selezionate annullate.\n"
+		else:
+			string = "Non ci sono carte selezionate da annullare.\n"
+
+		return string
 
 	def select_card(self):
 		""" seleziona le carte che il giocatore intende tentare di spostare """
@@ -174,115 +213,17 @@ class EngineSolitario(PileSolitario):
 		self.selected_card = []
 		return "spostamento completato!\n"
 
-	def cancel_selected_cards(self):
-		string = ""
-		if self.selected_card:
-			self.selected_card = []
-			string = "Carte selezionate annullate.\n"
-		else:
-			string = "Non ci sono carte selezionate da annullare.\n"
-
-		return string
-
 	def pesca(self):
-		if not self.pescata():
+		liv = self.difficulty_level
+		ver = self.tavolo.pescata(liv)
+		if not ver:
 			return "da allestire il rimescolamento degli scarti in mazzo riserve!"
 
-		string = ""
-		self.target_card = self.tavolo.pile[11].carte[-1]
-		if self.target_card:
-			card_name = self.target_card.get_name()
-			string = f"Hai pescato: {card_name}"
-		else:
-			string = "evento da verificare"
-
+		row = -1
+		col = 11
+		carta = self.tavolo.get_card_position(row, col)
+		string = "hai pescato: %s" % carta.get_name()
 		return string
-
-	def crea_gioco(self):
-		"""Crea un nuovo gioco del solitario."""
-		self.tavolo.crea_pile_gioco()
-		self.tavolo.distribuisci_carte()
-
-	def can_stack_card_on_top(self, pile_index, card):
-		pile = self.tavolo.pile[pile_index]
-		if not pile.carte:
-			# la pila è vuota, quindi la carta deve essere un Re
-			return card.valore_numerico == 13
-
-		top_card = pile.carte[-1]
-		return (top_card.valore_numerico - card.valore_numerico == 1) and (top_card.colore != card.colore)
-
-	def get_valid_destinations(self, source_pile_index, card):
-		valid_destinations = []
-		for i, pile in enumerate(self.pile):
-			if i == source_pile_index:
-				continue
-			if self.can_stack_card_on_top(i, card):
-				valid_destinations.append(i)
-
-		return valid_destinations
-
-	def check_legal_move(self, source_pile_index, dest_pile_index):
-		"""
-		Verifica se lo spostamento di una o più carte dalla pila sorgente a quella destinazione è legale.
-		"""
-		source_pile = self.tavolo.pile[source_pile_index]
-		dest_pile = self.tavolo.pile[dest_pile_index]
-
-		if not dest_pile.carte and source_pile.carte[-1].valore_numerico == 13:
-			return True
-
-		top_card = source_pile.carte[-1]
-		if self.can_stack_card_on_top(dest_pile_index, top_card):
-			return True
-
-		return False
-
-	def sposta_carte(self, source_row, source_col, dest_row, dest_col, cards):
-		# Ottieni la pila di partenza e quella di destinazione
-		source_pile = self.tavolo.pile[source_col]
-		dest_pile = self.tavolo.pile[dest_col]
-
-		# Verifica se lo spostamento delle carte è consentito
-		if not self.tavolo.check_legal_move(source_col, dest_col):
-			return False
-
-		# Rimuovi le carte dalla pila di partenza e aggiungile alla pila di destinazione
-		carte_rimosse = source_pile.rimuovi_carte(source_row, source_row+len(cards)-1)
-		for c in carte_rimosse:
-			dest_pile.aggiungi_carta(c)
-
-		# scopri l'ultima carta della pila di origine
-		if len(self.tavolo.pile[source_col].carte) > 0:
-			self.tavolo.pile[source_col].carte[-1].flip()
-
-		# aggiorniamo le coordinate memorizzate nel cursore di navigazione
-		self.cursor_pos = [dest_row, dest_col]
-		return True
-
-	def pescata(self):
-			# Definiamo il numero di carte da pescare in base al livello di difficoltà impostato
-			num_cards = self.difficulty_level
-			# Controllo se ci sono ancora carte nel mazzo riserve
-			if len(self.tavolo.pile[12].carte) < num_cards:
-				# Non ci sono abbastanza carte nel mazzo riserve, gestire l'errore come si preferisce
-				return
-
-			# Pesco le carte dal mazzo riserve
-			cards = self.tavolo.pile[12].prendi_carte(num_cards)
-			# Sposto le carte pescate sulla pila scoperta (numero 11)
-			if len(self.tavolo.pile[11].carte) > 0:
-				self.tavolo.pile[11].carte.extend(cards)
-			else:
-				self.tavolo.pile[11].carte = cards
-
-			# Aggiorno la posizione del cursore
-			self.cursor_position = len(self.tavolo.pile[11].carte) - 1
-			# Aggiorno lo stato della pila scoperta
-			for c in self.tavolo.pile[11].carte:
-				c.coperta = False
-
-			return True
 
 
 

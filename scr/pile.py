@@ -115,29 +115,6 @@ class PileSolitario:
 		pila_mazzo_riserve.nome = "pila riserve"
 		self.pile.append(pila_mazzo_riserve)
 
-	def alternativo_distribuisci_carte(self):
-		# distribuisci le carte alle pile base
-		if not self.mazzo.carte:
-			self.mazzo.reset()
-
-		for i, pila in enumerate(self.pile[:7]):
-			for j in range(i+1):
-				carta = self.mazzo.pesca()
-				carta.coperta = True if j < i else False
-				pila.aggiungi_carta(carta)
-
-		# distribuisci le restanti carte alla pila mazzo riserve
-		for i in range(24):
-			carta = self.mazzo.pesca()
-			carta.coperta = True
-			self.pile[12].aggiungi_carta(carta)
-
-		# scopro l'ultima carta di ogni pila
-		for pila in self.pile[:7]:
-			carta = pila.get_carte()[-1]
-			carta.scoperta = True
-
-
 	def distribuisci_carte(self):
 		logger.debug("inizio distribuzione delle carte nelle pile di gioco")
 		# distribuisci le carte alle pile base
@@ -224,6 +201,58 @@ class PileSolitario:
 				valid_destinations.append(i)
 
 		return valid_destinations
+
+	def pescata(self, num_cards):
+		# Controllo se ci sono ancora carte nel mazzo riserve
+		if not self.pile[12].carte:
+			return False
+
+		if len(self.pile[12].carte) < num_cards:
+			# Non ci sono abbastanza carte nel mazzo riserve, gestire l'errore come si preferisce
+			return False
+
+		# Pesco le carte dal mazzo riserve
+		cards = self.pile[12].prendi_carte(num_cards)
+		# Sposto le carte pescate sulla pila scoperta (numero 11)
+		if len(self.pile[11].carte) > 0:
+			self.pile[11].carte.extend(cards)
+		else:
+			self.pile[11].carte = cards
+
+		# Aggiorno lo stato della pila scoperta
+		for c in self.pile[11].carte:
+			c.coperta = False
+
+		return True
+
+
+	def last_pescata(self, num_cards, cur):
+			 #Definiamo il numero di carte da pescare in base al livello di difficoltà impostato
+			#num_cards = self.difficulty_level
+			# Controllo se ci sono ancora carte nel mazzo riserve
+			#if not self.pile[12].carte:
+				#return False, cur
+
+			if len(self.pile[12].carte) < num_cards:
+				# Non ci sono abbastanza carte nel mazzo riserve, gestire l'errore come si preferisce
+				return false, cur
+
+			# Pesco le carte dal mazzo riserve
+			cards = self.pile[12].prendi_carte(num_cards)
+			# Sposto le carte pescate sulla pila scoperta (numero 11)
+			if len(self.pile[11].carte) > 0:
+				self.pile[11].carte.extend(cards)
+			else:
+				self.pile[11].carte = cards
+
+			# Aggiorno la posizione del cursore
+			new_cursor_position = len(self.pile[11].carte) - 1
+			# Aggiorno lo stato della pila scoperta
+			for c in self.pile[11].carte:
+				c.coperta = False
+
+			return True, new_cursor_position
+
 
 
 #@@@# start del modulo
