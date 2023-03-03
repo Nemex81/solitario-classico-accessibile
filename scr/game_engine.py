@@ -205,7 +205,6 @@ class EngineSolitario:
 
 		# Utilizziamo get_card_parent per ottenere l'oggetto Pila di provenienza delle carte selezionate
 		source_pile = self.tavolo.get_card_parent(self.selected_card[0])
-
 		if not self.tavolo.check_legal_move(source_pile.id, dest_col):
 			return "Mossa non valida.\n"
 
@@ -226,7 +225,7 @@ class EngineSolitario:
 		source_pile = self.tavolo.pile[source_col]
 		dest_pile = self.tavolo.pile[dest_col]
 
-		# Verifica se lo spostamento delle carte è consentito
+		 #Verifica se lo spostamento delle carte è consentito
 		if not self.tavolo.check_legal_move(source_col, dest_col):
 			return False
 
