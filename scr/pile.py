@@ -24,6 +24,7 @@ class Pila:
 		self.id = id
 		self.nome = None
 		self.tipo = tipo_pila
+		self.seme = None
 		self.carte = []
 
 	def aggiungi_carta(self, carta):
@@ -65,6 +66,24 @@ class Pila:
 		""" Restituisce il tipo di pila """
 		return self.tipo
 
+	def get_pile_suit(self):
+		if self.seme is None:
+			return "nessuno"
+
+		return self.seme
+
+	def get_pile_info(self):
+		nome = self.nome
+		id = self.id
+		tipo = self.get_pile_type()
+		seme = self.get_pile_suit()
+		info_pila = f"nome: {nome}\n"
+		info_pila += f"id: {id}\n"
+		info_pila += f"tipo: {tipo}"
+		info_pila += f"seme: {seme}"
+		return info_pila
+		
+
 	def get_card_index(self, row, col):
 		"""
 		Restituisce l'indice della carta alla posizione (row, col) nella pila.
@@ -101,6 +120,7 @@ class PileSolitario:
 		for i in range(4):
 			pile_semi = Pila(id, "semi")
 			pile_semi.nome = f"pila {self.semi[i]}"
+			pile_semi.seme = self.semi[i]
 			self.pile.append(pile_semi)
 			id += 1
 

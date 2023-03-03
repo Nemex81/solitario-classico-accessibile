@@ -48,8 +48,11 @@ class GamePlay(DialogBox):
 	#@@# sezione comandi utente
 
 	def f1_press(self):
-		#self.engine.crea_gioco()
-		string = self.engine.prova()
+		string = self.engine.vocalizza_pila()
+		self.vocalizza(string)
+
+	def f2_press(self):
+		string = self.engine.vocalizza_carta()
 		self.vocalizza(string)
 
 	def up_press(self):
@@ -110,6 +113,7 @@ class GamePlay(DialogBox):
 			pygame.K_d: self.d_press,
 			pygame.K_f: self.f_press,
 			pygame.K_F1: self.f1_press,
+			pygame.K_F2: self.f2_press,
 			pygame.K_p: self.p_press,
 			pygame.K_LEFT: self.left_press,
 			pygame.K_RIGHT: self.right_press,

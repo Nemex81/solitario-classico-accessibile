@@ -42,13 +42,27 @@ class EngineSolitario:
 
 	#@@# sezione prepara stringhe per il vocalizza info
 
-	def prova(self):
+	def vocalizza_carta(self):
+		string = ""
+		infocarta = ""
 		row, col = self.cursor_pos
-		carta = self.tavolo.get_card_position(row, col)
-		infocarta = carta.get_info_card()
-		string = "scheda carta: %s\n" % infocarta
-		return string
+		pila = self.tavolo.pile[col]
+		totcarte = pila.numero_carte()
+		if totcarte > 0:
+			carta = pila.get_carta(row)
+			infocarta = carta.get_info_card()
+			string += "scheda carta: %s\n" % infocarta
 		
+		return string
+
+	def vocalizza_pila(self):
+		string = ""
+		infopila = ""
+		row, col = self.cursor_pos
+		pila = self.tavolo.pile[col]
+		infopila = pila .get_pile_info()
+		string += "scheda pila: %s\n" % infopila
+		return string
 
 	def vocalizza_colonna(self):
 		row, col = self.cursor_pos
