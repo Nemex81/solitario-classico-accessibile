@@ -6,11 +6,8 @@
 """
 
 # lib
-import os, sys, random, logging
+import sys, random, logging
 # moduli personali
-from my_lib.myglob import *
-import my_lib.myutyls as mu
-#from scr.cards import Carta, Mazzo
 from scr.pile import PileSolitario
 #import pdb #pdb.set_trace() da impostare dove si vuol far partire il debugger
 
@@ -21,12 +18,10 @@ logger = logging.getLogger()
 #logger.setLevel(logging.DEBUG)
 # Esempio di scrittura di una stringa di log
 #logger.debug("Il mio messaggio di debug")
-#logging.debug("Esempio di stringa di log")
 
 class EngineSolitario:
 	def __init__(self):
 		super().__init__()
-		#self.mazzo = Mazzo()
 		self.tavolo = PileSolitario()
 		self.difficulty_level = 1
 		self.primo_giro = True
@@ -196,6 +191,8 @@ class EngineSolitario:
 		string = f"carte selezionate: {tot}: {nome_carta}\n"
 		return string
 
+	#@@# sezione pila destinazione e spostamento carte
+
 	def set_destination_pile(self):
 		if not self.selected_card:
 			return "Nessuna carta selezionata.\n"
@@ -248,7 +245,8 @@ class EngineSolitario:
 		liv = self.difficulty_level
 		ver = self.tavolo.pescata(liv)
 		if not ver:
-			return "da allestire il rimescolamento degli scarti in mazzo riserve!"
+			self.tavolo.riordina_scarti()
+			return "rimescolo gli scarti in mazzo riserve!"
 
 		row = -1
 		col = 11
