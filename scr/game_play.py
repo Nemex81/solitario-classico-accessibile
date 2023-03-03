@@ -53,22 +53,22 @@ class GamePlay(DialogBox):
 		self.vocalizza(string)
 
 	def up_press(self):
-		string = self.engine.move_cursor_up()
+		string = self.engine.move_cursor("up")
 		if string:
 			self.vocalizza(string)
 
 	def down_press(self):
-		string = self.engine.move_cursor_down()
+		string = self.engine.move_cursor("down")
 		if string:
 			self.vocalizza(string)
 
 	def left_press(self):
-		string = self.engine.move_cursor_left()
+		string = self.engine.move_cursor("left")
 		if string:
 			self.vocalizza(string)
 
 	def right_press(self):
-		string = self.engine.move_cursor_right()
+		string = self.engine.move_cursor("right")
 		if string:
 			self.vocalizza(string)
 

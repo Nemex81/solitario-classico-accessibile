@@ -23,7 +23,7 @@ logger = logging.getLogger()
 #logger.debug("Il mio messaggio di debug")
 #logging.debug("Esempio di stringa di log")
 
-class EngineSolitario(PileSolitario):
+class EngineSolitario:
 	def __init__(self):
 		super().__init__()
 		#self.mazzo = Mazzo()
@@ -39,28 +39,6 @@ class EngineSolitario(PileSolitario):
 		"""Crea un nuovo gioco del solitario."""
 		self.tavolo.crea_pile_gioco()
 		self.tavolo.distribuisci_carte()
-
-	def sposta_carte(self, source_row, source_col, dest_row, dest_col, cards):
-		# Ottieni la pila di partenza e quella di destinazione
-		source_pile = self.tavolo.pile[source_col]
-		dest_pile = self.tavolo.pile[dest_col]
-
-		# Verifica se lo spostamento delle carte è consentito
-		if not self.tavolo.check_legal_move(source_col, dest_col):
-			return False
-
-		# Rimuovi le carte dalla pila di partenza e aggiungile alla pila di destinazione
-		carte_rimosse = source_pile.rimuovi_carte(source_row, source_row+len(cards)-1)
-		for c in carte_rimosse:
-			dest_pile.aggiungi_carta(c)
-
-		# scopri l'ultima carta della pila di origine
-		if len(self.tavolo.pile[source_col].carte) > 0:
-			self.tavolo.pile[source_col].carte[-1].flip()
-
-		# aggiorniamo le coordinate memorizzate nel cursore di navigazione
-		self.cursor_pos = [dest_row, dest_col]
-		return True
 
 	#@@# sezione prepara stringhe per il vocalizza info
 
@@ -139,6 +117,23 @@ class EngineSolitario(PileSolitario):
 			speack = self.vocalizza_colonna()
 			return speack
 
+	def move_cursor(self, direction):
+		""" Sposta il cursore nella direzione specificata """
+		string = ""
+		if direction == 'up':
+			string = self.move_cursor_up()
+
+		elif direction == 'down':
+			string = self.move_cursor_down()
+
+		elif direction == 'left':
+			string = self.move_cursor_left()
+
+		elif direction == 'right':
+			string = self.move_cursor_right()
+
+		return string
+
 	#@@# sezione metodi per selezionare e deselezionare le carte
 
 	def cancel_selected_cards(self):
@@ -212,6 +207,28 @@ class EngineSolitario(PileSolitario):
 		self.sposta_carte(self.id_row_origine, self.id_col_origine, dest_row, dest_col, self.selected_card)
 		self.selected_card = []
 		return "spostamento completato!\n"
+
+	def sposta_carte(self, source_row, source_col, dest_row, dest_col, cards):
+		# Ottieni la pila di partenza e quella di destinazione
+		source_pile = self.tavolo.pile[source_col]
+		dest_pile = self.tavolo.pile[dest_col]
+
+		# Verifica se lo spostamento delle carte è consentito
+		if not self.tavolo.check_legal_move(source_col, dest_col):
+			return False
+
+		# Rimuovi le carte dalla pila di partenza e aggiungile alla pila di destinazione
+		carte_rimosse = source_pile.rimuovi_carte(source_row, source_row+len(cards)-1)
+		for c in carte_rimosse:
+			dest_pile.aggiungi_carta(c)
+
+		# scopri l'ultima carta della pila di origine
+		if len(self.tavolo.pile[source_col].carte) > 0:
+			self.tavolo.pile[source_col].carte[-1].flip()
+
+		# aggiorniamo le coordinate memorizzate nel cursore di navigazione
+		self.cursor_pos = [dest_row, dest_col]
+		return True
 
 	def pesca(self):
 		liv = self.difficulty_level

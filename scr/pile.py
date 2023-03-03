@@ -151,21 +151,8 @@ class PileSolitario:
 				return pila
 
 	def get_card_position(self, row, col):
-		""" Restituisce la carta corrispondente alla colonna e riga specificate."""
-		# Calcola l'indice della pila corrispondente alla colonna
-		pila_index = col 
-
-		# Se la colonna specificata è invalida, restituisci None
-		if not 0 <= pila_index < len(self.pile):
-			return None
-
-		# Se la riga specificata è maggiore del numero di carte nella pila,
-		# restituisci None
-		if row >= len(self.pile[pila_index].carte):
-			return None
-
-		# Restituisci la carta corrispondente
-		return self.pile[pila_index].carte[row]
+		pila = self.pile[col]
+		return pila.get_carta(row)
 
 	def check_legal_move(self, source_pile_index, dest_pile_index):
 		"""
@@ -191,6 +178,10 @@ class PileSolitario:
 
 		top_card = pile.carte[-1]
 		return (top_card.valore_numerico - card.valore_numerico == 1) and (top_card.colore != card.colore)
+
+	def other_get_valid_destinations(self, source_pile_index, card):
+		""" cereato con la tecnica delle liste comprensive """
+		return [i for i, pile in enumerate(self.pile) if i != source_pile_index and self.can_stack_card_on_top(i, card)]
 
 	def get_valid_destinations(self, source_pile_index, card):
 		valid_destinations = []
@@ -225,33 +216,21 @@ class PileSolitario:
 
 		return True
 
+	def riordina_scarti(self):
+		if not self.pile[11].carte:
+			# La pila di scarti è vuota
+			return
 
-	def last_pescata(self, num_cards, cur):
-			 #Definiamo il numero di carte da pescare in base al livello di difficoltà impostato
-			#num_cards = self.difficulty_level
-			# Controllo se ci sono ancora carte nel mazzo riserve
-			#if not self.pile[12].carte:
-				#return False, cur
+		# Rimuovi le carte dalla pila di scarti e inverti l'ordine
+		carte_scarti = self.pile[11].carte[::-1]
+		self.pile[11].carte.clear()
 
-			if len(self.pile[12].carte) < num_cards:
-				# Non ci sono abbastanza carte nel mazzo riserve, gestire l'errore come si preferisce
-				return false, cur
+		# Riaggiungi le carte al mazzo riserve
+		for carta in carte_scarti:
+			self.pile[12].carte.append(carta)
 
-			# Pesco le carte dal mazzo riserve
-			cards = self.pile[12].prendi_carte(num_cards)
-			# Sposto le carte pescate sulla pila scoperta (numero 11)
-			if len(self.pile[11].carte) > 0:
-				self.pile[11].carte.extend(cards)
-			else:
-				self.pile[11].carte = cards
-
-			# Aggiorno la posizione del cursore
-			new_cursor_position = len(self.pile[11].carte) - 1
-			# Aggiorno lo stato della pila scoperta
-			for c in self.pile[11].carte:
-				c.coperta = False
-
-			return True, new_cursor_position
+		# mazzo riserve intertito
+		self.pile[12].carte.reverse()
 
 
 
