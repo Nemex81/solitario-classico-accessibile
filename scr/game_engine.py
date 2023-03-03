@@ -8,7 +8,7 @@
 # lib
 import sys, random, logging
 # moduli personali
-from scr.pile import PileSolitario
+from scr.pile import TavoloSolitario
 #import pdb #pdb.set_trace() da impostare dove si vuol far partire il debugger
 
 # Imposta la configurazione del logger
@@ -22,7 +22,7 @@ logger = logging.getLogger()
 class EngineSolitario:
 	def __init__(self):
 		super().__init__()
-		self.tavolo = PileSolitario()
+		self.tavolo = TavoloSolitario()
 		self.difficulty_level = 1
 		self.primo_giro = True
 		self.conta_giri = 0
@@ -45,7 +45,9 @@ class EngineSolitario:
 		totcarte = pila.numero_carte()
 		if totcarte > 0:
 			carta = pila.get_carta(row)
+			id_carta = pila.get_card_index(carta)
 			infocarta = carta.get_info_card()
+			infocarta += f"pos in pila: {id_carta+1}\n"
 			string += "scheda carta: %s\n" % infocarta
 		
 		return string

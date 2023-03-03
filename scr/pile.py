@@ -62,6 +62,10 @@ class Pila:
 	def numero_carte(self):
 		return len(self.carte)
 
+	def get_card_index(self, card):
+		""" Restituisce l'indice della carta. """
+		return self.carte.index(card)
+
 	def get_pile_type(self):
 		""" Restituisce il tipo di pila """
 		return self.tipo
@@ -73,32 +77,15 @@ class Pila:
 		return self.seme
 
 	def get_pile_info(self):
-		nome = self.nome
-		id = self.id
-		tipo = self.get_pile_type()
-		seme = self.get_pile_suit()
-		info_pila = f"nome: {nome}\n"
-		info_pila += f"id: {id}\n"
-		info_pila += f"tipo: {tipo}"
-		info_pila += f"seme: {seme}"
+		info_pila = f"nome: {self.nome}\n"
+		info_pila += f"id: {self.id}\n"
+		info_pila += f"tipo: {self.get_pile_type()}"
+		info_pila += f"seme: {self.get_pile_suit()}"
 		return info_pila
-		
-
-	def get_card_index(self, row, col):
-		"""
-		Restituisce l'indice della carta alla posizione (row, col) nella pila.
-		"""
-		try:
-			if col != self.id:
-				return None
-			return row
-
-		except IndexError:
-			return None
 
 
 
-class PileSolitario:
+class TavoloSolitario:
 	semi = ["cuori", "quadri", "picche", "fiori"]
 	def __init__(self):
 		self.mazzo = Mazzo()

@@ -31,6 +31,9 @@ class Carta:
 	def flip(self):
 		self.coperta = not self.coperta
 
+	def get_id(self):
+		return self.id
+
 	def get_name(self):
 		if self.nome is None:
 			return "nessuna nome"
@@ -68,14 +71,11 @@ class Carta:
 		return self.colore
 
 	def get_info_card(self):
-		nome = self.get_name()
-		seme = self.get_suit()
-		valore = self.get_value()
-		colore = self.get_color()
-		details = f"nome: {nome}\n"
-		details += f"seme: {seme}\n"
-		details += f"valore: {valore}\n"
-		details += f"colore: {colore}\n"
+		details = f"nome: {self.get_name()}\n"
+		details += f"id: {self.get_id()}"
+		details += f"seme: {self.get_suit()}\n"
+		details += f"valore: {self.get_value()}\n"
+		details += f"colore: {self.get_color()}\n"
 		return details
 
 	def set_name(self):
