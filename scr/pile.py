@@ -160,6 +160,45 @@ class PileSolitario:
 			carta = pila.carte[-1]
 			carta.flip()#coperta = False
 
+	def pescata(self, num_cards):
+		# Controllo se ci sono ancora carte nel mazzo riserve
+		if not self.pile[12].carte:
+			return False
+
+		if self.pile[12].numero_carte() < num_cards:
+			# Non ci sono abbastanza carte nel mazzo riserve, gestire l'errore come si preferisce
+			return False
+
+		# Pesco le carte dal mazzo riserve
+		cards = self.pile[12].prendi_carte(num_cards)
+		# Sposto le carte pescate sulla pila scoperta (numero 11)
+		if len(self.pile[11].carte) > 0:
+			self.pile[11].carte.extend(cards)
+		else:
+			self.pile[11].carte = cards
+
+		# Aggiorno lo stato della pila scoperta
+		for c in self.pile[11].carte:
+			c.coperta = False
+
+		return True
+
+	def riordina_scarti(self):
+		if not self.pile[11].carte:
+			# La pila di scarti è vuota
+			return
+
+		# Rimuovi le carte dalla pila di scarti e inverti l'ordine
+		carte_scarti = self.pile[11].carte[::-1]
+		self.pile[11].carte.clear()
+
+		# Riaggiungi le carte al mazzo riserve
+		for carta in carte_scarti:
+			self.pile[12].carte.append(carta)
+
+		# mazzo riserve intertito
+		self.pile[12].carte.reverse()
+
 	def get_pile_name(self, col):
 		pila = self.pile[col]
 		return pila.nome
@@ -212,45 +251,6 @@ class PileSolitario:
 				valid_destinations.append(i)
 
 		return valid_destinations
-
-	def pescata(self, num_cards):
-		# Controllo se ci sono ancora carte nel mazzo riserve
-		if not self.pile[12].carte:
-			return False
-
-		if len(self.pile[12].carte) < num_cards:
-			# Non ci sono abbastanza carte nel mazzo riserve, gestire l'errore come si preferisce
-			return False
-
-		# Pesco le carte dal mazzo riserve
-		cards = self.pile[12].prendi_carte(num_cards)
-		# Sposto le carte pescate sulla pila scoperta (numero 11)
-		if len(self.pile[11].carte) > 0:
-			self.pile[11].carte.extend(cards)
-		else:
-			self.pile[11].carte = cards
-
-		# Aggiorno lo stato della pila scoperta
-		for c in self.pile[11].carte:
-			c.coperta = False
-
-		return True
-
-	def riordina_scarti(self):
-		if not self.pile[11].carte:
-			# La pila di scarti è vuota
-			return
-
-		# Rimuovi le carte dalla pila di scarti e inverti l'ordine
-		carte_scarti = self.pile[11].carte[::-1]
-		self.pile[11].carte.clear()
-
-		# Riaggiungi le carte al mazzo riserve
-		for carta in carte_scarti:
-			self.pile[12].carte.append(carta)
-
-		# mazzo riserve intertito
-		self.pile[12].carte.reverse()
 
 
 

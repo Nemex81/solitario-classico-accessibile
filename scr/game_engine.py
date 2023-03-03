@@ -191,7 +191,7 @@ class EngineSolitario:
 		string = f"carte selezionate: {tot}: {nome_carta}\n"
 		return string
 
-	#@@# sezione pila destinazione e spostamento carte
+	#@@# sezione metodi per pesca da riserve, imposta pila destinazione e spostamento carte
 
 	def set_destination_pile(self):
 		if not self.selected_card:
