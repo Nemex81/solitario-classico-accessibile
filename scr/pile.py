@@ -83,6 +83,43 @@ class Pila:
 		info_pila += f"seme: {self.get_pile_suit()}"
 		return info_pila
 
+	#@@# sezione convalide spostamenti carte
+
+	def is_empty_pile(self):
+		max = self.numero_carte()
+		if max > 0:
+			return False
+
+		return True
+
+	def is_pila_base(self):
+		type = self.get_pile_type()
+		if type != "base":
+			return False
+
+		return True
+
+	def is_pila_seme(self):
+		type = self.get_pile_type()
+		if type != "seme":
+			return False
+
+		return True
+
+	def is_pila_scarti(self):
+		type = self.get_pile_type()
+		if type != "scarti":
+			return False
+
+		return True
+
+	def is_pila_riserve(self):
+		type = self.get_pile_type()
+		if type != "mazzo_riserve":
+			return False
+
+		return True
+
 
 
 class TavoloSolitario:
@@ -200,6 +237,38 @@ class TavoloSolitario:
 		pila = self.pile[col]
 		return pila.get_carta(row)
 
+	#@@# sezione convalide spostamenti
+
+	def from_base_to_base(self, pila_partenza_idx, pila_destinazione_idx, carta_selezionata_idx):
+		"""
+		Sposta una carta dalla pila di partenza di tipo "base" alla pila di destinazione di tipo "base".
+		La carta deve essere l'ultima della pila di partenza e di valore inferiore di una unità rispetto alla carta
+		di destinazione, la quale deve essere dello stesso seme.
+		Se la pila di destinazione è vuota, la carta di partenza deve essere un Re.
+
+		:param pila_partenza_idx: l'indice della pila di partenza
+		:param pila_destinazione_idx: l'indice della pila di destinazione
+		:param carta_selezionata_idx: l'indice della carta selezionata nella pila di partenza
+		:return: True se lo spostamento è stato effettuato con successo, False altrimenti
+		"""
+
+	def from_base_to_seme(self):
+		pass
+
+	def from_scarti_to_base(self):
+		pass
+
+	def from_scarti_to_seme(self):
+		pass
+
+	def from_seme_to_base(self):
+		pass
+
+	def verifica_spostamenti(self, pila_partenza_idx, carta_selezionata_idx):
+		return True
+
+	#@@# sezione vecchio sistema di convalida mosse, da sostituire ed eliminare il prima possibile con quello sopra.
+
 	def check_legal_move(self, source_pile_index, dest_pile_index):
 		"""
 		Verifica se lo spostamento di una o più carte dalla pila sorgente a quella destinazione è legale.
@@ -225,11 +294,11 @@ class TavoloSolitario:
 		top_card = pile.carte[-1]
 		return (top_card.valore_numerico - card.valore_numerico == 1) and (top_card.colore != card.colore)
 
-	def other_get_valid_destinations(self, source_pile_index, card):
-		""" cereato con la tecnica delle liste comprensive """
+	def get_valid_destinations(self, source_pile_index, card):
+		""" creato con la tecnica delle liste comprensive """
 		return [i for i, pile in enumerate(self.pile) if i != source_pile_index and self.can_stack_card_on_top(i, card)]
 
-	def get_valid_destinations(self, source_pile_index, card):
+	def last_get_valid_destinations(self, source_pile_index, card):
 		valid_destinations = []
 		for i, pile in enumerate(self.pile):
 			if i == source_pile_index:

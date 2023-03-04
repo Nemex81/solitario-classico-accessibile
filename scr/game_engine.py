@@ -29,6 +29,8 @@ class EngineSolitario:
 		self.cursor_pos = [0, 0]  # posizione iniziale del cursore sul tavolo
 		self.selected_card = []  # lista delle carte selezionate dal giocatore
 		self.target_card = None # oggetto carta nel focus
+		self.source_pile = None # salvo pila origine per gestione spostamenti
+		self.dest_pile = None # salvo pile destinazione valide per gestione spostamenti
 
 	def crea_gioco(self):
 		"""Crea un nuovo gioco del solitario."""
@@ -184,16 +186,26 @@ class EngineSolitario:
 			max_carte = len(pila.carte) - 1
 			tot_carte = max_carte - row
 			self.selected_card = pila.prendi_carte(tot_carte)
-			#for c in range(row, maxcarte):
-				#card = self.tavolo.get_card_position(c, colun)
-				#self.selected_card.append(card)
+			for c in range(row, maxcarte):
+				card = self.tavolo.get_card_position(c, colun)
+				self.selected_card.append(card)
 
+		# salvo la pila di origine su variabile interna
+		self.source_pile = pila
+		# preparo la stringa da vocalizzare
 		tot = len(self.selected_card)
 		nome_carta = card.get_name()
 		string = f"carte selezionate: {tot}: {nome_carta}\n"
 		return string
 
 	#@@# sezione metodi per pesca da riserve, imposta pila destinazione e spostamento carte
+
+	def new_set_destination_pile(self):
+		pass
+
+	def new_sposta_carte(self):
+		string = "nuovo spostamento ancora da implementare!  "
+		return string
 
 	def set_destination_pile(self):
 		if not self.selected_card:

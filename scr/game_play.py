@@ -82,6 +82,7 @@ class GamePlay(DialogBox):
 		
 	def space_press(self):
 		string = self.engine.set_destination_pile()
+		#string = self.engine.new_sposta_carte()
 		if string:
 			self.vocalizza(string)
 
