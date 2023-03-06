@@ -29,7 +29,7 @@ class EngineSolitario:
 		self.cursor_pos = [0, 0]  # posizione iniziale del cursore sul tavolo
 		self.selected_card = []  # lista delle carte selezionate dal giocatore
 		self.target_card = None # oggetto carta nel focus
-		self.source_pile = None # salvo pila origine per gestione spostamenti
+		self.origin_pile = None # salvo pila origine per gestione spostamenti
 		self.dest_pile = None # salvo pile destinazione valide per gestione spostamenti
 
 	def crea_gioco(self):
@@ -87,17 +87,36 @@ class EngineSolitario:
 	def vocalizza_focus(self):
 		# vocalizziamo lo spostamento
 		row, col = self.cursor_pos
+		pila = self.tavolo.pile[col]
+		if pila.is_empty_pile():
+			return "la pila è vuota!\n"
+
 		current_card = self.tavolo.get_card_position(row, col)
-		current_pile = self.tavolo.get_pile_name(col)
 		try:
 			card_name = current_card.get_name()
-			string_carta = f"{current_pile}.  "
+			string_carta = f"{pila.nome}.  "
 			string_carta += f"{row+1}: {card_name}"
 			string = string_carta
 
 		except AttributeError:
 			string = current_pile
 
+		return string
+
+	def say_origin(self):
+		string = f"pila di origine: {self.origin_pile.nome}"
+		string += f"tipo di pila: {self.origin_pile.tipo}"
+		return string
+
+	def say_dest(self):
+		string = f"pila di destinazione: {self.dest_pile.nome}"
+		string += f"tipo di pila: {self.dest_pile.tipo}"
+		return string
+
+	def say_selected_cards(self):
+		tot = len(self.selected_card)
+		string = f"carte selezionate: {tot}"
+		string += f"carta da collegare: {self.target_card.nome}"
 		return string
 
 	#@@# sezione metodi per il movimento del cursore di navigazione
@@ -151,12 +170,11 @@ class EngineSolitario:
 
 	def cancel_selected_cards(self):
 		string = ""
-		if self.selected_card:
-			self.selected_card = []
-			string = "Carte selezionate annullate.\n"
-		else:
-			string = "Non ci sono carte selezionate da annullare.\n"
-
+		self.selected_card = []
+		self.target_card = None
+		self.origin_pile = None
+		self.dest_pile = None
+		string = "Mossa annullata!\n"
 		return string
 
 	def select_card(self):
@@ -182,16 +200,17 @@ class EngineSolitario:
 		if row == len(pila.carte) - 1:
 			self.selected_card.append(card)
 
-		elif row < len(pila.carte) - 1:
+		elif row < len(pila.carte) - 1 and len(pila.carte) > 0:
 			max_carte = len(pila.carte) - 1
 			tot_carte = max_carte - row
-			self.selected_card = pila.prendi_carte(tot_carte)
+			selected_card = pila.prendi_carte(tot_carte)
 			for c in range(row, maxcarte):
 				card = self.tavolo.get_card_position(c, colun)
 				self.selected_card.append(card)
 
 		# salvo la pila di origine su variabile interna
-		self.source_pile = pila
+		self.origin_pile = pila
+		self.target_card = self.selected_card[0]
 		# preparo la stringa da vocalizzare
 		tot = len(self.selected_card)
 		nome_carta = card.get_name()
@@ -201,10 +220,51 @@ class EngineSolitario:
 	#@@# sezione metodi per pesca da riserve, imposta pila destinazione e spostamento carte
 
 	def new_set_destination_pile(self):
-		pass
+		row , col = self.cursor_pos
+		pila = self.tavolo.pile[col]
+		self.dest_pile = pila
 
 	def new_sposta_carte(self):
-		string = "nuovo spostamento ancora da implementare!  "
+		string = "mossa non consentita!\n"
+		self.new_set_destination_pile()
+		dest_pila = self.dest_pile
+		origin_pila = self.origin_pile
+		cards = self.selected_card
+		card = self.target_card
+		#if self.tavolo.verifica_spostamenti(origin_pila, dest_pila, card):
+		if self.tavolo.from_scarti_to_seme(origin_pila, dest_pila, cards):
+			card_index = self.origin_pile.get_card_index(card)
+			carta_rimossa = self.origin_pile.rimuovi_carta(card_index)
+			self.dest_pile.carte.append(carta_rimossa)
+
+			# scopro l'ultima carta della pila di origine, se è una pila base
+			if self.origin_pile.get_pile_type() == "base":
+				if not self.origin_pile.is_empty_pile():
+					self.origin_pile.carte[-1].flip()
+
+			string = "spostamento consentito!\n"
+			self.reset_data_moving() # resetto i parametri di spostamento carte
+
+		return string
+
+	def reset_data_moving(self):
+		# azzero i parametri utilizzati per gli spostamenti
+		self.origin_pile = None
+		self.dest_pile = None
+		self.target_card = None
+		self.selected_card = []
+
+	def prova_verifica(self):
+		string = "mossa non consentita!\n"
+		self.new_set_destination_pile()
+		dest_pila = self.dest_pile
+		origin_pila = self.origin_pile
+		cards = self.selected_card
+		card = self.target_card
+		#if self.tavolo.verifica_spostamenti(origin_pila, dest_pila, card):
+		if self.tavolo.from_scarti_to_seme(origin_pila, dest_pila, self.selected_card):
+			string = "spostamento consentito finalmente!  "
+
 		return string
 
 	def set_destination_pile(self):

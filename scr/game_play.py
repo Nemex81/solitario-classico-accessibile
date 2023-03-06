@@ -48,10 +48,26 @@ class GamePlay(DialogBox):
 	#@@# sezione comandi utente
 
 	def f1_press(self):
-		string = self.engine.vocalizza_pila()
+		string = self.engine.say_origin()
 		self.vocalizza(string)
 
 	def f2_press(self):
+		string = self.engine.say_dest()
+		self.vocalizza(string)
+
+	def f3_press(self):
+		string = self.engine.say_selected_cards()
+		self.vocalizza(string)
+
+	def f4_press(self):
+		string = self.engine.prova_verifica()
+		self.vocalizza(string)
+
+	def c_press(self):
+		string = self.engine.vocalizza_pila()
+		self.vocalizza(string)
+
+	def x_press(self):
 		string = self.engine.vocalizza_carta()
 		self.vocalizza(string)
 
@@ -81,8 +97,8 @@ class GamePlay(DialogBox):
 			self.vocalizza(string)
 		
 	def space_press(self):
-		string = self.engine.set_destination_pile()
-		#string = self.engine.new_sposta_carte()
+		#string = self.engine.set_destination_pile()
+		string = self.engine.new_sposta_carte()
 		if string:
 			self.vocalizza(string)
 
@@ -111,10 +127,14 @@ class GamePlay(DialogBox):
 
 	def build_commands_list(self):
 		self.callback_dict = {
+		pygame.K_c: self.c_press,
 			pygame.K_d: self.d_press,
 			pygame.K_f: self.f_press,
+			pygame.K_x: self.x_press,
 			pygame.K_F1: self.f1_press,
 			pygame.K_F2: self.f2_press,
+			pygame.K_F3: self.f3_press,
+			pygame.K_F4: self.f4_press,
 			pygame.K_p: self.p_press,
 			pygame.K_LEFT: self.left_press,
 			pygame.K_RIGHT: self.right_press,

@@ -258,14 +258,32 @@ class TavoloSolitario:
 	def from_scarti_to_base(self):
 		pass
 
-	def from_scarti_to_seme(self):
-		pass
+	def from_scarti_to_seme(self, origin_pila, dest_pila, select_card):
+		card = select_card[0]
+		#if card.seme != dest_pila.seme:
+			#return False
+
+		#if dest_pila.is_empty_pile():
+			#if card.get_value() == 1:
+				#return True
+
+		#elif not dest_pila.is_empty_pile():
+			#dest_card = dest_pila[-1]
+			#if card.valore_numerico == (dest_card.valore_numerico - 1):
+				#return True
+		return True
 
 	def from_seme_to_base(self):
 		pass
 
-	def verifica_spostamenti(self, pila_partenza_idx, carta_selezionata_idx):
-		return True
+	def verifica_spostamenti(self, origin_pila, dest_pila, select_card):
+		ver = False
+		if dest_pila.is_pila_seme():
+			ver = self.from_scarti_to_seme(origin_pila, dest_pila, select_card)
+			if ver:
+				return True
+
+		return ver
 
 	#@@# sezione vecchio sistema di convalida mosse, da sostituire ed eliminare il prima possibile con quello sopra.
 
