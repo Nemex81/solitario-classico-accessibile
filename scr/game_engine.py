@@ -117,6 +117,7 @@ class EngineSolitario:
 		tot = len(self.selected_card)
 		string = f"carte selezionate: {tot}"
 		string += f"carta da collegare: {self.target_card.nome}"
+		string += f"valore della carta: {self.target_card.get_value()}"
 		return string
 
 	#@@# sezione metodi per il movimento del cursore di navigazione
@@ -204,8 +205,8 @@ class EngineSolitario:
 			max_carte = len(pila.carte) - 1
 			tot_carte = max_carte - row
 			selected_card = pila.prendi_carte(tot_carte)
-			for c in range(row, maxcarte):
-				card = self.tavolo.get_card_position(c, colun)
+			for c in range(row, max_carte):
+				card = self.tavolo.get_card_position(c, col)
 				self.selected_card.append(card)
 
 		# salvo la pila di origine su variabile interna
@@ -217,8 +218,6 @@ class EngineSolitario:
 		string = f"carte selezionate: {tot}: {nome_carta}\n"
 		return string
 
-	#@@# sezione metodi per pesca da riserve, imposta pila destinazione e spostamento carte
-
 	def new_set_destination_pile(self):
 		row , col = self.cursor_pos
 		pila = self.tavolo.pile[col]
@@ -229,16 +228,16 @@ class EngineSolitario:
 		self.new_set_destination_pile()
 		dest_pila = self.dest_pile
 		origin_pila = self.origin_pile
-		cards = self.selected_card
+		#cards = self.selected_card
 		card = self.target_card
-		#if self.tavolo.verifica_spostamenti(origin_pila, dest_pila, card):
-		if self.tavolo.from_scarti_to_seme(origin_pila, dest_pila, cards):
+		if self.tavolo.verifica_spostamenti(origin_pila, dest_pila, card):
+		#if dest_pila.is_pila_seme() and self.tavolo.put_to_seme(origin_pila, dest_pila, cards):
 			card_index = self.origin_pile.get_card_index(card)
 			carta_rimossa = self.origin_pile.rimuovi_carta(card_index)
 			self.dest_pile.carte.append(carta_rimossa)
 
 			# scopro l'ultima carta della pila di origine, se è una pila base
-			if self.origin_pile.get_pile_type() == "base":
+			if self.origin_pile.is_pila_base():
 				if not self.origin_pile.is_empty_pile():
 					self.origin_pile.carte[-1].flip()
 
@@ -257,12 +256,13 @@ class EngineSolitario:
 	def prova_verifica(self):
 		string = "mossa non consentita!\n"
 		self.new_set_destination_pile()
-		dest_pila = self.dest_pile
+		col = self.cursor_pos[1]
+		dest_pila = self.tavolo.pile[col]
 		origin_pila = self.origin_pile
 		cards = self.selected_card
 		card = self.target_card
-		#if self.tavolo.verifica_spostamenti(origin_pila, dest_pila, card):
-		if self.tavolo.from_scarti_to_seme(origin_pila, dest_pila, self.selected_card):
+		#if self.tavolo.put_to_seme(origin_pila, dest_pila, card):
+		if self.tavolo.verifica_spostamenti(origin_pila, dest_pila, card):
 			string = "spostamento consentito finalmente!  "
 
 		return string

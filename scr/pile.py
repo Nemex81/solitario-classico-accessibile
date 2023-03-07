@@ -86,8 +86,8 @@ class Pila:
 	#@@# sezione convalide spostamenti carte
 
 	def is_empty_pile(self):
-		max = self.numero_carte()
-		if max > 0:
+		max = len(self.carte)
+		if max >= 1:
 			return False
 
 		return True
@@ -101,10 +101,8 @@ class Pila:
 
 	def is_pila_seme(self):
 		type = self.get_pile_type()
-		if type != "seme":
-			return False
-
-		return True
+		if type == "semi":
+			return True
 
 	def is_pila_scarti(self):
 		type = self.get_pile_type()
@@ -258,32 +256,36 @@ class TavoloSolitario:
 	def from_scarti_to_base(self):
 		pass
 
-	def from_scarti_to_seme(self, origin_pila, dest_pila, select_card):
-		card = select_card[0]
-		#if card.seme != dest_pila.seme:
-			#return False
+	def put_to_base(self, origin_pila, dest_pila, select_card):
+		return True
 
-		#if dest_pila.is_empty_pile():
-			#if card.get_value() == 1:
-				#return True
+	def put_to_seme(self, origin_pila, dest_pila, select_card):
+		card = select_card
+		if card.seme != dest_pila.seme:
+			return False
 
-		#elif not dest_pila.is_empty_pile():
-			#dest_card = dest_pila[-1]
-			#if card.valore_numerico == (dest_card.valore_numerico - 1):
-				#return True
+		if card.valore_numerico > 1 and dest_pila.is_empty_pile():
+			return False
+
+		#if card.get_value() > 1 and len(dest_pila.carte) > 0: #not dest_pila.is_empty_pile():
+			#dest_card = dest_pila.carte[-1]
+			#dest_value = dest_card.valore_numerico - 1
+			#if card.get_value() > dest_value or card.get_value() < dest_value:
+				#return False
+
 		return True
 
 	def from_seme_to_base(self):
 		pass
 
 	def verifica_spostamenti(self, origin_pila, dest_pila, select_card):
-		ver = False
 		if dest_pila.is_pila_seme():
-			ver = self.from_scarti_to_seme(origin_pila, dest_pila, select_card)
-			if ver:
+			if self.put_to_seme(origin_pila, dest_pila, select_card):
 				return True
 
-		return ver
+		elif dest_pila.is_pila_base():
+			if self.put_to_base(origin_pila, dest_pila, select_card):
+				return True
 
 	#@@# sezione vecchio sistema di convalida mosse, da sostituire ed eliminare il prima possibile con quello sopra.
 
