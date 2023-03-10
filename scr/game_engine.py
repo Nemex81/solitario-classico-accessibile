@@ -99,7 +99,7 @@ class EngineSolitario:
 			string = string_carta
 
 		except AttributeError:
-			string = current_pile
+			string = pila.get_name()
 
 		return string
 
@@ -198,24 +198,24 @@ class EngineSolitario:
 		self.id_row_origine = row
 		self.id_col_origine = col
 		pila = self.tavolo.pile[col]
+		# salvo la pila di origine su variabile interna
+		self.origin_pile = pila
 		if row == len(pila.carte) - 1:
 			self.selected_card.append(card)
 
 		elif row < len(pila.carte) - 1 and len(pila.carte) > 0:
+			max_carte  = 0
 			max_carte = len(pila.carte) - 1
 			tot_carte = max_carte - row
-			selected_card = pila.prendi_carte(tot_carte)
-			for c in range(row, max_carte):
-				card = self.tavolo.get_card_position(c, col)
-				self.selected_card.append(card)
+			carteprese = pila.prendi_carte(tot_carte)
+			self.selected_card = carteprese.reverse()
 
-		# salvo la pila di origine su variabile interna
-		self.origin_pile = pila
+		# salvo la carta da collegare su variabile interna
 		self.target_card = self.selected_card[0]
 		# preparo la stringa da vocalizzare
 		tot = len(self.selected_card)
 		nome_carta = card.get_name()
-		string = f"carte selezionate: {tot}: {nome_carta}\n"
+		string = f"carte selezionate: {tot}\n carta da collegare: {nome_carta}\n"
 		return string
 
 	def new_set_destination_pile(self):

@@ -52,6 +52,12 @@ class Pila:
 	def get_carte(self):
 		return self.carte
 
+	def get_top_card(self):
+		if len(self.carte) == 0:
+			return None
+
+		return self.carte[-1]
+
 	def get_carta(self, pos):
 		return self.carte[pos]
 
@@ -216,6 +222,7 @@ class TavoloSolitario:
 
 		# Riaggiungi le carte al mazzo riserve
 		for carta in carte_scarti:
+			carta.flip()
 			self.pile[12].carte.append(carta)
 
 		# mazzo riserve intertito
@@ -237,29 +244,40 @@ class TavoloSolitario:
 
 	#@@# sezione convalide spostamenti
 
-	def from_base_to_base(self, pila_partenza_idx, pila_destinazione_idx, carta_selezionata_idx):
-		"""
-		Sposta una carta dalla pila di partenza di tipo "base" alla pila di destinazione di tipo "base".
-		La carta deve essere l'ultima della pila di partenza e di valore inferiore di una unità rispetto alla carta
-		di destinazione, la quale deve essere dello stesso seme.
-		Se la pila di destinazione è vuota, la carta di partenza deve essere un Re.
-
-		:param pila_partenza_idx: l'indice della pila di partenza
-		:param pila_destinazione_idx: l'indice della pila di destinazione
-		:param carta_selezionata_idx: l'indice della carta selezionata nella pila di partenza
-		:return: True se lo spostamento è stato effettuato con successo, False altrimenti
-		"""
-
-	def from_base_to_seme(self):
-		pass
-
-	def from_scarti_to_base(self):
-		pass
-
 	def put_to_base(self, origin_pila, dest_pila, select_card):
+		"""
+		Sposta una carta dalla pila di partenza alla pila di destinazione di tipo "base".
+		La carta deve essere l'ultima della pila di partenza e di valore inferiore di una unità rispetto alla carta
+		di destinazione, la quale non deve essere dello stesso colore.
+		Se la pila di destinazione è vuota, la carta di partenza deve essere un Re.
+		:param origin_pila: l'oggetto Pila di partenza
+		:param dest_pila: l'oggetto Pila di destinazione
+		:param select_card: l'oggetto Carta selezionata
+		:return: True se lo spostamento è autorizzato, False altrimenti
+		"""
+
+		if not dest_pila.is_pila_base():
+			return False
+
+		card = select_card
+		if card.colore == dest_pila.carte[-1].colore :
+			return False
+
+		if card.valore_numerico < 13 and dest_pila.is_empty_pile():
+			return False
+
+		if not dest_pila.is_empty_pile():
+			dest_card = dest_pila.carte[-1]
+			dest_value = dest_card.valore_numerico - 1
+			if card.get_value() != dest_value:
+				return False
+
 		return True
 
 	def put_to_seme(self, origin_pila, dest_pila, select_card):
+		if not dest_pila.is_pila_seme():
+			return False
+
 		card = select_card
 		if card.seme != dest_pila.seme:
 			return False
@@ -267,16 +285,13 @@ class TavoloSolitario:
 		if card.valore_numerico > 1 and dest_pila.is_empty_pile():
 			return False
 
-		#if card.get_value() > 1 and len(dest_pila.carte) > 0: #not dest_pila.is_empty_pile():
-			#dest_card = dest_pila.carte[-1]
-			#dest_value = dest_card.valore_numerico - 1
-			#if card.get_value() > dest_value or card.get_value() < dest_value:
-				#return False
+		if not dest_pila.is_empty_pile():
+			dest_card = dest_pila.carte[-1]
+			dest_value = dest_card.valore_numerico + 1
+			if card.get_value() != dest_value:
+				return False
 
 		return True
-
-	def from_seme_to_base(self):
-		pass
 
 	def verifica_spostamenti(self, origin_pila, dest_pila, select_card):
 		if dest_pila.is_pila_seme():
