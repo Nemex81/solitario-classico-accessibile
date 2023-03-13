@@ -259,12 +259,21 @@ class TavoloSolitario:
 		if not dest_pila.is_pila_base():
 			return False
 
-		card = select_card
-		if card.colore == dest_pila.carte[-1].colore :
-			return False
+		totcard = len(select_card)
+		if totcard > 1:
+			card = select_card[0]
+		else:
+			card = select_card[-1]
+
+		if card.valore_numerico > 1 and not dest_pila.is_empty_pile():
+			if card.colore == dest_pila.carte[-1].colore :
+				return False
 
 		if card.valore_numerico < 13 and dest_pila.is_empty_pile():
 			return False
+
+		if card.valore_numerico == 13 and dest_pila.is_empty_pile():
+			return True
 
 		if not dest_pila.is_empty_pile():
 			dest_card = dest_pila.carte[-1]
@@ -294,8 +303,9 @@ class TavoloSolitario:
 		return True
 
 	def verifica_spostamenti(self, origin_pila, dest_pila, select_card):
+		card = select_card[0]
 		if dest_pila.is_pila_seme():
-			if self.put_to_seme(origin_pila, dest_pila, select_card):
+			if self.put_to_seme(origin_pila, dest_pila, card):
 				return True
 
 		elif dest_pila.is_pila_base():

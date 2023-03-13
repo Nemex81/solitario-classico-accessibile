@@ -47,6 +47,9 @@ class EngineSolitario:
 		totcarte = pila.numero_carte()
 		if totcarte > 0:
 			carta = pila.get_carta(row)
+			if not carta:
+				return "non riesco ad identificare la carta alle coordinate specificate"
+			
 			id_carta = pila.get_card_index(carta)
 			infocarta = carta.get_info_card()
 			infocarta += f"pos in pila: {id_carta+1}\n"
@@ -68,6 +71,7 @@ class EngineSolitario:
 		current_pile = self.tavolo.get_pile_name(col)
 		if current_pile:
 			string = current_pile
+			string += self.say_top_card(self.tavolo.pile[col])
 		else:
 			string = "pila non riconosciuta.\n"
 
@@ -120,6 +124,15 @@ class EngineSolitario:
 		string += f"valore della carta: {self.target_card.get_value()}"
 		return string
 
+	def say_top_card(self, pila):
+		# vocalizziamo la carta in cima alla pila
+		# se non è vuota
+		string = "la pila è vuota!\n"
+		if not pila.is_empty_pile():
+			string = f"carta in cima: {pila.carte[-1].nome}"
+
+		return string
+
 	#@@# sezione metodi per il movimento del cursore di navigazione
 
 	def move_cursor_up(self):
@@ -136,9 +149,10 @@ class EngineSolitario:
 			return speack
 
 	def move_cursor_left(self):
+		pile = self.tavolo.pile
 		if self.cursor_pos[1] > 0:
 			self.cursor_pos[1] -= 1
-			self.cursor_pos[0] = 0
+			self.cursor_pos[0] = self.move_cursor_top_card(pile[self.cursor_pos[1]])
 			speack = self.vocalizza_colonna()
 			return speack
 
@@ -146,7 +160,7 @@ class EngineSolitario:
 		pile = self.tavolo.pile
 		if self.cursor_pos[1] < len(pile) - 1:
 			self.cursor_pos[1] += 1
-			self.cursor_pos[0] = 0
+			self.cursor_pos[0] = self.move_cursor_top_card(pile[self.cursor_pos[1]])
 			speack = self.vocalizza_colonna()
 			return speack
 
@@ -167,6 +181,12 @@ class EngineSolitario:
 
 		return string
 
+	def move_cursor_top_card(self, pila):
+		""" Sposta il cursore di navigazione  in cima alla pila in cui ci si trova durante lospostamento con le frecce orizzontali"""
+		if not pila.is_empty_pile():
+			return len(pila.carte) - 1
+
+
 	#@@# sezione metodi per selezionare e deselezionare le carte
 
 	def cancel_selected_cards(self):
@@ -176,6 +196,24 @@ class EngineSolitario:
 		self.origin_pile = None
 		self.dest_pile = None
 		string = "Mossa annullata!\n"
+		return string
+
+	def select_scarto(self):
+		# seleziona la carta in cima allo scarto
+		string = ""
+		if self.selected_card:
+			string = "Hai già selezionato le carte da spostare!  premi canc per annullare la selezione.\n"
+			return string
+
+		scarti = self.tavolo.pile[11]
+		if scarti.is_empty_pile():
+			string = "la pila scarti è vuota!\n"
+			return string
+
+		self.selected_card.append(scarti.carte[-1])
+		self.target_card = scarti.carte[-1]
+		self.origin_pile = scarti
+		string = "carta selezionata: %s!\n" % self.target_card.get_name()
 		return string
 
 	def select_card(self):
@@ -206,9 +244,10 @@ class EngineSolitario:
 		elif row < len(pila.carte) - 1 and len(pila.carte) > 0:
 			max_carte  = 0
 			max_carte = len(pila.carte) - 1
-			tot_carte = max_carte - row
-			carteprese = pila.prendi_carte(tot_carte)
-			self.selected_card = carteprese.reverse()
+			for i in range(row, max_carte):
+				carteprese.append(pila.carte[i])
+
+			self.selected_card = carteprese
 
 		# salvo la carta da collegare su variabile interna
 		self.target_card = self.selected_card[0]
@@ -225,16 +264,19 @@ class EngineSolitario:
 
 	def new_sposta_carte(self):
 		string = "mossa non consentita!\n"
+		if not self.selected_card:
+			return "devi prima selezionare la carta da spostare!\n"
+
 		self.new_set_destination_pile()
 		dest_pila = self.dest_pile
 		origin_pila = self.origin_pile
-		#cards = self.selected_card
-		card = self.target_card
-		if self.tavolo.verifica_spostamenti(origin_pila, dest_pila, card):
-		#if dest_pila.is_pila_seme() and self.tavolo.put_to_seme(origin_pila, dest_pila, cards):
-			card_index = self.origin_pile.get_card_index(card)
-			carta_rimossa = self.origin_pile.rimuovi_carta(card_index)
-			self.dest_pile.carte.append(carta_rimossa)
+		cards = self.selected_card
+		if self.tavolo.verifica_spostamenti(origin_pila, dest_pila, cards):
+			# rimuovo le carte dalla pila di origine
+			card_index = self.origin_pile.get_card_index(cards[0])
+			totcards = len(cards)
+			carte_rimosse = self.origin_pile.prendi_carte(totcards)
+			self.dest_pile.carte.extend(carte_rimosse)
 
 			# scopro l'ultima carta della pila di origine, se è una pila base
 			if self.origin_pile.is_pila_base():
@@ -242,7 +284,8 @@ class EngineSolitario:
 					self.origin_pile.carte[-1].flip()
 
 			string = "spostamento consentito!\n"
-			self.reset_data_moving() # resetto i parametri di spostamento carte
+			self.reset_data_moving()
+
 
 		return string
 
