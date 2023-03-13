@@ -154,6 +154,11 @@ class Mazzo:
 	def mischia(self):
 		random.shuffle(self.cards)
 
+	def is_empty_dek(self):
+		# se il mazzo è vuoto restituiamo ture
+		if len(self.cards) == 0:
+			return True
+
 	def reset(self):
 		self.cards = []
 		self.crea()

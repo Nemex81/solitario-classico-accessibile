@@ -129,13 +129,39 @@ class EngineSolitario:
 		# se non è vuota
 		string = "la pila è vuota!\n"
 		if not pila.is_empty_pile():
-			string = f"carta in cima: {pila.carte[-1].nome}"
+			string = f"carta in cima: {pila.carte[-1].get_name()}"
 
 		return string
+
+	def say_top_scarto(self):
+		# vocalizziamo la carta in cima alla pila scarti se non è vuota
+		string = "la pila scarti è vuota!\n"
+		pila = self.tavolo.pile[11]
+		if not pila.is_empty_pile():
+			string = f"ultimo scarto: {pila.carte[-1].get_name()}"
+
+		return string
+
+	def say_tot_dek(self):
+		# vocalizziamo il numero di carte nel mazzo
+		string = "il mazzo è vuoto!\n"
+		mazzo = self.tavolo.pile[12]
+		if not mazzo.is_empty_pile():
+			string = f"carte nel mazzo: {mazzo.numero_carte()}"
+		else:
+			string = "il mazzo è vuoto!\n"
+
+		return string
+
+
 
 	#@@# sezione metodi per il movimento del cursore di navigazione
 
 	def move_cursor_up(self):
+		pila = self.tavolo.pile[self.cursor_pos[1]]
+		if not pila.is_pila_base():
+			return "non sei su una pila base.\n"
+
 		if self.cursor_pos[0] > 0:
 			self.cursor_pos[0] -= 1
 			speack =self.vocalizza_riga()
@@ -143,6 +169,9 @@ class EngineSolitario:
 
 	def move_cursor_down(self):
 		pila = self.tavolo.pile[self.cursor_pos[1]]
+		if not pila.is_pila_base():
+			return "non sei su una pila base.\n"
+
 		if self.cursor_pos[0] < len(pila.carte) - 1:
 			self.cursor_pos[0] += 1
 			speack = self.vocalizza_riga()
@@ -164,6 +193,40 @@ class EngineSolitario:
 			speack = self.vocalizza_colonna()
 			return speack
 
+	def move_cursor_pile_type(self):
+		""" Sposta il cursore di navigazione sulla prima pila di tipo diverso da quello iniziale"""
+		pile = self.tavolo.pile
+		pila_iniziale = pile[self.cursor_pos[1]]
+		tipo_iniziale = pila_iniziale.tipo
+		for i in range(self.cursor_pos[1] + 1, len(pile)):
+			if pile[i].tipo == "mazzo_riserve":
+				speack = "pile base:  \n"
+				self.cursor_pos[1] = 0
+				self.cursor_pos[0] = self.move_cursor_top_card(pile[0])
+				speack += self.vocalizza_colonna()
+				return speack
+
+			elif pile[i].tipo != tipo_iniziale:
+				speack = f"pile {pile[i].tipo}:  \n"
+				self.cursor_pos[1] = i
+				self.cursor_pos[0] = self.move_cursor_top_card(pile[i])
+				speack += self.vocalizza_colonna()
+				return speack
+
+	def move_cursor_to_base(self, pos):
+		""" Sposta il cursore di navigazione sulla pila base richiesta """
+		i = int(pos)
+		pile = self.tavolo.pile
+		self.cursor_pos[1] = i
+		self.cursor_pos[0] = self.move_cursor_top_card(pile[i])
+		speack = self.vocalizza_colonna()
+		return speack
+
+	def move_cursor_top_card(self, pila):
+		""" Sposta il cursore di navigazione  in cima alla pila in cui ci si trova durante lospostamento con le frecce orizzontali"""
+		if not pila.is_empty_pile():
+			return len(pila.carte) - 1
+
 	def move_cursor(self, direction):
 		""" Sposta il cursore nella direzione specificata """
 		string = ""
@@ -179,12 +242,15 @@ class EngineSolitario:
 		elif direction == 'right':
 			string = self.move_cursor_right()
 
+		elif direction == "tab":
+			string = self.move_cursor_pile_type()
+
+		#da qui dovrei controllare se sono lettere da 0 a 6 e far partire il metodo move_cursor_to_base
+		elif direction in "0123456":
+			string = self.move_cursor_to_base(direction)
+
 		return string
 
-	def move_cursor_top_card(self, pila):
-		""" Sposta il cursore di navigazione  in cima alla pila in cui ci si trova durante lospostamento con le frecce orizzontali"""
-		if not pila.is_empty_pile():
-			return len(pila.carte) - 1
 
 
 	#@@# sezione metodi per selezionare e deselezionare le carte

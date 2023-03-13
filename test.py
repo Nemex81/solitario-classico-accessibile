@@ -57,3 +57,6 @@ for p in tavolo.pile:
 
 6print("tavolo di gioco allestito.\n Numero di carte nel mazzo:", len(mazzo.cards))
 print("Numero di carte nel tavolo:", tavolo.numero_carte())
+
+
+

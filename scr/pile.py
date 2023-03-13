@@ -134,7 +134,6 @@ class TavoloSolitario:
 		self.pile = []  # lista delle pile di gioco
 
 	def crea_pile_gioco(self):
-		logger.debug("creazione delle pile di gioco")
 		# crea le sette pile base
 		self.pile = [] # resettiamo tutte le pile di gioco a 0
 		id = 0
@@ -164,7 +163,6 @@ class TavoloSolitario:
 		self.pile.append(pila_mazzo_riserve)
 
 	def distribuisci_carte(self):
-		logger.debug("inizio distribuzione delle carte nelle pile di gioco")
 		# distribuisci le carte alle pile base
 		if len(self.mazzo.cards) < 1:
 			self.mazzo.reset()
@@ -175,7 +173,6 @@ class TavoloSolitario:
 				carta.coperta = True #if j < i else False
 				self.pile[i].aggiungi_carta(carta)
 
-		logger.debug("carte distribuite in pile base. carte restanti in mazzo: %s", len(self.mazzo.cards))
 		# distribuisci le restanti carte alla pila mazzo riserve
 		for i in range(24):
 			carta = self.mazzo.pesca()

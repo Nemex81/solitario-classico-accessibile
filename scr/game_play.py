@@ -63,6 +63,41 @@ class GamePlay(DialogBox):
 		string = self.engine.prova_verifica()
 		self.vocalizza(string)
 
+	def press_1(self):
+		string = self.engine.move_cursor("0")
+		if string:
+			self.vocalizza(string)
+
+	def press_2(self):
+		string = self.engine.move_cursor("1")
+		if string:
+			self.vocalizza(string)
+
+	def press_3(self):
+		string = self.engine.move_cursor("2")
+		if string:
+			self.vocalizza(string)
+
+	def press_4(self):
+		string = self.engine.move_cursor("3")
+		if string:
+			self.vocalizza(string)
+
+	def press_5(self):
+		string = self.engine.move_cursor("4")
+		if string:
+			self.vocalizza(string)
+
+	def press_6(self):
+		string = self.engine.move_cursor("5")
+		if string:
+			self.vocalizza(string)
+
+	def press_7(self):
+		string = self.engine.move_cursor("6")
+		if string:
+			self.vocalizza(string)
+
 	def c_press(self):
 		string = self.engine.vocalizza_pila()
 		self.vocalizza(string)
@@ -106,6 +141,11 @@ class GamePlay(DialogBox):
 		if string:
 			self.vocalizza(string)
 
+	def tab_press(self):
+		string = self.engine.move_cursor("tab")
+		if string:
+			self.vocalizza(string)
+
 	def canc_press(self):
 		string = self.engine.cancel_selected_cards()
 		if string:
@@ -121,8 +161,18 @@ class GamePlay(DialogBox):
 		if string:
 			self.vocalizza(string)
 
+	def m_press(self):
+		string = self.engine.say_tot_dek()
+		if string:
+			self.vocalizza(string)
+
 	def p_press(self):
 		string = self.engine.pesca()
+		if string:
+			self.vocalizza(string)
+
+	def s_press(self):
+		string = self.engine.say_top_scarto()
 		if string:
 			self.vocalizza(string)
 
@@ -131,21 +181,31 @@ class GamePlay(DialogBox):
 
 	def build_commands_list(self):
 		self.callback_dict = {
+		pygame.K_1: self.press_1,
+		pygame.K_2: self.press_2,
+		pygame.K_3: self.press_3,
+		pygame.K_4: self.press_4,
+		pygame.K_5: self.press_5,
+		pygame.K_6: self.press_6,
+		pygame.K_7: self.press_7,
 		pygame.K_c: self.c_press,
 			pygame.K_d: self.d_press,
 			pygame.K_f: self.f_press,
+			pygame.K_m: self.m_press,
+			pygame.K_p: self.p_press,
+			pygame.K_s: self.s_press,
 			pygame.K_x: self.x_press,
 			pygame.K_F1: self.f1_press,
 			pygame.K_F2: self.f2_press,
 			pygame.K_F3: self.f3_press,
 			pygame.K_F4: self.f4_press,
-			pygame.K_p: self.p_press,
 			pygame.K_LEFT: self.left_press,
 			pygame.K_RIGHT: self.right_press,
 			pygame.K_UP: self.up_press,
 			pygame.K_DOWN: self.down_press,
 			pygame.K_RETURN: self.enter_press,
 			pygame.K_SPACE: self.space_press,
+			pygame.K_TAB: self.tab_press,
 			pygame.K_DELETE: self.canc_press,
 			pygame.K_ESCAPE: self.esc_press,
 		}
