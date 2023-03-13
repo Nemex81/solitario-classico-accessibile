@@ -108,19 +108,28 @@ class EngineSolitario:
 		return string
 
 	def say_origin(self):
+		if not self.origin_pile:
+			return "nessuna pila di origine selezionata"
+
 		string = f"pila di origine: {self.origin_pile.nome}"
 		string += f"tipo di pila: {self.origin_pile.tipo}"
 		return string
 
 	def say_dest(self):
+		if not self.dest_pile:
+			return "nessuna pila di destinazione selezionata"
+
 		string = f"pila di destinazione: {self.dest_pile.nome}"
 		string += f"tipo di pila: {self.dest_pile.tipo}"
 		return string
 
 	def say_selected_cards(self):
+		if not self.selected_card:
+			return "nessuna carta selezionata"
+
 		tot = len(self.selected_card)
 		string = f"carte selezionate: {tot}"
-		string += f"carta da collegare: {self.target_card.nome}"
+		string += f"carta da collegare: {self.target_card.get_name()}"
 		string += f"valore della carta: {self.target_card.get_value()}"
 		return string
 
@@ -252,7 +261,6 @@ class EngineSolitario:
 		return string
 
 
-
 	#@@# sezione metodi per selezionare e deselezionare le carte
 
 	def cancel_selected_cards(self):
@@ -284,56 +292,43 @@ class EngineSolitario:
 
 	def select_card(self):
 		""" seleziona le carte che il giocatore intende tentare di spostare """
-		carteprese = []
-		if len(self.selected_card) == 1:
-			return "Hai già selezionato la carta da spostare!  premi canc per annullare la selezione.\n"
-
-		elif len(self.selected_card) > 1:
-			return "Hai già selezionato le carte da spostare!  premi canc per annullare la selezione.\n"
+		string = ""
+		if self.selected_card:
+			string = "Hai già selezionato le carte da spostare!  premi canc per annullare la selezione.\n"
+			return string
 
 		row , col = self.cursor_pos
-		card = self.tavolo.get_card_position(row, col)
-		if not card:
-			return "la pila è vuota!\n"
+		pile = self.tavolo.pile[col]
+		if pile.is_empty_pile():
+			string = "la pila è vuota!\n"
+			return string
 
-		if card.coperta:
-			return "non puoi selezionare una carta coperta!\n"
+		if pile.carte[row].coperta:
+			string = "non puoi selezionare una carta coperta!\n"
+			return string
 
-		self.id_row_origine = row
-		self.id_col_origine = col
-		pila = self.tavolo.pile[col]
-		# salvo la pila di origine su variabile interna
-		self.origin_pile = pila
-		if row == len(pila.carte) - 1:
-			self.selected_card.append(card)
-
-		elif row < len(pila.carte) - 1 and len(pila.carte) > 0:
-			max_carte  = 0
-			max_carte = len(pila.carte) - 1
-			for i in range(row, max_carte):
-				carteprese.append(pila.carte[i])
-
-			self.selected_card = carteprese
-
-		# salvo la carta da collegare su variabile interna
-		self.target_card = self.selected_card[0]
-		# preparo la stringa da vocalizzare
+		self.origin_pile = pile
+		self.selected_card = pile.carte[row:]
+		self.target_card = pile.carte[row]
 		tot = len(self.selected_card)
-		nome_carta = card.get_name()
-		string = f"carte selezionate: {tot}\n carta da collegare: {nome_carta}\n"
+		string = f"carte selezionate: {tot }\n"
+		for card in self.selected_card:
+			string += "%s, " % card.get_name()
+
+		string = string[:-2] + "!\n"
 		return string
 
-	def new_set_destination_pile(self):
+	def set_destination_pile(self):
 		row , col = self.cursor_pos
 		pila = self.tavolo.pile[col]
 		self.dest_pile = pila
 
-	def new_sposta_carte(self):
+	def sposta_carte(self):
 		string = "mossa non consentita!\n"
 		if not self.selected_card:
 			return "devi prima selezionare la carta da spostare!\n"
 
-		self.new_set_destination_pile()
+		self.set_destination_pile()
 		dest_pila = self.dest_pile
 		origin_pila = self.origin_pile
 		cards = self.selected_card
@@ -364,64 +359,18 @@ class EngineSolitario:
 
 	def prova_verifica(self):
 		string = "mossa non consentita!\n"
-		self.new_set_destination_pile()
+		self.set_destination_pile()
 		col = self.cursor_pos[1]
 		dest_pila = self.tavolo.pile[col]
+		if not self.origin_pile or not self.target_card:
+			return "devi prima selezionare la carta da spostare!\n"
+
 		origin_pila = self.origin_pile
-		cards = self.selected_card
 		card = self.target_card
-		#if self.tavolo.put_to_seme(origin_pila, dest_pila, card):
 		if self.tavolo.verifica_spostamenti(origin_pila, dest_pila, card):
 			string = "spostamento consentito finalmente!  "
 
 		return string
-
-	def set_destination_pile(self):
-		if not self.selected_card:
-			return "Nessuna carta selezionata.\n"
-
-		dest_row, dest_col = self.cursor_pos
-		dest_pile = self.tavolo.pile[dest_col]
-		dest_pile_type = dest_pile.get_pile_type()
-
-		# Utilizziamo get_card_parent per ottenere l'oggetto Pila di provenienza delle carte selezionate
-		source_pile = self.tavolo.get_card_parent(self.selected_card[0])
-		if not self.tavolo.check_legal_move(source_pile.id, dest_col):
-			return "Mossa non valida.\n"
-
-		if dest_pile_type == "semi":
-			if len(self.selected_card) > 1:
-				return "Puoi spostare solo una carta alla volta in questa pila.\n"
-
-			card = self.selected_card[0]
-			if card.valore_numerico != 1 and source_pile.carte:
-				return "Solo l'asso può essere spostato in questa pila.\n"
-
-		self.sposta_carte(self.id_row_origine, self.id_col_origine, dest_row, dest_col, self.selected_card)
-		self.selected_card = []
-		return "spostamento completato!\n"
-
-	def sposta_carte(self, source_row, source_col, dest_row, dest_col, cards):
-		# Ottieni la pila di partenza e quella di destinazione
-		source_pile = self.tavolo.pile[source_col]
-		dest_pile = self.tavolo.pile[dest_col]
-
-		 #Verifica se lo spostamento delle carte è consentito
-		if not self.tavolo.check_legal_move(source_col, dest_col):
-			return False
-
-		# Rimuovi le carte dalla pila di partenza e aggiungile alla pila di destinazione
-		carte_rimosse = source_pile.rimuovi_carte(source_row, source_row+len(cards)-1)
-		for c in carte_rimosse:
-			dest_pile.aggiungi_carta(c)
-
-		# scopri l'ultima carta della pila di origine
-		if len(self.tavolo.pile[source_col].carte) > 0:
-			self.tavolo.pile[source_col].carte[-1].flip()
-
-		# aggiorniamo le coordinate memorizzate nel cursore di navigazione
-		self.cursor_pos = [dest_row, dest_col]
-		return True
 
 	def pesca(self):
 		liv = self.difficulty_level

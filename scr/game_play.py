@@ -99,7 +99,8 @@ class GamePlay(DialogBox):
 			self.vocalizza(string)
 
 	def c_press(self):
-		string = self.engine.vocalizza_pila()
+		#string = self.engine.vocalizza_pila()
+		string = self.engine.say_selected_cards()
 		self.vocalizza(string)
 
 	def x_press(self):
@@ -134,10 +135,9 @@ class GamePlay(DialogBox):
 
 		if string:
 			self.vocalizza(string)
-		
+
 	def space_press(self):
-		#string = self.engine.set_destination_pile()
-		string = self.engine.new_sposta_carte()
+		string = self.engine.sposta_carte()
 		if string:
 			self.vocalizza(string)
 

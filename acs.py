@@ -19,7 +19,7 @@ class ACS(SolitarioAccessibile):
 		super().__init__()
 
 
-
+ 
 #@@@# avvio del modulo
 if __name__ == '__main__':
 	print("compilazione di %s completata." % __name__)
