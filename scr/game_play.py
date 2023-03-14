@@ -181,14 +181,14 @@ class GamePlay(DialogBox):
 
 	def build_commands_list(self):
 		self.callback_dict = {
-		pygame.K_1: self.press_1,
-		pygame.K_2: self.press_2,
-		pygame.K_3: self.press_3,
-		pygame.K_4: self.press_4,
-		pygame.K_5: self.press_5,
-		pygame.K_6: self.press_6,
-		pygame.K_7: self.press_7,
-		pygame.K_c: self.c_press,
+			pygame.K_1: self.press_1,
+			pygame.K_2: self.press_2,
+			pygame.K_3: self.press_3,
+			pygame.K_4: self.press_4,
+			pygame.K_5: self.press_5,
+			pygame.K_6: self.press_6,
+			pygame.K_7: self.press_7,
+			pygame.K_c: self.c_press,
 			pygame.K_d: self.d_press,
 			pygame.K_f: self.f_press,
 			pygame.K_m: self.m_press,
@@ -215,6 +215,12 @@ class GamePlay(DialogBox):
 		if self.callback_dict.get(event.key):
 			self.callback_dict[event.key]()
 
+		# verifichiamo la vittoria
+		if self.engine.is_game_running:
+			string = self.engine.ceck_winner()
+			if string:
+				self.engine.is_game_running = False
+				self.vocalizza(string)
 
 
 #@@@# start del modulo

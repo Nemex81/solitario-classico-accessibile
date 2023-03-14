@@ -24,6 +24,7 @@ class EngineSolitario:
 		super().__init__()
 		self.tavolo = TavoloSolitario()
 		self.difficulty_level = 1
+		self.is_game_running = True
 		self.primo_giro = True
 		self.conta_giri = 0
 		self.cursor_pos = [0, 0]  # posizione iniziale del cursore sul tavolo
@@ -31,6 +32,21 @@ class EngineSolitario:
 		self.target_card = None # oggetto carta nel focus
 		self.origin_pile = None # salvo pila origine per gestione spostamenti
 		self.dest_pile = None # salvo pile destinazione valide per gestione spostamenti
+
+	def prova_verifica(self):
+		string = "mossa non consentita!\n"
+		self.set_destination_pile()
+		col = self.cursor_pos[1]
+		dest_pila = self.tavolo.pile[col]
+		if not self.origin_pile or not self.target_card:
+			return "devi prima selezionare la carta da spostare!\n"
+
+		origin_pila = self.origin_pile
+		card = self.target_card
+		if self.tavolo.verifica_spostamenti(origin_pila, dest_pila, card):
+			string = "spostamento consentito finalmente!  "
+
+		return string
 
 	def crea_gioco(self):
 		"""Crea un nuovo gioco del solitario."""
@@ -162,7 +178,12 @@ class EngineSolitario:
 
 		return string
 
+	#@@# sezione metodi di supporto
 
+	def incrementa_mossa(self):
+		self.conta_giri += 1
+		if self.primo_giro:
+			self.primo_giro = False
 
 	#@@# sezione metodi per il movimento del cursore di navigazione
 
@@ -318,60 +339,6 @@ class EngineSolitario:
 		string = string[:-2] + "!\n"
 		return string
 
-	def set_destination_pile(self):
-		row , col = self.cursor_pos
-		pila = self.tavolo.pile[col]
-		self.dest_pile = pila
-
-	def sposta_carte(self):
-		string = "mossa non consentita!\n"
-		if not self.selected_card:
-			return "devi prima selezionare la carta da spostare!\n"
-
-		self.set_destination_pile()
-		dest_pila = self.dest_pile
-		origin_pila = self.origin_pile
-		cards = self.selected_card
-		if self.tavolo.verifica_spostamenti(origin_pila, dest_pila, cards):
-			# rimuovo le carte dalla pila di origine
-			card_index = self.origin_pile.get_card_index(cards[0])
-			totcards = len(cards)
-			carte_rimosse = self.origin_pile.prendi_carte(totcards)
-			self.dest_pile.carte.extend(carte_rimosse)
-
-			# scopro l'ultima carta della pila di origine, se è una pila base
-			if self.origin_pile.is_pila_base():
-				if not self.origin_pile.is_empty_pile():
-					self.origin_pile.carte[-1].flip()
-
-			string = "spostamento consentito!\n"
-			self.reset_data_moving()
-
-
-		return string
-
-	def reset_data_moving(self):
-		# azzero i parametri utilizzati per gli spostamenti
-		self.origin_pile = None
-		self.dest_pile = None
-		self.target_card = None
-		self.selected_card = []
-
-	def prova_verifica(self):
-		string = "mossa non consentita!\n"
-		self.set_destination_pile()
-		col = self.cursor_pos[1]
-		dest_pila = self.tavolo.pile[col]
-		if not self.origin_pile or not self.target_card:
-			return "devi prima selezionare la carta da spostare!\n"
-
-		origin_pila = self.origin_pile
-		card = self.target_card
-		if self.tavolo.verifica_spostamenti(origin_pila, dest_pila, card):
-			string = "spostamento consentito finalmente!  "
-
-		return string
-
 	def pesca(self):
 		liv = self.difficulty_level
 		ver = self.tavolo.pescata(liv)
@@ -384,6 +351,60 @@ class EngineSolitario:
 		carta = self.tavolo.get_card_position(row, col)
 		string = "hai pescato: %s" % carta.get_name()
 		return string
+
+	def set_destination_pile(self):
+		row , col = self.cursor_pos
+		pila = self.tavolo.pile[col]
+		self.dest_pile = pila
+
+	def reset_data_moving(self):
+		# azzero i parametri utilizzati per gli spostamenti
+		self.origin_pile = None
+		self.dest_pile = None
+		self.target_card = None
+		self.selected_card = []
+
+	def sposta_carte(self):
+		string = "mossa non consentita!\n"
+		if not self.selected_card:
+			return "devi prima selezionare la carta da spostare!\n"
+
+		self.set_destination_pile()
+		dest_pila = self.dest_pile
+		origin_pila = self.origin_pile
+		cards = self.selected_card
+		if self.tavolo.verifica_spostamenti(self.origin_pile, self.dest_pile, self.selected_card):
+			# rimuovo le carte dalla pila di origine
+			#card_index = self.origin_pile.get_card_index(cards[0])
+			#totcards = len(cards)
+			#carte_rimosse = self.origin_pile.prendi_carte(totcards)
+			#self.dest_pile.carte.extend(carte_rimosse)
+			self.tavolo.esegui_spostamento(self.origin_pile, self.dest_pile, cards)
+
+			# scopro l'ultima carta della pila di origine, se è una pila base
+			#if self.origin_pile.is_pila_base():
+				#if not self.origin_pile.is_empty_pile():
+					#if self.origin_pile.carte[-1].coperta:
+						#self.origin_pile.carte[-1].flip()
+
+			self.tavolo.scopri_ultima_carta(self.origin_pile)
+			# alla fine di tutto:
+			self.incrementa_mossa() # incremento il numero di mosse effettuate
+			string = "spostamento consentito!\n"
+			# aggiorno la posizione del cursore
+			self.cursor_pos[1] = self.dest_pile.id
+			self.cursor_pos[0] = self.dest_pile.get_last_card_index()
+			self.reset_data_moving() # resettiamo anche i dati di spostamento
+
+		return string
+
+	def ceck_winner(self):
+		""" verifica se il giocatore ha vinto utilizzando il metodo verifica_vittoria del tavolo """
+		if self.tavolo.verifica_vittoria():
+			string = "Complimenti!  \nHai vinto!\n"
+			return string
+
+		return False
 
 
 

@@ -72,6 +72,10 @@ class Pila:
 		""" Restituisce l'indice della carta. """
 		return self.carte.index(card)
 
+	def get_last_card_index(self):
+		""" Restituisce l'indice dell'ultima carta. """
+		return len(self.carte) - 1
+
 	def get_pile_type(self):
 		""" Restituisce il tipo di pila """
 		return self.tipo
@@ -299,6 +303,21 @@ class TavoloSolitario:
 
 		return True
 
+	def scopri_ultima_carta(self, origin_pile):
+		# scopro l'ultima carta della pila di origine, se è una pila base
+		if origin_pile.is_pila_base():
+			if not origin_pile.is_empty_pile():
+				if origin_pile.carte[-1].coperta:
+					origin_pile.carte[-1].flip()
+
+	def esegui_spostamento(self, origin_pile, dest_pile, cards):
+		# rimuovo le carte dalla pila di origine
+		card_index = origin_pile.get_card_index(cards[0])
+		totcards = len(cards)
+		carte_rimosse = origin_pile.prendi_carte(totcards)
+		# aggiungo le carte alla pila di destinazione
+		dest_pile.carte.extend(carte_rimosse)
+
 	def verifica_spostamenti(self, origin_pila, dest_pila, select_card):
 		card = select_card[0]
 		if dest_pila.is_pila_seme():
@@ -309,47 +328,15 @@ class TavoloSolitario:
 			if self.put_to_base(origin_pila, dest_pila, select_card):
 				return True
 
-	#@@# sezione vecchio sistema di convalida mosse, da sostituire ed eliminare il prima possibile con quello sopra.
-
-	def check_legal_move(self, source_pile_index, dest_pile_index):
-		"""
-		Verifica se lo spostamento di una o più carte dalla pila sorgente a quella destinazione è legale.
-		"""
-		source_pile = self.pile[source_pile_index]
-		dest_pile = self.pile[dest_pile_index]
-
-		if not dest_pile.carte and source_pile.carte[-1].valore_numerico == 13:
-			return True
-
-		top_card = source_pile.carte[-1]
-		if self.can_stack_card_on_top(dest_pile_index, top_card):
-			return True
-
 		return False
 
-	def can_stack_card_on_top(self, pile_index, card):
-		pile = self.pile[pile_index]
-		if not pile.carte:
-			# la pila è vuota, quindi la carta deve essere un Re
-			return card.valore_numerico == 13
-
-		top_card = pile.carte[-1]
-		return (top_card.valore_numerico - card.valore_numerico == 1) and (top_card.colore != card.colore)
-
-	def get_valid_destinations(self, source_pile_index, card):
-		""" creato con la tecnica delle liste comprensive """
-		return [i for i, pile in enumerate(self.pile) if i != source_pile_index and self.can_stack_card_on_top(i, card)]
-
-	def last_get_valid_destinations(self, source_pile_index, card):
-		valid_destinations = []
-		for i, pile in enumerate(self.pile):
-			if i == source_pile_index:
-				continue
-			if self.can_stack_card_on_top(i, card):
-				valid_destinations.append(i)
-
-		return valid_destinations
-
+	def verifica_vittoria(self):
+		# verificare la vittoria controllando che le 4 pile  semi siano composte da 13 carte
+		for i in range(7, 10):
+			if len(self.pile[i].carte) != 13:
+				return False
+			
+		return True
 
 
 #@@@# start del modulo
