@@ -8,6 +8,7 @@
 # lib
 import sys, random, logging
 # moduli personali
+from my_lib.dialog_box import DialogBox
 from scr.pile import TavoloSolitario
 #import pdb #pdb.set_trace() da impostare dove si vuol far partire il debugger
 
@@ -19,14 +20,15 @@ logger = logging.getLogger()
 # Esempio di scrittura di una stringa di log
 #logger.debug("Il mio messaggio di debug")
 
-class EngineSolitario:
+class EngineSolitario(DialogBox):
 	def __init__(self):
 		super().__init__()
 		self.tavolo = TavoloSolitario()
 		self.difficulty_level = 1
-		self.is_game_running = True
+		self.is_game_running = False
 		self.primo_giro = True
-		self.conta_giri = 0
+		self.conta_giri = 0 # contatore per gestire il numero di mosse fatte dal player
+		self.conta_rimischiate = 0 # contatore per gestire il numero di rimischiate fatte dal player
 		self.cursor_pos = [0, 0]  # posizione iniziale del cursore sul tavolo
 		self.selected_card = []  # lista delle carte selezionate dal giocatore
 		self.target_card = None # oggetto carta nel focus
@@ -52,8 +54,46 @@ class EngineSolitario:
 		"""Crea un nuovo gioco del solitario."""
 		self.tavolo.crea_pile_gioco()
 		self.tavolo.distribuisci_carte()
+		self.is_game_running = True
+
+	def nuova_partita(self):
+		"""Crea un nuovo gioco del solitario."""
+		if self.is_game_running:
+			self.create_yes_or_no_box("Sei sicuro di voler abbandonare la partita?", "Abbandonare?")
+			result = self.answare
+			if result:
+				self.difficulty_level = self.get_difficulty_level()
+				self.crea_gioco()
+
+		elif not self.is_game_running :
+			self.difficulty_level = self.engine.get_difficulty_level()
+			self.crea_gioco()
+
+		string = "avvio di una nuova partita in corso.  \n"
+		self.is_game_running = True
+		return string
 
 	#@@# sezione getter
+
+	def get_difficulty_level(self):
+		"""Richiede il livello di difficoltà tramite dialog box."""
+		level = 1
+		# richiediamo all'utente tramite dialog box il livello di difficoltà
+		self.create_input_box("Inserisci il livello di difficoltà da 1 a 3.", "Richiesta difficoltà")
+		try: #verifichiamo che sia stato immesso un numero e che sia compreso tra 1 e 3.
+			level = self.answare
+			if not level.isdigit():
+				raise ValueError
+
+			level = int(level)
+			if level < 1 or level > 3:
+				raise ValueError
+
+		except ValueError:
+			self.create_alert_box("Livello di difficoltà non valido, impostato a 1.", "Livello di difficoltà")
+			level = 1
+
+		return level
 
 	def get_info_carta(self):
 		string = ""
@@ -178,30 +218,54 @@ class EngineSolitario:
 
 		return string
 
+	def get_rimischiate(self):
+		# vocalizza il numero di rimischiate effettuate dal giocatore
+		rimischiate = self.conta_rimischiate
+		string = F"Fin'ora hai rimischiato gli scarti nel mazzo {rimischiate} volte.  \n"
+		return string
+
 	def get_mosse(self):
-		# vocalizziamo il punteggio
-		mosse = self.conta_giri
+		# vocalizziamo il punteggionumero di spostamenti feseguiti dal player 
+		mosse =  self.conta_giri
 		string= F"Fin'ora hai eseguito {mosse} spostamenti.\n"
+		return string
+
+	def get_info_game(self):
+		# vocalizza il numero di mosse ed il numero di rimischiate fatte dal giocatore
+		string = ""
+		string += f"Spostamenti totali: {self.get_mosse()}  \n"
+		string += f"Rimischiate:  {self.get_rimischiate()}  \n"
 		return string
 
 	def get_report_mossa(self):
 		"""
-		prepariamo la stringa da vocalizzare cmprendende le seguenti informazioni:
+		prepariamo la stringa da vocalizzare con le seguenti informazioni:
 		vocalizziamo il report della mossa
-		vocalizziamo la carta o le carte da spostare,
-		vocalizziamo il nome della pila di destinazione,
-		vocalizziamo la carta nell'ultima posizione della pila di destinazione prima dello spsotamento
 		"""
 		string = ""
 		if self.selected_card:
+			tot_cards = len(self.selected_card)
 			string += "sposti:  \n"
-			for carta in self.selected_card:
-				string += f"{carta.get_name()}  \n"
+			if tot_cards  > 3:
+				string += f"{self.selected_card[0].get_name()} e altre {tot_cards - 1} carte.  \n"
+			else:
+				for carta in self.selected_card:
+					string += f"{carta.get_name()}.  \n"
+
+		if self.origin_pile:
+			string += f"da: {self.origin_pile.nome},  \n"
 
 		if self.dest_pile:
-			string += f"in: {self.dest_pile.nome}  \n"
-			if not self.dest_pile.is_empty_pile():
-				string += f"la nuova ultima carta di {self.dest_pile.nome} è: {self.dest_pile.carte[-1].get_name()}  \n"
+			string += f"a: {self.dest_pile.nome},  \n"
+			id = (len(self.dest_pile.carte) - 1) - tot_cards
+			if self.dest_pile.carte[id] != self.selected_card[0]:
+				string += f"sopra alla carta: {self.dest_pile.carte[id].get_name()}.  \n"
+
+		if not self.origin_pile.is_empty_pile():
+			string += f"la nuova ultima carta di {self.origin_pile.nome} è: {self.origin_pile.carte[-1].get_name()}.  \n"
+
+		if not self.dest_pile.is_empty_pile():
+			string += f"la nuova ultima carta di {self.dest_pile.nome} è: {self.dest_pile.carte[-1].get_name()}.  \n"
 
 		return string
 
@@ -371,6 +435,7 @@ class EngineSolitario:
 		ver = self.tavolo.pescata(liv)
 		if not ver:
 			self.tavolo.riordina_scarti()
+			self.conta_rimischiate += 1
 			return "rimescolo gli scarti in mazzo riserve!"
 
 		row = -1

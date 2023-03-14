@@ -56,7 +56,7 @@ class GamePlay(DialogBox):
 		self.vocalizza(string)
 
 	def f3_press(self):
-		string = self.engine.get_mosse()
+		string = self.engine.get_info_game()
 		self.vocalizza(string)
 
 	def f4_press(self):
@@ -165,6 +165,12 @@ class GamePlay(DialogBox):
 		if string:
 			self.vocalizza(string)
 
+	def n_press(self):
+		# avviamo una nuova partita richiedendo il livello di difficoltà.
+		string = self.engine.nuova_partita()
+		if string:
+			self.vocalizza(string)
+
 	def p_press(self):
 		string = self.engine.pesca()
 		if string:
@@ -176,7 +182,14 @@ class GamePlay(DialogBox):
 			self.vocalizza(string)
 
 	def esc_press(self):
-		self.quit_app()
+		if self.engine.is_game_running:
+			self.create_question_box("Sei sicuro di voler abbandonare la partita?")
+			result = self.answare
+			if result:
+				self.engine.crea_gioco()
+
+		else:
+			self.quit_app()
 
 	def build_commands_list(self):
 		self.callback_dict = {
@@ -191,6 +204,7 @@ class GamePlay(DialogBox):
 			pygame.K_d: self.d_press,
 			pygame.K_f: self.f_press,
 			pygame.K_m: self.m_press,
+			pygame.K_n: self.n_press,
 			pygame.K_p: self.p_press,
 			pygame.K_s: self.s_press,
 			pygame.K_x: self.x_press,

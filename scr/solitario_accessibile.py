@@ -37,7 +37,7 @@ class SolitarioAccessibile(DialogBox):
 		self.screen_reader = ScreenReader()  # gestore screen reader per le vocalizzazioni delle stringhe
 		#self.dialog_box = DialogBox()  # gestore dialog box
 		self.gameplay = GamePlay(self.schermo, self.screen_reader)
-		self.menu = PyMenu(["Nuova partita", "Esci dal gioco"], self.handle_menu_selection, self.schermo, self.screen_reader)
+		self.menu = PyMenu(["Gioca al solitario classico", "Esci dal gioco"], self.handle_menu_selection, self.schermo, self.screen_reader)
 		self.EVENTS_DN = self.menu.build_commands_list()  # inizializzo la lista dei comandi di gioco
 		self.is_menu_open = True
 		self.selected_menu_item = 0
