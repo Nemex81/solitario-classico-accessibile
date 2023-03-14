@@ -48,15 +48,15 @@ class GamePlay(DialogBox):
 	#@@# sezione comandi utente
 
 	def f1_press(self):
-		string = self.engine.say_origin()
+		string = self.engine.get_origin()
 		self.vocalizza(string)
 
 	def f2_press(self):
-		string = self.engine.say_dest()
+		string = self.engine.get_dest()
 		self.vocalizza(string)
 
 	def f3_press(self):
-		string = self.engine.say_selected_cards()
+		string = self.engine.get_mosse()
 		self.vocalizza(string)
 
 	def f4_press(self):
@@ -99,12 +99,11 @@ class GamePlay(DialogBox):
 			self.vocalizza(string)
 
 	def c_press(self):
-		#string = self.engine.vocalizza_pila()
-		string = self.engine.say_selected_cards()
+		string = self.engine.get_selected_cards()
 		self.vocalizza(string)
 
 	def x_press(self):
-		string = self.engine.vocalizza_carta()
+		string = self.engine.get_info_carta()
 		self.vocalizza(string)
 
 	def up_press(self):
@@ -152,7 +151,7 @@ class GamePlay(DialogBox):
 			self.vocalizza(string)
 
 	def f_press(self):
-		string = self.engine.vocalizza_focus()
+		string = self.engine.get_focus()
 		if string:
 			self.vocalizza(string)
 
@@ -162,7 +161,7 @@ class GamePlay(DialogBox):
 			self.vocalizza(string)
 
 	def m_press(self):
-		string = self.engine.say_tot_dek()
+		string = self.engine.get_tot_dek()
 		if string:
 			self.vocalizza(string)
 
@@ -172,7 +171,7 @@ class GamePlay(DialogBox):
 			self.vocalizza(string)
 
 	def s_press(self):
-		string = self.engine.say_top_scarto()
+		string = self.engine.get_top_scarto()
 		if string:
 			self.vocalizza(string)
 

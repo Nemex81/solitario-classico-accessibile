@@ -2,7 +2,7 @@
 	file game_engine.py
 	percorso: https://github.com/Nemex81/solitario-classico-accessibile/blob/main/scr/game_engine.py
 
-	Modulo per le regole del gioco del solitario
+	Modulo per la gestione delle regole del gioco del solitario
 """
 
 # lib
@@ -53,9 +53,9 @@ class EngineSolitario:
 		self.tavolo.crea_pile_gioco()
 		self.tavolo.distribuisci_carte()
 
-	#@@# sezione prepara stringhe per il vocalizza info
+	#@@# sezione getter
 
-	def vocalizza_carta(self):
+	def get_info_carta(self):
 		string = ""
 		infocarta = ""
 		row, col = self.cursor_pos
@@ -73,7 +73,7 @@ class EngineSolitario:
 		
 		return string
 
-	def vocalizza_pila(self):
+	def get_info_pila(self):
 		string = ""
 		infopila = ""
 		row, col = self.cursor_pos
@@ -82,18 +82,18 @@ class EngineSolitario:
 		string += "scheda pila: %s\n" % infopila
 		return string
 
-	def vocalizza_colonna(self):
+	def get_string_colonna(self):
 		row, col = self.cursor_pos
 		current_pile = self.tavolo.get_pile_name(col)
 		if current_pile:
 			string = current_pile
-			string += self.say_top_card(self.tavolo.pile[col])
+			string += self.get_top_card(self.tavolo.pile[col])
 		else:
 			string = "pila non riconosciuta.\n"
 
 		return string
 
-	def vocalizza_riga(self):
+	def get_string_riga(self):
 		row, col = self.cursor_pos
 		current_card = self.tavolo.get_card_position(row, col)
 		if not current_card:
@@ -104,8 +104,8 @@ class EngineSolitario:
 		string = string_carta
 		return string
 
-	def vocalizza_focus(self):
-		# vocalizziamo lo spostamento
+	def get_focus(self):
+		# vocalizziamo la posizione del cursore di navigazione
 		row, col = self.cursor_pos
 		pila = self.tavolo.pile[col]
 		if pila.is_empty_pile():
@@ -123,7 +123,7 @@ class EngineSolitario:
 
 		return string
 
-	def say_origin(self):
+	def get_origin(self):
 		if not self.origin_pile:
 			return "nessuna pila di origine selezionata"
 
@@ -131,7 +131,7 @@ class EngineSolitario:
 		string += f"tipo di pila: {self.origin_pile.tipo}"
 		return string
 
-	def say_dest(self):
+	def get_dest(self):
 		if not self.dest_pile:
 			return "nessuna pila di destinazione selezionata"
 
@@ -139,7 +139,7 @@ class EngineSolitario:
 		string += f"tipo di pila: {self.dest_pile.tipo}"
 		return string
 
-	def say_selected_cards(self):
+	def get_selected_cards(self):
 		if not self.selected_card:
 			return "nessuna carta selezionata"
 
@@ -149,7 +149,7 @@ class EngineSolitario:
 		string += f"valore della carta: {self.target_card.get_value()}"
 		return string
 
-	def say_top_card(self, pila):
+	def get_top_card(self, pila):
 		# vocalizziamo la carta in cima alla pila
 		# se non è vuota
 		string = "la pila è vuota!\n"
@@ -158,7 +158,7 @@ class EngineSolitario:
 
 		return string
 
-	def say_top_scarto(self):
+	def get_top_scarto(self):
 		# vocalizziamo la carta in cima alla pila scarti se non è vuota
 		string = "la pila scarti è vuota!\n"
 		pila = self.tavolo.pile[11]
@@ -167,7 +167,7 @@ class EngineSolitario:
 
 		return string
 
-	def say_tot_dek(self):
+	def get_tot_dek(self):
 		# vocalizziamo il numero di carte nel mazzo
 		string = "il mazzo è vuoto!\n"
 		mazzo = self.tavolo.pile[12]
@@ -175,6 +175,33 @@ class EngineSolitario:
 			string = f"carte nel mazzo: {mazzo.numero_carte()}"
 		else:
 			string = "il mazzo è vuoto!\n"
+
+		return string
+
+	def get_mosse(self):
+		# vocalizziamo il punteggio
+		mosse = self.conta_giri
+		string= F"Fin'ora hai eseguito {mosse} spostamenti.\n"
+		return string
+
+	def get_report_mossa(self):
+		"""
+		prepariamo la stringa da vocalizzare cmprendende le seguenti informazioni:
+		vocalizziamo il report della mossa
+		vocalizziamo la carta o le carte da spostare,
+		vocalizziamo il nome della pila di destinazione,
+		vocalizziamo la carta nell'ultima posizione della pila di destinazione prima dello spsotamento
+		"""
+		string = ""
+		if self.selected_card:
+			string += "sposti:  \n"
+			for carta in self.selected_card:
+				string += f"{carta.get_name()}  \n"
+
+		if self.dest_pile:
+			string += f"in: {self.dest_pile.nome}  \n"
+			if not self.dest_pile.is_empty_pile():
+				string += f"la nuova ultima carta di {self.dest_pile.nome} è: {self.dest_pile.carte[-1].get_name()}  \n"
 
 		return string
 
@@ -194,7 +221,7 @@ class EngineSolitario:
 
 		if self.cursor_pos[0] > 0:
 			self.cursor_pos[0] -= 1
-			speack =self.vocalizza_riga()
+			speack =self.get_string_riga()
 			return speack
 
 	def move_cursor_down(self):
@@ -204,7 +231,7 @@ class EngineSolitario:
 
 		if self.cursor_pos[0] < len(pila.carte) - 1:
 			self.cursor_pos[0] += 1
-			speack = self.vocalizza_riga()
+			speack = self.get_string_riga()
 			return speack
 
 	def move_cursor_left(self):
@@ -212,7 +239,7 @@ class EngineSolitario:
 		if self.cursor_pos[1] > 0:
 			self.cursor_pos[1] -= 1
 			self.cursor_pos[0] = self.move_cursor_top_card(pile[self.cursor_pos[1]])
-			speack = self.vocalizza_colonna()
+			speack = self.get_string_colonna()
 			return speack
 
 	def move_cursor_right(self):
@@ -220,7 +247,7 @@ class EngineSolitario:
 		if self.cursor_pos[1] < len(pile) - 1:
 			self.cursor_pos[1] += 1
 			self.cursor_pos[0] = self.move_cursor_top_card(pile[self.cursor_pos[1]])
-			speack = self.vocalizza_colonna()
+			speack = self.get_string_colonna()
 			return speack
 
 	def move_cursor_pile_type(self):
@@ -233,14 +260,14 @@ class EngineSolitario:
 				speack = "pile base:  \n"
 				self.cursor_pos[1] = 0
 				self.cursor_pos[0] = self.move_cursor_top_card(pile[0])
-				speack += self.vocalizza_colonna()
+				speack += self.get_string_colonna()
 				return speack
 
 			elif pile[i].tipo != tipo_iniziale:
 				speack = f"pile {pile[i].tipo}:  \n"
 				self.cursor_pos[1] = i
 				self.cursor_pos[0] = self.move_cursor_top_card(pile[i])
-				speack += self.vocalizza_colonna()
+				speack += self.get_string_colonna()
 				return speack
 
 	def move_cursor_to_base(self, pos):
@@ -249,7 +276,7 @@ class EngineSolitario:
 		pile = self.tavolo.pile
 		self.cursor_pos[1] = i
 		self.cursor_pos[0] = self.move_cursor_top_card(pile[i])
-		speack = self.vocalizza_colonna()
+		speack = self.get_string_colonna()
 		return speack
 
 	def move_cursor_top_card(self, pila):
@@ -374,23 +401,14 @@ class EngineSolitario:
 		origin_pila = self.origin_pile
 		cards = self.selected_card
 		if self.tavolo.verifica_spostamenti(self.origin_pile, self.dest_pile, self.selected_card):
-			# rimuovo le carte dalla pila di origine
-			#card_index = self.origin_pile.get_card_index(cards[0])
-			#totcards = len(cards)
-			#carte_rimosse = self.origin_pile.prendi_carte(totcards)
-			#self.dest_pile.carte.extend(carte_rimosse)
+			# rimuovo le carte dalla pila di origine e le aggiungo a quella di destinazione
 			self.tavolo.esegui_spostamento(self.origin_pile, self.dest_pile, cards)
-
 			# scopro l'ultima carta della pila di origine, se è una pila base
-			#if self.origin_pile.is_pila_base():
-				#if not self.origin_pile.is_empty_pile():
-					#if self.origin_pile.carte[-1].coperta:
-						#self.origin_pile.carte[-1].flip()
-
 			self.tavolo.scopri_ultima_carta(self.origin_pile)
 			# alla fine di tutto:
 			self.incrementa_mossa() # incremento il numero di mosse effettuate
 			string = "spostamento consentito!\n"
+			string += self.get_report_mossa()
 			# aggiorno la posizione del cursore
 			self.cursor_pos[1] = self.dest_pile.id
 			self.cursor_pos[0] = self.dest_pile.get_last_card_index()
