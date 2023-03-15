@@ -183,10 +183,11 @@ class GamePlay(DialogBox):
 
 	def esc_press(self):
 		if self.engine.is_game_running:
-			self.create_question_box("Sei sicuro di voler abbandonare la partita?")
+			self.create_yes_or_no_box("Sei sicuro di voler abbandonare la partita?", "Abbandonare la partita??")
 			result = self.answare
 			if result:
-				self.engine.crea_gioco()
+				string = self.engine.chiudi_partita()
+				self.vocalizza(string)
 
 		else:
 			self.quit_app()

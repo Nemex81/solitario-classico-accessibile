@@ -6,7 +6,7 @@
 """
 
 # lib
-import sys, random, logging
+import sys, random, logging, time, pygame
 # moduli personali
 from my_lib.dialog_box import DialogBox
 from scr.pile import TavoloSolitario
@@ -54,24 +54,54 @@ class EngineSolitario(DialogBox):
 		"""Crea un nuovo gioco del solitario."""
 		self.tavolo.crea_pile_gioco()
 		self.tavolo.distribuisci_carte()
-		self.is_game_running = True
+		# copri tutte le ultime carte delle pile base
+		for i in range(7):
+			pila = self.tavolo.pile[i]
+			if pila.is_pila_base() and not self.is_game_running:
+				pila.carte[-1].coperta = True
 
 	def nuova_partita(self):
 		"""Crea un nuovo gioco del solitario."""
+		string = ""
 		if self.is_game_running:
 			self.create_yes_or_no_box("Sei sicuro di voler abbandonare la partita?", "Abbandonare?")
 			result = self.answare
 			if result:
-				self.difficulty_level = self.get_difficulty_level()
-				self.crea_gioco()
+				string = self.chiudi_partita()
+				return string
 
 		elif not self.is_game_running :
-			self.difficulty_level = self.engine.get_difficulty_level()
+			self.difficulty_level = self.get_difficulty_level()
+			self.is_game_running  = True
 			self.crea_gioco()
+			string = "avvio di una nuova partita in corso.  \n"
 
-		string = "avvio di una nuova partita in corso.  \n"
-		self.is_game_running = True
+		self.clock = pygame.time.Clock()
+		self.fps = 60
+		self.start_ticks = pygame.time.get_ticks()
 		return string
+
+	def chiudi_partita(self):
+		""" Chiude la partita aperta del solitario. """
+		self.is_game_running = False
+		self.tavolo.crea_pile_gioco()
+		self.tavolo.distribuisci_carte()
+		# copri tutte le ultime carte delle pile base
+		for i in range(0, 6):
+			pila = self.tavolo.pile[i]
+			if pila.is_pila_base() and not self.is_game_running:
+				pila.carte[-1].coperta = True
+
+		self.conta_giri = 0
+		self.conta_rimischiate = 0
+		self.start_ticks = pygame.time.get_ticks()
+		self.difficulty_level = 1
+		self.cursor_pos = [0, 0]
+		self.selected_card = []
+		self.target_card = None
+		self.origin_pile = None
+		self.dest_pile = None
+		return "partita chiusa.  \n"
 
 	#@@# sezione getter
 
@@ -79,7 +109,7 @@ class EngineSolitario(DialogBox):
 		"""Richiede il livello di difficoltà tramite dialog box."""
 		level = 1
 		# richiediamo all'utente tramite dialog box il livello di difficoltà
-		self.create_input_box("Inserisci il livello di difficoltà da 1 a 3.", "Richiesta difficoltà")
+		self.create_input_box("Inserisci il livello di difficoltà da 1 a 3.", "Configuro Nuova Partita")
 		try: #verifichiamo che sia stato immesso un numero e che sia compreso tra 1 e 3.
 			level = self.answare
 			if not level.isdigit():
@@ -230,10 +260,25 @@ class EngineSolitario(DialogBox):
 		string= F"Fin'ora hai eseguito {mosse} spostamenti.\n"
 		return string
 
+	def get_time(self):
+		if not self.is_game_running:
+			return 0
+
+		elapsed_time = (pygame.time.get_ticks() - self.start_ticks) // 1000
+		#traduci in minuti il tempo trascorso
+		return elapsed_time 
+
 	def get_info_game(self):
 		# vocalizza il numero di mosse ed il numero di rimischiate fatte dal giocatore
-		string = ""
-		string += f"Spostamenti totali: {self.get_mosse()}  \n"
+		if not self.is_game_running:
+			return "nessuna partita in corso"
+
+		string = "Partita in corso,  \n"
+		elapsed_time = self.get_time()
+		minuti = time.strftime("%M:%S", time.gmtime(elapsed_time))
+		string += f"minuti trascorsi:  {minuti}.  \n"
+		string += f"difficoltà impostata:  livello {self.difficulty_level}.  \n"
+		string += f"Spostamenti totali:  {self.get_mosse()}  \n"
 		string += f"Rimischiate:  {self.get_rimischiate()}  \n"
 		return string
 
@@ -262,7 +307,7 @@ class EngineSolitario(DialogBox):
 				string += f"sopra alla carta: {self.dest_pile.carte[id].get_name()}.  \n"
 
 		if not self.origin_pile.is_empty_pile():
-			string += f"la nuova ultima carta di {self.origin_pile.nome} è: {self.origin_pile.carte[-1].get_name()}.  \n"
+			string += f"hai scoperto : {self.origin_pile.carte[-1].get_name()} nella {self.origin_pile.nome}.  \n"
 
 		if not self.dest_pile.is_empty_pile():
 			string += f"la nuova ultima carta di {self.dest_pile.nome} è: {self.dest_pile.carte[-1].get_name()}.  \n"
@@ -431,7 +476,7 @@ class EngineSolitario(DialogBox):
 		return string
 
 	def pesca(self):
-		liv = self.difficulty_level
+		liv = int(self.difficulty_level)
 		ver = self.tavolo.pescata(liv)
 		if not ver:
 			self.tavolo.riordina_scarti()
@@ -440,8 +485,17 @@ class EngineSolitario(DialogBox):
 
 		row = -1
 		col = 11
-		carta = self.tavolo.get_card_position(row, col)
-		string = "hai pescato: %s" % carta.get_name()
+		carte = []
+		for i in range(liv):
+			carta = self.tavolo.get_card_position(row, col)
+			carte.append(carta)
+			row -= 1
+
+		carte.reverse()
+		string = "hai pescato: "
+		for carta in carte:
+			string += "%s,  \n" % carta.get_name()
+
 		return string
 
 	def set_destination_pile(self):
