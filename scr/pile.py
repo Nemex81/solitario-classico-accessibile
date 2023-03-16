@@ -69,12 +69,9 @@ class Pila:
 		return len(self.carte)
 
 	def get_card_index(self, card):
-		""" Restituisce l'indice della carta. """
-		return self.carte.index(card)
-
-	def get_last_card_index(self):
-		""" Restituisce l'indice dell'ultima carta. """
-		return len(self.carte) - 1
+		""" Restituisce l'indice della carta se presente. """
+		if card in self.carte:
+			return self.carte.index(card)
 
 	def get_pile_type(self):
 		""" Restituisce il tipo di pila """
