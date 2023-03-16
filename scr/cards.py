@@ -6,56 +6,191 @@
 """
 
 #lib
-import random
-from itertools import product
+import logging, random
 # moduli personali
-from my_lib.dialog_box import DialogBox
 import my_lib.myutyls as mu
-#import pdb
+from my_lib.myglob import *
+#import pdb #pdb.set_trace() da impostare dove si vuol far partire il debugger
+
+# Imposta la configurazione del logger
+logging.basicConfig(filename='log.txt', level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
 
 class Carta:
+	""" classe per la gestione delle carte di gioco"""
 	def __init__(self, valore, seme, coperta=True):
 		self.valore = valore
 		self.seme = seme
+		self.colore = None
+		self.id = None
 		self.nome = None
+		self.valore_numerico = None
 		self.coperta = coperta
+
+	def __str__(self):
+		""" restituisce una stringa con le informazioni della carta"""
+		details = f"nome: {self.get_name}\n"
+		details += f"id: {self.get_id}\n"
+		details += f"seme: {self.get_suit}\n"
+		details += f"valore: {self.get_value}\n"
+		details += f"colore: {self.get_color}\n"
+		return details
+
+	#@@# sezione property
+
+	@property
+	def get_name(self):
+		if self.nome is None:
+			return "nessun nome"
+
+		if self.coperta:
+			return "carta coperta"
+
+		return self.nome
+
+	@property
+	def get_id(self):
+		return self.id
+
+	@property
+	def get_suit(self):
+		if self.seme is None:
+			return "nessuna seme"
+
+		if self.coperta:
+			return "carta coperta"
+
+		return self.seme
+
+	@property
+	def get_value(self):
+		if self.valore_numerico is None:
+			return "nessun valore"
+
+		if self.coperta:
+			return "carta coperta"
+
+		return self.valore_numerico
+
+	@property
+	def get_color(self):
+		if self.colore is None:
+			return "nessuna colore"
+
+		if self.coperta:
+			return "carta coperta"
+
+		return self.colore
+
+	@property
+	def get_info_card(self):
+		details = f"nome: {self.get_name}\n"
+		details += f"id: {self.get_id}"
+		details += f"seme: {self.get_suit}\n"
+		details += f"valore: {self.get_value}\n"
+		details += f"colore: {self.get_color}\n"
+		return details
+
+	#@@# sezione metodi di classe
 
 	def flip(self):
 		self.coperta = not self.coperta
 
-	def get_nome(self):
-		nome = f"{self.valore} di {self.seme}"
-		return nome
+	def set_color(self):
+		seme = self.seme
+		colore = ""
+		if seme == "cuori" or seme == "quadri":
+			colore = "rosso"
+
+		elif seme == "picche" or seme == "fiori":
+			colore = "blu"
+
+		else:
+			colore = "indefinito"
+
+		self.colore = colore
+
 
 class Mazzo:
-	SUITES = ["Cuori", "Quadri", "Fiori", "Picche"]
+	SUITES = ["cuori", "quadri", "fiori", "picche"]
 	VALUES = ["Asso", "2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Regina", "Re"]
+	FIGURE_VALUES = {"Jack": 11, "Regina": 12, "Re": 13, "Asso" : 1}
 
 	def __init__(self):
-		self.carte = self.crea_mazzo()
+		self.cards = []  # lista delle carte nel mazzo
+		self.reset()
 
-	def crea_mazzo(self):
-		mazzo = [Carta(valore, seme) for valore, seme in product(Mazzo.VALUES, Mazzo.SUITES)]
+	def crea(self):
+		semi = self.SUITES
+		valori = self.VALUES
+		mazzo = []
+		i = 0
+		for seme in semi:
+			for valore in valori:
+				carta = Carta(valore, seme)
+				carta.nome = f"{valore} di {seme}"
+				carta.set_color()
+				if valore in ["Jack", "Regina", "Re", "Asso"]:
+					carta.valore_numerico = int(self.FIGURE_VALUES[valore])
+				else:
+					carta.valore_numerico = int(valore)
+
+				carta.id = i
+				mazzo.append(carta)
+				i += 1
+
+		self.cards = mazzo
 		return mazzo
 
-	def mischia_carte(self, mazzo):
-		random.shuffle(mazzo)
-		return mazzo
+	def inserisci_carte(self, carte_aggiuntive):
+		""" 
+			permette di inserire un altro set di carte  nel mazzo 
+			da utilizzare per altri tip di solitario.
+		"""
+		for carta in carte_aggiuntive:
+			self.cards.append(carta)
+
+	def rimuovi_carte(self, n):
+		"""Rimuove n carte dal mazzo e le restituisce come lista."""
+		carte_rimosse = self.cards[:n]
+		self.cards = self.cards[n:]
+		return carte_rimosse
 
 	def pesca(self):
-		carta_pescata = self.carte.pop(0)
+		carta_pescata = self.cards.pop(0)
 		return carta_pescata
 
 	def get_carta(self, i):
-		return self.carte[i]
+		# restituisce la carta in posizione i se esistente
+		if i < len(self.cards):
+			return self.cards[i]
+
+
+	def get_numero_carte(self):
+		return len(self.cards)
+
+	def mischia(self):
+		random.shuffle(self.cards)
+
+	def is_empty_dek(self):
+		# se il mazzo è vuoto restituiamo true
+		if len(self.cards) == 0:
+			return True
+
+	def reset(self):
+		self.cards = []
+		self.crea()
+		self.mischia()
 
 	def get_carta(self, i):
 		return self.carte[i]
 
 
 
-#@@@# start del modulo
+#@@@# Start del modulo
 if __name__ == "__main__":
-	print("compilazione completata di %s" % __name__)
+	print("compilazione di %s completata." % __name__)
+
 else:
 	print("Carico: %s" % __name__)

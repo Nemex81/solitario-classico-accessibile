@@ -2,13 +2,20 @@
 	file game_play.py
 	percorso: https://github.com/Nemex81/solitario-classico-accessibile/blob/main/scr/game_play.py
 
+	Modulo per la gestione dellinterfaccia utente durante la partita al solitario
+
 """
 
 import sys, os, time, random, pygame
 from pygame.locals import *
 from scr.game_engine import EngineSolitario
-from scr.pygame_menu import PyMenu
 from my_lib.dialog_box import DialogBox
+#import pdb #pdb.set_trace() da impostare dove si vuol far partire il debugger
+
+# Imposta la configurazione del logger
+#logging.basicConfig(filename='log.txt', level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
+#logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+#logger.setLevel(logging.DEBUG)
 
 # inizializzo pygame
 pygame.init()
@@ -18,122 +25,245 @@ class GamePlay(DialogBox):
 	def __init__(self, screen, screen_reader):
 		super().__init__()
 		#self.callback = callback_dict
-		self.engine = EngineSolitario()
-		self.screen = screen
-		self.screen_reader = screen_reader
-		self.cursor_pos = [0, 0]  # posizione iniziale del cursore sul tableau
-		self.min_row = 0
-		self.max_row = len(self.engine.tableau) - 1
-		self.min_col = 0
-		self.max_col = max([len(col) for col in self.engine.tableau])
-		self.selected_card = None  # carta selezionata dal cursore
-		self.selected_card_index = 0  # indice della carta selezionata nella pila di tableau
-		self.build_commands_list()
-		self.new_game()
+		self.screen = screen # import config schermo
+		self.screen_reader = screen_reader # import motore di vocalizzazione
+		self.engine = EngineSolitario() # inizializzazione motore di gioco per il solitario classico
+		self.build_commands_list() # creazione lista dei comandi utente
+		self.engine.crea_gioco() # avvio una nuova partita
 
-	def new_game(self):
-		self.engine.crea_gioco()
+	#@@# sezione metodi di supporto per comandi utente
 
-	def is_valid_move(self, origin_pile, dest_pile):
-		# Check if origin and destination piles are valid
-		if not self.is_valid_pile(origin_pile) or not self.is_valid_pile(dest_pile):
-			return False
-		
-		# Controlla se la pila di origine è vuota
-		if self.is_empty_pile(origin_pile):
-			return False
-		
-		# Prendi la carta in cima al mazzo delle origini
-		top_card = self.get_top_card(origin_pile)
-		
-		# Controlla se la prima carta può essere spostata nella pila di destinazione
-		if self.is_valid_card_move(top_card, dest_pile):
-			return True
-		
-		return False
-
-	def move_cursor_left(self):
-		if self.cursor_pos[0] > 0:
-			self.cursor_pos[0] -= 1
-			self.cursor_pos[1] = min(self.cursor_pos[1], len(self.engine.tableau[self.cursor_pos[0]])-1)
-
-	def move_cursor_right(self):
-		if self.cursor_pos[0] < len(self.engine.tableau) - 1:
-			self.cursor_pos[0] += 1
-			self.cursor_pos[1] = min(self.cursor_pos[1], len(self.engine.tableau[self.cursor_pos[0]])-1)
-
-	def move_cursor_up(self):
-		if self.cursor_pos[1] > 0:
-			self.cursor_pos[1] -= 1
-
-	def move_cursor_down(self):
-		if self.cursor_pos[1] < len(self.engine.tableau[self.cursor_pos[0]]) - 1:
-			self.cursor_pos[1] += 1
-
-	def select_card(self):
-		row, col = self.cursor_pos
-		card = self.engine.get_card_at_position(row, col)
-
-		if card is not None:
-			self.selected_card = card
-
-	def move_card(self):
-		if self.selected_card is not None:
-			dest_row = self.cursor_pos[0]
-			dest_col = len(self.engine.tableau[dest_row])
-			self.engine.move_card(self.selected_card, dest_row, dest_col)
-			self.selected_card = None
-			self.update_game_state()
-
-	def vocalizza_selezioni(self):
-		row, col = self.cursor_pos
-		card = self.engine.get_card_at_position(row, col)
-		if card is not None:
-			card_name = self.engine.mazzo.get_card_name(card.valore + (card.seme * 13))
-			pile_name = self.get_pile_name(row, col)
-			message = f"Carta selezionata: {card_name}. Pila selezionata: {pile_name}."
-			self.screen_reader.vocalizza(message)
-
-	def update_game_state(self):
-		# Aggiorna lo stato del tavolo di gioco
-		self.engine.check_for_win()
-		self.engine.update_tableau()
-		self.engine.update_foundations()
-		self.engine.update_waste_pile()
-
-	def build_commands_list(self):
-		self.callback_dict = {
-			pygame.K_UP: self.move_cursor_left,
-			pygame.K_DOWN: self.move_cursor_right,
-			pygame.K_LEFT: self.move_cursor_up,
-			pygame.K_RIGHT: self.move_cursor_down,
-			pygame.K_RETURN: self.select_card,
-			pygame.K_SPACE: self.move_card,
-			pygame.K_ESCAPE: self.quit_app,
-		}
-
-	def handle_keyboard_EVENTS(self, event):
-		if event.type == KEYDOWN:
-			if event.key == K_ESCAPE:
-				self.quit_app()
-
-			if self.callback_dict.get(event.key):
-				self.callback_dict[event.key]()
-
-		row, col = self.cursor_pos
-		current_card = self.engine.get_card(row, col)
-		current_pile = self.engine.get_pile_name(row, col)
-		card_name = self.engine.get_card_name(current_card) if current_card else "carta coperta"
-		self.screen_reader.vocalizza(f"Cursore spostato a colonna {col}, riga {row}. {card_name} nella pila {current_pile}")
+	def vocalizza(self, string):
+		self.screen_reader.vocalizza(string)
 
 	def quit_app(self):
-		self.screen_reader.vocalizza("chiusura in corso.  ")
+		self.vocalizza("chiusura in corso.  ")
 		pygame.time.wait(500)
-		self.dialog_box.create_question_box("Sei sicuro di voler uscire?")
+		self.create_question_box("Sei sicuro di voler uscire?")
 		result = self.answare
 		if result:
 			pygame.quit()
 			sys.exit()
+
+	#@@# sezione comandi utente
+
+	def f1_press(self):
+		string = self.engine.test_vittoria()
+		self.vocalizza(string)
+
+	def f2_press(self):
+		string = self.engine.test_set_time_out()
+		self.vocalizza(string)
+
+	def f3_press(self):
+		string = self.engine.get_info_game()
+		self.vocalizza(string)
+
+	def f4_press(self):
+		string = ""
+		self.vocalizza(string)
+
+	def f5_press(self):
+		string = ""
+		self.vocalizza(string)
+
+	def up_press(self):
+		string = self.engine.move_cursor("up")
+		if string:
+			self.vocalizza(string)
+
+	def down_press(self):
+		string = self.engine.move_cursor("down")
+		if string:
+			self.vocalizza(string)
+
+	def left_press(self):
+		string = self.engine.move_cursor("left")
+		if string:
+			self.vocalizza(string)
+
+	def right_press(self):
+		string = self.engine.move_cursor("right")
+		if string:
+			self.vocalizza(string)
+
+	def enter_press(self):
+		if pygame.key.get_mods() and KMOD_CTRL:
+			string = self.engine.select_scarto()
+		else:
+			string = self.engine.select_card()
+
+		if string:
+			self.vocalizza(string)
+
+	def space_press(self):
+		string = self.engine.sposta_carte()
+		if string:
+			self.vocalizza(string)
+
+	def tab_press(self):
+		string = self.engine.move_cursor("tab")
+		if string:
+			self.vocalizza(string)
+
+	def canc_press(self):
+		string = self.engine.cancel_selected_cards()
+		if string:
+			self.vocalizza(string)
+
+	def press_1(self):
+		string = self.engine.move_cursor("0")
+		if string:
+			self.vocalizza(string)
+
+	def press_2(self):
+		string = self.engine.move_cursor("1")
+		if string:
+			self.vocalizza(string)
+
+	def press_3(self):
+		string = self.engine.move_cursor("2")
+		if string:
+			self.vocalizza(string)
+
+	def press_4(self):
+		string = self.engine.move_cursor("3")
+		if string:
+			self.vocalizza(string)
+
+	def press_5(self):
+		string = self.engine.move_cursor("4")
+		if string:
+			self.vocalizza(string)
+
+	def press_6(self):
+		string = self.engine.move_cursor("5")
+		if string:
+			self.vocalizza(string)
+
+	def press_7(self):
+		string = self.engine.move_cursor("6")
+		if string:
+			self.vocalizza(string)
+
+	def c_press(self):
+		string = self.engine.get_selected_cards()
+		self.vocalizza(string)
+
+	def d_press(self):
+		string = self.engine.pesca()
+		if string:
+			self.vocalizza(string)
+
+	def f_press(self):
+		string = self.engine.get_focus()
+		if string:
+			self.vocalizza(string)
+
+	def m_press(self):
+		string = self.engine.get_tot_dek()
+		if string:
+			self.vocalizza(string)
+
+	def n_press(self):
+		# avviamo una nuova partita richiedendo il livello di difficoltà.
+		if self.engine.is_game_running:
+			self.create_yes_or_no_box("Sei sicuro di voler avviare una nuova partita?", "Partita in corso rilevata")
+			if not self.answare:
+				return
+
+		self.engine.nuova_partita()
+
+	def p_press(self):
+		string = self.engine.pesca()
+		if string:
+			self.vocalizza(string)
+
+	def s_press(self):
+		string = self.engine.get_top_scarto()
+		if string:
+			self.vocalizza(string)
+
+	def t_press(self):
+		string = self.engine.get_info_tavolo()
+		if string:
+			self.vocalizza(string)
+
+	def x_press(self):
+		string = self.engine.get_info_carta()
+		self.vocalizza(string)
+
+	def esc_press(self):
+		if self.engine.is_game_running:
+			self.create_yes_or_no_box("Sei sicuro di voler abbandonare la partita?", "Abbandonare la partita??")
+			result = self.answare
+			if result:
+				string = self.engine.chiudi_partita()
+				self.vocalizza(string)
+
+		else:
+			self.quit_app()
+
+	def build_commands_list(self):
+		self.callback_dict = {
+			pygame.K_1: self.press_1,
+			pygame.K_2: self.press_2,
+			pygame.K_3: self.press_3,
+			pygame.K_4: self.press_4,
+			pygame.K_5: self.press_5,
+			pygame.K_6: self.press_6,
+			pygame.K_7: self.press_7,
+			pygame.K_c: self.c_press,
+			pygame.K_d: self.d_press,
+			pygame.K_f: self.f_press,
+			pygame.K_m: self.m_press,
+			pygame.K_n: self.n_press,
+			pygame.K_p: self.p_press,
+			pygame.K_s: self.s_press,
+			pygame.K_t: self.t_press,
+			pygame.K_x: self.x_press,
+			pygame.K_F1: self.f1_press,
+			pygame.K_F2: self.f2_press,
+			pygame.K_F3: self.f3_press,
+			pygame.K_F4: self.f4_press,
+			pygame.K_F5: self.f5_press,
+			pygame.K_LEFT: self.left_press,
+			pygame.K_RIGHT: self.right_press,
+			pygame.K_UP: self.up_press,
+			pygame.K_DOWN: self.down_press,
+			pygame.K_RETURN: self.enter_press,
+			pygame.K_SPACE: self.space_press,
+			pygame.K_TAB: self.tab_press,
+			pygame.K_DELETE: self.canc_press,
+			pygame.K_ESCAPE: self.esc_press,
+		}
+
+	def handle_keyboard_EVENTS(self, event):
+		""" gestione ciclo eventi """
+		if self.callback_dict.get(event.key):
+			self.callback_dict[event.key]()
+
+		# verifichiamo la sconfitta per tempo scaduto
+		if self.engine.is_game_running and self.engine.is_time_over:
+			# se il tempo è scaduto e non abbiamo vinto, allora annunciamo la sconfitta con una yes_or_no_box chiedendo se si vuole giocare ancora.
+			str_lost = "Hai perso!  \nHai superato il tempo limite di 60 minuti!\n"
+			self.create_alert_box(str_lost, "Tempo scaduto")
+			self.create_yes_or_no_box("Vuoi giocare ancora?", "Richiesta")
+			if self.answare:
+				self.engine.nuova_partita()
+			else:
+				self.engine.chiudi_partita()
+
+		# verifichiamo la vittoria
+		if self.engine.is_game_running and self.engine.winner:
+			str_winner = self.engine.get_info_game()
+			self.create_alert_box(str_winner, "Vittoria Spumeggiante")
+			self.create_yes_or_no_box("Vuoi giocare un'altra partita?", "Domanda")
+			if self.answare:
+				self.engine.nuova_partita()
+			else:
+				self.engine.chiudi_partita()
+
 
 
 

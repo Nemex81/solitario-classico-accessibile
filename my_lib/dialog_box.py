@@ -20,7 +20,7 @@ class DialogBox:
 		self.dialog_box.create_question_box(question)
 		self.answare = self.dialog_box.answare
 
-	def create_yes_or_no_box(self, questionm, title):
+	def create_yes_or_no_box(self, question, title):
 		self.dialog_box.create_yes_or_no_box(question, title)
 		self.answare = self.dialog_box.answare
 

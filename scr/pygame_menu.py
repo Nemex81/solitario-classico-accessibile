@@ -9,6 +9,13 @@
 import sys, os, time, pygame
 from pygame.locals import *
 from my_lib.dialog_box import DialogBox
+#import pdb #pdb.set_trace() da impostare dove si vuol far partire il debugger
+
+# Imposta la configurazione del logger
+#logging.basicConfig(filename='log.txt', level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
+#logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+#logger.setLevel(logging.DEBUG)
+
 # inizializzo pygame
 pygame.init()
 pygame.font.init()
