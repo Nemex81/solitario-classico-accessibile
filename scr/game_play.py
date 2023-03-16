@@ -48,11 +48,11 @@ class GamePlay(DialogBox):
 	#@@# sezione comandi utente
 
 	def f1_press(self):
-		string = self.engine.get_origin()
+		string = self.engine.test_vittoria()
 		self.vocalizza(string)
 
 	def f2_press(self):
-		string = self.engine.get_dest()
+		string = self.engine.test_set_time_out()
 		self.vocalizza(string)
 
 	def f3_press(self):
@@ -60,50 +60,11 @@ class GamePlay(DialogBox):
 		self.vocalizza(string)
 
 	def f4_press(self):
-		string = self.engine.prova_verifica()
+		string = ""
 		self.vocalizza(string)
 
-	def press_1(self):
-		string = self.engine.move_cursor("0")
-		if string:
-			self.vocalizza(string)
-
-	def press_2(self):
-		string = self.engine.move_cursor("1")
-		if string:
-			self.vocalizza(string)
-
-	def press_3(self):
-		string = self.engine.move_cursor("2")
-		if string:
-			self.vocalizza(string)
-
-	def press_4(self):
-		string = self.engine.move_cursor("3")
-		if string:
-			self.vocalizza(string)
-
-	def press_5(self):
-		string = self.engine.move_cursor("4")
-		if string:
-			self.vocalizza(string)
-
-	def press_6(self):
-		string = self.engine.move_cursor("5")
-		if string:
-			self.vocalizza(string)
-
-	def press_7(self):
-		string = self.engine.move_cursor("6")
-		if string:
-			self.vocalizza(string)
-
-	def c_press(self):
-		string = self.engine.get_selected_cards()
-		self.vocalizza(string)
-
-	def x_press(self):
-		string = self.engine.get_info_carta()
+	def f5_press(self):
+		string = ""
 		self.vocalizza(string)
 
 	def up_press(self):
@@ -150,13 +111,52 @@ class GamePlay(DialogBox):
 		if string:
 			self.vocalizza(string)
 
-	def f_press(self):
-		string = self.engine.get_focus()
+	def press_1(self):
+		string = self.engine.move_cursor("0")
 		if string:
 			self.vocalizza(string)
 
+	def press_2(self):
+		string = self.engine.move_cursor("1")
+		if string:
+			self.vocalizza(string)
+
+	def press_3(self):
+		string = self.engine.move_cursor("2")
+		if string:
+			self.vocalizza(string)
+
+	def press_4(self):
+		string = self.engine.move_cursor("3")
+		if string:
+			self.vocalizza(string)
+
+	def press_5(self):
+		string = self.engine.move_cursor("4")
+		if string:
+			self.vocalizza(string)
+
+	def press_6(self):
+		string = self.engine.move_cursor("5")
+		if string:
+			self.vocalizza(string)
+
+	def press_7(self):
+		string = self.engine.move_cursor("6")
+		if string:
+			self.vocalizza(string)
+
+	def c_press(self):
+		string = self.engine.get_selected_cards()
+		self.vocalizza(string)
+
 	def d_press(self):
 		string = self.engine.pesca()
+		if string:
+			self.vocalizza(string)
+
+	def f_press(self):
+		string = self.engine.get_focus()
 		if string:
 			self.vocalizza(string)
 
@@ -167,9 +167,12 @@ class GamePlay(DialogBox):
 
 	def n_press(self):
 		# avviamo una nuova partita richiedendo il livello di difficoltà.
-		string = self.engine.nuova_partita()
-		if string:
-			self.vocalizza(string)
+		if self.engine.is_game_running:
+			self.create_yes_or_no_box("Sei sicuro di voler avviare una nuova partita?", "Partita in corso rilevata")
+			if not self.answare:
+				return
+
+		self.engine.nuova_partita()
 
 	def p_press(self):
 		string = self.engine.pesca()
@@ -180,6 +183,15 @@ class GamePlay(DialogBox):
 		string = self.engine.get_top_scarto()
 		if string:
 			self.vocalizza(string)
+
+	def t_press(self):
+		string = self.engine.get_info_tavolo()
+		if string:
+			self.vocalizza(string)
+
+	def x_press(self):
+		string = self.engine.get_info_carta()
+		self.vocalizza(string)
 
 	def esc_press(self):
 		if self.engine.is_game_running:
@@ -208,11 +220,13 @@ class GamePlay(DialogBox):
 			pygame.K_n: self.n_press,
 			pygame.K_p: self.p_press,
 			pygame.K_s: self.s_press,
+			pygame.K_t: self.t_press,
 			pygame.K_x: self.x_press,
 			pygame.K_F1: self.f1_press,
 			pygame.K_F2: self.f2_press,
 			pygame.K_F3: self.f3_press,
 			pygame.K_F4: self.f4_press,
+			pygame.K_F5: self.f5_press,
 			pygame.K_LEFT: self.left_press,
 			pygame.K_RIGHT: self.right_press,
 			pygame.K_UP: self.up_press,
@@ -229,12 +243,28 @@ class GamePlay(DialogBox):
 		if self.callback_dict.get(event.key):
 			self.callback_dict[event.key]()
 
+		# verifichiamo la sconfitta per tempo scaduto
+		if self.engine.is_game_running and self.engine.is_time_over:
+			# se il tempo è scaduto e non abbiamo vinto, allora annunciamo la sconfitta con una yes_or_no_box chiedendo se si vuole giocare ancora.
+			str_lost = "Hai perso!  \nHai superato il tempo limite di 60 minuti!\n"
+			self.create_alert_box(str_lost, "Tempo scaduto")
+			self.create_yes_or_no_box("Vuoi giocare ancora?", "Richiesta")
+			if self.answare:
+				self.engine.nuova_partita()
+			else:
+				self.engine.chiudi_partita()
+
 		# verifichiamo la vittoria
-		if self.engine.is_game_running:
-			string = self.engine.ceck_winner()
-			if string:
-				self.engine.is_game_running = False
-				self.vocalizza(string)
+		if self.engine.is_game_running and self.engine.winner:
+			str_winner = self.engine.get_info_game()
+			self.create_alert_box(str_winner, "Vittoria Spumeggiante")
+			self.create_yes_or_no_box("Vuoi giocare un'altra partita?", "Domanda")
+			if self.answare:
+				self.engine.nuova_partita()
+			else:
+				self.engine.chiudi_partita()
+
+
 
 
 #@@@# start del modulo

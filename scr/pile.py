@@ -194,10 +194,6 @@ class TavoloSolitario:
 		if not self.pile[12].carte:
 			return False
 
-		if self.pile[12].numero_carte() < num_cards:
-			# Non ci sono abbastanza carte nel mazzo riserve, gestire l'errore come si preferisce
-			return False
-
 		# Pesco le carte dal mazzo riserve
 		cards = self.pile[12].prendi_carte(num_cards)
 		# Sposto le carte pescate sulla pila scoperta (numero 11)

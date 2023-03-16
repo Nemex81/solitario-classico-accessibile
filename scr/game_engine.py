@@ -15,18 +15,17 @@ from scr.pile import TavoloSolitario
 # Imposta la configurazione del logger
 logging.basicConfig(filename='log.txt', level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger()
-#logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-#logger.setLevel(logging.DEBUG)
-# Esempio di scrittura di una stringa di log
+logger.setLevel(logging.DEBUG)
 #logger.debug("Il mio messaggio di debug")
 
 class EngineSolitario(DialogBox):
 	def __init__(self):
 		super().__init__()
 		self.tavolo = TavoloSolitario()
-		self.difficulty_level = 1
+		self.winner = False
+		self.is_time_over = False
 		self.is_game_running = False
-		self.primo_giro = True
+		self.difficulty_level = 1
 		self.conta_giri = 0 # contatore per gestire il numero di mosse fatte dal player
 		self.conta_rimischiate = 0 # contatore per gestire il numero di rimischiate fatte dal player
 		self.cursor_pos = [0, 0]  # posizione iniziale del cursore sul tavolo
@@ -35,55 +34,58 @@ class EngineSolitario(DialogBox):
 		self.origin_pile = None # salvo pila origine per gestione spostamenti
 		self.dest_pile = None # salvo pile destinazione valide per gestione spostamenti
 
-	def prova_verifica(self):
-		string = "mossa non consentita!\n"
-		self.set_destination_pile()
-		col = self.cursor_pos[1]
-		dest_pila = self.tavolo.pile[col]
-		if not self.origin_pile or not self.target_card:
-			return "devi prima selezionare la carta da spostare!\n"
+		# imposto il tempo di gioco
+		self.clock = pygame.time.Clock()
+		self.fps = 60
+		self.start_ticks = 0
 
-		origin_pila = self.origin_pile
-		card = self.target_card
-		if self.tavolo.verifica_spostamenti(origin_pila, dest_pila, card):
-			string = "spostamento consentito finalmente!  "
+	def test_set_time_out(self):
+	#																																																																																																																																												 impostare manualmente il tempo a 60 minuti
+		self.is_time_over = True
+		return "Prova verifica tempo scaduto.  \n"
 
-		return string
+	def test_vittoria(self):
+		# creiamo una simulazione di vittoria partita per testare il ceck nel ciclo principale
+		self.winner = True
+		return "Prova verifica vittoria partita.  \n"
 
 	def crea_gioco(self):
+
 		"""Crea un nuovo gioco del solitario."""
 		self.tavolo.crea_pile_gioco()
 		self.tavolo.distribuisci_carte()
+
 		# copri tutte le ultime carte delle pile base
 		for i in range(7):
 			pila = self.tavolo.pile[i]
 			if pila.is_pila_base() and not self.is_game_running:
 				pila.carte[-1].coperta = True
 
+		# apre una alertbox per notificare l'apertura della partita specificando il livello impostato
+		if self.is_game_running and not self.winner:
+			self.create_alert_box("Livello di difficoltà impostato: %s" % self.difficulty_level, "Nuova partita creata")
+
 	def nuova_partita(self):
 		"""Crea un nuovo gioco del solitario."""
-		string = ""
-		if self.is_game_running:
-			self.create_yes_or_no_box("Sei sicuro di voler abbandonare la partita?", "Abbandonare?")
-			result = self.answare
-			if result:
-				string = self.chiudi_partita()
-				return string
+		self.winner = False
+		self.is_time_over = False
+		self.is_game_running = True
 
-		elif not self.is_game_running :
-			self.difficulty_level = self.get_difficulty_level()
-			self.is_game_running  = True
-			self.crea_gioco()
-			string = "avvio di una nuova partita in corso.  \n"
+		# imposto il livello di difficoltà ed avvio la partita
+		self.difficulty_level = self.get_difficulty_level()
+		self.crea_gioco()
 
+		# resetto cronometro partita e dati orologio
 		self.clock = pygame.time.Clock()
 		self.fps = 60
 		self.start_ticks = pygame.time.get_ticks()
-		return string
+		return "avvio di una nuova partita in corso.  \n"
 
 	def chiudi_partita(self):
 		""" Chiude la partita aperta del solitario. """
 		self.is_game_running = False
+		self.winner = False
+		self.is_time_over = False
 		self.tavolo.crea_pile_gioco()
 		self.tavolo.distribuisci_carte()
 		# copri tutte le ultime carte delle pile base
@@ -101,7 +103,7 @@ class EngineSolitario(DialogBox):
 		self.target_card = None
 		self.origin_pile = None
 		self.dest_pile = None
-		return "partita chiusa.  \n"
+		return "partita attuale chiusa.  \n"
 
 	#@@# sezione getter
 
@@ -126,7 +128,6 @@ class EngineSolitario(DialogBox):
 		return level
 
 	def get_info_carta(self):
-		string = ""
 		infocarta = ""
 		row, col = self.cursor_pos
 		pila = self.tavolo.pile[col]
@@ -139,18 +140,14 @@ class EngineSolitario(DialogBox):
 			id_carta = pila.get_card_index(carta)
 			infocarta = carta.get_info_card()
 			infocarta += f"pos in pila: {id_carta+1}\n"
-			string += "scheda carta: %s\n" % infocarta
-		
-		return string
+			return "scheda carta: %s\n" % infocarta
 
 	def get_info_pila(self):
-		string = ""
 		infopila = ""
 		row, col = self.cursor_pos
 		pila = self.tavolo.pile[col]
 		infopila = pila .get_pile_info()
-		string += "scheda pila: %s\n" % infopila
-		return string
+		return "scheda pila: %s\n" % infopila
 
 	def get_string_colonna(self):
 		row, col = self.cursor_pos
@@ -170,9 +167,7 @@ class EngineSolitario(DialogBox):
 			return "non riesco ad identificare la carta alle coordinate specificate"
 
 		card_name = current_card.get_name()
-		string_carta = f"{row+1}: {card_name}"
-		string = string_carta
-		return string
+		return f"{row+1}: {card_name}"
 
 	def get_focus(self):
 		# vocalizziamo la posizione del cursore di navigazione
@@ -251,22 +246,18 @@ class EngineSolitario(DialogBox):
 	def get_rimischiate(self):
 		# vocalizza il numero di rimischiate effettuate dal giocatore
 		rimischiate = self.conta_rimischiate
-		string = F"Fin'ora hai rimischiato gli scarti nel mazzo {rimischiate} volte.  \n"
-		return string
+		return F"Fin'ora hai rimischiato gli scarti nel mazzo {rimischiate} volte.  \n"
 
 	def get_mosse(self):
 		# vocalizziamo il punteggionumero di spostamenti feseguiti dal player 
 		mosse =  self.conta_giri
-		string= F"Fin'ora hai eseguito {mosse} spostamenti.\n"
-		return string
+		return F"Fin'ora hai eseguito {mosse} spostamenti.\n"
 
 	def get_time(self):
 		if not self.is_game_running:
 			return 0
 
-		elapsed_time = (pygame.time.get_ticks() - self.start_ticks) // 1000
-		#traduci in minuti il tempo trascorso
-		return elapsed_time 
+		return (pygame.time.get_ticks() - self.start_ticks) // 1000
 
 	def get_info_game(self):
 		# vocalizza il numero di mosse ed il numero di rimischiate fatte dal giocatore
@@ -282,11 +273,25 @@ class EngineSolitario(DialogBox):
 		string += f"Rimischiate:  {self.get_rimischiate()}  \n"
 		return string
 
+	def get_info_tavolo(self):
+		#vocalizza le ultime carte di tutte le pile di tipo base
+		string = "ultime carte sul tavolo:  \n"
+		for pila in self.tavolo.pile:
+			if pila.tipo == "base":
+				string += f"{pila.nome}:  \n"
+				if pila.is_empty_pile():
+					string += "la pila è vuota!  \n"
+				else:
+					string += f"{pila.carte[-1].get_name()}.  \n"
+
+		# vocalizza il nuero totale dicarte nella pila scarti
+		string += f"negli scarti ci sono:  {self.tavolo.pile[11].numero_carte()} Carte.  \n"
+		# vocalizza il numero totale di carte nel mazzo
+		string += f"Carte nel mazzo:  {self.tavolo.pile[12].numero_carte()} carte.  \n"
+		return string
+
 	def get_report_mossa(self):
-		"""
-		prepariamo la stringa da vocalizzare con le seguenti informazioni:
-		vocalizziamo il report della mossa
-		"""
+		""" vocalizziamo il report della mossa """
 		string = ""
 		if self.selected_card:
 			tot_cards = len(self.selected_card)
@@ -303,23 +308,20 @@ class EngineSolitario(DialogBox):
 		if self.dest_pile:
 			string += f"a: {self.dest_pile.nome},  \n"
 			id = (len(self.dest_pile.carte) - 1) - tot_cards
-			if self.dest_pile.carte[id] != self.selected_card[0]:
+			if not self.dest_pile.is_empty_pile() and self.dest_pile.carte[id] != self.selected_card[0]:
 				string += f"sopra alla carta: {self.dest_pile.carte[id].get_name()}.  \n"
 
 		if not self.origin_pile.is_empty_pile():
-			string += f"hai scoperto : {self.origin_pile.carte[-1].get_name()} nella {self.origin_pile.nome}.  \n"
-
-		if not self.dest_pile.is_empty_pile():
-			string += f"la nuova ultima carta di {self.dest_pile.nome} è: {self.dest_pile.carte[-1].get_name()}.  \n"
+			string += f"hai scoperto : {self.origin_pile.carte[-1].get_name()} in:  {self.origin_pile.nome}.  \n"
 
 		return string
 
 	#@@# sezione metodi di supporto
 
 	def incrementa_mossa(self):
-		self.conta_giri += 1
-		if self.primo_giro:
-			self.primo_giro = False
+		if self.is_game_running:
+			self.conta_giri += 1
+
 
 	#@@# sezione metodi per il movimento del cursore di navigazione
 
@@ -327,6 +329,9 @@ class EngineSolitario(DialogBox):
 		pila = self.tavolo.pile[self.cursor_pos[1]]
 		if not pila.is_pila_base():
 			return "non sei su una pila base.\n"
+
+		if pila.is_empty_pile():# and self.cursor_pos[0] == 0:
+			return "La pila è vuota!  \n"
 
 		if self.cursor_pos[0] > 0:
 			self.cursor_pos[0] -= 1
@@ -337,6 +342,9 @@ class EngineSolitario(DialogBox):
 		pila = self.tavolo.pile[self.cursor_pos[1]]
 		if not pila.is_pila_base():
 			return "non sei su una pila base.\n"
+
+		if pila.is_empty_pile():# and self.cursor_pos[0] == 0:
+			return "La pila è vuota!  \n"
 
 		if self.cursor_pos[0] < len(pila.carte) - 1:
 			self.cursor_pos[0] += 1
@@ -426,43 +434,36 @@ class EngineSolitario(DialogBox):
 		self.target_card = None
 		self.origin_pile = None
 		self.dest_pile = None
-		string = "Mossa annullata!\n"
-		return string
+		return "annullo carte selezionate!  \n"
 
 	def select_scarto(self):
 		# seleziona la carta in cima allo scarto
 		string = ""
 		if self.selected_card:
-			string = "Hai già selezionato le carte da spostare!  premi canc per annullare la selezione.\n"
-			return string
+			return "Hai già selezionato le carte da spostare!  premi canc per annullare la selezione.\n"
 
 		scarti = self.tavolo.pile[11]
 		if scarti.is_empty_pile():
-			string = "la pila scarti è vuota!\n"
-			return string
+			return "la pila scarti è vuota!\n"
 
 		self.selected_card.append(scarti.carte[-1])
 		self.target_card = scarti.carte[-1]
 		self.origin_pile = scarti
-		string = "carta selezionata: %s!\n" % self.target_card.get_name()
-		return string
+		return "carta selezionata: %s!\n" % self.target_card.get_name()
 
 	def select_card(self):
 		""" seleziona le carte che il giocatore intende tentare di spostare """
 		string = ""
 		if self.selected_card:
-			string = "Hai già selezionato le carte da spostare!  premi canc per annullare la selezione.\n"
-			return string
+			return "Hai già selezionato le carte da spostare!  premi canc per annullare la selezione.\n"
 
 		row , col = self.cursor_pos
 		pile = self.tavolo.pile[col]
 		if pile.is_empty_pile():
-			string = "la pila è vuota!\n"
-			return string
+			return "la pila è vuota!\n"
 
 		if pile.carte[row].coperta:
-			string = "non puoi selezionare una carta coperta!\n"
-			return string
+			return "non puoi selezionare una carta coperta!\n"
 
 		self.origin_pile = pile
 		self.selected_card = pile.carte[row:]
@@ -472,8 +473,7 @@ class EngineSolitario(DialogBox):
 		for card in self.selected_card:
 			string += "%s, " % card.get_name()
 
-		string = string[:-2] + "!\n"
-		return string
+		return string[:-2] + "!\n"
 
 	def pesca(self):
 		liv = int(self.difficulty_level)
@@ -481,7 +481,8 @@ class EngineSolitario(DialogBox):
 		if not ver:
 			self.tavolo.riordina_scarti()
 			self.conta_rimischiate += 1
-			return "rimescolo gli scarti in mazzo riserve!"
+			string = "Rimescolo gli scarti in mazzo riserve!  \n"
+			return string 
 
 		row = -1
 		col = 11
@@ -491,7 +492,7 @@ class EngineSolitario(DialogBox):
 			carte.append(carta)
 			row -= 1
 
-		carte.reverse()
+		carte.reverse() # inverto l'ordine degli scarti
 		string = "hai pescato: "
 		for carta in carte:
 			string += "%s,  \n" % carta.get_name()
@@ -526,8 +527,14 @@ class EngineSolitario(DialogBox):
 			self.tavolo.scopri_ultima_carta(self.origin_pile)
 			# alla fine di tutto:
 			self.incrementa_mossa() # incremento il numero di mosse effettuate
-			string = "spostamento consentito!\n"
-			string += self.get_report_mossa()
+			string = self.get_report_mossa()
+
+			# verifichiamo la vittoria
+			if self.dest_pile.is_pila_seme():
+				ver_win = self.ceck_victory()
+				if ver_win:
+					string += ver_win
+
 			# aggiorno la posizione del cursore
 			self.cursor_pos[1] = self.dest_pile.id
 			self.cursor_pos[0] = self.dest_pile.get_last_card_index()
@@ -535,11 +542,20 @@ class EngineSolitario(DialogBox):
 
 		return string
 
-	def ceck_winner(self):
+	def ceck_victory(self):
 		""" verifica se il giocatore ha vinto utilizzando il metodo verifica_vittoria del tavolo """
 		if self.tavolo.verifica_vittoria():
-			string = "Complimenti!  \nHai vinto!\n"
-			return string
+			self.winner = True
+			return "Complimenti!  \nHai vinto!\n"
+
+		return False
+
+	def ceck_lost(self):
+		""" verifica se il giocatore ha perso controllando se la partita è durata più di 60 minuti """
+		tempo_partita = self.get_tempo_partita()
+		if self.tempo_partita > 3600:
+			self.is_time_over = True
+			return "Hai perso!  \nHai superato il tempo limite di 60 minuti!\n"
 
 		return False
 
