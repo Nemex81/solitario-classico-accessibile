@@ -89,10 +89,7 @@ class EngineSolitario(DialogBox):
 		self.tavolo.crea_pile_gioco()
 		self.tavolo.distribuisci_carte()
 		# copri tutte le ultime carte delle pile base
-		for i in range(0, 6):
-			pila = self.tavolo.pile[i]
-			if pila.is_pila_base() and not self.is_game_running:
-				pila.carte[-1].coperta = True
+		self.copri_tutto()
 
 		self.conta_giri = 0
 		self.conta_rimischiate = 0
@@ -322,6 +319,12 @@ class EngineSolitario(DialogBox):
 		if self.is_game_running:
 			self.conta_giri += 1
 
+	def copri_tutto(self):
+		# copriamo tutte le carte del mazzo
+		for i in range(0, 6):
+			pila = self.tavolo.pile[i]
+			if pila.is_pila_base() and not self.is_game_running:
+				pila.carte[-1].coperta = True
 
 	#@@# sezione metodi per il movimento del cursore di navigazione
 
