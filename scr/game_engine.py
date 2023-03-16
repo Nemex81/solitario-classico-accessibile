@@ -133,10 +133,11 @@ class EngineSolitario(DialogBox):
 			carta = pila.get_carta(row)
 			if not carta:
 				return "non riesco ad identificare la carta alle coordinate specificate"
-			
+
 			id_carta = pila.get_card_index(carta)
-			infocarta = carta.get_info_card()
-			infocarta += f"pos in pila: {id_carta+1}\n"
+			infocarta = carta.get_info_card
+			infocarta += f"genitore:  {pila.nome}  \n"
+			infocarta += f"pos in pila: {id_carta+1}  \n"
 			return "scheda carta: %s\n" % infocarta
 
 	def get_info_pila(self):
@@ -175,13 +176,13 @@ class EngineSolitario(DialogBox):
 
 		current_card = self.tavolo.get_card_position(row, col)
 		try:
-			card_name = current_card.get_name()
+			card_name = current_card.get_name
 			string_carta = f"{pila.nome}.  "
 			string_carta += f"{row+1}: {card_name}"
 			string = string_carta
 
 		except AttributeError:
-			string = pila.get_name()
+			string = pila.get_name
 
 		return string
 
@@ -207,7 +208,7 @@ class EngineSolitario(DialogBox):
 
 		tot = len(self.selected_card)
 		string = f"carte selezionate: {tot}"
-		string += f"carta da collegare: {self.target_card.get_name()}"
+		string += f"carta da collegare: {self.target_card.get_name}"
 		string += f"valore della carta: {self.target_card.get_value()}"
 		return string
 
@@ -216,7 +217,7 @@ class EngineSolitario(DialogBox):
 		# se non è vuota
 		string = "la pila è vuota!\n"
 		if not pila.is_empty_pile():
-			string = f"carta in cima: {pila.carte[-1].get_name()}"
+			string = f"carta in cima: {pila.carte[-1].get_name}"
 
 		return string
 
@@ -538,11 +539,10 @@ class EngineSolitario(DialogBox):
 				if ver_win:
 					string += ver_win
 
-			# aggiorno la posizione del cursore
-			self.cursor_pos[1] = self.dest_pile.id
-			self.cursor_pos[0] = self.dest_pile.get_last_card_index()
-			self.reset_data_moving() # resettiamo anche i dati di spostamento
-
+		# aggiorno la posizione del cursore
+		self.cursor_pos[1] = self.dest_pile.id
+		self.cursor_pos[0] = self.dest_pile.get_last_card_index()
+		self.reset_data_moving() # resettiamo anche i dati di spostamento
 		return string
 
 	def ceck_victory(self):
