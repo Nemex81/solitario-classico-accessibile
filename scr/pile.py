@@ -303,7 +303,7 @@ class TavoloSolitario:
 		if not dest_pila.is_empty_pile():
 			dest_card = dest_pila.carte[-1]
 			dest_value = dest_card.valore_numerico + 1
-			if card.get_value() != dest_value:
+			if card.get_value != dest_value:
 				return False
 
 		return True
