@@ -164,7 +164,7 @@ class EngineSolitario(DialogBox):
 		if not current_card:
 			return "non riesco ad identificare la carta alle coordinate specificate"
 
-		card_name = current_card.get_name()
+		card_name = current_card.get_name
 		return f"{row+1}: {card_name}"
 
 	def get_focus(self):
@@ -209,7 +209,7 @@ class EngineSolitario(DialogBox):
 		tot = len(self.selected_card)
 		string = f"carte selezionate: {tot}"
 		string += f"carta da collegare: {self.target_card.get_name}"
-		string += f"valore della carta: {self.target_card.get_value()}"
+		string += f"valore della carta: {self.target_card.get_value}"
 		return string
 
 	def get_top_card(self, pila):
@@ -226,7 +226,7 @@ class EngineSolitario(DialogBox):
 		string = "la pila scarti è vuota!\n"
 		pila = self.tavolo.pile[11]
 		if not pila.is_empty_pile():
-			string = f"ultimo scarto: {pila.carte[-1].get_name()}"
+			string = f"ultimo scarto: {pila.carte[-1].get_name}"
 
 		return string
 
@@ -280,7 +280,7 @@ class EngineSolitario(DialogBox):
 				if pila.is_empty_pile():
 					string += "la pila è vuota!  \n"
 				else:
-					string += f"{pila.carte[-1].get_name()}.  \n"
+					string += f"{pila.carte[-1].get_name}.  \n"
 
 		# vocalizza il nuero totale dicarte nella pila scarti
 		string += f"negli scarti ci sono:  {self.tavolo.pile[11].numero_carte()} Carte.  \n"
@@ -295,10 +295,10 @@ class EngineSolitario(DialogBox):
 			tot_cards = len(self.selected_card)
 			string += "sposti:  \n"
 			if tot_cards  > 3:
-				string += f"{self.selected_card[0].get_name()} e altre {tot_cards - 1} carte.  \n"
+				string += f"{self.selected_card[0].get_name} e altre {tot_cards - 1} carte.  \n"
 			else:
 				for carta in self.selected_card:
-					string += f"{carta.get_name()}.  \n"
+					string += f"{carta.get_name}.  \n"
 
 		if self.origin_pile:
 			string += f"da: {self.origin_pile.nome},  \n"
@@ -306,11 +306,11 @@ class EngineSolitario(DialogBox):
 		if self.dest_pile:
 			string += f"a: {self.dest_pile.nome},  \n"
 			id = (len(self.dest_pile.carte) - 1) - tot_cards
-			if not self.dest_pile.is_empty_pile() and self.dest_pile.carte[id] != self.selected_card[0]:
-				string += f"sopra alla carta: {self.dest_pile.carte[id].get_name()}.  \n"
+			if not self.dest_pile.carte[id].get_value != 13 and self.dest_pile.carte[id] != self.selected_card[0]:
+				string += f"sopra alla carta: {self.dest_pile.carte[id].get_name}.  \n"
 
 		if not self.origin_pile.is_empty_pile():
-			string += f"hai scoperto : {self.origin_pile.carte[-1].get_name()} in:  {self.origin_pile.nome}.  \n"
+			string += f"hai scoperto : {self.origin_pile.carte[-1].get_name} in:  {self.origin_pile.nome}.  \n"
 
 		return string
 
@@ -453,7 +453,7 @@ class EngineSolitario(DialogBox):
 		self.selected_card.append(scarti.carte[-1])
 		self.target_card = scarti.carte[-1]
 		self.origin_pile = scarti
-		return "carta selezionata: %s!\n" % self.target_card.get_name()
+		return "carta selezionata: %s!\n" % self.target_card.get_name
 
 	def select_card(self):
 		""" seleziona le carte che il giocatore intende tentare di spostare """
@@ -475,7 +475,7 @@ class EngineSolitario(DialogBox):
 		tot = len(self.selected_card)
 		string = f"carte selezionate: {tot }\n"
 		for card in self.selected_card:
-			string += "%s, " % card.get_name()
+			string += "%s, " % card.get_name
 
 		return string[:-2] + "!\n"
 
@@ -499,7 +499,7 @@ class EngineSolitario(DialogBox):
 		carte.reverse() # inverto l'ordine degli scarti
 		string = "hai pescato: "
 		for carta in carte:
-			string += "%s,  \n" % carta.get_name()
+			string += "%s,  \n" % carta.get_name
 
 		return string
 

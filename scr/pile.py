@@ -73,6 +73,18 @@ class Pila:
 		if card in self.carte:
 			return self.carte.index(card)
 
+	def get_last_card_index(self):
+		""" Restituisce l'indice della carta scoperta in ultima posizione della pila, se la pila non è vuota. """
+		if len(self.carte) == 0:
+			return None
+
+		for i in range(len(self.carte)-1, -1, -1):
+			if not self.carte[i].coperta:
+				return i
+
+		return None
+
+
 	def get_pile_type(self):
 		""" Restituisce il tipo di pila """
 		return self.tipo
@@ -272,7 +284,7 @@ class TavoloSolitario:
 		if not dest_pila.is_empty_pile():
 			dest_card = dest_pila.carte[-1]
 			dest_value = dest_card.valore_numerico - 1
-			if card.get_value() != dest_value:
+			if card.get_value != dest_value:
 				return False
 
 		return True
