@@ -9,7 +9,7 @@
 import sys, random, logging, time, pygame
 # moduli personali
 from my_lib.dialog_box import DialogBox
-from scr.game_table import TavoloSolitario
+from scr.decks import FrenchDeck, NeapolitanDeck
 #import pdb #pdb.set_trace() da impostare dove si vuol far partire il debugger
 
 # Imposta la configurazione del logger
@@ -19,12 +19,13 @@ logger.setLevel(logging.DEBUG)
 #logger.debug("Il mio messaggio di debug")
 
 class EngineSolitario(DialogBox):
-	def __init__(self):
+	def __init__(self, tavolo):
 		super().__init__()
-		self.tavolo = TavoloSolitario()
+		self.tavolo = tavolo
 		self.winner = False # variabile per gestire la vittoria del gioco
 		self.is_time_over = False # variabile per gestire il tempo di gioco
 		self.is_game_running = False # variabile per gestire il ciclo principale del gioco
+		self.change_settings = False # variabile per gestire il cambio impostazioni
 		self.difficulty_level = 1 # livello di difficoltà impostato dal giocatore
 		self.conta_giri = 0 # contatore per gestire il numero di mosse fatte dal player
 		self.conta_rimischiate = 0 # contatore per gestire il numero di rimischiate fatte dal player
@@ -49,6 +50,14 @@ class EngineSolitario(DialogBox):
 		self.winner = True
 		return "Prova verifica vittoria partita.  \n"
 
+	#@@# sezione per la gestione del gioco @##@
+
+	def notify_new_game(self):
+		""" Notifica l'avvio di una nuova partita con una alert box. """
+
+		str_notify = f"Avvio di una nuova partita in corso.\n\nMazzo in uso: {self.tavolo.mazzo.tipo}\nLivello di difficoltà impostato: {self.difficulty_level}"
+		self.create_alert_box(str_notify, "Tavolo di gioco allestito")
+
 	def crea_gioco(self):
 
 		"""Crea un nuovo gioco del solitario."""
@@ -63,34 +72,38 @@ class EngineSolitario(DialogBox):
 
 		# apre una alertbox per notificare l'apertura della partita specificando il livello impostato
 		if self.is_game_running and not self.winner:
-			self.create_alert_box("Livello di difficoltà impostato: %s" % self.difficulty_level, "Nuova partita creata")
+			self.notify_new_game()
 
 	def nuova_partita(self):
 		"""Crea un nuovo gioco del solitario."""
+
+		if self.change_settings:
+			self.create_alert_box("Chiudi prima le impostazioni partita.", "Impossibile procedere")
+			return
+
+		# imposto le variabili di gioco
 		self.winner = False
 		self.is_time_over = False
 		self.is_game_running = True
-
-		# imposto il livello di difficoltà ed avvio la partita
-		self.difficulty_level = self.get_difficulty_level()
 		self.crea_gioco()
 
 		# resetto cronometro partita e dati orologio
-		self.clock = pygame.time.Clock()
-		self.fps = 60
-		self.start_ticks = pygame.time.get_ticks()
+		self.clock = pygame.time.Clock() # inizializzo il clock
+		self.fps = 60 # imposto il numero di frame per secondo
+		self.start_ticks = pygame.time.get_ticks() # inizializzo il contatore dei secondi
 		return "avvio di una nuova partita in corso.  \n"
 
 	def chiudi_partita(self):
 		""" Chiude la partita aperta del solitario. """
+
 		self.is_game_running = False
 		self.winner = False
 		self.is_time_over = False
 		self.tavolo.crea_pile_gioco()
-		self.tavolo.distribuisci_carte()
-		# copri tutte le ultime carte delle pile base
-		self.copri_tutto()
+		self.tavolo.distribuisci_carte()		
+		self.copri_tutto() # copri tutte le ultime carte delle pile base
 
+		# resetto cronometro partita e dati orologio
 		self.conta_giri = 0
 		self.conta_rimischiate = 0
 		self.start_ticks = pygame.time.get_ticks()
@@ -100,12 +113,14 @@ class EngineSolitario(DialogBox):
 		self.target_card = None
 		self.origin_pile = None
 		self.dest_pile = None
-		return "partita attuale chiusa.  \n"
+		self.create_alert_box("Partita chiusa cons successo, torno al menù di inizio partita.", "Chiusura della partita")
+		return "partita chiusa.  \n"
 
 	#@@# sezione getter
 
 	def get_difficulty_level(self):
 		"""Richiede il livello di difficoltà tramite dialog box."""
+
 		level = 1
 		# richiediamo all'utente tramite dialog box il livello di difficoltà
 		self.create_input_box("Inserisci il livello di difficoltà da 1 a 3.", "Configuro Nuova Partita")
@@ -328,6 +343,65 @@ class EngineSolitario(DialogBox):
 			if pila.is_pila_base() and not self.is_game_running:
 				pila.carte[-1].set_cover()
 
+	def change_deck_type(self):
+		""" cambiamo il tipo di mazzo """
+
+		mazzo = None
+		if self.is_game_running:
+			return "Non puoi modificare il tipo di mazzo durante una partita!  \n"
+
+		if not self.change_settings:
+			return "Devi prima aprire le opzioni!  \n"
+
+		deck_type = self.tavolo.mazzo.get_type()
+		if deck_type == "carte francesi":
+			mazzo = NeapolitanDeck()
+
+		elif deck_type == "carte napoletane":
+			mazzo = FrenchDeck()
+
+		else:
+			mazzo = FrenchDeck()
+
+		self.tavolo.mazzo = mazzo
+		self.tavolo.reset_pile()
+		self.create_alert_box(F"tipo di mazzo impostato a:  {self.tavolo.mazzo.tipo}.  \n", "Tipo di mazzo cambiato")
+		return F"tipo di mazzo impostato a:  {self.tavolo.mazzo.tipo}.  \n"
+
+	def change_difficulty_level(self):
+		""" cambiamo il livello di difficoltà """
+
+		if self.is_game_running:
+			return "Non puoi modificare il livello di difficoltà durante una partita!  \n"
+
+		#level = self.difficulty_level
+		level = self.difficulty_level
+		if level == 1:
+			level = 2
+		elif level == 2:
+			level = 3
+		else:
+			level = 1
+
+		#if level:
+		self.difficulty_level = int(level)
+		self.create_alert_box(f"Livello di difficoltà impostato a {self.difficulty_level}\n", "difficoltà cambiata")
+		return F"livello di difficoltà impostato a:  {self.difficulty_level}.  \n"
+
+	def change_game_settings(self):
+		""" cambiamo le impostazioni del gioco """
+
+		if self.is_game_running:
+			return "Non puoi modificare le impostazioni di gioco durante una partita!  \n"
+
+		elif not self.is_game_running and self.change_settings:
+			self.change_settings = False
+			return "impostazioni di gioco chiuse.  \n"
+
+		elif not self.is_game_running and not self.change_settings:
+			self.change_settings = True
+			return "impostazioni di gioco aperte.  \n"
+
 	#@@# sezione metodi per il movimento del cursore di navigazione
 
 	def move_cursor_up(self):
@@ -434,7 +508,9 @@ class EngineSolitario(DialogBox):
 	#@@# sezione metodi per selezionare e deselezionare le carte
 
 	def cancel_selected_cards(self):
-		string = ""
+		if not self.selected_card :
+			return "non hai selezionato nessuna carta!  \n"
+
 		self.selected_card = []
 		self.target_card = None
 		self.origin_pile = None

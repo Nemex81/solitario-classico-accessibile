@@ -19,7 +19,7 @@ logger.setLevel(logging.DEBUG)
 
 class ProtoCard:
 	"""Modello base per la gestione delle carte di gioco """
-	"""Classe base per la gestione delle carte di gioco """
+
 	def __init__(self):
 		self._nome = None
 		self._id = None
@@ -137,7 +137,7 @@ class ProtoCard:
 	@staticmethod
 	def _determine_color(suit: Suit) -> Color:
 		""" Determina il colore della carta in base al seme """
-		if suit == Suit.CUORI.value  or suit == Suit.QUADRI.value:
+		if suit == Suit.CUORI.value  or suit == Suit.QUADRI.value or suit == Suit.COPPE.value or suit == Suit.DENARI.value:
 			return Color.ROSSO.value
 
 		return Color.BLU.value
@@ -146,6 +146,7 @@ class ProtoCard:
 
 class Card(ProtoCard):
 	""" Classe per la gestione delle carte di gioco """
+
 	def __init__(self, valore, seme, coperta=True):
 		super().__init__()
 		self._valore = valore
@@ -164,84 +165,6 @@ class Card(ProtoCard):
 			self.set_uncover()
 		else:
 			self.set_cover()
-
-
-
-class Mazzo:
-	""" Classe per la gestione del mazzo di carte """
-	SUITES = ["cuori", "quadri", "fiori", "picche"]
-	VALUES = ["Asso", "2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Regina", "Re"]
-	FIGURE_VALUES = {"Jack": 11, "Regina": 12, "Re": 13, "Asso" : 1}
-
-	def __init__(self):
-		self.cards = []  # lista delle carte nel mazzo
-		self.reset()
-
-	def crea(self):
-		""" Crea il mazzo di carte """
-		semi = self.SUITES
-		valori = self.VALUES
-		mazzo = []
-		i = 0
-		for seme in semi:
-			for valore in valori:
-				carta = Card(valore, seme)
-				carta.set_name(f"{valore} di {seme}")
-				if valore in ["Jack", "Regina", "Re", "Asso"]:
-					carta.set_int_value(int(self.FIGURE_VALUES[valore]))
-				else:
-					carta.set_int_value(int(valore))
-
-				carta.set_id(i)
-				carta.set_color(carta._determine_color(seme))
-				mazzo.append(carta)
-				i += 1
-
-		self.cards = mazzo
-		return mazzo
-
-	def inserisci_carte(self, carte_aggiuntive):
-		""" 
-			permette di inserire un altro set di carte  nel mazzo 
-			da utilizzare per altri tip di solitario.
-		"""
-		for carta in carte_aggiuntive:
-			self.cards.append(carta)
-
-	def rimuovi_carte(self, n):
-		""" Rimuove n carte dal mazzo e le restituisce come lista """
-		carte_rimosse = self.cards[:n]
-		self.cards = self.cards[n:]
-		return carte_rimosse
-
-	def pesca(self):
-		""" pesca una carta dal mazzo """
-		carta_pescata = self.cards.pop(0)
-		return carta_pescata
-
-	def get_carta(self, i):
-		""" restituisce la carta in posizione i se esistente """
-		if i < len(self.cards):
-			return self.cards[i]
-
-	def get_len(self):
-		""" restituisce il numero di carte nel mazzo """
-		return len(self.cards)
-
-	def mischia(self):
-		""" mischia le carte nel mazzo """
-		random.shuffle(self.cards)
-
-	def is_empty_dek(self):
-		""" se il mazzo è vuoto restituiamo true """
-		if len(self.cards) == 0:
-			return True
-
-	def reset(self):
-		""" Resetta il mazzo """
-		self.cards = []
-		self.crea()
-		self.mischia()
 
 
 

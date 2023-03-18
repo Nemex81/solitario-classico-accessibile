@@ -10,8 +10,7 @@ import logging
 # moduli personali
 from my_lib.myglob import *
 import my_lib.myutyls as mu
-from scr.cards import  Mazzo
-from scr.pile import PilaClassica
+from scr.pile import PilaBase, PilaSemi, PilaScarti, PilaRiserve
 # import pdb #pdb.set_trace() da impostare dove si vuol far partire il debugger
 
 # Imposta la configurazione del logger
@@ -20,43 +19,53 @@ logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 
-
 class TavoloSolitario:
 	""" Gestisce il tavolo di gioco del solitario """
-	semi = ["cuori", "quadri", "fiori", "picche"]
-	def __init__(self):
-		self.mazzo = Mazzo()
-		self.mazzo.reset()
+
+	def __init__(self, mazzo):
+		self.mazzo = mazzo
 		self.pile = []  # lista delle pile di gioco
+
+	def get_type_deck(self):
+		""" Restituisce il tipo di mazzo di gioco """
+		if self.mazzo.is_french_deck():
+			return ["cuori", "quadri", "fiori", "picche"]
+		else:
+			return ["spade", "bastoni", "coppe", "denari"]
+
+	def reset_pile(self):
+		""" Resetta le pile di gioco """
+
+		self.pile.clear()
+		self.crea_pile_gioco()
+		self.distribuisci_carte()
 
 	def crea_pile_gioco(self):
 		# crea le sette pile base
 		self.pile = [] # resettiamo tutte le pile di gioco a 0
 		id = 0
 		for i in range(7):
-			pile_base = PilaClassica(id, "base")
-			pile_base.set_pile_name(f"pila {i+1}")
+			pile_base = PilaBase(id)
 			self.pile.append(pile_base)
 			id += 1
 
 		# crea le quattro pile semi
+		dech_semi = self.get_type_deck()
 		for i in range(4):
-			pile_semi = PilaClassica(id, "semi")
-			pile_semi.set_pile_name(f"pila {self.semi[i]}")
-			pile_semi.set_pile_suit(self.semi[i])
+			name = dech_semi[i]
+			pile_semi = PilaSemi(id, name)
 			self.pile.append(pile_semi)
 			id += 1
 
 		# crea la pila di scarti
-		pila_scarti = PilaClassica(id, "scarti")
+		pila_scarti = PilaScarti(id)
 		pila_scarti.set_pile_name("pila scarti")
 		self.pile.append(pila_scarti)
 		id += 1
 
 		# crea la pila di mazzo riserve
-		pila_mazzo_riserve = PilaClassica(id, "pila riserve")
-		pila_mazzo_riserve.set_pile_name("pila riserve")
-		self.pile.append(pila_mazzo_riserve)
+		mazzo_riserve = PilaRiserve(id)
+		self.pile.append(mazzo_riserve)
 
 	def distribuisci_carte(self):
 		""" Distribuisce le carte sul tavolo """
@@ -81,8 +90,10 @@ class TavoloSolitario:
 		self.uncover_top_all_base_piles()
 
 	def pescata(self, num_cards):
+		""" Pesca le carte dal mazzo riserve e le aggiunge alla pila di scarti """
+
 		# Controllo se ci sono ancora carte nel mazzo riserve
-		if not self.pile[12].carte:
+		if self.pile[12].is_empty_pile():
 			return False
 
 		# Pesco le carte dal mazzo riserve
@@ -93,7 +104,7 @@ class TavoloSolitario:
 		else:
 			self.pile[11].carte = cards
 
-		# Aggiorno lo stato della pila scoperta
+		# Aggiorno lo stato della pila scarti
 		for c in self.pile[11].carte:
 			c.set_uncover()
 
@@ -113,11 +124,19 @@ class TavoloSolitario:
 			carta.flip()
 			self.pile[12].carte.append(carta)
 
-		# mazzo riserve intertito
+		# inverto l'ordine delle carte nel mazzo riserve
 		self.pile[12].carte.reverse()
+
+	def scopri_ultima_carta(self, origin_pile):
+		# scopro l'ultima carta della pila di origine, se è una pila base
+		if origin_pile.is_pila_base():
+			if not origin_pile.is_empty_pile():
+				if origin_pile.carte[-1].get_covered:
+					origin_pile.carte[-1].flip()
 
 	def uncover_top_all_base_piles(self):
 		""" Scopre l'ultima carta di tutte le pile base """
+
 		for i in range(7):
 			pila = self.pile[i]
 			if pila.is_empty_pile():
@@ -134,13 +153,6 @@ class TavoloSolitario:
 		for pila in self.pile:
 			if card in pila.carte:
 				return pila
-
-	def scopri_ultima_carta(self, origin_pile):
-		# scopro l'ultima carta della pila di origine, se è una pila base
-		if origin_pile.is_pila_base():
-			if not origin_pile.is_empty_pile():
-				if origin_pile.carte[-1].get_covered:
-					origin_pile.carte[-1].flip()
 
 	def get_card_position(self, row, col):
 		pila = self.pile[col]

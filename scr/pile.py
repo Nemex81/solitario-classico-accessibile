@@ -23,7 +23,6 @@ class Pila:
 		self.id = id
 		self.nome = None
 		self.tipo = tipo_pila
-		self.seme = None
 		self.carte = []
 
 	#@@# sezione metodi getter
@@ -81,9 +80,6 @@ class Pila:
 
 	def set_pile_name(self, nome):
 		self.nome = nome
-
-	def set_pile_suit(self, seme):
-		self.seme = seme
 
 	def set_pile_type(self, tipo):
 		self.tipo = tipo
@@ -162,36 +158,48 @@ class Pila:
 		return carte_pescate
 
 
-
-class PilaClassica(Pila):
-	""" Gestisce le pile del solitario classico """
-	def __init__(self, id, tipo_pila):
-		super().__init__(id, tipo_pila)
-
-	def is_pila_base(self):
-		type = self.get_pile_type()
-		if type != "base":
-			return False
-
-		return True
-
-	def is_pila_seme(self):
-		type = self.get_pile_type()
-		if type == "semi":
-			return True
+class PilaScarti(Pila):
+	""" Gestisce la pila degli scarti """
+	def __init__(self, id):
+		super().__init__(id, "scarti")
+		self.set_pile_name("Pila scarti")
 
 	def is_pila_scarti(self):
-		type = self.get_pile_type()
-		if type != "scarti":
-			return False
-
 		return True
 
-	def is_pila_riserve(self):
-		type = self.get_pile_type()
-		if type != "riserve":
-			return False
 
+class PilaRiserve(Pila):
+	""" Gestisce la pila delle riserve """
+	def __init__(self, id):
+		super().__init__(id, "riserve")
+		self.set_pile_name("pila riserve")
+
+	def is_pila_riserve(self):
+		return True
+
+
+class PilaSemi(Pila):
+	""" Gestisce la pila dei semi """
+	def __init__(self, id, name):
+		super().__init__(id, "semi")
+		self.seme = None
+		self.set_pile_name(f"Pila {name}")
+		self.set_pile_suit(name)
+
+	def set_pile_suit(self, seme):
+		self.seme = seme
+
+	def is_pila_seme(self):
+		return True
+
+
+class PilaBase(Pila):
+	""" Gestisce la pila delle carte base """
+	def __init__(self, id):
+		super().__init__(id, "base")
+		self.set_pile_name(f"pila {id+1}")
+
+	def is_pila_base(self):
 		return True
 
 

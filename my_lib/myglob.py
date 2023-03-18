@@ -18,6 +18,10 @@ class Suit(Enum):
     QUADRI = "quadri"
     FIORI = "fiori"
     PICCHE = "picche"
+    COPPE = "coppe"
+    DENARI = "denari"
+    BASTONI = "bastoni"
+    SPADE = "spade"
 
 class Color(Enum):
     ROSSO = "rosso"
@@ -37,6 +41,23 @@ class CardValue(Enum):
     JACK = 11
     REGINA = 12
     RE = 13
+
+class GamePiles(Enum):
+	BASE1 = 0
+	BASE2 = 1
+	BASE3 = 2
+	BASE4 = 3
+	BASE5 = 4
+	BASE6 = 5
+	BASE7 = 6
+	CUORI = 7
+	QUADRI = 8
+	FIORI = 9
+	PICCHE = 10
+	SCARTI = 11
+	RISERVE = 12
+
+
 
 #@@@# Start del modulo
 if __name__ != "__main__":

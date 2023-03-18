@@ -2,8 +2,8 @@
 	file acs.py
 	percorso: https://github.com/Nemex81/solitario-classico-accessibile/blob/main/acs.py
 
-	Solitario Accessibile con pygame
-
+	Gioco di  carte Solitario classico accessibile creato con pygame
+ 
  """
 
 # lib

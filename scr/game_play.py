@@ -6,16 +6,19 @@
 
 """
 
-import sys, os, time, random, pygame
+import logging, sys, os, time, random, pygame
 from pygame.locals import *
-from scr.game_engine import EngineSolitario
 from my_lib.dialog_box import DialogBox
+from scr.decks import FrenchDeck, NeapolitanDeck
+from scr.game_table import TavoloSolitario
+from scr.game_engine import EngineSolitario
+
 #import pdb #pdb.set_trace() da impostare dove si vuol far partire il debugger
 
 # Imposta la configurazione del logger
-#logging.basicConfig(filename='log.txt', level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
-#logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-#logger.setLevel(logging.DEBUG)
+logging.basicConfig(filename='log.txt', level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
 
 # inizializzo pygame
 pygame.init()
@@ -27,7 +30,9 @@ class GamePlay(DialogBox):
 		#self.callback = callback_dict
 		self.screen = screen # import config schermo
 		self.screen_reader = screen_reader # import motore di vocalizzazione
-		self.engine = EngineSolitario() # inizializzazione motore di gioco per il solitario classico
+		self.mazzo = FrenchDeck() # inizializzazione mazzo di gioco
+		self.tavolo = TavoloSolitario(self.mazzo) # inizializzazione tavolo di gioco
+		self.engine = EngineSolitario(self.tavolo) # inizializzazione motore di gioco per il solitario classico
 		self.build_commands_list() # creazione lista dei comandi utente
 		self.engine.crea_gioco() # avvio una nuova partita
 
@@ -48,11 +53,11 @@ class GamePlay(DialogBox):
 	#@@# sezione comandi utente
 
 	def f1_press(self):
-		string = self.engine.test_vittoria()
+		string = self.engine.change_deck_type()
 		self.vocalizza(string)
 
 	def f2_press(self):
-		string = self.engine.test_set_time_out()
+		string = self.engine.change_difficulty_level()
 		self.vocalizza(string)
 
 	def f3_press(self):
@@ -174,6 +179,11 @@ class GamePlay(DialogBox):
 
 		self.engine.nuova_partita()
 
+	def o_press(self):
+		string = self.engine.change_game_settings()
+		if string:
+			self.vocalizza(string)
+
 	def p_press(self):
 		string = self.engine.pesca()
 		if string:
@@ -218,6 +228,7 @@ class GamePlay(DialogBox):
 			pygame.K_f: self.f_press,
 			pygame.K_m: self.m_press,
 			pygame.K_n: self.n_press,
+			pygame.K_o: self.o_press,
 			pygame.K_p: self.p_press,
 			pygame.K_s: self.s_press,
 			pygame.K_t: self.t_press,
