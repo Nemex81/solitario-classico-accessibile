@@ -10,7 +10,6 @@ import logging, random
 # moduli personali
 from my_lib.myglob import *
 import my_lib.myutyls as mu
-from scr.cards import Card, Mazzo
 # import pdb #pdb.set_trace() da impostare dove si vuol far partire il debugger
 
 # Imposta la configurazione del logger
@@ -27,27 +26,10 @@ class Pila:
 		self.seme = None
 		self.carte = []
 
-	def aggiungi_carta(self, carta):
-		self.carte.append(carta)
+	#@@# sezione metodi getter
 
-	def rimuovi_carta(self, pos):
-		carta_rimossa = self.carte.pop(pos)
-		return carta_rimossa
-
-	def rimuovi_carte(self, pos_iniziale, pos_finale):
-		carte_rimosse = self.carte[pos_iniziale:pos_finale+1]
-		self.carte = self.carte[:pos_iniziale] + self.carte[pos_finale+1:]
-		return carte_rimosse
-
-	def prendi_carte(self, num_carte):
-		carte_pescate = []
-		for i in range(num_carte):
-			if len(self.carte) == 0:
-				break
-
-			carta = self.rimuovi_carta(-1)
-			carte_pescate.insert(0, carta)
-		return carte_pescate
+	def get_len(self):
+		return len(self.carte)
 
 	def get_carte(self):
 		return self.carte
@@ -72,11 +54,8 @@ class Pila:
 			return None
 
 		for i in range(len(self.carte)-1, -1, -1):
-			if not self.carte[i].coperta:
+			if not self.carte[i].get_covered:
 				return i
-
-		return None
-
 
 	def get_pile_type(self):
 		""" Restituisce il tipo di pila """
@@ -89,17 +68,36 @@ class Pila:
 		return self.seme
 
 	def get_pile_info(self):
-		info_pila = f"nome: {self.nome}\n"
-		info_pila += f"id: {self.id}\n"
-		info_pila += f"tipo: {self.get_pile_type()}"
-		info_pila += f"seme: {self.get_pile_suit()}"
+		info_pila = f"nome: {self.nome}.  \n"
+		info_pila += f"id: {self.id}.  \n"
+		info_pila += f"tipo: {self.get_pile_type()}.  \n"
+		info_pila += f"seme: {self.get_pile_suit()}.  \n"
 		return info_pila
 
+	#@@# sezione metodi setter
+
+	def set_pile_id(self, id):
+		self.id = id
+
+	def set_pile_name(self, nome):
+		self.nome = nome
+
+	def set_pile_suit(self, seme):
+		self.seme = seme
+
+	def set_pile_type(self, tipo):
+		self.tipo = tipo
+
+	def set_pile_cards(self, carte):
+		self.carte = carte
+
 	def set_all_cover(self):
+		""" Imposta tutte le carte della pila come coperte. """
 		for carta in self.carte:
 			carta.set_cover()
 
 	def set_all_uncover(self):
+		""" Imposta tutte le carte della pila come scoperte. """
 		for carta in self.carte:
 			carta.set_uncover()
 
@@ -110,13 +108,11 @@ class Pila:
 		self.carte[-1].set_uncover()
 
 	def set_coperte(self, inizio, fine, coperte):
+		""" Imposta le carte come coperte o scoperte in un range da passargli """
 		for carta in self.carte[inizio:fine+1]:
 			carta.coperta = coperte
 
-	def numero_carte(self):
-		return len(self.carte)
-
-	#@@# sezione convalide spostamenti carte
+	#@@# sezione convalide
 
 	def is_empty_pile(self):
 		max = len(self.carte)
@@ -124,6 +120,53 @@ class Pila:
 			return False
 
 		return True
+
+	def is_pila_base(self):
+		pass
+
+	def is_pila_seme(self):
+		pass
+
+	def is_pila_scarti(self):
+		pass
+
+	def is_pila_riserve(self):
+		pass
+
+	#@@# sezione metodi di gestione
+
+	def aggiungi_carta(self, carta):
+		""" Aggiunge una carta alla pila. """
+		self.carte.append(carta)
+
+	def rimuovi_carta(self, pos):
+		""" Rimuove una carta dalla pila. """
+		carta_rimossa = self.carte.pop(pos)
+		return carta_rimossa
+
+	def rimuovi_carte(self, pos_iniziale, pos_finale):
+		""" Rimuove le carte dalla pila all'interno del range passato """
+		carte_rimosse = self.carte[pos_iniziale:pos_finale+1]
+		self.carte = self.carte[:pos_iniziale] + self.carte[pos_finale+1:]
+		return carte_rimosse
+
+	def prendi_carte(self, num_carte):
+		""" Prende le carte dalla pila e le restituisce in ordine inverso. """
+		carte_pescate = []
+		for i in range(num_carte):
+			if len(self.carte) == 0:
+				break
+
+			carta = self.rimuovi_carta(-1)
+			carte_pescate.insert(0, carta)
+		return carte_pescate
+
+
+
+class PilaClassica(Pila):
+	""" Gestisce le pile del solitario classico """
+	def __init__(self, id, tipo_pila):
+		super().__init__(id, tipo_pila)
 
 	def is_pila_base(self):
 		type = self.get_pile_type()
@@ -146,218 +189,11 @@ class Pila:
 
 	def is_pila_riserve(self):
 		type = self.get_pile_type()
-		if type != "mazzo_riserve":
+		if type != "riserve":
 			return False
 
 		return True
 
-
-
-class TavoloSolitario:
-	""" Gestisce il tavolo di gioco del solitario """
-	semi = ["cuori", "quadri", "picche", "fiori"]
-	def __init__(self):
-		self.mazzo = Mazzo()
-		self.mazzo.reset()
-		self.pile = []  # lista delle pile di gioco
-
-	def crea_pile_gioco(self):
-		# crea le sette pile base
-		self.pile = [] # resettiamo tutte le pile di gioco a 0
-		id = 0
-		for i in range(7):
-			pile_base = Pila(id, "base")
-			pile_base.nome = f"pila {i+1}"
-			self.pile.append(pile_base)
-			id += 1
-
-		# crea le quattro pile semi
-		for i in range(4):
-			pile_semi = Pila(id, "semi")
-			pile_semi.nome = f"pila {self.semi[i]}"
-			pile_semi.seme = self.semi[i]
-			self.pile.append(pile_semi)
-			id += 1
-
-		# crea la pila di scarti
-		pila_scarti = Pila(id, "scarti")
-		pila_scarti.nome = "pila scarti"
-		self.pile.append(pila_scarti)
-		id += 1
-
-		# crea la pila di mazzo riserve
-		pila_mazzo_riserve = Pila(id, "mazzo_riserve")
-		pila_mazzo_riserve.nome = "pila riserve"
-		self.pile.append(pila_mazzo_riserve)
-
-	def distribuisci_carte(self):
-		""" Distribuisce le carte sul tavolo """
-
-		# se il mazzo è vuoto, lo resetto
-		if self.mazzo.is_empty_dek():
-			self.mazzo.reset()
-
-		# pesco le carte dal mazzo e le aggiungo alle pile base
-		for i in range(7):
-			for j in range(i+1):
-				carta = self.mazzo.pesca()
-				self.pile[i].aggiungi_carta(carta)
-
-		# distribuisci le restanti carte alla pila mazzo riserve
-		for i in range(24):
-			carta = self.mazzo.pesca()
-			carta.set_cover()
-			self.pile[12].aggiungi_carta(carta)
-
-		# scopro l'ultima carta di ogni pila
-		self.uncover_top_all_base_piles()
-
-	def pescata(self, num_cards):
-		# Controllo se ci sono ancora carte nel mazzo riserve
-		if not self.pile[12].carte:
-			return False
-
-		# Pesco le carte dal mazzo riserve
-		cards = self.pile[12].prendi_carte(num_cards)
-		# Sposto le carte pescate sulla pila scoperta (numero 11)
-		if len(self.pile[11].carte) > 0:
-			self.pile[11].carte.extend(cards)
-		else:
-			self.pile[11].carte = cards
-
-		# Aggiorno lo stato della pila scoperta
-		for c in self.pile[11].carte:
-			c.set_uncover()
-
-		return True
-
-	def riordina_scarti(self):
-		if not self.pile[11].carte:
-			# La pila di scarti è vuota
-			return
-
-		# Rimuovi le carte dalla pila di scarti e inverti l'ordine
-		carte_scarti = self.pile[11].carte[::-1]
-		self.pile[11].carte.clear()
-
-		# Riaggiungi le carte al mazzo riserve
-		for carta in carte_scarti:
-			carta.flip()
-			self.pile[12].carte.append(carta)
-
-		# mazzo riserve intertito
-		self.pile[12].carte.reverse()
-
-	def uncover_top_all_base_piles(self):
-		""" Scopre l'ultima carta di tutte le pile base """
-		for i in range(7):
-			pila = self.pile[i]
-			if pila.is_empty_pile():
-				continue
-
-			pila.set_uncover_top_card()
-
-	def get_pile_name(self, col):
-		pila = self.pile[col]
-		return pila.nome
-
-	def get_card_parent(self, card):
-		""" Restituisce l'oggetto Pila a cui appartiene la carta passata come parametro """
-		for pila in self.pile:
-			if card in pila.carte:
-				return pila
-
-	def scopri_ultima_carta(self, origin_pile):
-		# scopro l'ultima carta della pila di origine, se è una pila base
-		if origin_pile.is_pila_base():
-			if not origin_pile.is_empty_pile():
-				if origin_pile.carte[-1].coperta:
-					origin_pile.carte[-1].flip()
-
-	def get_card_position(self, row, col):
-		pila = self.pile[col]
-		return pila.get_carta(row)
-
-	#@@# sezione convalide spostamenti
-
-	def put_to_base(self, origin_pila, dest_pila, select_card):
-		"""
-		Sposta una carta dalla pila di partenza alla pila di destinazione di tipo "base".
-		"""
-
-		if not dest_pila.is_pila_base():
-			return False
-
-		totcard = len(select_card)
-		if totcard > 1:
-			card = select_card[0]
-		else:
-			card = select_card[-1]
-
-		if card.valore_numerico > 1 and not dest_pila.is_empty_pile():
-			if card.colore == dest_pila.carte[-1].colore :
-				return False
-
-		elif card.valore_numerico < 13 and dest_pila.is_empty_pile():
-			return False
-
-		elif card.valore_numerico == 13 and dest_pila.is_empty_pile():
-			return True
-
-		if not dest_pila.is_empty_pile():
-			dest_card = dest_pila.carte[-1]
-			dest_value = dest_card.get_value - 1
-			if card.get_value != dest_value:
-				return False
-
-		return True
-
-	def put_to_seme(self, origin_pila, dest_pila, select_card):
-		if not dest_pila.is_pila_seme():
-			return False
-
-		card = select_card
-		if card.seme != dest_pila.seme:
-			return False
-
-		if card.valore_numerico > 1 and dest_pila.is_empty_pile():
-			return False
-
-		if not dest_pila.is_empty_pile():
-			dest_card = dest_pila.carte[-1]
-			dest_value = dest_card.valore_numerico + 1
-			if card.get_value != dest_value:
-				return False
-
-		return True
-
-	def esegui_spostamento(self, origin_pile, dest_pile, cards):
-		# rimuovo le carte dalla pila di origine
-		card_index = origin_pile.get_card_index(cards[0])
-		totcards = len(cards)
-		carte_rimosse = origin_pile.prendi_carte(totcards)
-		# aggiungo le carte alla pila di destinazione
-		dest_pile.carte.extend(carte_rimosse)
-
-	def verifica_spostamenti(self, origin_pila, dest_pila, select_card):
-		card = select_card[0]
-		if dest_pila.is_pila_seme():
-			if self.put_to_seme(origin_pila, dest_pila, card):
-				return True
-
-		elif dest_pila.is_pila_base():
-			if self.put_to_base(origin_pila, dest_pila, select_card):
-				return True
-
-		return False
-
-	def verifica_vittoria(self):
-		# verificare la vittoria controllando che le 4 pile  semi siano composte da 13 carte
-		for i in range(7, 10):
-			if len(self.pile[i].carte) != 13:
-				return False
-			
-		return True
 
 
 #@@@# start del modulo

@@ -31,12 +31,14 @@ class ProtoCard:
 
 	def __str__(self):
 		""" restituisce una stringa con le informazioni della carta"""
-		details = f"nome: {self.get_name}\n"
-		details += f"id: {self.get_id}\n"
-		details += f"seme: {self.get_suit}\n"
-		details += f"valore: {self.get_value}\n"
-		details += f"colore: {self.get_color}\n"
-		details += f"coperta: {self._coperta}\n"
+		if self.get_covered:
+			return "carta coperta.  \n"
+
+		details = f"nome: {self.get_name}.  \n"
+		details += f"id: {self.get_id}.  \n"
+		details += f"seme: {self.get_suit}.  \n"
+		details += f"valore: {self.get_value}.  \n"
+		details += f"colore: {self.get_color}.  \n"
 		return details
 
 	#@@# sezione metodi getter
@@ -47,8 +49,8 @@ class ProtoCard:
 		if self._nome is None:
 			return "nessun nome"
 
-		if self._seme is None:
-			return "nessuna seme"
+		if self.get_covered:
+			return "carta coperta"
 
 		return self._nome
 
@@ -66,7 +68,7 @@ class ProtoCard:
 		if self._seme is None:
 			return "nessuna seme"
 
-		if self.get_cover:
+		if self.get_covered:
 			return "carta coperta"
 
 		return self._seme
@@ -77,7 +79,7 @@ class ProtoCard:
 		if self._valore_numerico is None:
 			return "nessun valore"
 
-		if self.get_cover:
+		if self.get_covered:
 			return "carta coperta"
 
 		return self._valore_numerico
@@ -88,49 +90,17 @@ class ProtoCard:
 		if self._colore is None:
 			return "nessun colore"
 
-		if self.get_cover:
+		if self.get_covered:
 			return "carta coperta"
 
 		return self._colore
 
 	@property
-	def get_cover(self):
+	def get_covered(self):
 		""" restituisce il valore della copertura della carta """
 		return self._coperta
 
 	#@@# sezione metodi setter
-
-	def set_cover(self):
-		""" Copre la carta """
-		self._coperta = True
-
-	def set_uncover(self):
-		""" Copre la carta """
-		self._coperta = False
-
-
-
-class Card(ProtoCard):
-	""" Classe per la gestione delle carte di gioco """
-	def __init__(self, valore, seme, coperta=True):
-		super().__init__()
-		self._valore = valore
-		self._seme = seme
-		self._coperta = coperta
-
-
-	@property
-	def get_info_card(self):
-		""" restituisce una stringa con le informazioni della carta """
-		if self.coperta:
-			return "Carta coperta  \n"
-
-		details = f"nome: {self.get_name}.  \n"
-		details += f"id: {self.get_id}"
-		details += f"seme: {self.get_suit}.  \n"
-		details += f"valore: {self.get_value}.  \n"
-		details += f"colore: {self.get_color}.  \n"
-		return details
 
 	def set_name(self, name):
 		""" Imposta il nome della carta """
@@ -156,17 +126,41 @@ class Card(ProtoCard):
 		""" Imposta il colore della carta """
 		self._colore = color
 
+	def set_cover(self):
+		""" Copre la carta """
+		self._coperta = True
+
+	def set_uncover(self):
+		""" Copre la carta """
+		self._coperta = False
+
 	@staticmethod
 	def _determine_color(suit: Suit) -> Color:
 		""" Determina il colore della carta in base al seme """
 		if suit == Suit.CUORI.value  or suit == Suit.QUADRI.value:
 			return Color.ROSSO.value
-		
+
 		return Color.BLU.value
 
+
+
+class Card(ProtoCard):
+	""" Classe per la gestione delle carte di gioco """
+	def __init__(self, valore, seme, coperta=True):
+		super().__init__()
+		self._valore = valore
+		self._seme = seme
+		self._coperta = coperta
+
+	@property
+	def get_info_card(self):
+		""" restituisce una stringa con le informazioni della carta """
+		details = self.__str__()
+		return details
+
 	def flip(self):
-		""" Ruota la carta usando i protometodi cover ed uncover"""
-		if self.coperta:
+		""" Ruota la carta usando i protometodi set_cover ed set_uncover"""
+		if self.get_covered:
 			self.set_uncover()
 		else:
 			self.set_cover()
@@ -192,19 +186,14 @@ class Mazzo:
 		for seme in semi:
 			for valore in valori:
 				carta = Card(valore, seme)
-				#carta._nome = f"{valore} di {seme}"
 				carta.set_name(f"{valore} di {seme}")
 				if valore in ["Jack", "Regina", "Re", "Asso"]:
-					#carta._valore_numerico = int(self.FIGURE_VALUES[valore])
 					carta.set_int_value(int(self.FIGURE_VALUES[valore]))
 				else:
-					#carta._valore_numerico = int(valore)
-					valore = int(valore)
-					carta.set_int_value(valore)
+					carta.set_int_value(int(valore))
 
-				#carta._id = i
 				carta.set_id(i)
-				carta._colore = carta._determine_color(seme)
+				carta.set_color(carta._determine_color(seme))
 				mazzo.append(carta)
 				i += 1
 
@@ -235,7 +224,7 @@ class Mazzo:
 		if i < len(self.cards):
 			return self.cards[i]
 
-	def get_numero_carte(self):
+	def get_len(self):
 		""" restituisce il numero di carte nel mazzo """
 		return len(self.cards)
 

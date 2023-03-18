@@ -9,7 +9,7 @@
 import sys, random, logging, time, pygame
 # moduli personali
 from my_lib.dialog_box import DialogBox
-from scr.pile import TavoloSolitario
+from scr.game_table import TavoloSolitario
 #import pdb #pdb.set_trace() da impostare dove si vuol far partire il debugger
 
 # Imposta la configurazione del logger
@@ -22,10 +22,10 @@ class EngineSolitario(DialogBox):
 	def __init__(self):
 		super().__init__()
 		self.tavolo = TavoloSolitario()
-		self.winner = False
-		self.is_time_over = False
-		self.is_game_running = False
-		self.difficulty_level = 1
+		self.winner = False # variabile per gestire la vittoria del gioco
+		self.is_time_over = False # variabile per gestire il tempo di gioco
+		self.is_game_running = False # variabile per gestire il ciclo principale del gioco
+		self.difficulty_level = 1 # livello di difficoltà impostato dal giocatore
 		self.conta_giri = 0 # contatore per gestire il numero di mosse fatte dal player
 		self.conta_rimischiate = 0 # contatore per gestire il numero di rimischiate fatte dal player
 		self.cursor_pos = [0, 0]  # posizione iniziale del cursore sul tavolo
@@ -34,13 +34,13 @@ class EngineSolitario(DialogBox):
 		self.origin_pile = None # salvo pila origine per gestione spostamenti
 		self.dest_pile = None # salvo pile destinazione valide per gestione spostamenti
 
-		# imposto il tempo di gioco
-		self.clock = pygame.time.Clock()
-		self.fps = 60
-		self.start_ticks = 0
+		# inizializzo il tempo di gioco
+		self.clock = pygame.time.Clock() # inizializzo il clock
+		self.fps = 60 # imposto il numero di frame per secondo
+		self.start_ticks = 0 # inizializzo il contatore dei secondi
 
 	def test_set_time_out(self):
-	#																																																																																																																																												 impostare manualmente il tempo a 60 minuti
+		# impostare manualmente il tempo a 60 minuti
 		self.is_time_over = True
 		return "Prova verifica tempo scaduto.  \n"
 
@@ -128,7 +128,7 @@ class EngineSolitario(DialogBox):
 		infocarta = ""
 		row, col = self.cursor_pos
 		pila = self.tavolo.pile[col]
-		totcarte = pila.numero_carte()
+		totcarte = pila.get_len()
 		if totcarte > 0:
 			carta = pila.get_carta(row)
 			if not carta:
@@ -238,9 +238,7 @@ class EngineSolitario(DialogBox):
 		string = "il mazzo è vuoto!\n"
 		mazzo = self.tavolo.pile[12]
 		if not mazzo.is_empty_pile():
-			string = f"carte nel mazzo: {mazzo.numero_carte()}"
-		else:
-			string = "il mazzo è vuoto!\n"
+			string = f"carte nel mazzo: {mazzo.get_len()}"
 
 		return string
 
@@ -286,9 +284,9 @@ class EngineSolitario(DialogBox):
 					string += f"{pila.carte[-1].get_name}.  \n"
 
 		# vocalizza il nuero totale dicarte nella pila scarti
-		string += f"negli scarti ci sono:  {self.tavolo.pile[11].numero_carte()} Carte.  \n"
+		string += f"negli scarti ci sono:  {self.tavolo.pile[11].get_len()} Carte.  \n"
 		# vocalizza il numero totale di carte nel mazzo
-		string += f"Carte nel mazzo:  {self.tavolo.pile[12].numero_carte()} carte.  \n"
+		string += f"Carte nel mazzo:  {self.tavolo.pile[12].get_len()} carte.  \n"
 		return string
 
 	def get_report_mossa(self):
@@ -469,7 +467,7 @@ class EngineSolitario(DialogBox):
 		if pile.is_empty_pile():
 			return "la pila è vuota!\n"
 
-		if pile.carte[row].coperta:
+		if pile.carte[row].get_covered:
 			return "non puoi selezionare una carta coperta!\n"
 
 		self.origin_pile = pile
