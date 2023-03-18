@@ -59,7 +59,7 @@ class EngineSolitario(DialogBox):
 		for i in range(7):
 			pila = self.tavolo.pile[i]
 			if pila.is_pila_base() and not self.is_game_running:
-				pila.carte[-1].coperta = True
+				pila.carte[-1].cover()
 
 		# apre una alertbox per notificare l'apertura della partita specificando il livello impostato
 		if self.is_game_running and not self.winner:
@@ -175,6 +175,9 @@ class EngineSolitario(DialogBox):
 			return "la pila è vuota!\n"
 
 		current_card = self.tavolo.get_card_position(row, col)
+		if not current_card:
+			return "non riesco ad identificare la carta alle coordinate specificate"
+
 		try:
 			card_name = current_card.get_name
 			string_carta = f"{pila.nome}.  "
@@ -325,7 +328,7 @@ class EngineSolitario(DialogBox):
 		for i in range(0, 6):
 			pila = self.tavolo.pile[i]
 			if pila.is_pila_base() and not self.is_game_running:
-				pila.carte[-1].coperta = True
+				pila.carte[-1].cover()
 
 	#@@# sezione metodi per il movimento del cursore di navigazione
 
@@ -479,24 +482,33 @@ class EngineSolitario(DialogBox):
 
 		return string[:-2] + "!\n"
 
-	def pesca(self):
+	def execute_draw(self):
+		""" esegue la pescata e ritorna le carte pescate """
 		liv = int(self.difficulty_level)
-		ver = self.tavolo.pescata(liv)
-		if not ver:
-			self.tavolo.riordina_scarti()
-			self.conta_rimischiate += 1
-			string = "Rimescolo gli scarti in mazzo riserve!  \n"
-			return string 
-
 		row = -1
 		col = 11
 		carte = []
 		for i in range(liv):
+			# pesco una carta dal mazzo
 			carta = self.tavolo.get_card_position(row, col)
 			carte.append(carta)
 			row -= 1
 
 		carte.reverse() # inverto l'ordine degli scarti
+		return carte
+
+	def pesca(self):
+		""" pesca le carte dal mazzo riserve """
+		carte = []
+		liv = int(self.difficulty_level)
+		ver = self.tavolo.pescata(liv)
+		if not ver:
+			self.tavolo.riordina_scarti()
+			self.conta_rimischiate += 1
+			return "Rimescolo gli scarti in mazzo riserve!  \n"
+
+		# se la pescata è andata a buon fine ritorno la stringa da vocalizzare con le carte pescate
+		carte = self.execute_draw()
 		string = "hai pescato: "
 		for carta in carte:
 			string += "%s,  \n" % carta.get_name

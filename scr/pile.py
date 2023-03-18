@@ -10,7 +10,7 @@ import logging, random
 # moduli personali
 from my_lib.myglob import *
 import my_lib.myutyls as mu
-from scr.cards import Carta, Mazzo
+from scr.cards import Card, Mazzo
 # import pdb #pdb.set_trace() da impostare dove si vuol far partire il debugger
 
 # Imposta la configurazione del logger
@@ -61,13 +61,6 @@ class Pila:
 	def get_carta(self, pos):
 		return self.carte[pos]
 
-	def set_coperte(self, inizio, fine, coperte):
-		for carta in self.carte[inizio:fine+1]:
-			carta.coperta = coperte
-
-	def numero_carte(self):
-		return len(self.carte)
-
 	def get_card_index(self, card):
 		""" Restituisce l'indice della carta se presente. """
 		if card in self.carte:
@@ -101,6 +94,27 @@ class Pila:
 		info_pila += f"tipo: {self.get_pile_type()}"
 		info_pila += f"seme: {self.get_pile_suit()}"
 		return info_pila
+
+	def set_all_cover(self):
+		for carta in self.carte:
+			carta.cover()
+
+	def set_all_uncover(self):
+		for carta in self.carte:
+			carta.uncover()
+
+	def set_uncover_top_card(self):
+		if len(self.carte) == 0:
+			return
+
+		self.carte[-1].uncover()
+
+	def set_coperte(self, inizio, fine, coperte):
+		for carta in self.carte[inizio:fine+1]:
+			carta.coperta = coperte
+
+	def numero_carte(self):
+		return len(self.carte)
 
 	#@@# sezione convalide spostamenti carte
 
@@ -140,6 +154,7 @@ class Pila:
 
 
 class TavoloSolitario:
+	""" Gestisce il tavolo di gioco del solitario """
 	semi = ["cuori", "quadri", "picche", "fiori"]
 	def __init__(self):
 		self.mazzo = Mazzo()
@@ -176,27 +191,26 @@ class TavoloSolitario:
 		self.pile.append(pila_mazzo_riserve)
 
 	def distribuisci_carte(self):
-		# distribuisci le carte alle pile base
-		if len(self.mazzo.cards) < 1:
+		""" Distribuisce le carte sul tavolo """
+
+		# se il mazzo è vuoto, lo resetto
+		if self.mazzo.is_empty_dek():
 			self.mazzo.reset()
 
+		# pesco le carte dal mazzo e le aggiungo alle pile base
 		for i in range(7):
 			for j in range(i+1):
 				carta = self.mazzo.pesca()
-				carta.coperta = True #if j < i else False
 				self.pile[i].aggiungi_carta(carta)
 
 		# distribuisci le restanti carte alla pila mazzo riserve
 		for i in range(24):
 			carta = self.mazzo.pesca()
-			carta.coperta = True
+			carta.cover()
 			self.pile[12].aggiungi_carta(carta)
 
 		# scopro l'ultima carta di ogni pila
-		for i in range(7):
-			pila = self.pile[i]
-			carta = pila.carte[-1]
-			carta.flip()#coperta = False
+		self.uncover_top_all_base_piles()
 
 	def pescata(self, num_cards):
 		# Controllo se ci sono ancora carte nel mazzo riserve
@@ -213,7 +227,7 @@ class TavoloSolitario:
 
 		# Aggiorno lo stato della pila scoperta
 		for c in self.pile[11].carte:
-			c.coperta = False
+			c.uncover()
 
 		return True
 
@@ -234,6 +248,17 @@ class TavoloSolitario:
 		# mazzo riserve intertito
 		self.pile[12].carte.reverse()
 
+	def uncover_top_all_base_piles(self):
+		""" Scopre l'ultima carta di tutte le pile base """
+		for i in range(7):
+			pila = self.pile[i]
+			if pila.is_empty_pile():
+				continue
+
+			pila.set_uncover_top_card()
+			#carta = pila.carte[-1]
+			#carta.uncover()
+
 	def get_pile_name(self, col):
 		pila = self.pile[col]
 		return pila.nome
@@ -244,6 +269,13 @@ class TavoloSolitario:
 			if card in pila.carte:
 				return pila
 
+	def scopri_ultima_carta(self, origin_pile):
+		# scopro l'ultima carta della pila di origine, se è una pila base
+		if origin_pile.is_pila_base():
+			if not origin_pile.is_empty_pile():
+				if origin_pile.carte[-1].coperta:
+					origin_pile.carte[-1].flip()
+
 	def get_card_position(self, row, col):
 		pila = self.pile[col]
 		return pila.get_carta(row)
@@ -253,13 +285,6 @@ class TavoloSolitario:
 	def put_to_base(self, origin_pila, dest_pila, select_card):
 		"""
 		Sposta una carta dalla pila di partenza alla pila di destinazione di tipo "base".
-		La carta deve essere l'ultima della pila di partenza e di valore inferiore di una unità rispetto alla carta
-		di destinazione, la quale non deve essere dello stesso colore.
-		Se la pila di destinazione è vuota, la carta di partenza deve essere un Re.
-		:param origin_pila: l'oggetto Pila di partenza
-		:param dest_pila: l'oggetto Pila di destinazione
-		:param select_card: l'oggetto Carta selezionata
-		:return: True se lo spostamento è autorizzato, False altrimenti
 		"""
 
 		if not dest_pila.is_pila_base():
@@ -275,15 +300,15 @@ class TavoloSolitario:
 			if card.colore == dest_pila.carte[-1].colore :
 				return False
 
-		if card.valore_numerico < 13 and dest_pila.is_empty_pile():
+		elif card.valore_numerico < 13 and dest_pila.is_empty_pile():
 			return False
 
-		if card.valore_numerico == 13 and dest_pila.is_empty_pile():
+		elif card.valore_numerico == 13 and dest_pila.is_empty_pile():
 			return True
 
 		if not dest_pila.is_empty_pile():
 			dest_card = dest_pila.carte[-1]
-			dest_value = dest_card.valore_numerico - 1
+			dest_value = dest_card.get_value - 1
 			if card.get_value != dest_value:
 				return False
 
@@ -307,13 +332,6 @@ class TavoloSolitario:
 				return False
 
 		return True
-
-	def scopri_ultima_carta(self, origin_pile):
-		# scopro l'ultima carta della pila di origine, se è una pila base
-		if origin_pile.is_pila_base():
-			if not origin_pile.is_empty_pile():
-				if origin_pile.carte[-1].coperta:
-					origin_pile.carte[-1].flip()
 
 	def esegui_spostamento(self, origin_pile, dest_pile, cards):
 		# rimuovo le carte dalla pila di origine

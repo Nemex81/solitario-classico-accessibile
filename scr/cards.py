@@ -17,30 +17,84 @@ logging.basicConfig(filename='log.txt', level=logging.DEBUG, format='%(asctime)s
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
-class Carta:
-	""" classe per la gestione delle carte di gioco"""
-	def __init__(self, valore, seme, coperta=True):
-		self.valore = valore
-		self.seme = seme
-		self.colore = None
-		self.id = None
-		self.nome = None
-		self.valore_numerico = None
-		self.coperta = coperta
+class ProtoCard:
+	"""Modello base per la gestione delle carte di gioco """
+	"""Classe base per la gestione delle carte di gioco """
+	def __init__(self):
+		self._nome = None
+		self._id = None
+		self._seme = None
+		self._colore = None
+		self._valore = None
+		self._valore_numerico = None
+		self._coperta = None
 
 	def __str__(self):
 		""" restituisce una stringa con le informazioni della carta"""
-		details = f"nome: {self.get_name}\n"
-		details += f"id: {self.get_id}\n"
-		details += f"seme: {self.get_suit}\n"
-		details += f"valore: {self.get_value}\n"
-		details += f"colore: {self.get_color}\n"
+		details = f"nome: {self.nome}\n"
+		details += f"id: {self.id}\n"
+		details += f"seme: {self.seme}\n"
+		details += f"valore: {self.valore_numerico}\n"
+		details += f"colore: {self.colore}\n"
+		details += f"coperta: {self.coperta}\n"
 		return details
 
-	#@@# sezione property
+	@property
+	def nome(self):
+		""" restituisce il nome della carta """
+		return self._nome
+
+	@property
+	def id(self):
+		""" restituisce l'id della carta """
+		return self._id
+
+	@property
+	def valore(self):
+		""" restituisce il valore della carta in formato stringa """
+		return self._valore
+
+	@property
+	def seme(self):
+		""" restituisce il seme della carta in formato stringa """
+		return self._seme
+
+	@property
+	def colore(self):
+		""" restituisce il colore della carta in formato stringa """
+		return self._colore
+
+	@property
+	def valore_numerico(self):
+		""" restituisce il valore numerico della carta """
+		return self._valore_numerico
+
+	@property
+	def coperta(self):
+		""" restituisce il valore booleano che indica se la carta è coperta o scoperta """
+		return self._coperta
+
+	def cover(self):
+		""" Copre la carta """
+		self._coperta = True
+
+	def uncover(self):
+		""" Copre la carta """
+		self._coperta = False
+
+
+
+class Card(ProtoCard):
+	""" Classe per la gestione delle carte di gioco """
+	def __init__(self, valore, seme, coperta=True):
+		super().__init__()
+		self._valore = valore
+		self._seme = seme
+		self._coperta = coperta
 
 	@property
 	def get_name(self):
+		""" restituisce il nome della carta """
 		if self.nome is None:
 			return "nessun nome"
 
@@ -51,10 +105,12 @@ class Carta:
 
 	@property
 	def get_id(self):
+		""" restituisce l'id della carta """
 		return self.id
 
 	@property
 	def get_suit(self):
+		""" restituisce il seme della carta """
 		if self.seme is None:
 			return "nessuna seme"
 
@@ -65,18 +121,20 @@ class Carta:
 
 	@property
 	def get_value(self):
+		""" restituisce il valore della carta """
 		if self.valore_numerico is None:
 			return "nessun valore"
 
 		if self.coperta:
 			return "carta coperta"
 
-		return self.valore_numerico
+		return self._valore_numerico
 
 	@property
 	def get_color(self):
+		""" restituisce il colore della carta """
 		if self.colore is None:
-			return "nessuna colore"
+			return "nessun colore"
 
 		if self.coperta:
 			return "carta coperta"
@@ -85,34 +143,60 @@ class Carta:
 
 	@property
 	def get_info_card(self):
-		details = f"nome: {self.get_name}\n"
+		""" restituisce una stringa con le informazioni della carta """
+		if self.coperta:
+			return "Carta coperta  \n"
+
+		details = f"nome: {self.get_name}.  \n"
 		details += f"id: {self.get_id}"
-		details += f"seme: {self.get_suit}\n"
-		details += f"valore: {self.get_value}\n"
-		details += f"colore: {self.get_color}\n"
+		details += f"seme: {self.get_suit}.  \n"
+		details += f"valore: {self.get_value}.  \n"
+		details += f"colore: {self.get_color}.  \n"
 		return details
 
-	#@@# sezione metodi di classe
+	def set_name(self, name):
+		""" Imposta il nome della carta """
+		self._nome = name
+
+	def set_id(self, id):
+		""" Imposta l'id della carta """
+		self._id = id
+
+	def set_suit(self, suit):
+		""" Imposta il seme della carta """
+		self._seme = suit
+
+	def set_str_value(self, value):
+		""" Imposta il valore della carta """
+		self._valore = value
+
+	def set_int_value(self, value):
+		""" Imposta il valore numerico della carta """
+		self._valore_numerico = value
+
+	def set_color(self, color):
+		""" Imposta il colore della carta """
+		self._colore = color
+
+	@staticmethod
+	def _determine_color(suit: Suit) -> Color:
+		""" Determina il colore della carta in base al seme """
+		if suit == Suit.CUORI.value  or suit == Suit.QUADRI.value:
+			return Color.ROSSO.value
+		
+		return Color.BLU.value
 
 	def flip(self):
-		self.coperta = not self.coperta
-
-	def set_color(self):
-		seme = self.seme
-		colore = ""
-		if seme == "cuori" or seme == "quadri":
-			colore = "rosso"
-
-		elif seme == "picche" or seme == "fiori":
-			colore = "blu"
-
+		""" Ruota la carta usando i protometodi cover ed uncover"""
+		if self.coperta:
+			self.uncover()
 		else:
-			colore = "indefinito"
+			self.cover()
 
-		self.colore = colore
 
 
 class Mazzo:
+	""" Classe per la gestione del mazzo di carte """
 	SUITES = ["cuori", "quadri", "fiori", "picche"]
 	VALUES = ["Asso", "2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Regina", "Re"]
 	FIGURE_VALUES = {"Jack": 11, "Regina": 12, "Re": 13, "Asso" : 1}
@@ -122,21 +206,27 @@ class Mazzo:
 		self.reset()
 
 	def crea(self):
+		""" Crea il mazzo di carte """
 		semi = self.SUITES
 		valori = self.VALUES
 		mazzo = []
 		i = 0
 		for seme in semi:
 			for valore in valori:
-				carta = Carta(valore, seme)
-				carta.nome = f"{valore} di {seme}"
-				carta.set_color()
+				carta = Card(valore, seme)
+				#carta._nome = f"{valore} di {seme}"
+				carta.set_name(f"{valore} di {seme}")
 				if valore in ["Jack", "Regina", "Re", "Asso"]:
-					carta.valore_numerico = int(self.FIGURE_VALUES[valore])
+					#carta._valore_numerico = int(self.FIGURE_VALUES[valore])
+					carta.set_int_value(int(self.FIGURE_VALUES[valore]))
 				else:
-					carta.valore_numerico = int(valore)
+					#carta._valore_numerico = int(valore)
+					valore = int(valore)
+					carta.set_int_value(valore)
 
-				carta.id = i
+				#carta._id = i
+				carta.set_id(i)
+				carta._colore = carta._determine_color(seme)
 				mazzo.append(carta)
 				i += 1
 
@@ -152,39 +242,39 @@ class Mazzo:
 			self.cards.append(carta)
 
 	def rimuovi_carte(self, n):
-		"""Rimuove n carte dal mazzo e le restituisce come lista."""
+		""" Rimuove n carte dal mazzo e le restituisce come lista """
 		carte_rimosse = self.cards[:n]
 		self.cards = self.cards[n:]
 		return carte_rimosse
 
 	def pesca(self):
+		""" pesca una carta dal mazzo """
 		carta_pescata = self.cards.pop(0)
 		return carta_pescata
 
 	def get_carta(self, i):
-		# restituisce la carta in posizione i se esistente
+		""" restituisce la carta in posizione i se esistente """
 		if i < len(self.cards):
 			return self.cards[i]
 
-
 	def get_numero_carte(self):
+		""" restituisce il numero di carte nel mazzo """
 		return len(self.cards)
 
 	def mischia(self):
+		""" mischia le carte nel mazzo """
 		random.shuffle(self.cards)
 
 	def is_empty_dek(self):
-		# se il mazzo è vuoto restituiamo true
+		""" se il mazzo è vuoto restituiamo true """
 		if len(self.cards) == 0:
 			return True
 
 	def reset(self):
+		""" Resetta il mazzo """
 		self.cards = []
 		self.crea()
 		self.mischia()
-
-	def get_carta(self, i):
-		return self.carte[i]
 
 
 

@@ -13,12 +13,30 @@ class Colors(Enum):
     GREEN = (0, 255, 0)
     BLUE = (0, 0, 255)
 
+class Suit(Enum):
+    CUORI = "cuori"
+    QUADRI = "quadri"
+    FIORI = "fiori"
+    PICCHE = "picche"
 
-#@@@# inizio parte 2
-# costanti
-M_TITOLO = "Solitario Accessibile"
+class Color(Enum):
+    ROSSO = "rosso"
+    BLU = "blu"
 
-
+class CardValue(Enum):
+    ASSO = 1
+    DUE = 2
+    TRE = 3
+    QUATTRO = 4
+    CINQUE = 5
+    SEI = 6
+    SETTE = 7
+    OTTO = 8
+    NOVE = 9
+    DIECI = 10
+    JACK = 11
+    REGINA = 12
+    RE = 13
 
 #@@@# Start del modulo
 if __name__ != "__main__":
