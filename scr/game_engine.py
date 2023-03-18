@@ -59,7 +59,7 @@ class EngineSolitario(DialogBox):
 		for i in range(7):
 			pila = self.tavolo.pile[i]
 			if pila.is_pila_base() and not self.is_game_running:
-				pila.carte[-1].cover()
+				pila.carte[-1].set_cover()
 
 		# apre una alertbox per notificare l'apertura della partita specificando il livello impostato
 		if self.is_game_running and not self.winner:
@@ -328,7 +328,7 @@ class EngineSolitario(DialogBox):
 		for i in range(0, 6):
 			pila = self.tavolo.pile[i]
 			if pila.is_pila_base() and not self.is_game_running:
-				pila.carte[-1].cover()
+				pila.carte[-1].set_cover()
 
 	#@@# sezione metodi per il movimento del cursore di navigazione
 

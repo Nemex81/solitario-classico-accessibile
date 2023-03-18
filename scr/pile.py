@@ -97,17 +97,17 @@ class Pila:
 
 	def set_all_cover(self):
 		for carta in self.carte:
-			carta.cover()
+			carta.set_cover()
 
 	def set_all_uncover(self):
 		for carta in self.carte:
-			carta.uncover()
+			carta.set_uncover()
 
 	def set_uncover_top_card(self):
 		if len(self.carte) == 0:
 			return
 
-		self.carte[-1].uncover()
+		self.carte[-1].set_uncover()
 
 	def set_coperte(self, inizio, fine, coperte):
 		for carta in self.carte[inizio:fine+1]:
@@ -206,7 +206,7 @@ class TavoloSolitario:
 		# distribuisci le restanti carte alla pila mazzo riserve
 		for i in range(24):
 			carta = self.mazzo.pesca()
-			carta.cover()
+			carta.set_cover()
 			self.pile[12].aggiungi_carta(carta)
 
 		# scopro l'ultima carta di ogni pila
@@ -227,7 +227,7 @@ class TavoloSolitario:
 
 		# Aggiorno lo stato della pila scoperta
 		for c in self.pile[11].carte:
-			c.uncover()
+			c.set_uncover()
 
 		return True
 
@@ -256,8 +256,6 @@ class TavoloSolitario:
 				continue
 
 			pila.set_uncover_top_card()
-			#carta = pila.carte[-1]
-			#carta.uncover()
 
 	def get_pile_name(self, col):
 		pila = self.pile[col]

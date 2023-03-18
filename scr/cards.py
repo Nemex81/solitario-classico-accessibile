@@ -31,54 +31,80 @@ class ProtoCard:
 
 	def __str__(self):
 		""" restituisce una stringa con le informazioni della carta"""
-		details = f"nome: {self.nome}\n"
-		details += f"id: {self.id}\n"
-		details += f"seme: {self.seme}\n"
-		details += f"valore: {self.valore_numerico}\n"
-		details += f"colore: {self.colore}\n"
-		details += f"coperta: {self.coperta}\n"
+		details = f"nome: {self.get_name}\n"
+		details += f"id: {self.get_id}\n"
+		details += f"seme: {self.get_suit}\n"
+		details += f"valore: {self.get_value}\n"
+		details += f"colore: {self.get_color}\n"
+		details += f"coperta: {self._coperta}\n"
 		return details
 
+	#@@# sezione metodi getter
+
 	@property
-	def nome(self):
+	def get_name(self):
 		""" restituisce il nome della carta """
+		if self._nome is None:
+			return "nessun nome"
+
+		if self._seme is None:
+			return "nessuna seme"
+
 		return self._nome
 
 	@property
-	def id(self):
+	def get_id(self):
 		""" restituisce l'id della carta """
+		if self._seme is None:
+			return "nessuna seme"
+
 		return self._id
 
 	@property
-	def valore(self):
-		""" restituisce il valore della carta in formato stringa """
-		return self._valore
+	def get_suit(self):
+		""" restituisce il seme della carta """
+		if self._seme is None:
+			return "nessuna seme"
 
-	@property
-	def seme(self):
-		""" restituisce il seme della carta in formato stringa """
+		if self.get_cover:
+			return "carta coperta"
+
 		return self._seme
 
 	@property
-	def colore(self):
-		""" restituisce il colore della carta in formato stringa """
-		return self._colore
+	def get_value(self):
+		""" restituisce il valore della carta """
+		if self._valore_numerico is None:
+			return "nessun valore"
 
-	@property
-	def valore_numerico(self):
-		""" restituisce il valore numerico della carta """
+		if self.get_cover:
+			return "carta coperta"
+
 		return self._valore_numerico
 
 	@property
-	def coperta(self):
-		""" restituisce il valore booleano che indica se la carta è coperta o scoperta """
+	def get_color(self):
+		""" restituisce il colore della carta """
+		if self._colore is None:
+			return "nessun colore"
+
+		if self.get_cover:
+			return "carta coperta"
+
+		return self._colore
+
+	@property
+	def get_cover(self):
+		""" restituisce il valore della copertura della carta """
 		return self._coperta
 
-	def cover(self):
+	#@@# sezione metodi setter
+
+	def set_cover(self):
 		""" Copre la carta """
 		self._coperta = True
 
-	def uncover(self):
+	def set_uncover(self):
 		""" Copre la carta """
 		self._coperta = False
 
@@ -92,54 +118,6 @@ class Card(ProtoCard):
 		self._seme = seme
 		self._coperta = coperta
 
-	@property
-	def get_name(self):
-		""" restituisce il nome della carta """
-		if self.nome is None:
-			return "nessun nome"
-
-		if self.coperta:
-			return "carta coperta"
-
-		return self.nome
-
-	@property
-	def get_id(self):
-		""" restituisce l'id della carta """
-		return self.id
-
-	@property
-	def get_suit(self):
-		""" restituisce il seme della carta """
-		if self.seme is None:
-			return "nessuna seme"
-
-		if self.coperta:
-			return "carta coperta"
-
-		return self.seme
-
-	@property
-	def get_value(self):
-		""" restituisce il valore della carta """
-		if self.valore_numerico is None:
-			return "nessun valore"
-
-		if self.coperta:
-			return "carta coperta"
-
-		return self._valore_numerico
-
-	@property
-	def get_color(self):
-		""" restituisce il colore della carta """
-		if self.colore is None:
-			return "nessun colore"
-
-		if self.coperta:
-			return "carta coperta"
-
-		return self.colore
 
 	@property
 	def get_info_card(self):
@@ -189,9 +167,9 @@ class Card(ProtoCard):
 	def flip(self):
 		""" Ruota la carta usando i protometodi cover ed uncover"""
 		if self.coperta:
-			self.uncover()
+			self.set_uncover()
 		else:
-			self.cover()
+			self.set_cover()
 
 
 
