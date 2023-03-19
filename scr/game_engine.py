@@ -56,8 +56,9 @@ class EngineSolitario(DialogBox):
 	def notify_new_game(self):
 		""" Notifica l'avvio di una nuova partita con una alert box. """
 
+		minuti = self.max_time_game // 60
 		str_notify = f"Avvio di una nuova partita in corso.\n\nMazzo in uso: {self.tavolo.mazzo.tipo}\nLivello di difficoltà impostato: {self.difficulty_level}"
-		str_notify += f"\ntimer di gioco impostato a: {self.max_time_game} minuti.  \n"
+		str_notify += f"\ntimer di gioco impostato a: {minuti} minuti.  \n"
 		self.create_alert_box(str_notify, "Tavolo di gioco allestito")
 
 	def crea_gioco(self):
@@ -285,10 +286,11 @@ class EngineSolitario(DialogBox):
 			string = "Partita terminata,  \n"
 
 		timer = self.max_time_game
-		tempo_trascorso = self.get_time() // 60
-		tempo_rimanente = timer - tempo_trascorso
+		timer_minuti = timer // 60
+		tempo_trascorso = self.get_time()
+		tempo_rimanente = (timer - tempo_trascorso) // 60
 		if timer > 0:
-			string += f"timer impostato a:  {timer} minuti.  \n"
+			string += f"timer impostato a:  {timer_minuti} minuti.  \n"
 			string += f"tempo rimanente:  {tempo_rimanente} minuti.  \n"
 		elapsed_time = self.get_time()
 		minuti = time.strftime("%M:%S", time.gmtime(elapsed_time))
@@ -407,9 +409,9 @@ class EngineSolitario(DialogBox):
 
 		elif not self.is_game_running and self.change_settings:
 			timer = self.set_game_timer()
-			minuti = int(timer)
-			secondi = minuti * 60
-			self.max_time_game = minuti
+			secondi = int(timer) * 60
+			minuti = int(secondi // 60)
+			self.max_time_game = secondi
 			self.create_alert_box(f"il limite massimo di tempo di gioco è stato impostato a:  {minuti} minuti.  \n", "impostazione del timer")
 			return F"il limite massimo di tempo di gioco è stato impostato a:  {minuti} minuti.  \n"
 
@@ -677,13 +679,14 @@ class EngineSolitario(DialogBox):
 
 		return False
 
-	def ceck_lost(self):
-		""" verifica se il giocatore ha perso controllando se la partita è durata più di 60 minuti """
-		tempo_partita = self.get_tempo_partita()
-		time_out = self.max_game_time * 60
-		if self.tempo_partita > time_out:
+	def ceck_lost_by_time(self):
+		""" verifica se il giocatore ha perso controllando se la partita è durata più del tempo impostato """
+
+		tempo_partita = self.get_time()
+		time_out = self.max_time_game
+		if tempo_partita > time_out:
 			self.is_time_over = True
-			return "Hai perso!  \nHai superato il tempo limite di 60 minuti!\n"
+			return "Hai perso!  \nHai superato il tempo limite impostato!\n"
 
 		return False
 
