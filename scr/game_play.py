@@ -65,7 +65,7 @@ class GamePlay(DialogBox):
 		self.vocalizza(string)
 
 	def f4_press(self):
-		string = ""
+		string = self.engine.change_game_time()
 		self.vocalizza(string)
 
 	def f5_press(self):
@@ -255,7 +255,7 @@ class GamePlay(DialogBox):
 			self.callback_dict[event.key]()
 
 		# verifichiamo la sconfitta per tempo scaduto
-		if self.engine.is_game_running and self.engine.is_time_over:
+		if self.engine.is_game_running and self.engine.max_time_game > 0 and self.engine.is_time_over:
 			# se il tempo è scaduto e non abbiamo vinto, allora annunciamo la sconfitta con una yes_or_no_box chiedendo se si vuole giocare ancora.
 			str_lost = "Hai perso!  \nHai superato il tempo limite di 60 minuti!\n"
 			self.create_alert_box(str_lost, "Tempo scaduto")

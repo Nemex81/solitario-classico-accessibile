@@ -27,6 +27,7 @@ class EngineSolitario(DialogBox):
 		self.is_game_running = False # variabile per gestire il ciclo principale del gioco
 		self.change_settings = False # variabile per gestire il cambio impostazioni
 		self.difficulty_level = 1 # livello di difficoltà impostato dal giocatore
+		self.max_time_game = 0 # tempo di gioco impostato dal giocatore
 		self.conta_giri = 0 # contatore per gestire il numero di mosse fatte dal player
 		self.conta_rimischiate = 0 # contatore per gestire il numero di rimischiate fatte dal player
 		self.cursor_pos = [0, 0]  # posizione iniziale del cursore sul tavolo
@@ -56,6 +57,7 @@ class EngineSolitario(DialogBox):
 		""" Notifica l'avvio di una nuova partita con una alert box. """
 
 		str_notify = f"Avvio di una nuova partita in corso.\n\nMazzo in uso: {self.tavolo.mazzo.tipo}\nLivello di difficoltà impostato: {self.difficulty_level}"
+		str_notify += f"\ntimer di gioco impostato a: {self.max_time_game} minuti.  \n"
 		self.create_alert_box(str_notify, "Tavolo di gioco allestito")
 
 	def crea_gioco(self):
@@ -279,6 +281,15 @@ class EngineSolitario(DialogBox):
 			return "nessuna partita in corso"
 
 		string = "Partita in corso,  \n"
+		if not self.is_game_running:
+			string = "Partita terminata,  \n"
+
+		timer = self.max_time_game
+		tempo_trascorso = self.get_time() // 60
+		tempo_rimanente = timer - tempo_trascorso
+		if timer > 0:
+			string += f"timer impostato a:  {timer} minuti.  \n"
+			string += f"tempo rimanente:  {tempo_rimanente} minuti.  \n"
 		elapsed_time = self.get_time()
 		minuti = time.strftime("%M:%S", time.gmtime(elapsed_time))
 		string += f"minuti trascorsi:  {minuti}.  \n"
@@ -310,7 +321,7 @@ class EngineSolitario(DialogBox):
 		if self.selected_card:
 			tot_cards = len(self.selected_card)
 			string += "sposti:  \n"
-			if tot_cards  > 3:
+			if tot_cards  > 2:
 				string += f"{self.selected_card[0].get_name} e altre {tot_cards - 1} carte.  \n"
 			else:
 				for carta in self.selected_card:
@@ -387,6 +398,33 @@ class EngineSolitario(DialogBox):
 		self.difficulty_level = int(level)
 		self.create_alert_box(f"Livello di difficoltà impostato a {self.difficulty_level}\n", "difficoltà cambiata")
 		return F"livello di difficoltà impostato a:  {self.difficulty_level}.  \n"
+
+	def change_game_time(self):
+		""" cambiamo il limite massimo di tempo iocabile """
+
+		if self.is_game_running:
+			return "Non puoi modificare il limite massimo per il tempo di gioco durante una partita!  \n"
+
+		elif not self.is_game_running and self.change_settings:
+			timer = self.set_game_timer()
+			minuti = int(timer)
+			secondi = minuti * 60
+			self.max_time_game = minuti
+			self.create_alert_box(f"il limite massimo di tempo di gioco è stato impostato a:  {minuti} minuti.  \n", "impostazione del timer")
+			return F"il limite massimo di tempo di gioco è stato impostato a:  {minuti} minuti.  \n"
+
+	def set_game_timer(self):
+		""" impostiamo il limite massimo di tempo iocabile """
+
+		self.create_input_box("impostare il limite massimo di tempo di gioco", "impostazione del timer")
+		timer = self.answare
+		if timer:
+			if timer.isdigit():
+				if int(timer) > 0:
+					return timer
+
+		return -1
+
 
 	def change_game_settings(self):
 		""" cambiamo le impostazioni del gioco """
@@ -642,7 +680,8 @@ class EngineSolitario(DialogBox):
 	def ceck_lost(self):
 		""" verifica se il giocatore ha perso controllando se la partita è durata più di 60 minuti """
 		tempo_partita = self.get_tempo_partita()
-		if self.tempo_partita > 3600:
+		time_out = self.max_game_time * 60
+		if self.tempo_partita > time_out:
 			self.is_time_over = True
 			return "Hai perso!  \nHai superato il tempo limite di 60 minuti!\n"
 
