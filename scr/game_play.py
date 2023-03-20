@@ -70,7 +70,11 @@ class GamePlay(DialogBox):
 		self.vocalizza(string)
 
 	def f3_press(self):
-		string = self.engine.change_game_time()
+		if pygame.key.get_mods() and KMOD_CTRL:
+			self.engine.disable_timer()
+		else:
+			string = self.engine.change_game_time()
+
 		self.vocalizza(string)
 
 	def f4_press(self):

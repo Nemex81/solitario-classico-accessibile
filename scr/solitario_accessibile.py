@@ -24,6 +24,8 @@ pygame.init()
 pygame.font.init()
 
 class SolitarioAccessibile(DialogBox):
+	"""	Classe per la gestione dellinterfaccia utente durante la partita al solitario """
+
 	menu = None
 
 	def __init__(self):
