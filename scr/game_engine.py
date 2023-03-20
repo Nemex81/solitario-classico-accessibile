@@ -288,11 +288,17 @@ class EngineSolitario(DialogBox):
 		return (pygame.time.get_ticks() - self.start_ticks) // 1000
 
 	def get_int_timer_status(self):
-		""" torna lo stato del timer in millisecondi """
+		""" torna lo stato del timer in secondi """
 		timer = self.max_time_game
 		timer_minuti = timer // 60
 		tempo_trascorso = self.get_time()
 		return timer - tempo_trascorso
+
+	def get_time_status(self):
+		""" torna lo stato del timer in formato di tempo """
+		secondi = self.get_time()
+		minuti = time.strftime("%M:%S", time.gmtime(secondi))
+		return minuti
 
 	def get_timer_status(self):
 		""" vocalizza lo stato del timer """
@@ -320,9 +326,9 @@ class EngineSolitario(DialogBox):
 			string += f"timer impostato a:  {timer_minuti} minuti.  \n"
 			string += f"timer:  {tempo_rimanente} minuti.  \n"
 
-		elapsed_time = self.get_time()
-		minuti = time.strftime("%M:%S", time.gmtime(elapsed_time))
-		string += f"minuti trascorsi:  {minuti}.  \n"
+		#elapsed_time = self.get_time()
+		minuti = self.get_time_status()
+		string += f"minuti trascorsi:  {minuti} secondi.  \n"
 		string += f"difficoltà impostata:  livello {self.difficulty_level}.  \n"
 		string += f"Spostamenti totali:  {self.get_mosse()}  \n"
 		string += f"Rimischiate:  {self.get_rimischiate()}  \n"
@@ -729,7 +735,7 @@ class EngineSolitario(DialogBox):
 
 	def you_lost_by_time(self):
 		""" metodo che viene chiamato quando il giocatore perde per tempo scaduto """
-		timer = self.max_time_game
+		timer = self.max_time_game // 60
 		str_lost = f"Hai perso!  \nHai superato il tempo limite di {timer} minuti!  \n"
 		self.create_alert_box(str_lost, "Tempo scaduto")
 		self.create_yes_or_no_box("Vuoi giocare ancora?", "Rivincita?")

@@ -244,6 +244,7 @@ class GamePlay(DialogBox):
 			pygame.K_c: self.c_press,
 			pygame.K_d: self.d_press,
 			pygame.K_f: self.f_press,
+			pygame.K_g: self.g_press,
 			pygame.K_m: self.m_press,
 			pygame.K_n: self.n_press,
 			pygame.K_o: self.o_press,
