@@ -61,7 +61,7 @@ class GamePlay(DialogBox):
 		self.vocalizza(string)
 
 	def f3_press(self):
-		string = self.engine.get_info_game()
+		string = self.engine.change_game_time()
 		self.vocalizza(string)
 
 	def f4_press(self):
@@ -189,6 +189,11 @@ class GamePlay(DialogBox):
 		if string:
 			self.vocalizza(string)
 
+	def r_press(self):
+		string = self.engine.get_info_game()
+		if string:
+			self.vocalizza(string
+
 	def s_press(self):
 		string = self.engine.get_top_scarto()
 		if string:
@@ -230,6 +235,7 @@ class GamePlay(DialogBox):
 			pygame.K_n: self.n_press,
 			pygame.K_o: self.o_press,
 			pygame.K_p: self.p_press,
+			pygame.K_r: self.r_press,
 			pygame.K_s: self.s_press,
 			pygame.K_t: self.t_press,
 			pygame.K_x: self.x_press,

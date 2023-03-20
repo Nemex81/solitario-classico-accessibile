@@ -686,7 +686,7 @@ class EngineSolitario(DialogBox):
 		time_out = self.max_time_game
 		if tempo_partita > time_out:
 			self.is_time_over = True
-			return "Hai perso!  \nHai superato il tempo limite impostato!\n"
+			return True
 
 		return False
 
