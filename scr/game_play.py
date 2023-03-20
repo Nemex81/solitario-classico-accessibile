@@ -25,6 +25,10 @@ pygame.init()
 pygame.font.init()
 
 class GamePlay(DialogBox):
+	"""	Classe per la gestione dellinterfaccia utente durante la partita al solitario """
+
+	TIME_CHECK_EVENT = pygame.USEREVENT + 1	# evento per il controllo del tempo residuo di gioco
+
 	def __init__(self, screen, screen_reader):
 		super().__init__()
 		#self.callback = callback_dict
@@ -192,7 +196,7 @@ class GamePlay(DialogBox):
 	def r_press(self):
 		string = self.engine.get_info_game()
 		if string:
-			self.vocalizza(string
+			self.vocalizza(string)
 
 	def s_press(self):
 		string = self.engine.get_top_scarto()
@@ -255,24 +259,35 @@ class GamePlay(DialogBox):
 			pygame.K_ESCAPE: self.esc_press,
 		}
 
-	def handle_keyboard_EVENTS(self, event):
-		""" gestione ciclo eventi """
-		if self.callback_dict.get(event.key):
-			self.callback_dict[event.key]()
+	def check_time(self):
+		""" controlliamo il tempo rimanente per la partita """
 
 		# verifichiamo la sconfitta per tempo scaduto
 		if self.engine.is_game_running and self.engine.max_time_game > 0 and not self.engine.is_time_over:
-			self.engine.ceck_lost_by_time()
+			if self.engine.ceck_lost_by_time():
+				self.engine.you_lost_by_time()
 
-		elif self.engine.is_game_running and self.engine.max_time_game > 0 and self.engine.is_time_over:
-			# se il tempo è scaduto e non abbiamo vinto, allora annunciamo la sconfitta con una yes_or_no_box chiedendo se si vuole giocare ancora.
-			str_lost = "Hai perso!  \nHai superato il tempo limite di 60 minuti!\n"
-			self.create_alert_box(str_lost, "Tempo scaduto")
-			self.create_yes_or_no_box("Vuoi giocare ancora?", "Richiesta")
-			if self.answare:
-				self.engine.nuova_partita()
-			else:
-				self.engine.chiudi_partita()
+
+	def handle_keyboard_EVENTS(self, event):
+		""" gestione ciclo eventi """
+
+		if event.type == QUIT:
+			self.quit_app()
+
+		if event.type == self.TIME_CHECK_EVENT:
+			self.check_time()
+
+		if event.type == pygame.KEYDOWN:
+			if self.callback_dict.get(event.key):
+				self.callback_dict[event.key]()
+
+		# verifichiamo la sconfitta per tempo scaduto
+		#if self.engine.is_game_running and self.engine.max_time_game > 0 and not self.engine.is_time_over:
+			#if self.engine.ceck_lost_by_time():
+				#self.engine.you_lost_by_time()
+
+		#elif self.engine.is_game_running and self.engine.max_time_game > 0 and self.engine.is_time_over:
+			#self.engine.you_lost_by_time()
 
 		# verifichiamo la vittoria
 		if self.engine.is_game_running and self.engine.winner:

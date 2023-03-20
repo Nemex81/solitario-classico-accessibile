@@ -70,22 +70,33 @@ class SolitarioAccessibile(DialogBox):
 		else:
 			self.is_menu_open = False
 
-	def handle_keyboard_events(self, event):
+	def handle_keyboard_events(self):
 		"""
 		Metodo per la gestione degli eventi da tastiera.
 		"""
-		#for event in pygame.event.get():
-		if event.type == QUIT:
-			self.quit_app()
 
-		elif event.type == KEYDOWN:
+		for event in pygame.event.get():
+			if event.type == QUIT:
+				self.quit_app()
+
+			elif event.type == KEYDOWN:
+				if self.is_menu_open:
+					self.menu.handle_keyboard_EVENTS(event)
+				else:
+					self.gameplay.handle_keyboard_EVENTS(event)
+
+			elif event.type == KEYUP:
+				pass
+
+	def handle_events(self):
+		""" Gestione degli eventi """
+
+		for event in pygame.event.get():
 			if self.is_menu_open:
 				self.menu.handle_keyboard_EVENTS(event)
 			else:
 				self.gameplay.handle_keyboard_EVENTS(event)
 
-		elif event.type == KEYUP:
-			pass
 
 	def quit_app(self):
 		question = "Sei sicuro di voler uscire?"
@@ -101,11 +112,8 @@ class SolitarioAccessibile(DialogBox):
 
 	def run(self):
 		while self.is_running:
-			for event in pygame.event.get():
-				#if event.type == QUIT:
-					#self.quit_app()
-
-				self.handle_keyboard_events(event)
+			#self.handle_keyboard_events()
+			self.handle_events()
 
 			#if self.is_menu_open:
 				#self.menu.draw_menu()

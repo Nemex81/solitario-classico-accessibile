@@ -19,6 +19,10 @@ logger.setLevel(logging.DEBUG)
 #logger.debug("Il mio messaggio di debug")
 
 class EngineSolitario(DialogBox):
+	""" Classe per la gestione delle regole del gioco del solitario """
+
+	TIME_CHECK_EVENT = pygame.USEREVENT + 1 # evento per il controllo del tempo residuo di gioco
+
 	def __init__(self, tavolo):
 		super().__init__()
 		self.tavolo = tavolo
@@ -94,6 +98,7 @@ class EngineSolitario(DialogBox):
 		self.clock = pygame.time.Clock() # inizializzo il clock
 		self.fps = 60 # imposto il numero di frame per secondo
 		self.start_ticks = pygame.time.get_ticks() # inizializzo il contatore dei secondi
+		pygame.time.set_timer(self.TIME_CHECK_EVENT, 1000)  # imposto il timer per il controllo del tempo residuo di gioco
 		return "avvio di una nuova partita in corso.  \n"
 
 	def chiudi_partita(self):
@@ -116,7 +121,7 @@ class EngineSolitario(DialogBox):
 		self.target_card = None
 		self.origin_pile = None
 		self.dest_pile = None
-		self.create_alert_box("Partita chiusa cons successo, torno al menù di inizio partita.", "Chiusura della partita")
+		self.create_alert_box("Partita chiusa con successo, torno al menù di inizio partita.", "Chiusura della partita")
 		return "partita chiusa.  \n"
 
 	#@@# sezione getter
@@ -689,6 +694,17 @@ class EngineSolitario(DialogBox):
 			return True
 
 		return False
+
+	def you_lost_by_time(self):
+		""" metodo che viene chiamato quando il giocatore perde per tempo scaduto """
+		timer = self.max_time_game
+		str_lost = f"Hai perso!  \nHai superato il tempo limite di {timer} minuti!  \n"
+		self.create_alert_box(str_lost, "Tempo scaduto")
+		self.create_yes_or_no_box("Vuoi giocare ancora?", "Rivincita?")
+		if self.answare:
+			self.nuova_partita()
+		else:
+			self.chiudi_partita()
 
 
 
