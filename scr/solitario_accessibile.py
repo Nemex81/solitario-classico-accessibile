@@ -43,18 +43,6 @@ class SolitarioAccessibile(DialogBox):
 		self.selected_menu_item = 0
 		self.is_running = True  # boolean per tenere il ciclo principale degli eventi aperto
 
-	def vocalizza(self, string):
-		"""
-		chiamata al metodo vocalizza del modulo screen_reader
-		"""
-		self.screen_reader.vocalizza(string)
-
-	def draw_game(self):
-		"""
-		Metodo per disegnare la finestra di gioco.
-		"""
-		self.game_engine.render(self.schermo)
-
 	def next_item(self):
 		self.menu.next_item()
 
@@ -69,24 +57,6 @@ class SolitarioAccessibile(DialogBox):
 			self.quit_app()
 		else:
 			self.is_menu_open = False
-
-	def handle_keyboard_events(self):
-		"""
-		Metodo per la gestione degli eventi da tastiera.
-		"""
-
-		for event in pygame.event.get():
-			if event.type == QUIT:
-				self.quit_app()
-
-			elif event.type == KEYDOWN:
-				if self.is_menu_open:
-					self.menu.handle_keyboard_EVENTS(event)
-				else:
-					self.gameplay.handle_keyboard_EVENTS(event)
-
-			elif event.type == KEYUP:
-				pass
 
 	def handle_events(self):
 		""" Gestione degli eventi """
@@ -122,6 +92,7 @@ class SolitarioAccessibile(DialogBox):
 				#self.game_engine.render(self.schermo)
 
 			pygame.display.update()
+			pygame.time.wait(10)
 
 
 

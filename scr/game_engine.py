@@ -31,7 +31,7 @@ class EngineSolitario(DialogBox):
 		self.is_game_running = False # variabile per gestire il ciclo principale del gioco
 		self.change_settings = False # variabile per gestire il cambio impostazioni
 		self.difficulty_level = 1 # livello di difficoltà impostato dal giocatore
-		self.max_time_game = 0 # tempo di gioco impostato dal giocatore
+		self.max_time_game = -1 # tempo di gioco impostato dal giocatore
 		self.conta_giri = 0 # contatore per gestire il numero di mosse fatte dal player
 		self.conta_rimischiate = 0 # contatore per gestire il numero di rimischiate fatte dal player
 		self.cursor_pos = [0, 0]  # posizione iniziale del cursore sul tavolo
@@ -335,7 +335,7 @@ class EngineSolitario(DialogBox):
 		return string
 
 	def get_info_game(self):
-		# vocalizza il numero di mosse ed il numero di rimischiate fatte dal giocatore
+		""" vocalizza il numero di mosse ed il numero di rimischiate fatte dal giocatore """
 		if not self.is_game_running:
 			return "nessuna partita in corso"
 
@@ -344,6 +344,7 @@ class EngineSolitario(DialogBox):
 
 	def get_info_tavolo(self):
 		#vocalizza le ultime carte di tutte le pile di tipo base
+
 		string = "ultime carte sul tavolo:  \n"
 		for pila in self.tavolo.pile:
 			if pila.tipo == "base":
@@ -361,6 +362,7 @@ class EngineSolitario(DialogBox):
 
 	def get_report_mossa(self):
 		""" vocalizziamo il report della mossa """
+
 		string = ""
 		if self.selected_card:
 			tot_cards = len(self.selected_card)
@@ -452,9 +454,16 @@ class EngineSolitario(DialogBox):
 		elif not self.is_game_running and self.change_settings:
 			timer = self.set_game_timer()
 			secondi = int(timer) * 60
-			minuti = int(secondi // 60)
-			self.max_time_game = secondi
-			self.create_alert_box(f"il limite massimo di tempo di gioco è stato impostato a:  {minuti} minuti.  \n", "impostazione del timer")
+			minuti = int(timer)
+			if secondi > 0:
+				self.max_time_game = secondi
+			else:
+				self.max_time_game = -1
+
+			msg_box = f"il timer è stato disattivato!  \n"
+			if secondi > 0:
+				msg_box = f"il limite massimo di tempo di gioco è stato impostato a:  {minuti} minuti.  \n"
+			self.create_alert_box(msg_box, "impostazione del timer")
 			return F"il limite massimo di tempo di gioco è stato impostato a:  {minuti} minuti.  \n"
 
 	def set_game_timer(self):

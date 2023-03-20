@@ -40,10 +40,11 @@ class GamePlay(DialogBox):
 		self.build_commands_list() # creazione lista dei comandi utente
 		self.engine.crea_gioco() # avvio una nuova partita
 
-	#@@# sezione metodi di supporto per comandi utente
+	#@@# sezione metodi di supporto
 
 	def vocalizza(self, string):
 		self.screen_reader.vocalizza(string)
+		pygame.time.wait(500)
 
 	def quit_app(self):
 		self.vocalizza("chiusura in corso.  ")
@@ -232,6 +233,33 @@ class GamePlay(DialogBox):
 		else:
 			self.quit_app()
 
+	#@@# sezione metodi per verifiche di fine partita
+
+	def check_time(self):
+		""" controlliamo il tempo rimanente per la partita """
+
+		# verifichiamo la sconfitta per tempo scaduto
+		if self.engine.is_game_running and self.engine.max_time_game > 0 and not self.engine.is_time_over:
+			if self.engine.ceck_lost_by_time():
+				self.engine.you_lost_by_time()
+
+	def ceck_winner(self):
+		""" controlliamo se c'è un vincitore """
+
+		if self.engine.is_game_running and self.engine.winner:
+			self.engine.you_winner()
+
+	def check_auto_events(self):
+		""" controlliamo gli eventi automatici """
+
+		# controlliamo il tempo rimanente per la partita
+		self.check_time()
+
+		# controlliamo se c'è un vincitore
+		self.ceck_winner()
+
+	#@@# sezione per la gestione degli eventi di gioco
+
 	def build_commands_list(self):
 		self.callback_dict = {
 			pygame.K_1: self.press_1,
@@ -269,52 +297,32 @@ class GamePlay(DialogBox):
 			pygame.K_ESCAPE: self.esc_press,
 		}
 
-	def check_time(self):
-		""" controlliamo il tempo rimanente per la partita """
+	def handle_keyboard_EVENTS(self, event):
+		""" gestione eventi da tastiera """
 
-		# verifichiamo la sconfitta per tempo scaduto
-		if self.engine.is_game_running and self.engine.max_time_game > 0 and not self.engine.is_time_over:
-			if self.engine.ceck_lost_by_time():
-				self.engine.you_lost_by_time()
-
-	def ceck_winner(self):
-		""" controlliamo se c'è un vincitore """
-
-		if self.engine.is_game_running and self.engine.winner:
-			self.engine.you_winner()
-
-	def handle_EVENTS(self, event):
-		""" gestione ciclo eventi """
-
-		if event.type == QUIT:
-			self.quit_app()
-
-		if event.type == self.TIME_CHECK_EVENT:
-			self.check_time()
-			self.ceck_winner()
-
+		# verifichiamo se è stato premuto un tasto di comando valido
 		if event.type == pygame.KEYDOWN:
 			if self.callback_dict.get(event.key):
 				self.callback_dict[event.key]()
 
-		# verifichiamo la sconfitta per tempo scaduto
-		#if self.engine.is_game_running and self.engine.max_time_game > 0 and not self.engine.is_time_over:
-			#if self.engine.ceck_lost_by_time():
-				#self.engine.you_lost_by_time()
+		# verifichiamo se è stato rilasciato un tasto di comando valido
+		if event.type == pygame.KEYUP:
+			pass
 
-		#elif self.engine.is_game_running and self.engine.max_time_game > 0 and self.engine.is_time_over:
-			#self.engine.you_lost_by_time()
+	def handle_EVENTS(self, event):
+		""" gestione ciclo eventi principali """
 
-		# verifichiamo la vittoria
-		#if self.engine.is_game_running and self.engine.winner:
-			#str_winner = self.engine.get_info_game()
-			#self.create_alert_box(str_winner, "Vittoria Spumeggiante")
-			#self.create_yes_or_no_box("Vuoi giocare un'altra partita?", "Domanda")
-			#if self.answare:
-				#self.engine.nuova_partita()
-			#else:
-				#self.engine.chiudi_partita()
+		# verifichiamo se è stato avviato l'evento di chiusura della finestra
+		if event.type == QUIT:
+			self.quit_app()
 
+		# verifichiamo se possono essere eseguiti gli eventi personalizzati per il gioco
+		if event.type == self.TIME_CHECK_EVENT:
+			self.check_auto_events()
+
+		# verifichiamo se è stato avviato un evento della tastiera
+		if event.type == pygame.KEYDOWN or event.type == pygame.KEYUP:
+			self.handle_keyboard_EVENTS(event)
 
 
 
