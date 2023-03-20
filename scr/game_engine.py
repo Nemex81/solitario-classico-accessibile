@@ -422,7 +422,7 @@ class EngineSolitario(DialogBox):
 
 		self.tavolo.mazzo = mazzo
 		self.tavolo.reset_pile()
-		self.create_alert_box(F"tipo di mazzo impostato a:  {self.tavolo.mazzo.tipo}.  \n", "Tipo di mazzo cambiato")
+		#self.create_alert_box(F"tipo di mazzo impostato a:  {self.tavolo.mazzo.tipo}.  \n", "Tipo di mazzo cambiato")
 		return F"tipo di mazzo impostato a:  {self.tavolo.mazzo.tipo}.  \n"
 
 	def change_difficulty_level(self):
@@ -442,7 +442,7 @@ class EngineSolitario(DialogBox):
 
 		#if level:
 		self.difficulty_level = int(level)
-		self.create_alert_box(f"Livello di difficoltà impostato a {self.difficulty_level}\n", "difficoltà cambiata")
+		#self.create_alert_box(f"Livello di difficoltà impostato a {self.difficulty_level}\n", "difficoltà cambiata")
 		return F"livello di difficoltà impostato a:  {self.difficulty_level}.  \n"
 
 	def change_game_time(self):
@@ -452,7 +452,8 @@ class EngineSolitario(DialogBox):
 			return "Non puoi modificare il limite massimo per il tempo di gioco durante una partita!  \n"
 
 		elif not self.is_game_running and self.change_settings:
-			timer = self.set_game_timer()
+			#timer = self.set_game_timer()
+			timer = self.change_time_over()
 			secondi = int(timer) * 60
 			minuti = int(timer)
 			if secondi > 0:
@@ -460,11 +461,39 @@ class EngineSolitario(DialogBox):
 			else:
 				self.max_time_game = -1
 
-			msg_box = f"il timer è stato disattivato!  \n"
+			msg_box = f"Il timer è stato disattivato!  \n"
 			if secondi > 0:
-				msg_box = f"il limite massimo di tempo di gioco è stato impostato a:  {minuti} minuti.  \n"
-			self.create_alert_box(msg_box, "impostazione del timer")
-			return F"il limite massimo di tempo di gioco è stato impostato a:  {minuti} minuti.  \n"
+				msg_box = f"Timer impostato a:  {minuti} minuti.  \n"
+
+			#self.create_alert_box(msg_box, "impostazione del timer")
+			return msg_box
+
+	def disable_timer(self):
+		""" disabilitiamo il timer """
+
+		if not self.is_game_running and self.change_settings:
+
+		self.max_time_game = -1
+		#self.create_alert_box("il timer è stato disattivato!  \n", "disattivazione del timer")
+		return "il timer è stato disattivato!  \n"
+
+	def change_time_over(self):
+		""" permette di personalizzare il tempo limite per il tempo di gioco """
+
+		timer = 0
+		max_settable = 60 * 60 # massima durata pe ril timer 60 minuti
+		if self.max_time_game < 0:
+			timer = 5
+
+		elif self.max_time_game >= max_settable:
+			timer = self.max_time_game // 60
+			timer = -1
+
+		else:
+			timer = self.max_time_game // 60
+			timer += 5
+
+		return timer
 
 	def set_game_timer(self):
 		""" impostiamo il limite massimo di tempo iocabile """
