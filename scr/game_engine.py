@@ -21,7 +21,7 @@ logger.setLevel(logging.DEBUG)
 class EngineSolitario(DialogBox):
 	""" Classe per la gestione delle regole del gioco del solitario """
 
-	TIME_CHECK_EVENT = pygame.USEREVENT + 1 # evento per il controllo del tempo residuo di gioco
+	TIME_CHECK_EVENT = pygame.USEREVENT + 1 # ceck eventi pygame personalizzati
 
 	def __init__(self, tavolo):
 		super().__init__()
@@ -48,12 +48,12 @@ class EngineSolitario(DialogBox):
 	def test_set_time_out(self):
 		# impostare manualmente il tempo a 60 minuti
 		self.is_time_over = True
-		return "Prova verifica tempo scaduto.  \n"
+		return "test time over!  \n"
 
 	def test_vittoria(self):
 		# creiamo una simulazione di vittoria partita per testare il ceck nel ciclo principale
 		self.winner = True
-		return "Prova verifica vittoria partita.  \n"
+		return "test vittoria!  \n"
 
 	#@@# sezione per la gestione del gioco @##@
 
@@ -85,8 +85,9 @@ class EngineSolitario(DialogBox):
 		"""Crea un nuovo gioco del solitario."""
 
 		if self.change_settings:
-			self.create_alert_box("Chiudi prima le impostazioni partita.", "Impossibile procedere")
-			return
+			#self.create_alert_box("Chiudi prima le impostazioni partita.", "Impossibile procedere")
+			#return
+			self.change_settings = False
 
 		# imposto le variabili di gioco
 		self.winner = False
@@ -99,19 +100,19 @@ class EngineSolitario(DialogBox):
 		self.fps = 60 # imposto il numero di frame per secondo
 		self.start_ticks = pygame.time.get_ticks() # inizializzo il contatore dei secondi
 		pygame.time.set_timer(self.TIME_CHECK_EVENT, 1000)  # imposto il timer per il controllo del tempo residuo di gioco
-		return "avvio di una nuova partita in corso.  \n"
+		return True
 
-	def chiudi_partita(self):
-		""" Chiude la partita aperta del solitario. """
+	def stop_game(self):
+		""" Ferma il gioco. """
 
 		self.is_game_running = False
 		self.winner = False
-		self.is_time_over = False
 		self.tavolo.crea_pile_gioco()
-		self.tavolo.distribuisci_carte()		
+		self.tavolo.distribuisci_carte()
 		self.copri_tutto() # copri tutte le ultime carte delle pile base
 
 		# resetto cronometro partita e dati orologio
+		self.is_time_over = False
 		self.conta_giri = 0
 		self.conta_rimischiate = 0
 		self.start_ticks = pygame.time.get_ticks()
@@ -121,6 +122,11 @@ class EngineSolitario(DialogBox):
 		self.target_card = None
 		self.origin_pile = None
 		self.dest_pile = None
+
+	def chiudi_partita(self):
+		""" Chiude la partita aperta del solitario. """
+
+		self.stop_game()
 		self.create_alert_box("Partita chiusa con successo, torno al menù di inizio partita.", "Chiusura della partita")
 		return "partita chiusa.  \n"
 
@@ -281,10 +287,26 @@ class EngineSolitario(DialogBox):
 
 		return (pygame.time.get_ticks() - self.start_ticks) // 1000
 
-	def get_info_game(self):
-		# vocalizza il numero di mosse ed il numero di rimischiate fatte dal giocatore
-		if not self.is_game_running:
-			return "nessuna partita in corso"
+	def get_int_timer_status(self):
+		""" torna lo stato del timer in millisecondi """
+		timer = self.max_time_game
+		timer_minuti = timer // 60
+		tempo_trascorso = self.get_time()
+		return timer - tempo_trascorso
+
+	def get_timer_status(self):
+		""" vocalizza lo stato del timer """
+
+		if self.max_time_game == 0:
+			return "timer disattivato!  \n"
+
+		secondi_rimanenti = self.get_int_timer_status()
+		 #per avere un formato di tempo simile a 00:00
+		tempo_rimanente = time.strftime("%M:%S", time.gmtime(secondi_rimanenti))
+		return f"Minuti mancanti:  {tempo_rimanente} secondi.  \n"
+
+	def get_report_game(self):
+		""" vocalizza il report finale della partita """
 
 		string = "Partita in corso,  \n"
 		if not self.is_game_running:
@@ -292,17 +314,26 @@ class EngineSolitario(DialogBox):
 
 		timer = self.max_time_game
 		timer_minuti = timer // 60
-		tempo_trascorso = self.get_time()
-		tempo_rimanente = (timer - tempo_trascorso) // 60
+		#per avere un formato di tempo simile a 00:00
+		tempo_rimanente = self.get_timer_status()
 		if timer > 0:
 			string += f"timer impostato a:  {timer_minuti} minuti.  \n"
-			string += f"tempo rimanente:  {tempo_rimanente} minuti.  \n"
+			string += f"timer:  {tempo_rimanente} minuti.  \n"
+
 		elapsed_time = self.get_time()
 		minuti = time.strftime("%M:%S", time.gmtime(elapsed_time))
 		string += f"minuti trascorsi:  {minuti}.  \n"
 		string += f"difficoltà impostata:  livello {self.difficulty_level}.  \n"
 		string += f"Spostamenti totali:  {self.get_mosse()}  \n"
 		string += f"Rimischiate:  {self.get_rimischiate()}  \n"
+		return string
+
+	def get_info_game(self):
+		# vocalizza il numero di mosse ed il numero di rimischiate fatte dal giocatore
+		if not self.is_game_running:
+			return "nessuna partita in corso"
+
+		string = self.get_report_game()
 		return string
 
 	def get_info_tavolo(self):
@@ -678,9 +709,10 @@ class EngineSolitario(DialogBox):
 
 	def ceck_victory(self):
 		""" verifica se il giocatore ha vinto utilizzando il metodo verifica_vittoria del tavolo """
+
 		if self.tavolo.verifica_vittoria():
 			self.winner = True
-			return "Complimenti!  \nHai vinto!\n"
+			return True
 
 		return False
 
@@ -700,6 +732,19 @@ class EngineSolitario(DialogBox):
 		timer = self.max_time_game
 		str_lost = f"Hai perso!  \nHai superato il tempo limite di {timer} minuti!  \n"
 		self.create_alert_box(str_lost, "Tempo scaduto")
+		self.create_yes_or_no_box("Vuoi giocare ancora?", "Rivincita?")
+		if self.answare:
+			self.nuova_partita()
+		else:
+			self.chiudi_partita()
+
+	def you_winner(self):
+		""" crea la finestra di vittoria """
+
+		self.stop_game()
+		str_win = f"Hai Vinto!  \nComplimenti, vittoria spumeggiante!  \n\n"
+		str_win += self.get_report_game()
+		self.create_alert_box(str_win, "Congratulazioni")
 		self.create_yes_or_no_box("Vuoi giocare ancora?", "Rivincita?")
 		if self.answare:
 			self.nuova_partita()

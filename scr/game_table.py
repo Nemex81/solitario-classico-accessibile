@@ -27,11 +27,12 @@ class TavoloSolitario:
 		self.pile = []  # lista delle pile di gioco
 
 	def get_type_deck(self):
-		""" Restituisce il tipo di mazzo di gioco """
-		if self.mazzo.is_french_deck():
-			return ["cuori", "quadri", "fiori", "picche"]
-		else:
-			return ["spade", "bastoni", "coppe", "denari"]
+		""" Restituisce una lista con i semi per il tipo di mazzo in uso """
+		return self.mazzo.get_suits()				
+		#if self.mazzo.is_french_deck():
+			#return ["cuori", "quadri", "fiori", "picche"]
+		#else:
+			#return ["spade", "bastoni", "coppe", "denari"]
 
 	def reset_pile(self):
 		""" Resetta le pile di gioco """

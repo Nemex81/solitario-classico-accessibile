@@ -36,6 +36,10 @@ class ProtoDeck:
 		self.cards = []  # lista delle carte nel mazzo
 		self.tipo = None  # tipo di mazzo
 
+	def get_suits(self):
+		""" restituisce la lista dei semi del mazzo """
+		return self.SUITES
+
 	def crea(self):
 		pass
 

@@ -27,7 +27,7 @@ pygame.font.init()
 class GamePlay(DialogBox):
 	"""	Classe per la gestione dellinterfaccia utente durante la partita al solitario """
 
-	TIME_CHECK_EVENT = pygame.USEREVENT + 1	# evento per il controllo del tempo residuo di gioco
+	TIME_CHECK_EVENT = pygame.USEREVENT + 1	# ceck eventi pygame personalizzati
 
 	def __init__(self, screen, screen_reader):
 		super().__init__()
@@ -57,7 +57,11 @@ class GamePlay(DialogBox):
 	#@@# sezione comandi utente
 
 	def f1_press(self):
-		string = self.engine.change_deck_type()
+		stri = ""
+		if pygame.key.get_mods() and KMOD_CTRL:
+			string = self.engine.test_vittoria()
+		else:
+			string = self.engine.change_deck_type()
 		self.vocalizza(string)
 
 	def f2_press(self):
@@ -169,6 +173,11 @@ class GamePlay(DialogBox):
 		if string:
 			self.vocalizza(string)
 
+	def g_press(self):
+		string = self.engine.get_info_tavolo()
+		if string:
+			self.vocalizza(string)
+
 	def m_press(self):
 		string = self.engine.get_tot_dek()
 		if string:
@@ -204,7 +213,7 @@ class GamePlay(DialogBox):
 			self.vocalizza(string)
 
 	def t_press(self):
-		string = self.engine.get_info_tavolo()
+		string = self.engine.get_timer_status()
 		if string:
 			self.vocalizza(string)
 
@@ -267,8 +276,13 @@ class GamePlay(DialogBox):
 			if self.engine.ceck_lost_by_time():
 				self.engine.you_lost_by_time()
 
+	def ceck_winner(self):
+		""" controlliamo se c'è un vincitore """
 
-	def handle_keyboard_EVENTS(self, event):
+		if self.engine.is_game_running and self.engine.winner:
+			self.engine.you_winner()
+
+	def handle_EVENTS(self, event):
 		""" gestione ciclo eventi """
 
 		if event.type == QUIT:
@@ -276,6 +290,7 @@ class GamePlay(DialogBox):
 
 		if event.type == self.TIME_CHECK_EVENT:
 			self.check_time()
+			self.ceck_winner()
 
 		if event.type == pygame.KEYDOWN:
 			if self.callback_dict.get(event.key):
@@ -290,14 +305,14 @@ class GamePlay(DialogBox):
 			#self.engine.you_lost_by_time()
 
 		# verifichiamo la vittoria
-		if self.engine.is_game_running and self.engine.winner:
-			str_winner = self.engine.get_info_game()
-			self.create_alert_box(str_winner, "Vittoria Spumeggiante")
-			self.create_yes_or_no_box("Vuoi giocare un'altra partita?", "Domanda")
-			if self.answare:
-				self.engine.nuova_partita()
-			else:
-				self.engine.chiudi_partita()
+		#if self.engine.is_game_running and self.engine.winner:
+			#str_winner = self.engine.get_info_game()
+			#self.create_alert_box(str_winner, "Vittoria Spumeggiante")
+			#self.create_yes_or_no_box("Vuoi giocare un'altra partita?", "Domanda")
+			#if self.answare:
+				#self.engine.nuova_partita()
+			#else:
+				#self.engine.chiudi_partita()
 
 
 

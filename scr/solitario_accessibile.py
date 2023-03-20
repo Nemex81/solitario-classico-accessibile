@@ -92,10 +92,11 @@ class SolitarioAccessibile(DialogBox):
 		""" Gestione degli eventi """
 
 		for event in pygame.event.get():
+			pygame.event.pump()
 			if self.is_menu_open:
 				self.menu.handle_keyboard_EVENTS(event)
 			else:
-				self.gameplay.handle_keyboard_EVENTS(event)
+				self.gameplay.handle_EVENTS(event)
 
 
 	def quit_app(self):
@@ -112,7 +113,7 @@ class SolitarioAccessibile(DialogBox):
 
 	def run(self):
 		while self.is_running:
-			#self.handle_keyboard_events()
+			pygame.event.pump()
 			self.handle_events()
 
 			#if self.is_menu_open:
