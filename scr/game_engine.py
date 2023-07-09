@@ -18,7 +18,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 #logger.debug("Il mio messaggio di debug")
 
-class EngineSolitario(DialogBox):
+class EngineData(DialogBox):
 	""" Classe per la gestione delle regole del gioco del solitario """
 
 	TIME_CHECK_EVENT = pygame.USEREVENT + 1 # ceck eventi pygame personalizzati
@@ -44,6 +44,15 @@ class EngineSolitario(DialogBox):
 		self.clock = pygame.time.Clock() # inizializzo il clock
 		self.fps = 60 # imposto il numero di frame per secondo
 		self.start_ticks = 0 # inizializzo il contatore dei secondi
+
+
+class EngineSolitario(EngineData):
+	""" Classe per la gestione delle regole del gioco del solitario """
+
+	TIME_CHECK_EVENT = pygame.USEREVENT + 1 # ceck eventi pygame personalizzati
+
+	def __init__(self, tavolo):
+		super().__init__(tavolo)
 
 	def test_set_time_out(self):
 		# impostare manualmente il tempo a 60 minuti
@@ -384,8 +393,10 @@ class EngineSolitario(DialogBox):
 
 		if not self.origin_pile.is_empty_pile():
 			string += f"hai scoperto : {self.origin_pile.carte[-1].get_name} in:  {self.origin_pile.nome}.  \n"
+			
 
 		return string
+
 
 	#@@# sezione metodi di supporto
 
@@ -472,10 +483,9 @@ class EngineSolitario(DialogBox):
 		""" disabilitiamo il timer """
 
 		if not self.is_game_running and self.change_settings:
-
-		self.max_time_game = -1
+			self.max_time_game = -1
 		#self.create_alert_box("il timer è stato disattivato!  \n", "disattivazione del timer")
-		return "il timer è stato disattivato!  \n"
+			return "il timer è stato disattivato!  \n"
 
 	def change_time_over(self):
 		""" permette di personalizzare il tempo limite per il tempo di gioco """
@@ -783,7 +793,7 @@ class EngineSolitario(DialogBox):
 			self.chiudi_partita()
 
 	def you_winner(self):
-		""" crea la finestra di vittoria """
+		""" metodo che viene chiamato quando il giocatore vince """
 
 		self.stop_game()
 		str_win = f"Hai Vinto!  \nComplimenti, vittoria spumeggiante!  \n\n"
