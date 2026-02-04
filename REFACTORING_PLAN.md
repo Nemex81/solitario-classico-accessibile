@@ -43,7 +43,7 @@ src/
 - [x] **Fase 0**: Preparazione ambiente (pytest, mypy, pre-commit)
 - [x] **Fase 1**: Creazione struttura directory modulare
 - [x] **Fase 2**: Estrazione GameState immutabile
-- [ ] **Fase 3**: Refactoring Card e Pile
+- [x] **Fase 3**: Refactoring Card e Pile
 - [ ] **Fase 4**: Estrazione MoveValidator
 - [ ] **Fase 5**: Creazione GameService
 - [ ] **Fase 6**: Estrazione Formatter
@@ -955,10 +955,10 @@ Test coverage: 100% for Card model.
 ```
 
 ### Criteri di Completamento
-- [ ] File `card.py` creato
-- [ ] Tutti i test passano (16/16)
-- [ ] Coverage >= 95%
-- [ ] Mypy validation passa
+- [x] File `card.py` creato
+- [x] Tutti i test passano (19/19)
+- [x] Coverage >= 95% (95.96%)
+- [x] Mypy validation passa
 
 ---
 
@@ -1327,13 +1327,22 @@ Test coverage: 100% for MoveValidator.
 
 ### Fase 2: ✅ COMPLETATA
 - Data: 2026-02-04
-- Commit: [Next commit]
+- Commit: 2ff26fc
 - Note: Immutable GameState model created with frozen dataclass
 - Test passati: 7/7
 - Coverage: 100% for game_state.py
 - Type checking: mypy validation passed
 
-### Fase 3: 📋 PROSSIMA
+### Fase 3: ✅ COMPLETATA
+- Data: 2026-02-04
+- Commit: [Next commit]
+- Note: Card model with Rank and Suit enums created
+- Test passati: 19/19
+- Coverage: 95.96% for card.py, 96.67% overall models
+- Type checking: mypy validation passed
+- from_string() factory method implemented for parsing
+
+### Fase 4: 📋 PROSSIMA
 - Data: [DA COMPILARE]
 - Commit: [HASH]
 - Note: [EVENTUALI NOTE]
@@ -1341,4 +1350,4 @@ Test coverage: 100% for MoveValidator.
 ---
 
 **Ultimo aggiornamento**: 2026-02-04
-**Prossima fase**: Fase 3 - Refactoring Card e Pile
+**Prossima fase**: Fase 4 - Estrazione MoveValidator
