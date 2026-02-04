@@ -46,7 +46,7 @@ src/
 - [x] **Fase 3**: Refactoring Card e Pile
 - [x] **Fase 4**: Estrazione MoveValidator
 - [x] **Fase 4.5**: Correzioni critiche (Pile model, Italian deck, Accessibility)
-- [ ] **Fase 5**: Creazione GameService
+- [x] **Fase 5**: Creazione GameService
 - [ ] **Fase 6**: Estrazione Formatter
 - [ ] **Fase 7**: Protocol interfaces
 - [ ] **Fase 8**: GameController applicativo
@@ -1416,7 +1416,21 @@ Risolvere vulnerabilità e lacune identificate dopo completamento Fase 4.
 - Test passati: 53 test (15 nuovi)
 - Coverage domain: 92.65%
 
-### Fase 5: 📋 IN CORSO
+### Fase 5: ✅ COMPLETATA
+- Data: 2026-02-05
+- Commit: 002e0a3
+- Note: GameService implementation with game orchestration
+- Test passati: 68 test (15 nuovi)
+- Coverage domain: 92.98%
+- Type checking: mypy validation passed
+- **Funzionalità Implementate**:
+  - new_game() con creazione e shuffle del mazzo
+  - move_to_foundation() con validazione
+  - draw_from_stock() e recycle_waste()
+  - Victory detection automatica
+  - Supporto mazzi francesi e napoletani
+
+### Fase 6: 📋 PROSSIMA
 - Data: [DA COMPILARE]
 - Commit: [HASH]
 - Note: [EVENTUALI NOTE]
