@@ -45,6 +45,7 @@ src/
 - [x] **Fase 2**: Estrazione GameState immutabile
 - [x] **Fase 3**: Refactoring Card e Pile
 - [x] **Fase 4**: Estrazione MoveValidator
+- [x] **Fase 4.5**: Correzioni critiche (Pile model, Italian deck, Accessibility)
 - [ ] **Fase 5**: Creazione GameService
 - [ ] **Fase 6**: Estrazione Formatter
 - [ ] **Fase 7**: Protocol interfaces
@@ -1217,6 +1218,57 @@ Test coverage: 100% for MoveValidator.
 
 ---
 
+---
+
+## Fase 4.5: Correzioni Critiche Post-Review ✅
+
+### Obiettivo
+Risolvere vulnerabilità e lacune identificate dopo completamento Fase 4.
+
+### Problemi Risolti
+
+#### 1. Pile Model Mancante (CRITICO)
+**File Creati**:
+- `src/domain/models/pile.py` - Modello immutabile pile
+- `tests/unit/domain/models/test_pile.py` - Test completi
+
+**Funzionalità**:
+- PileType enum (TABLEAU, FOUNDATION, STOCK, WASTE)
+- Gestione carte coperte/scoperte
+- Factory functions per creazione pile
+- Metodi immutabili (add_card, remove_top, flip_top_card)
+
+#### 2. Suit Enum Esteso (CRITICO)
+**Modifiche**:
+- Aggiunto supporto mazzo napoletano (COPPE, DENARI, SPADE_IT, BASTONI)
+- Property `is_italian` per distinguere mazzi
+- Simboli Unicode per semi italiani
+- Backward compatibility con `scr/` legacy
+
+#### 3. GameState Accessibilità (MEDIO)
+**Estensioni**:
+- CursorPosition per navigazione screen reader
+- SelectionState per tracking selezione carte
+- GameConfiguration per impostazioni gioco
+- elapsed_seconds per supporto timer
+
+### Criteri di Completamento
+- [x] Pile model implementato con 85%+ coverage
+- [x] Suit enum esteso con test italiani
+- [x] GameState con campi accessibilità
+- [x] Tutti i test passano (15 nuovi test, 53 totali)
+- [x] Coverage domain layer >= 92.65%
+- [x] Zero regressioni su test esistenti
+
+### Test Passati
+- 7 test per Pile model
+- 2 test per Italian deck support
+- 6 test per GameState accessibility
+- **Totale**: 15 nuovi test aggiunti
+- **Coverage**: 92.65% domain layer
+
+---
+
 ## Fase 5-12: Da Completare
 
 **Note**: Le fasi 5-12 seguono lo stesso pattern:
@@ -1344,14 +1396,27 @@ Test coverage: 100% for MoveValidator.
 
 ### Fase 4: ✅ COMPLETATA
 - Data: 2026-02-04
-- Commit: [Next commit]
-- Note: MoveValidator with complete game rules validation
+- Commit: de00898
+- Note: MoveValidator con validazione regole completa
 - Test passati: 12/12
-- Coverage: 93.63% for domain layer
-- Type checking: mypy validation passed
-- Zero external dependencies in domain layer
+- Coverage: 93.63% domain layer
+- **CORREZIONI APPLICATE**:
+  - ✅ Aggiunto Pile model con factory functions
+  - ✅ Esteso Suit enum per mazzo napoletano
+  - ✅ Esteso GameState con CursorPosition, SelectionState, GameConfiguration
 
-### Fase 5: 📋 PROSSIMA
+### Correzioni Post Fase 4: ✅ COMPLETATE
+- Data: 2026-02-05
+- Commit: 9748a6f, 41f632c, b4753b2
+- Note: Risolte 3 vulnerabilità critiche identificate in code review
+- **Vulnerabilità Risolte**:
+  1. 🔴 Pile model mancante → Implementato con factory
+  2. 🔴 Incompatibilità mazzo napoletano → Suit esteso
+  3. 🟡 GameState incompleto → Aggiunto supporto accessibilità
+- Test passati: 53 test (15 nuovi)
+- Coverage domain: 92.65%
+
+### Fase 5: 📋 IN CORSO
 - Data: [DA COMPILARE]
 - Commit: [HASH]
 - Note: [EVENTUALI NOTE]
