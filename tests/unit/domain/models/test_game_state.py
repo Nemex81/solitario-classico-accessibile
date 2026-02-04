@@ -1,7 +1,14 @@
 """Unit tests for GameState model."""
+
 import pytest
 
-from src.domain.models.game_state import GameState, GameStatus
+from src.domain.models.game_state import (
+    CursorPosition,
+    GameConfiguration,
+    GameState,
+    GameStatus,
+    SelectionState,
+)
 
 
 class TestGameState:
@@ -87,3 +94,51 @@ class TestGameState:
             )
         )
         assert state.is_victory()
+
+    def test_cursor_position(self) -> None:
+        """Test cursor position tracking."""
+        cursor = CursorPosition("tableau", 2, 5)
+        state = GameState(cursor=cursor)
+        assert state.cursor.pile_type == "tableau"
+        assert state.cursor.pile_index == 2
+        assert state.cursor.card_index == 5
+
+    def test_selection_state(self) -> None:
+        """Test card selection tracking."""
+        selection = SelectionState("tableau", 0, (3, 4, 5))
+        state = GameState(selection=selection)
+        assert state.selection.source_pile_type == "tableau"
+        assert state.selection.source_pile_index == 0
+        assert len(state.selection.selected_card_indices) == 3
+
+    def test_game_configuration(self) -> None:
+        """Test game configuration."""
+        config = GameConfiguration(difficulty="hard", deck_type="neapolitan", draw_count=1)
+        state = GameState(config=config)
+        assert state.config.difficulty == "hard"
+        assert state.config.deck_type == "neapolitan"
+        assert state.config.draw_count == 1
+
+    def test_with_cursor(self) -> None:
+        """Test with_cursor helper method."""
+        state = GameState()
+        new_cursor = CursorPosition("foundation", 3)
+        new_state = state.with_cursor(new_cursor)
+        assert new_state.cursor.pile_type == "foundation"
+        assert new_state.cursor.pile_index == 3
+
+    def test_with_selection(self) -> None:
+        """Test with_selection helper method."""
+        state = GameState()
+        new_selection = SelectionState("waste", 0, (1, 2))
+        new_state = state.with_selection(new_selection)
+        assert new_state.selection.source_pile_type == "waste"
+        assert len(new_state.selection.selected_card_indices) == 2
+
+    def test_elapsed_seconds(self) -> None:
+        """Test elapsed time tracking."""
+        state = GameState(elapsed_seconds=120)
+        assert state.elapsed_seconds == 120
+        new_state = state.with_move(elapsed_seconds=180)
+        assert new_state.elapsed_seconds == 180
+        assert state.elapsed_seconds == 120  # Original unchanged
