@@ -42,7 +42,7 @@ src/
 
 - [x] **Fase 0**: Preparazione ambiente (pytest, mypy, pre-commit)
 - [x] **Fase 1**: Creazione struttura directory modulare
-- [ ] **Fase 2**: Estrazione GameState immutabile
+- [x] **Fase 2**: Estrazione GameState immutabile
 - [ ] **Fase 3**: Refactoring Card e Pile
 - [ ] **Fase 4**: Estrazione MoveValidator
 - [ ] **Fase 5**: Creazione GameService
@@ -569,10 +569,10 @@ Test coverage: 100% for GameState model.
 ```
 
 ### Criteri di Completamento
-- [ ] File `game_state.py` creato con dataclass frozen
-- [ ] Tutti i test passano (8/8)
-- [ ] `mypy` non restituisce errori
-- [ ] Coverage >= 90% per `game_state.py`
+- [x] File `game_state.py` creato con dataclass frozen
+- [x] Tutti i test passano (7/7)
+- [x] `mypy` non restituisce errori
+- [x] Coverage >= 90% per `game_state.py` (100%)
 
 ---
 
@@ -1320,12 +1320,20 @@ Test coverage: 100% for MoveValidator.
 
 ### Fase 1: ✅ COMPLETATA
 - Data: 2026-02-04
-- Commit: [Next commit]
+- Commit: 5ab4fb7
 - Note: Created complete layered architecture structure
 - 4 main layers: domain, application, infrastructure, presentation
 - Test structure: unit (domain/models, domain/rules, application) + integration
 
-### Fase 2: 📋 PROSSIMA
+### Fase 2: ✅ COMPLETATA
+- Data: 2026-02-04
+- Commit: [Next commit]
+- Note: Immutable GameState model created with frozen dataclass
+- Test passati: 7/7
+- Coverage: 100% for game_state.py
+- Type checking: mypy validation passed
+
+### Fase 3: 📋 PROSSIMA
 - Data: [DA COMPILARE]
 - Commit: [HASH]
 - Note: [EVENTUALI NOTE]
@@ -1333,4 +1341,4 @@ Test coverage: 100% for MoveValidator.
 ---
 
 **Ultimo aggiornamento**: 2026-02-04
-**Prossima fase**: Fase 2 - Estrazione GameState Immutabile
+**Prossima fase**: Fase 3 - Refactoring Card e Pile
