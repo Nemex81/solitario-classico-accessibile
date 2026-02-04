@@ -40,7 +40,7 @@ src/
 
 ## Checklist Fasi
 
-- [ ] **Fase 0**: Preparazione ambiente (pytest, mypy, pre-commit)
+- [x] **Fase 0**: Preparazione ambiente (pytest, mypy, pre-commit)
 - [ ] **Fase 1**: Creazione struttura directory modulare
 - [ ] **Fase 2**: Estrazione GameState immutabile
 - [ ] **Fase 3**: Refactoring Card e Pile
@@ -248,10 +248,10 @@ No functional changes to application code.
 
 ### Criteri di Completamento
 - [x] File di configurazione creati
-- [ ] Dipendenze installate con successo
-- [ ] `pytest --version` restituisce versione >= 7.4
-- [ ] `mypy --version` restituisce versione >= 1.7
-- [ ] Struttura `tests/` creata
+- [x] Dipendenze installate con successo
+- [x] `pytest --version` restituisce versione >= 7.4
+- [x] `mypy --version` restituisce versione >= 1.7
+- [x] Struttura `tests/` creata
 
 ---
 
@@ -1313,16 +1313,17 @@ Test coverage: 100% for MoveValidator.
 ## Progress Log
 
 ### Fase 0: ✅ COMPLETATA
-- Data: [DA COMPILARE]
-- Commit: [HASH]
-- Note: [EVENTUALI NOTE]
+- Data: 2026-02-04
+- Commit: [Next commit]
+- Note: All development tools installed successfully. pytest 7.4.3, mypy 1.7.1, black 23.12.0, isort 5.13.2
+- Test directory structure created
 
-### Fase 1: ⏳ IN CORSO
+### Fase 1: 📋 PROSSIMA
 - Data: [DA COMPILARE]
 - Commit: [HASH]
 - Note: [EVENTUALI NOTE]
 
 ---
 
-**Ultimo aggiornamento**: [DATA]
-**Prossima fase**: Fase 0 - Preparazione Ambiente
+**Ultimo aggiornamento**: 2026-02-04
+**Prossima fase**: Fase 1 - Creazione Struttura Directory Modulare
