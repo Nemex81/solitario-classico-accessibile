@@ -41,7 +41,7 @@ src/
 ## Checklist Fasi
 
 - [x] **Fase 0**: Preparazione ambiente (pytest, mypy, pre-commit)
-- [ ] **Fase 1**: Creazione struttura directory modulare
+- [x] **Fase 1**: Creazione struttura directory modulare
 - [ ] **Fase 2**: Estrazione GameState immutabile
 - [ ] **Fase 3**: Refactoring Card e Pile
 - [ ] **Fase 4**: Estrazione MoveValidator
@@ -339,10 +339,10 @@ Follows SOLID principles and domain-driven design.
 ```
 
 ### Criteri di Completamento
-- [ ] Directory `src/` con 4 layer principali
-- [ ] Directory `tests/` con struttura unit/integration
-- [ ] Tutti i file `__init__.py` hanno docstring
-- [ ] `tree` o `ls -R` mostra struttura corretta
+- [x] Directory `src/` con 4 layer principali
+- [x] Directory `tests/` con struttura unit/integration
+- [x] Tutti i file `__init__.py` hanno docstring
+- [x] `tree` o `ls -R` mostra struttura corretta
 
 ---
 
@@ -1314,11 +1314,18 @@ Test coverage: 100% for MoveValidator.
 
 ### Fase 0: ✅ COMPLETATA
 - Data: 2026-02-04
-- Commit: [Next commit]
+- Commit: 5f7a5c3
 - Note: All development tools installed successfully. pytest 7.4.3, mypy 1.7.1, black 23.12.0, isort 5.13.2
 - Test directory structure created
 
-### Fase 1: 📋 PROSSIMA
+### Fase 1: ✅ COMPLETATA
+- Data: 2026-02-04
+- Commit: [Next commit]
+- Note: Created complete layered architecture structure
+- 4 main layers: domain, application, infrastructure, presentation
+- Test structure: unit (domain/models, domain/rules, application) + integration
+
+### Fase 2: 📋 PROSSIMA
 - Data: [DA COMPILARE]
 - Commit: [HASH]
 - Note: [EVENTUALI NOTE]
@@ -1326,4 +1333,4 @@ Test coverage: 100% for MoveValidator.
 ---
 
 **Ultimo aggiornamento**: 2026-02-04
-**Prossima fase**: Fase 1 - Creazione Struttura Directory Modulare
+**Prossima fase**: Fase 2 - Estrazione GameState Immutabile
