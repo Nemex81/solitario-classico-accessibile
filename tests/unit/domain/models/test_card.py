@@ -1,4 +1,5 @@
 """Unit tests for Card model."""
+
 import pytest
 
 from src.domain.models.card import Card, Rank, Suit
@@ -23,6 +24,26 @@ class TestSuit:
         assert Suit.DIAMONDS.symbol == "♦"
         assert Suit.CLUBS.symbol == "♣"
         assert Suit.SPADES.symbol == "♠"
+
+    def test_italian_deck_suits(self) -> None:
+        """Test Italian deck suit properties."""
+        assert Suit.COPPE.color == "red"
+        assert Suit.DENARI.color == "red"
+        assert Suit.SPADE_IT.color == "black"
+        assert Suit.BASTONI.color == "black"
+
+        assert Suit.COPPE.is_italian
+        assert Suit.DENARI.is_italian
+        assert Suit.SPADE_IT.is_italian
+        assert Suit.BASTONI.is_italian
+        assert not Suit.HEARTS.is_italian
+
+    def test_italian_suit_symbols(self) -> None:
+        """Test Italian deck suit symbols."""
+        assert Suit.COPPE.symbol == "🍷"
+        assert Suit.DENARI.symbol == "🪙"
+        assert Suit.SPADE_IT.symbol == "🗡️"
+        assert Suit.BASTONI.symbol == "🏑"
 
 
 class TestRank:

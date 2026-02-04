@@ -1,32 +1,52 @@
 """Card model and related types."""
+
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
 
 class Suit(Enum):
-    """Card suit enumeration."""
+    """Card suit enumeration - supports French and Italian decks."""
 
+    # French deck
     HEARTS = "H"
     DIAMONDS = "D"
     CLUBS = "C"
     SPADES = "S"
 
+    # Neapolitan deck (Italian)
+    COPPE = "COPPE"
+    DENARI = "DENARI"
+    SPADE_IT = "SPADE_IT"  # Avoid conflict with SPADES
+    BASTONI = "BASTONI"
+
     @property
     def color(self) -> str:
         """Get suit color (red or black)."""
-        return "red" if self in (Suit.HEARTS, Suit.DIAMONDS) else "black"
+        red_suits = (Suit.HEARTS, Suit.DIAMONDS, Suit.COPPE, Suit.DENARI)
+        return "red" if self in red_suits else "black"
 
     @property
     def symbol(self) -> str:
         """Get unicode symbol for suit."""
         symbols = {
+            # French
             Suit.HEARTS: "♥",
             Suit.DIAMONDS: "♦",
             Suit.CLUBS: "♣",
             Suit.SPADES: "♠",
+            # Italian
+            Suit.COPPE: "🍷",
+            Suit.DENARI: "🪙",
+            Suit.SPADE_IT: "🗡️",
+            Suit.BASTONI: "🏑",
         }
         return symbols[self]
+
+    @property
+    def is_italian(self) -> bool:
+        """Check if suit belongs to Italian deck."""
+        return self in (Suit.COPPE, Suit.DENARI, Suit.SPADE_IT, Suit.BASTONI)
 
 
 class Rank(Enum):
