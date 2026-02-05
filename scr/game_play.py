@@ -59,7 +59,7 @@ class GamePlay(DialogBox):
 
 	def f1_press(self):
 		stri = ""
-		if pygame.key.get_mods() and KMOD_CTRL:
+		if pygame.key.get_mods() & KMOD_CTRL:
 			string = self.engine.test_vittoria()
 		else:
 			string = self.engine.change_deck_type()
@@ -70,7 +70,7 @@ class GamePlay(DialogBox):
 		self.vocalizza(string)
 
 	def f3_press(self):
-		if pygame.key.get_mods() and KMOD_CTRL:
+		if pygame.key.get_mods() & KMOD_CTRL:
 			self.engine.disable_timer()
 		else:
 			string = self.engine.change_game_time()
