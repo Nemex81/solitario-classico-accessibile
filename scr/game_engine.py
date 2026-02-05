@@ -404,13 +404,13 @@ class EngineSolitario(EngineData):
 
 	def get_report_mossa(self):
 		""" vocalizziamo il report della mossa """
-
+		
 		string = ""
 		tot_cards = 0
 		if self.selected_card:
 			tot_cards = len(self.selected_card)
 			string += "sposti:  \n"
-			if tot_cards  > 2:
+			if tot_cards > 2:
 				string += f"{self.selected_card[0].get_name} e altre {tot_cards - 1} carte.  \n"
 			else:
 				for carta in self.selected_card:
@@ -421,14 +421,23 @@ class EngineSolitario(EngineData):
 
 		if self.dest_pile:
 			string += f"a: {self.dest_pile.nome},  \n"
-			id = (len(self.dest_pile.carte) - 1) - tot_cards
-			if not self.dest_pile.carte[id].get_value != 13 and self.dest_pile.carte[id] != self.selected_card[0]:
-				string += f"sopra alla carta: {self.dest_pile.carte[id].get_name}.  \n"
-
-		if not self.origin_pile.is_empty_pile():
-			string += f"hai scoperto : {self.origin_pile.carte[-1].get_name} in:  {self.origin_pile.nome}.  \n"
 			
+			# Verifica che ci siano abbastanza carte e che l'indice sia valido
+			if tot_cards > 0 and len(self.dest_pile.carte) > tot_cards:
+				id = len(self.dest_pile.carte) - tot_cards - 1
+				
+				# Verifica bounds dell'indice
+				if 0 <= id < len(self.dest_pile.carte):
+					carta_sotto = self.dest_pile.carte[id]
+					
+					# Mostra la carta sotto SOLO se NON è un Re E NON è la carta selezionata stessa
+					if carta_sotto.get_value != 13 and carta_sotto != self.selected_card[0]:
+						string += f"sopra alla carta: {carta_sotto.get_name}.  \n"
 
+		# Verifica che origin_pile non sia None prima di controllare se è vuota
+		if self.origin_pile and not self.origin_pile.is_empty_pile():
+			string += f"hai scoperto : {self.origin_pile.carte[-1].get_name} in:  {self.origin_pile.nome}.  \n"
+		
 		return string
 
 
