@@ -34,6 +34,7 @@ class EngineData(DialogBox):
 		self.max_time_game = -1 # tempo di gioco impostato dal giocatore
 		self.conta_giri = 0 # contatore per gestire il numero di mosse fatte dal player
 		self.conta_rimischiate = 0 # contatore per gestire il numero di rimischiate fatte dal player
+		self.shuffle_discards = False # modalità riciclo scarti: False=inversione (default), True=mescolata
 		# Tracciamento carte per seme (live)
 		# Indici: 0=Cuori, 1=Quadri, 2=Fiori, 3=Picche
 		self.carte_per_seme = [0, 0, 0, 0]
@@ -700,6 +701,30 @@ class EngineSolitario(EngineData):
 					return timer
 
 		return -1
+
+	def toggle_shuffle_mode(self):
+		""" alterna tra modalità inversione e mescolata per riciclo scarti """
+		
+		if self.is_game_running:
+			return "Non puoi modificare la modalità di riciclo scarti durante una partita!  \n"
+		
+		elif not self.is_game_running and self.change_settings:
+			self.shuffle_discards = not self.shuffle_discards
+			if self.shuffle_discards:
+				return "Modalità riciclo scarti: MESCOLATA CASUALE.  \n"
+			else:
+				return "Modalità riciclo scarti: INVERSIONE SEMPLICE.  \n"
+		
+		else:
+			return "Devi prima aprire le opzioni con il tasto O!  \n"
+
+	def get_shuffle_mode_status(self):
+		""" restituisce lo stato della modalità riciclo scarti """
+		
+		if self.shuffle_discards:
+			return "Modalità riciclo scarti: MESCOLATA CASUALE"
+		else:
+			return "Modalità riciclo scarti: INVERSIONE SEMPLICE"
 
 
 	def change_game_settings(self):
