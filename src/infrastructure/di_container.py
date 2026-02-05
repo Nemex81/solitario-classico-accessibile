@@ -1,6 +1,6 @@
 """Dependency injection container."""
 
-from typing import Dict, Any
+from typing import Any, Dict, cast
 
 from src.application.commands import CommandHistory
 from src.application.game_controller import GameController
@@ -31,7 +31,7 @@ class DIContainer:
         """
         if "move_validator" not in self._instances:
             self._instances["move_validator"] = MoveValidator()
-        return self._instances["move_validator"]
+        return cast(MoveValidator, self._instances["move_validator"])
 
     def get_game_service(self) -> GameService:
         """
@@ -43,7 +43,7 @@ class DIContainer:
         if "game_service" not in self._instances:
             validator = self.get_move_validator()
             self._instances["game_service"] = GameService(validator)
-        return self._instances["game_service"]
+        return cast(GameService, self._instances["game_service"])
 
     def get_formatter(self, language: str = "it") -> GameFormatter:
         """
@@ -58,7 +58,7 @@ class DIContainer:
         key = f"formatter_{language}"
         if key not in self._instances:
             self._instances[key] = GameFormatter(language)
-        return self._instances[key]
+        return cast(GameFormatter, self._instances[key])
 
     def get_command_history(self, max_size: int = 100) -> CommandHistory:
         """
@@ -72,7 +72,7 @@ class DIContainer:
         """
         if "command_history" not in self._instances:
             self._instances["command_history"] = CommandHistory(max_size)
-        return self._instances["command_history"]
+        return cast(CommandHistory, self._instances["command_history"])
 
     def get_game_controller(self, language: str = "it") -> GameController:
         """
@@ -89,7 +89,7 @@ class DIContainer:
             service = self.get_game_service()
             formatter = self.get_formatter(language)
             self._instances[key] = GameController(service, formatter)
-        return self._instances[key]
+        return cast(GameController, self._instances[key])
 
     def reset(self) -> None:
         """

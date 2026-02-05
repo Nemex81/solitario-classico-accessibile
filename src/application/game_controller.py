@@ -73,6 +73,8 @@ class GameController:
 
         try:
             if action == "move_to_foundation":
+                if source_pile is None or source_index is None or target_index is None:
+                    return False, "Parametri mancanti per move_to_foundation"
                 self.current_state = self.game_service.move_to_foundation(
                     self.current_state,
                     source_pile,

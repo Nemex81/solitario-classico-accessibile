@@ -86,7 +86,7 @@ class MoveCommand(Command):
 class DrawCommand(Command):
     """Command for drawing cards from stock."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize draw command."""
         self.previous_state: Optional[GameState] = None
 
@@ -110,7 +110,7 @@ class DrawCommand(Command):
 class RecycleCommand(Command):
     """Command for recycling waste to stock."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize recycle command."""
         self.previous_state: Optional[GameState] = None
 

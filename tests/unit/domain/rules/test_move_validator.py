@@ -1,4 +1,5 @@
 """Unit tests for MoveValidator."""
+
 import pytest
 
 from src.domain.models.card import Card, Rank, Suit

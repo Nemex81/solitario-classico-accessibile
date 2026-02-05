@@ -1,4 +1,5 @@
 """Move validation rules for Klondike solitaire."""
+
 from typing import Tuple
 
 from src.domain.models.card import Card
