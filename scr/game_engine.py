@@ -148,15 +148,23 @@ class EngineSolitario(EngineData):
 		return True
 
 	def stop_game(self):
-		""" Ferma il gioco. """
-
+		""" Ferma il gioco e salva le statistiche finali prima di resettare """
+		
+		# PRIMA salviamo le statistiche della partita appena conclusa
+		if self.is_game_running:
+			self.final_time_elapsed = self.get_time()
+			self.final_mosse = self.conta_giri
+			self.final_rimischiate = self.conta_rimischiate
+			self.final_difficulty = self.difficulty_level
+		
+		# POI resettiamo tutto
 		self.is_game_running = False
 		self.winner = False
 		self.tavolo.crea_pile_gioco()
 		self.tavolo.distribuisci_carte()
 		self.copri_tutto() # copri tutte le ultime carte delle pile base
 
-		# resetto cronometro partita e dati orologio
+		# Resetto cronometro e contatori per la PROSSIMA partita
 		self.is_time_over = False
 		self.conta_giri = 0
 		self.conta_rimischiate = 0
