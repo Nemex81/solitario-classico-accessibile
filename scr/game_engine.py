@@ -406,6 +406,7 @@ class EngineSolitario(EngineData):
 		""" vocalizziamo il report della mossa """
 
 		string = ""
+		tot_cards = 0
 		if self.selected_card:
 			tot_cards = len(self.selected_card)
 			string += "sposti:  \n"
@@ -439,7 +440,7 @@ class EngineSolitario(EngineData):
 
 	def copri_tutto(self):
 		# copriamo tutte le carte del mazzo
-		for i in range(0, 6):
+		for i in range(0, 7):
 			pila = self.tavolo.pile[i]
 			if pila.is_pila_base() and not self.is_game_running:
 				pila.carte[-1].set_cover()

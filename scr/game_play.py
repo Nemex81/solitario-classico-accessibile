@@ -71,7 +71,7 @@ class GamePlay(DialogBox):
 
 	def f3_press(self):
 		if pygame.key.get_mods() & KMOD_CTRL:
-			self.engine.disable_timer()
+			string = self.engine.disable_timer()
 		else:
 			string = self.engine.change_game_time()
 
