@@ -83,7 +83,7 @@ class GamePlay(DialogBox):
 		self.vocalizza(string)
 
 	def f5_press(self):
-		string = ""
+		string = self.engine.toggle_shuffle_mode()
 		self.vocalizza(string)
 
 	def up_press(self):
