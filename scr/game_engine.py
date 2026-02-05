@@ -602,8 +602,6 @@ class EngineSolitario(EngineData):
 			self.cursor_pos[0] = self.move_cursor_top_card(pila)
 			speack = self.get_string_colonna()
 			return speack
-		else:
-			return "Sei già alla prima colonna!\n"
 
 	def move_cursor_right(self):
 		pile = self.tavolo.pile
@@ -614,8 +612,6 @@ class EngineSolitario(EngineData):
 			self.cursor_pos[0] = self.move_cursor_top_card(pila)
 			speack = self.get_string_colonna()
 			return speack
-		else:
-			return "Sei già all'ultima colonna!\n"
 
 	def move_cursor_pile_type(self):
 		""" Sposta il cursore di navigazione sulla prima pila di tipo diverso da quello iniziale"""
@@ -647,7 +643,7 @@ class EngineSolitario(EngineData):
 		return speack
 
 	def move_cursor_top_card(self, pila):
-		""" Sposta il cursore di navigazione  in cima alla pila in cui ci si trova durante lospostamento con le frecce orizzontali"""
+		""" Sposta il cursore di navigazione in cima alla pila in cui ci si trova durante lo spostamento con le frecce orizzontali"""
 		if not pila.is_empty_pile():
 			return len(pila.carte) - 1
 		return 0  # Ritorna 0 invece di None per pile vuote
@@ -715,13 +711,6 @@ class EngineSolitario(EngineData):
 		pile = self.tavolo.pile[col]
 		if pile.is_empty_pile():
 			return "la pila è vuota!\n"
-
-		# NUOVA VALIDAZIONE: Verifica che l'indice sia valido
-		if row >= len(pile.carte) or row < 0:
-			# Reset automatico alla carta in cima se l'indice non è valido
-			self.cursor_pos[0] = len(pile.carte) - 1
-			row = self.cursor_pos[0]
-			logger.warning(f"Indice cursore non valido corretto: row={row}, col={col}")
 
 		if pile.carte[row].get_covered:
 			return "non puoi selezionare una carta coperta!\n"
