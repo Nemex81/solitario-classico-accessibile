@@ -7,6 +7,7 @@
 
 # lib
 import logging
+import random
 # moduli personali
 from my_lib.myglob import *
 import my_lib.myutyls as mu
@@ -111,14 +112,22 @@ class TavoloSolitario:
 
 		return True
 
-	def riordina_scarti(self):
+	def riordina_scarti(self, shuffle_mode=False):
 		if not self.pile[11].carte:
 			# La pila di scarti è vuota
 			return
 
-		# Rimuovi le carte dalla pila di scarti e inverti l'ordine
-		carte_scarti = self.pile[11].carte[::-1]
+		# Rimuovi le carte dalla pila di scarti
+		carte_scarti = self.pile[11].carte[:]
 		self.pile[11].carte.clear()
+
+		# Applica la modalità di riciclo scelta
+		if shuffle_mode:
+			# Modalità MESCOLATA: mescola casualmente le carte
+			random.shuffle(carte_scarti)
+		else:
+			# Modalità INVERSIONE (default): inverti l'ordine
+			carte_scarti = carte_scarti[::-1]
 
 		# Riaggiungi le carte al mazzo riserve
 		for carta in carte_scarti:

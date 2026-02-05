@@ -936,9 +936,12 @@ class EngineSolitario(EngineData):
 		liv = int(self.difficulty_level)
 		ver = self.tavolo.pescata(liv)
 		if not ver:
-			self.tavolo.riordina_scarti()
+			self.tavolo.riordina_scarti(self.shuffle_discards)
 			self.conta_rimischiate += 1
-			return "Rimescolo gli scarti in mazzo riserve!  \n"
+			if self.shuffle_discards:
+				return "Rimescolo gli scarti in modo casuale nel mazzo riserve!  \n"
+			else:
+				return "Rimescolo gli scarti in mazzo riserve!  \n"
 
 		# se la pescata è andata a buon fine ritorno la stringa da vocalizzare con le carte pescate
 		carte = self.execute_draw()
