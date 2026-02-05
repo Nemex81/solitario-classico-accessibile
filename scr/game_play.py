@@ -106,7 +106,7 @@ class GamePlay(DialogBox):
 			self.vocalizza(string)
 
 	def enter_press(self):
-		if pygame.key.get_mods() and KMOD_CTRL:
+		if pygame.key.get_mods() & KMOD_CTRL:
 			string = self.engine.select_scarto()
 		else:
 			string = self.engine.select_card()
