@@ -726,6 +726,26 @@ class EngineSolitario(EngineData):
 		else:
 			return "Modalità riciclo scarti: INVERSIONE SEMPLICE"
 
+	def get_settings_info(self):
+		""" vocalizza le impostazioni correnti di gioco """
+		
+		string = "Impostazioni di gioco:  \n"
+		
+		# Livello di difficoltà
+		string += f"Livello di difficoltà: {self.difficulty_level}.  \n"
+		
+		# Timer
+		if self.max_time_game < 0:
+			string += "Timer: disattivato.  \n"
+		else:
+			minuti = self.max_time_game // 60
+			string += f"Timer: {minuti} minuti.  \n"
+		
+		# Modalità riciclo scarti
+		string += f"{self.get_shuffle_mode_status()}.  \n"
+		
+		return string
+
 
 	def change_game_settings(self):
 		""" cambiamo le impostazioni del gioco """
