@@ -47,13 +47,13 @@ src/
 - [x] **Fase 4**: Estrazione MoveValidator
 - [x] **Fase 4.5**: Correzioni critiche (Pile model, Italian deck, Accessibility)
 - [x] **Fase 5**: Creazione GameService
-- [ ] **Fase 6**: Estrazione Formatter
-- [ ] **Fase 7**: Protocol interfaces
-- [ ] **Fase 8**: GameController applicativo
-- [ ] **Fase 9**: Command pattern
-- [ ] **Fase 10**: Dependency injection
-- [ ] **Fase 11**: Test coverage completo
-- [ ] **Fase 12**: Documentazione finale
+- [x] **Fase 6**: Estrazione Formatter
+- [x] **Fase 7**: Protocol interfaces
+- [x] **Fase 8**: GameController applicativo
+- [x] **Fase 9**: Command pattern
+- [x] **Fase 10**: Dependency injection
+- [x] **Fase 11**: Test coverage completo
+- [x] **Fase 12**: Documentazione finale
 
 ---
 
