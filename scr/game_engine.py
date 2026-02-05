@@ -452,7 +452,8 @@ class EngineSolitario(EngineData):
 		for i in range(0, 7):
 			pila = self.tavolo.pile[i]
 			if pila.is_pila_base() and not self.is_game_running:
-				pila.carte[-1].set_cover()
+				if not pila.is_empty_pile():
+					pila.carte[-1].set_cover()
 
 	def change_deck_type(self):
 		""" cambiamo il tipo di mazzo """
