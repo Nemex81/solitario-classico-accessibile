@@ -189,6 +189,7 @@ class EngineSolitario(EngineData):
 		self.target_card = None
 		self.origin_pile = None
 		self.dest_pile = None
+		self.shuffle_discards = False  # Reset modalità shuffle
 
 	def chiudi_partita(self):
 		""" Chiude la partita aperta del solitario. """
