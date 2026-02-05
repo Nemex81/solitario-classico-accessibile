@@ -54,6 +54,23 @@ class EngineSolitario(EngineData):
 	def __init__(self, tavolo):
 		super().__init__(tavolo)
 
+	def validate_cursor_position(self):
+		"""Valida e corregge automaticamente la posizione del cursore se non è valida"""
+		# Valida colonna
+		col = self.cursor_pos[1]
+		if col < 0 or col >= len(self.tavolo.pile):
+			self.cursor_pos[1] = 0
+			col = 0
+		
+		# Valida riga
+		pila = self.tavolo.pile[col]
+		if pila.is_empty_pile():
+			self.cursor_pos[0] = 0
+		elif self.cursor_pos[0] >= len(pila.carte):
+			self.cursor_pos[0] = len(pila.carte) - 1
+		elif self.cursor_pos[0] < 0:
+			self.cursor_pos[0] = 0
+
 	def test_set_time_out(self):
 		# impostare manualmente il tempo a 60 minuti
 		self.is_time_over = True
@@ -197,6 +214,9 @@ class EngineSolitario(EngineData):
 		return string
 
 	def get_string_riga(self):
+		# VALIDAZIONE CURSORE
+		self.validate_cursor_position()
+
 		row, col = self.cursor_pos
 		current_card = self.tavolo.get_card_position(row, col)
 		if not current_card:
@@ -207,6 +227,9 @@ class EngineSolitario(EngineData):
 
 	def get_focus(self):
 		# vocalizziamo la posizione del cursore di navigazione
+		# VALIDAZIONE CURSORE
+		self.validate_cursor_position()
+
 		row, col = self.cursor_pos
 		pila = self.tavolo.pile[col]
 		if pila.is_empty_pile():
@@ -539,26 +562,40 @@ class EngineSolitario(EngineData):
 		if not pila.is_pila_base():
 			return "non sei su una pila base.\n"
 
-		if pila.is_empty_pile():# and self.cursor_pos[0] == 0:
+		if pila.is_empty_pile():
+			self.cursor_pos[0] = 0
 			return "La pila è vuota!  \n"
+
+		# Valida prima l'indice corrente
+		if self.cursor_pos[0] >= len(pila.carte):
+			self.cursor_pos[0] = len(pila.carte) - 1
 
 		if self.cursor_pos[0] > 0:
 			self.cursor_pos[0] -= 1
 			speack =self.get_string_riga()
 			return speack
+		else:
+			return "Sei già alla prima carta della pila!\n"
 
 	def move_cursor_down(self):
 		pila = self.tavolo.pile[self.cursor_pos[1]]
 		if not pila.is_pila_base():
 			return "non sei su una pila base.\n"
 
-		if pila.is_empty_pile():# and self.cursor_pos[0] == 0:
+		if pila.is_empty_pile():
+			self.cursor_pos[0] = 0
 			return "La pila è vuota!  \n"
+
+		# Valida prima l'indice corrente
+		if self.cursor_pos[0] >= len(pila.carte):
+			self.cursor_pos[0] = len(pila.carte) - 1
 
 		if self.cursor_pos[0] < len(pila.carte) - 1:
 			self.cursor_pos[0] += 1
 			speack = self.get_string_riga()
 			return speack
+		else:
+			return "Sei già all'ultima carta della pila!\n"
 
 	def move_cursor_left(self):
 		pile = self.tavolo.pile
@@ -609,6 +646,7 @@ class EngineSolitario(EngineData):
 		""" Sposta il cursore di navigazione  in cima alla pila in cui ci si trova durante lospostamento con le frecce orizzontali"""
 		if not pila.is_empty_pile():
 			return len(pila.carte) - 1
+		return 0  # Ritorna 0 invece di None per pile vuote
 
 	def move_cursor(self, direction):
 		""" Sposta il cursore nella direzione specificata """
@@ -668,10 +706,20 @@ class EngineSolitario(EngineData):
 		if self.selected_card:
 			return "Hai già selezionato le carte da spostare!  premi canc per annullare la selezione.\n"
 
+		# VALIDAZIONE CURSORE
+		self.validate_cursor_position()
+
 		row , col = self.cursor_pos
 		pile = self.tavolo.pile[col]
 		if pile.is_empty_pile():
 			return "la pila è vuota!\n"
+
+		# NUOVA VALIDAZIONE: Verifica che l'indice sia valido
+		if row >= len(pile.carte) or row < 0:
+			# Reset automatico alla carta in cima se l'indice non è valido
+			self.cursor_pos[0] = len(pile.carte) - 1
+			row = self.cursor_pos[0]
+			logger.warning(f"Indice cursore non valido corretto: row={row}, col={col}")
 
 		if pile.carte[row].get_covered:
 			return "non puoi selezionare una carta coperta!\n"
@@ -755,9 +803,13 @@ class EngineSolitario(EngineData):
 				if ver_win:
 					string += ver_win
 
-		# aggiorno la posizione del cursore
+		# CORREZIONE: Aggiorno la posizione del cursore con validazione
 		self.cursor_pos[1] = self.dest_pile.id
-		self.cursor_pos[0] = self.dest_pile.get_last_card_index()
+		if not self.dest_pile.is_empty_pile():
+			self.cursor_pos[0] = self.dest_pile.get_last_card_index()
+		else:
+			self.cursor_pos[0] = 0
+
 		self.reset_data_moving() # resettiamo anche i dati di spostamento
 		return string
 
