@@ -457,28 +457,24 @@ class EngineSolitario(EngineData):
 
 	def change_deck_type(self):
 		""" cambiamo il tipo di mazzo """
-
+		
 		mazzo = None
 		if self.is_game_running:
 			return "Non puoi modificare il tipo di mazzo durante una partita!  \n"
 
-		if not self.change_settings:
-			return "Devi prima aprire le opzioni!  \n"
-
+		# Rimosso il controllo self.change_settings - ora funziona sia dentro che fuori dalle opzioni
+		
 		deck_type = self.tavolo.mazzo.get_type()
 		if deck_type == "carte francesi":
 			mazzo = NeapolitanDeck()
-
 		elif deck_type == "carte napoletane":
 			mazzo = FrenchDeck()
-
 		else:
 			mazzo = FrenchDeck()
 
 		self.tavolo.mazzo = mazzo
 		self.tavolo.reset_pile()
-		#self.create_alert_box(F"tipo di mazzo impostato a:  {self.tavolo.mazzo.tipo}.  \n", "Tipo di mazzo cambiato")
-		return F"tipo di mazzo impostato a:  {self.tavolo.mazzo.tipo}.  \n"
+		return f"tipo di mazzo impostato a: {self.tavolo.mazzo.tipo}.  \n"
 
 	def change_difficulty_level(self):
 		""" cambiamo il livello di difficoltà """

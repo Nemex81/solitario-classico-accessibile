@@ -58,7 +58,8 @@ class GamePlay(DialogBox):
 	#@@# sezione comandi utente
 
 	def f1_press(self):
-		stri = ""
+		# F1 = cambio mazzo (principale)
+		# CTRL+F1 = test vittoria (secondario)
 		if pygame.key.get_mods() & KMOD_CTRL:
 			string = self.engine.test_vittoria()
 		else:
