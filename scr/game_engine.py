@@ -884,8 +884,15 @@ class EngineSolitario(EngineData):
 
 	def you_lost_by_time(self):
 		""" metodo che viene chiamato quando il giocatore perde per tempo scaduto """
+		
+		# PRIMA salva le statistiche
+		self.stop_game()
+		
+		# POI genera il messaggio usando le statistiche salvate
 		timer = self.max_time_game // 60
-		str_lost = f"Hai perso!  \nHai superato il tempo limite di {timer} minuti!  \n"
+		str_lost = f"Hai perso!  \nHai superato il tempo limite di {timer} minuti!  \n\n"
+		str_lost += self.get_report_game()
+		
 		self.create_alert_box(str_lost, "Tempo scaduto")
 		self.create_yes_or_no_box("Vuoi giocare ancora?", "Rivincita?")
 		if self.answare:
@@ -895,10 +902,16 @@ class EngineSolitario(EngineData):
 
 	def you_winner(self):
 		""" metodo che viene chiamato quando il giocatore vince """
-
-		self.stop_game()
+		
+		# PRIMA genera il report (mentre i dati sono ancora disponibili)
 		str_win = f"Hai Vinto!  \nComplimenti, vittoria spumeggiante!  \n\n"
+		
+		# stop_game() salverà le statistiche e poi resetterà i contatori
+		self.stop_game()
+		
+		# Ora usa get_report_game() che leggerà le statistiche salvate
 		str_win += self.get_report_game()
+		
 		self.create_alert_box(str_win, "Congratulazioni")
 		self.create_yes_or_no_box("Vuoi giocare ancora?", "Rivincita?")
 		if self.answare:
