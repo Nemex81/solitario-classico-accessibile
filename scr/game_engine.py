@@ -627,7 +627,7 @@ class EngineSolitario(EngineData):
 		#self.create_alert_box(f"Livello di difficoltà impostato a {self.difficulty_level}\n", "difficoltà cambiata")
 		return F"livello di difficoltà impostato a:  {self.difficulty_level}.  \n"
 
-	def change_game_time(self):
+	def change_game_time(self, increment=True):
 		""" cambiamo il limite massimo di tempo iocabile """
 
 		if self.is_game_running:
@@ -635,7 +635,7 @@ class EngineSolitario(EngineData):
 
 		elif not self.is_game_running and self.change_settings:
 			#timer = self.set_game_timer()
-			timer = self.change_time_over()
+			timer = self.change_time_over(increment)
 			secondi = int(timer) * 60
 			minuti = int(timer)
 			if secondi > 0:
@@ -662,21 +662,30 @@ class EngineSolitario(EngineData):
 		else:
 			return "Devi prima aprire le opzioni con il tasto O!  \n"
 
-	def change_time_over(self):
+	def change_time_over(self, increment=True):
 		""" permette di personalizzare il tempo limite per il tempo di gioco """
 
 		timer = 0
+		min_settable = 5 * 60  # minimo durata per il timer 5 minuti
 		max_settable = 60 * 60 # massima durata pe ril timer 60 minuti
+		
 		if self.max_time_game < 0:
 			timer = 5
 
-		elif self.max_time_game >= max_settable:
+		elif increment and self.max_time_game >= max_settable:
 			timer = self.max_time_game // 60
+			timer = -1
+
+		elif not increment and self.max_time_game <= min_settable:
+			# Se siamo al minimo e stiamo decrementando, disabilitiamo il timer
 			timer = -1
 
 		else:
 			timer = self.max_time_game // 60
-			timer += 5
+			if increment:
+				timer += 5
+			else:
+				timer -= 5
 
 		return timer
 
