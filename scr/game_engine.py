@@ -34,6 +34,11 @@ class EngineData(DialogBox):
 		self.max_time_game = -1 # tempo di gioco impostato dal giocatore
 		self.conta_giri = 0 # contatore per gestire il numero di mosse fatte dal player
 		self.conta_rimischiate = 0 # contatore per gestire il numero di rimischiate fatte dal player
+		# Tracciamento carte per seme (live)
+		# Indici: 0=Cuori, 1=Quadri, 2=Fiori, 3=Picche
+		self.carte_per_seme = [0, 0, 0, 0]
+		# Contatore semi completati (live)
+		self.semi_completati = 0
 		self.cursor_pos = [0, 0]  # posizione iniziale del cursore sul tavolo
 		self.selected_card = []  # lista delle carte selezionate dal giocatore
 		self.target_card = None # oggetto carta nel focus
@@ -50,6 +55,9 @@ class EngineData(DialogBox):
 		self.final_mosse = 0  # numero di spostamenti
 		self.final_rimischiate = 0  # numero di rimischiate
 		self.final_difficulty = 1  # livello di difficoltà della partita
+		# Statistiche semi salvate
+		self.final_carte_per_seme = [0, 0, 0, 0]
+		self.final_semi_completati = 0
 
 
 class EngineSolitario(EngineData):
@@ -156,6 +164,9 @@ class EngineSolitario(EngineData):
 			self.final_mosse = self.conta_giri
 			self.final_rimischiate = self.conta_rimischiate
 			self.final_difficulty = self.difficulty_level
+			# Salva statistiche semi
+			self.final_carte_per_seme = self.carte_per_seme.copy()  # IMPORTANTE: usa .copy()!
+			self.final_semi_completati = self.semi_completati
 		
 		# POI resettiamo tutto
 		self.is_game_running = False
@@ -168,6 +179,8 @@ class EngineSolitario(EngineData):
 		self.is_time_over = False
 		self.conta_giri = 0
 		self.conta_rimischiate = 0
+		self.carte_per_seme = [0, 0, 0, 0]
+		self.semi_completati = 0
 		self.start_ticks = pygame.time.get_ticks()
 		self.difficulty_level = 1
 		self.cursor_pos = [0, 0]
@@ -337,6 +350,28 @@ class EngineSolitario(EngineData):
 		mosse =  self.conta_giri
 		return F"Fin'ora hai eseguito {mosse} spostamenti.\n"
 
+	def get_statistiche_semi(self):
+		"""
+		Vocalizza le statistiche correnti delle pile semi.
+		
+		Returns:
+			str: Statistiche formattate per screen reader
+		"""
+		if not self.is_game_running:
+			return "Nessuna partita in corso.\n"
+		
+		nomi_semi = ["Cuori", "Quadri", "Fiori", "Picche"]
+		string = "Statistiche pile semi:  \n"
+		
+		for i in range(4):
+			num_carte = self.carte_per_seme[i]
+			nome_seme = nomi_semi[i]
+			string += f"{nome_seme}: {num_carte} su 13 carte.  \n"
+		
+		string += f"\nHai completato {self.semi_completati} semi su 4.  \n"
+		
+		return string
+
 	def get_time(self):
 		if not self.is_game_running:
 			return 0
@@ -371,6 +406,8 @@ class EngineSolitario(EngineData):
 		""" vocalizza il report finale della partita """
 		
 		string = ""
+		# Nomi dei semi per output leggibile
+		nomi_semi = ["Cuori", "Quadri", "Fiori", "Picche"]
 		
 		# Se la partita è terminata, usa le statistiche finali salvate
 		if not self.is_game_running:
@@ -389,6 +426,23 @@ class EngineSolitario(EngineData):
 			string += f"difficoltà impostata:  livello {self.final_difficulty}.  \n"
 			string += f"Spostamenti totali:  {self.final_mosse}.  \n"
 			string += f"Rimischiate:  {self.final_rimischiate}.  \n"
+			
+			# Statistiche semi
+			string += "\n--- Statistiche Pile Semi ---\n"
+			
+			# Mostra carte per ogni seme
+			for i in range(4):
+				num_carte = self.final_carte_per_seme[i]
+				nome_seme = nomi_semi[i]
+				string += f"{nome_seme}: {num_carte} carte.  \n"
+			
+			# Mostra semi completati
+			string += f"\nSemi completati: {self.final_semi_completati} su 4.  \n"
+			
+			# Percentuale completamento totale
+			totale_carte_semi = sum(self.final_carte_per_seme)
+			percentuale = (totale_carte_semi / 52) * 100
+			string += f"Completamento totale: {totale_carte_semi}/52 carte ({percentuale:.1f}%).  \n"
 		
 		# Se la partita è in corso, usa i contatori live
 		else:
@@ -406,6 +460,20 @@ class EngineSolitario(EngineData):
 			string += f"difficoltà impostata:  livello {self.difficulty_level}.  \n"
 			string += f"Spostamenti totali:  {self.conta_giri}.  \n"
 			string += f"Rimischiate:  {self.conta_rimischiate}.  \n"
+			
+			# Statistiche semi live
+			string += "\n--- Statistiche Pile Semi ---\n"
+			
+			for i in range(4):
+				num_carte = self.carte_per_seme[i]
+				nome_seme = nomi_semi[i]
+				string += f"{nome_seme}: {num_carte} carte.  \n"
+			
+			string += f"\nSemi completati: {self.semi_completati} su 4.  \n"
+			
+			totale_carte_semi = sum(self.carte_per_seme)
+			percentuale = (totale_carte_semi / 52) * 100
+			string += f"Completamento totale: {totale_carte_semi}/52 carte ({percentuale:.1f}%).  \n"
 		
 		return string
 
@@ -479,6 +547,36 @@ class EngineSolitario(EngineData):
 	def incrementa_mossa(self):
 		if self.is_game_running:
 			self.conta_giri += 1
+
+	def aggiorna_statistiche_semi(self):
+		"""
+		Aggiorna le statistiche delle carte nelle pile semi.
+		
+		Conta quante carte ci sono in ogni pila seme e quanti semi sono completi.
+		Chiamato dopo ogni spostamento verso una pila seme.
+		
+		Effetti collaterali:
+		- Aggiorna self.carte_per_seme[0-3]
+		- Aggiorna self.semi_completati
+		"""
+		if not self.is_game_running:
+			return
+		
+		# Reset contatore semi completati per ricalcolo
+		self.semi_completati = 0
+		
+		# Itera sulle 4 pile semi (indici 7-10)
+		for i in range(4):
+			pile_index = 7 + i  # Pile semi sono alle posizioni 7, 8, 9, 10
+			pila_seme = self.tavolo.pile[pile_index]
+			
+			# Conta carte nella pila
+			num_carte = pila_seme.get_len()
+			self.carte_per_seme[i] = num_carte
+			
+			# Un seme è completo se ha 13 carte (A-K)
+			if num_carte == 13:
+				self.semi_completati += 1
 
 	def copri_tutto(self):
 		# copriamo tutte le carte del mazzo
@@ -848,6 +946,7 @@ class EngineSolitario(EngineData):
 
 			# verifichiamo la vittoria
 			if self.dest_pile.is_pila_seme():
+				self.aggiorna_statistiche_semi()  # NUOVA LINEA: aggiorna statistiche semi
 				ver_win = self.ceck_victory()
 				if ver_win:
 					string += ver_win
