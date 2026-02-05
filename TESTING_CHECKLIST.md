@@ -185,6 +185,14 @@ This document provides a comprehensive testing checklist for the timer decrement
 
 ## ✅ Test 7: Reset Behavior
 
+### Important Note on Reset Behavior
+Different settings have different persistence behaviors by design:
+- **Shuffle Mode**: Resets to default (Inversion) on each new game - prevents unexpected gameplay changes
+- **Timer**: Persists between games - user preference for session
+- **Difficulty**: Resets to 1 on new game - consistent with shuffle mode
+
+This is intentional: gameplay-affecting settings (shuffle, difficulty) reset for consistency, while meta-settings (timer) persist for convenience.
+
 ### Test Cases
 
 #### TC7.1: Shuffle Mode Resets on New Game
