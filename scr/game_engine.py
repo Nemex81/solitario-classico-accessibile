@@ -369,25 +369,44 @@ class EngineSolitario(EngineData):
 
 	def get_report_game(self):
 		""" vocalizza il report finale della partita """
-
-		string = "Partita in corso,  \n"
+		
+		string = ""
+		
+		# Se la partita è terminata, usa le statistiche finali salvate
 		if not self.is_game_running:
 			string = "Partita terminata,  \n"
-
-		timer = self.max_time_game
-		timer_minuti = timer // 60
-		#per avere un formato di tempo simile a 00:00
-		tempo_rimanente = self.get_timer_status()
-		if timer > 0:
-			string += f"timer impostato a:  {timer_minuti} minuti.  \n"
-			string += f"timer:  {tempo_rimanente} minuti.  \n"
-
-		#elapsed_time = self.get_time()
-		minuti = self.get_time_status()
-		string += f"minuti trascorsi:  {minuti} secondi.  \n"
-		string += f"difficoltà impostata:  livello {self.difficulty_level}.  \n"
-		string += f"Spostamenti totali:  {self.get_mosse()}  \n"
-		string += f"Rimischiate:  {self.get_rimischiate()}  \n"
+			
+			# Usa le statistiche salvate da stop_game()
+			secondi_trascorsi = self.final_time_elapsed
+			minuti_trascorsi = time.strftime("%M:%S", time.gmtime(secondi_trascorsi))
+			
+			# Mostra timer impostato solo se era attivo
+			if self.max_time_game > 0:
+				timer_minuti = self.max_time_game // 60
+				string += f"timer impostato a:  {timer_minuti} minuti.  \n"
+			
+			string += f"minuti trascorsi:  {minuti_trascorsi}.  \n"
+			string += f"difficoltà impostata:  livello {self.final_difficulty}.  \n"
+			string += f"Spostamenti totali:  {self.final_mosse}.  \n"
+			string += f"Rimischiate:  {self.final_rimischiate}.  \n"
+		
+		# Se la partita è in corso, usa i contatori live
+		else:
+			string = "Partita in corso,  \n"
+			
+			timer = self.max_time_game
+			tempo_rimanente = self.get_timer_status()
+			if timer > 0:
+				timer_minuti = timer // 60
+				string += f"timer impostato a:  {timer_minuti} minuti.  \n"
+				string += f"timer:  {tempo_rimanente}.  \n"
+			
+			minuti = self.get_time_status()
+			string += f"minuti trascorsi:  {minuti}.  \n"
+			string += f"difficoltà impostata:  livello {self.difficulty_level}.  \n"
+			string += f"Spostamenti totali:  {self.conta_giri}.  \n"
+			string += f"Rimischiate:  {self.conta_rimischiate}.  \n"
+		
 		return string
 
 	def get_info_game(self):
