@@ -45,6 +45,12 @@ class EngineData(DialogBox):
 		self.fps = 60 # imposto il numero di frame per secondo
 		self.start_ticks = 0 # inizializzo il contatore dei secondi
 
+		# Statistiche finali dell'ultima partita completata
+		self.final_time_elapsed = 0  # tempo trascorso in secondi
+		self.final_mosse = 0  # numero di spostamenti
+		self.final_rimischiate = 0  # numero di rimischiate
+		self.final_difficulty = 1  # livello di difficoltà della partita
+
 
 class EngineSolitario(EngineData):
 	""" Classe per la gestione delle regole del gioco del solitario """
@@ -53,6 +59,36 @@ class EngineSolitario(EngineData):
 
 	def __init__(self, tavolo):
 		super().__init__(tavolo)
+
+	def validate_cursor_position(self):
+		"""Valida e corregge automaticamente la posizione del cursore se non è valida
+		
+		Effetti collaterali:
+		- Modifica self.cursor_pos[0] e self.cursor_pos[1] in place
+		- Se la colonna non è valida, viene impostata a 0
+		- Se la riga non è valida, viene corretta al valore valido più vicino
+		- Per pile vuote, la riga viene impostata a 0
+		"""
+		# Valida colonna
+		col = self.cursor_pos[1]
+		if col < 0 or col >= len(self.tavolo.pile):
+			logger.warning(f"Colonna cursore non valida corretta: {col} -> 0")
+			self.cursor_pos[1] = 0
+			col = 0
+		
+		# Valida riga
+		pila = self.tavolo.pile[col]
+		if pila.is_empty_pile():
+			if self.cursor_pos[0] != 0:
+				logger.debug(f"Riga cursore su pila vuota corretta: {self.cursor_pos[0]} -> 0")
+				self.cursor_pos[0] = 0
+		elif self.cursor_pos[0] >= len(pila.carte):
+			old_row = self.cursor_pos[0]
+			self.cursor_pos[0] = len(pila.carte) - 1
+			logger.warning(f"Riga cursore oltre limite corretta: {old_row} -> {self.cursor_pos[0]}")
+		elif self.cursor_pos[0] < 0:
+			logger.warning(f"Riga cursore negativa corretta: {self.cursor_pos[0]} -> 0")
+			self.cursor_pos[0] = 0
 
 	def test_set_time_out(self):
 		# impostare manualmente il tempo a 60 minuti
@@ -112,15 +148,23 @@ class EngineSolitario(EngineData):
 		return True
 
 	def stop_game(self):
-		""" Ferma il gioco. """
-
+		""" Ferma il gioco e salva le statistiche finali prima di resettare """
+		
+		# PRIMA salviamo le statistiche della partita appena conclusa
+		if self.is_game_running:
+			self.final_time_elapsed = self.get_time()
+			self.final_mosse = self.conta_giri
+			self.final_rimischiate = self.conta_rimischiate
+			self.final_difficulty = self.difficulty_level
+		
+		# POI resettiamo tutto
 		self.is_game_running = False
 		self.winner = False
 		self.tavolo.crea_pile_gioco()
 		self.tavolo.distribuisci_carte()
 		self.copri_tutto() # copri tutte le ultime carte delle pile base
 
-		# resetto cronometro partita e dati orologio
+		# Resetto cronometro e contatori per la PROSSIMA partita
 		self.is_time_over = False
 		self.conta_giri = 0
 		self.conta_rimischiate = 0
@@ -186,6 +230,7 @@ class EngineSolitario(EngineData):
 		return "scheda pila: %s\n" % infopila
 
 	def get_string_colonna(self):
+		self.validate_cursor_position()
 		row, col = self.cursor_pos
 		current_pile = self.tavolo.get_pile_name(col)
 		if current_pile:
@@ -197,6 +242,7 @@ class EngineSolitario(EngineData):
 		return string
 
 	def get_string_riga(self):
+		self.validate_cursor_position()
 		row, col = self.cursor_pos
 		current_card = self.tavolo.get_card_position(row, col)
 		if not current_card:
@@ -207,6 +253,7 @@ class EngineSolitario(EngineData):
 
 	def get_focus(self):
 		# vocalizziamo la posizione del cursore di navigazione
+		self.validate_cursor_position()
 		row, col = self.cursor_pos
 		pila = self.tavolo.pile[col]
 		if pila.is_empty_pile():
@@ -322,25 +369,44 @@ class EngineSolitario(EngineData):
 
 	def get_report_game(self):
 		""" vocalizza il report finale della partita """
-
-		string = "Partita in corso,  \n"
+		
+		string = ""
+		
+		# Se la partita è terminata, usa le statistiche finali salvate
 		if not self.is_game_running:
 			string = "Partita terminata,  \n"
-
-		timer = self.max_time_game
-		timer_minuti = timer // 60
-		#per avere un formato di tempo simile a 00:00
-		tempo_rimanente = self.get_timer_status()
-		if timer > 0:
-			string += f"timer impostato a:  {timer_minuti} minuti.  \n"
-			string += f"timer:  {tempo_rimanente} minuti.  \n"
-
-		#elapsed_time = self.get_time()
-		minuti = self.get_time_status()
-		string += f"minuti trascorsi:  {minuti} secondi.  \n"
-		string += f"difficoltà impostata:  livello {self.difficulty_level}.  \n"
-		string += f"Spostamenti totali:  {self.get_mosse()}  \n"
-		string += f"Rimischiate:  {self.get_rimischiate()}  \n"
+			
+			# Usa le statistiche salvate da stop_game()
+			secondi_trascorsi = self.final_time_elapsed
+			minuti_trascorsi = time.strftime("%M:%S", time.gmtime(secondi_trascorsi))
+			
+			# Mostra timer impostato solo se era attivo
+			if self.max_time_game > 0:
+				timer_minuti = self.max_time_game // 60
+				string += f"timer impostato a:  {timer_minuti} minuti.  \n"
+			
+			string += f"minuti trascorsi:  {minuti_trascorsi}.  \n"
+			string += f"difficoltà impostata:  livello {self.final_difficulty}.  \n"
+			string += f"Spostamenti totali:  {self.final_mosse}.  \n"
+			string += f"Rimischiate:  {self.final_rimischiate}.  \n"
+		
+		# Se la partita è in corso, usa i contatori live
+		else:
+			string = "Partita in corso,  \n"
+			
+			timer = self.max_time_game
+			tempo_rimanente = self.get_timer_status()
+			if timer > 0:
+				timer_minuti = timer // 60
+				string += f"timer impostato a:  {timer_minuti} minuti.  \n"
+				string += f"timer:  {tempo_rimanente}.  \n"
+			
+			minuti = self.get_time_status()
+			string += f"minuti trascorsi:  {minuti}.  \n"
+			string += f"difficoltà impostata:  livello {self.difficulty_level}.  \n"
+			string += f"Spostamenti totali:  {self.conta_giri}.  \n"
+			string += f"Rimischiate:  {self.conta_rimischiate}.  \n"
+		
 		return string
 
 	def get_info_game(self):
@@ -371,12 +437,13 @@ class EngineSolitario(EngineData):
 
 	def get_report_mossa(self):
 		""" vocalizziamo il report della mossa """
-
+		
 		string = ""
+		tot_cards = 0
 		if self.selected_card:
 			tot_cards = len(self.selected_card)
 			string += "sposti:  \n"
-			if tot_cards  > 2:
+			if tot_cards > 2:
 				string += f"{self.selected_card[0].get_name} e altre {tot_cards - 1} carte.  \n"
 			else:
 				for carta in self.selected_card:
@@ -387,14 +454,23 @@ class EngineSolitario(EngineData):
 
 		if self.dest_pile:
 			string += f"a: {self.dest_pile.nome},  \n"
-			id = (len(self.dest_pile.carte) - 1) - tot_cards
-			if not self.dest_pile.carte[id].get_value != 13 and self.dest_pile.carte[id] != self.selected_card[0]:
-				string += f"sopra alla carta: {self.dest_pile.carte[id].get_name}.  \n"
-
-		if not self.origin_pile.is_empty_pile():
-			string += f"hai scoperto : {self.origin_pile.carte[-1].get_name} in:  {self.origin_pile.nome}.  \n"
 			
+			# Verifica che ci siano abbastanza carte e che l'indice sia valido
+			if tot_cards > 0 and len(self.dest_pile.carte) > tot_cards:
+				id = len(self.dest_pile.carte) - tot_cards - 1
+				
+				# Verifica bounds dell'indice
+				if 0 <= id < len(self.dest_pile.carte):
+					carta_sotto = self.dest_pile.carte[id]
+					
+					# Mostra la carta sotto SOLO se NON è un Re E NON è la carta selezionata stessa
+					if carta_sotto.get_value != 13 and carta_sotto != self.selected_card[0]:
+						string += f"sopra alla carta: {carta_sotto.get_name}.  \n"
 
+		# Verifica che origin_pile non sia None prima di controllare se è vuota
+		if self.origin_pile and not self.origin_pile.is_empty_pile():
+			string += f"hai scoperto : {self.origin_pile.carte[-1].get_name} in:  {self.origin_pile.nome}.  \n"
+		
 		return string
 
 
@@ -406,35 +482,32 @@ class EngineSolitario(EngineData):
 
 	def copri_tutto(self):
 		# copriamo tutte le carte del mazzo
-		for i in range(0, 6):
+		for i in range(0, 7):
 			pila = self.tavolo.pile[i]
 			if pila.is_pila_base() and not self.is_game_running:
-				pila.carte[-1].set_cover()
+				if not pila.is_empty_pile():
+					pila.carte[-1].set_cover()
 
 	def change_deck_type(self):
 		""" cambiamo il tipo di mazzo """
-
+		
 		mazzo = None
 		if self.is_game_running:
 			return "Non puoi modificare il tipo di mazzo durante una partita!  \n"
 
-		if not self.change_settings:
-			return "Devi prima aprire le opzioni!  \n"
-
+		# Rimosso il controllo self.change_settings - ora funziona sia dentro che fuori dalle opzioni
+		
 		deck_type = self.tavolo.mazzo.get_type()
 		if deck_type == "carte francesi":
 			mazzo = NeapolitanDeck()
-
 		elif deck_type == "carte napoletane":
 			mazzo = FrenchDeck()
-
 		else:
 			mazzo = FrenchDeck()
 
 		self.tavolo.mazzo = mazzo
 		self.tavolo.reset_pile()
-		#self.create_alert_box(F"tipo di mazzo impostato a:  {self.tavolo.mazzo.tipo}.  \n", "Tipo di mazzo cambiato")
-		return F"tipo di mazzo impostato a:  {self.tavolo.mazzo.tipo}.  \n"
+		return f"tipo di mazzo impostato a: {self.tavolo.mazzo.tipo}.  \n"
 
 	def change_difficulty_level(self):
 		""" cambiamo il livello di difficoltà """
@@ -481,11 +554,15 @@ class EngineSolitario(EngineData):
 
 	def disable_timer(self):
 		""" disabilitiamo il timer """
-
+		
 		if not self.is_game_running and self.change_settings:
 			self.max_time_game = -1
-		#self.create_alert_box("il timer è stato disattivato!  \n", "disattivazione del timer")
 			return "il timer è stato disattivato!  \n"
+		
+		if self.is_game_running:
+			return "Non puoi disabilitare il timer durante una partita!  \n"
+		else:
+			return "Devi prima aprire le opzioni con il tasto O!  \n"
 
 	def change_time_over(self):
 		""" permette di personalizzare il tempo limite per il tempo di gioco """
@@ -539,32 +616,48 @@ class EngineSolitario(EngineData):
 		if not pila.is_pila_base():
 			return "non sei su una pila base.\n"
 
-		if pila.is_empty_pile():# and self.cursor_pos[0] == 0:
+		if pila.is_empty_pile():
+			self.cursor_pos[0] = 0
 			return "La pila è vuota!  \n"
+
+		# Valida prima l'indice corrente
+		if self.cursor_pos[0] >= len(pila.carte):
+			self.cursor_pos[0] = len(pila.carte) - 1
 
 		if self.cursor_pos[0] > 0:
 			self.cursor_pos[0] -= 1
 			speack =self.get_string_riga()
 			return speack
+		else:
+			return "Sei già alla prima carta della pila!\n"
 
 	def move_cursor_down(self):
 		pila = self.tavolo.pile[self.cursor_pos[1]]
 		if not pila.is_pila_base():
 			return "non sei su una pila base.\n"
 
-		if pila.is_empty_pile():# and self.cursor_pos[0] == 0:
+		if pila.is_empty_pile():
+			self.cursor_pos[0] = 0
 			return "La pila è vuota!  \n"
+
+		# Valida prima l'indice corrente
+		if self.cursor_pos[0] >= len(pila.carte):
+			self.cursor_pos[0] = len(pila.carte) - 1
 
 		if self.cursor_pos[0] < len(pila.carte) - 1:
 			self.cursor_pos[0] += 1
 			speack = self.get_string_riga()
 			return speack
+		else:
+			return "Sei già all'ultima carta della pila!\n"
 
 	def move_cursor_left(self):
 		pile = self.tavolo.pile
 		if self.cursor_pos[1] > 0:
 			self.cursor_pos[1] -= 1
-			self.cursor_pos[0] = self.move_cursor_top_card(pile[self.cursor_pos[1]])
+			self.validate_cursor_position()
+			pila = self.tavolo.pile[self.cursor_pos[1]]
+			self.cursor_pos[0] = self.move_cursor_top_card(pila)
 			speack = self.get_string_colonna()
 			return speack
 
@@ -572,7 +665,9 @@ class EngineSolitario(EngineData):
 		pile = self.tavolo.pile
 		if self.cursor_pos[1] < len(pile) - 1:
 			self.cursor_pos[1] += 1
-			self.cursor_pos[0] = self.move_cursor_top_card(pile[self.cursor_pos[1]])
+			self.validate_cursor_position()
+			pila = self.tavolo.pile[self.cursor_pos[1]]
+			self.cursor_pos[0] = self.move_cursor_top_card(pila)
 			speack = self.get_string_colonna()
 			return speack
 
@@ -606,9 +701,10 @@ class EngineSolitario(EngineData):
 		return speack
 
 	def move_cursor_top_card(self, pila):
-		""" Sposta il cursore di navigazione  in cima alla pila in cui ci si trova durante lospostamento con le frecce orizzontali"""
+		""" Sposta il cursore di navigazione in cima alla pila in cui ci si trova durante lo spostamento con le frecce orizzontali"""
 		if not pila.is_empty_pile():
 			return len(pila.carte) - 1
+		return 0  # Ritorna 0 invece di None per pile vuote
 
 	def move_cursor(self, direction):
 		""" Sposta il cursore nella direzione specificata """
@@ -668,6 +764,7 @@ class EngineSolitario(EngineData):
 		if self.selected_card:
 			return "Hai già selezionato le carte da spostare!  premi canc per annullare la selezione.\n"
 
+		self.validate_cursor_position()
 		row , col = self.cursor_pos
 		pile = self.tavolo.pile[col]
 		if pile.is_empty_pile():
@@ -755,9 +852,13 @@ class EngineSolitario(EngineData):
 				if ver_win:
 					string += ver_win
 
-		# aggiorno la posizione del cursore
+		# CORREZIONE: Aggiorno la posizione del cursore con validazione
 		self.cursor_pos[1] = self.dest_pile.id
-		self.cursor_pos[0] = self.dest_pile.get_last_card_index()
+		if not self.dest_pile.is_empty_pile():
+			self.cursor_pos[0] = self.dest_pile.get_last_card_index()
+		else:
+			self.cursor_pos[0] = 0
+
 		self.reset_data_moving() # resettiamo anche i dati di spostamento
 		return string
 
@@ -783,8 +884,15 @@ class EngineSolitario(EngineData):
 
 	def you_lost_by_time(self):
 		""" metodo che viene chiamato quando il giocatore perde per tempo scaduto """
+		
+		# PRIMA salva le statistiche
+		self.stop_game()
+		
+		# POI genera il messaggio usando le statistiche salvate
 		timer = self.max_time_game // 60
-		str_lost = f"Hai perso!  \nHai superato il tempo limite di {timer} minuti!  \n"
+		str_lost = f"Hai perso!  \nHai superato il tempo limite di {timer} minuti!  \n\n"
+		str_lost += self.get_report_game()
+		
 		self.create_alert_box(str_lost, "Tempo scaduto")
 		self.create_yes_or_no_box("Vuoi giocare ancora?", "Rivincita?")
 		if self.answare:
@@ -794,10 +902,16 @@ class EngineSolitario(EngineData):
 
 	def you_winner(self):
 		""" metodo che viene chiamato quando il giocatore vince """
-
-		self.stop_game()
+		
+		# PRIMA genera il report (mentre i dati sono ancora disponibili)
 		str_win = f"Hai Vinto!  \nComplimenti, vittoria spumeggiante!  \n\n"
+		
+		# stop_game() salverà le statistiche e poi resetterà i contatori
+		self.stop_game()
+		
+		# Ora usa get_report_game() che leggerà le statistiche salvate
 		str_win += self.get_report_game()
+		
 		self.create_alert_box(str_win, "Congratulazioni")
 		self.create_yes_or_no_box("Vuoi giocare ancora?", "Rivincita?")
 		if self.answare:

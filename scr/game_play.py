@@ -58,8 +58,9 @@ class GamePlay(DialogBox):
 	#@@# sezione comandi utente
 
 	def f1_press(self):
-		stri = ""
-		if pygame.key.get_mods() and KMOD_CTRL:
+		# F1 = cambio mazzo (principale)
+		# CTRL+F1 = test vittoria (secondario)
+		if pygame.key.get_mods() & KMOD_CTRL:
 			string = self.engine.test_vittoria()
 		else:
 			string = self.engine.change_deck_type()
@@ -70,8 +71,8 @@ class GamePlay(DialogBox):
 		self.vocalizza(string)
 
 	def f3_press(self):
-		if pygame.key.get_mods() and KMOD_CTRL:
-			self.engine.disable_timer()
+		if pygame.key.get_mods() & KMOD_CTRL:
+			string = self.engine.disable_timer()
 		else:
 			string = self.engine.change_game_time()
 
@@ -106,7 +107,7 @@ class GamePlay(DialogBox):
 			self.vocalizza(string)
 
 	def enter_press(self):
-		if pygame.key.get_mods() and KMOD_CTRL:
+		if pygame.key.get_mods() & KMOD_CTRL:
 			string = self.engine.select_scarto()
 		else:
 			string = self.engine.select_card()
@@ -226,6 +227,47 @@ class GamePlay(DialogBox):
 		string = self.engine.get_info_carta()
 		self.vocalizza(string)
 
+	def h_press(self):
+		"""Mostra aiuto comandi disponibili"""
+		help_text = """COMANDI DI GIOCO:
+
+NAVIGAZIONE:
+- Frecce SU/GIÙ: muovi cursore nella pila
+- Frecce SINISTRA/DESTRA: cambia pila
+- TAB: salta a tipo di pila diverso
+- Numeri 1-7: vai alla pila base corrispondente
+
+AZIONI:
+- INVIO: seleziona carta sotto il cursore
+- CTRL+INVIO: seleziona carta dagli scarti
+- SPAZIO: sposta le carte selezionate
+- CANC: annulla selezione
+- D o P: pesca dal mazzo
+
+INFORMAZIONI:
+- F: posizione cursore attuale
+- G: stato tavolo completo
+- R: report partita (tempo, mosse, rimischiate)
+- T: tempo rimanente
+- X: dettagli carta sotto cursore
+- S: ultima carta negli scarti
+- M: numero carte nel mazzo
+- C: carte selezionate
+- H: questo aiuto
+
+IMPOSTAZIONI:
+- N: nuova partita
+- O: apri/chiudi opzioni
+- F1: cambia tipo mazzo (francesi/napoletane)
+- F2: cambia difficoltà (1-3)
+- F3: cambia tempo limite
+- CTRL+F3: disabilita timer
+- ESC: abbandona partita / esci dal gioco
+
+DEBUG:
+- CTRL+F1: simula vittoria (test)"""
+		self.create_alert_box(help_text, "Aiuto Comandi")
+
 	def esc_press(self):
 		if self.engine.is_game_running:
 			self.create_yes_or_no_box("Sei sicuro di voler abbandonare la partita?", "Abbandonare la partita??")
@@ -285,6 +327,7 @@ class GamePlay(DialogBox):
 			pygame.K_s: self.s_press,
 			pygame.K_t: self.t_press,
 			pygame.K_x: self.x_press,
+			pygame.K_h: self.h_press,
 			pygame.K_F1: self.f1_press,
 			pygame.K_F2: self.f2_press,
 			pygame.K_F3: self.f3_press,
