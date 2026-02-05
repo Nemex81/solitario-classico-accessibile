@@ -45,6 +45,12 @@ class EngineData(DialogBox):
 		self.fps = 60 # imposto il numero di frame per secondo
 		self.start_ticks = 0 # inizializzo il contatore dei secondi
 
+		# Statistiche finali dell'ultima partita completata
+		self.final_time_elapsed = 0  # tempo trascorso in secondi
+		self.final_mosse = 0  # numero di spostamenti
+		self.final_rimischiate = 0  # numero di rimischiate
+		self.final_difficulty = 1  # livello di difficoltà della partita
+
 
 class EngineSolitario(EngineData):
 	""" Classe per la gestione delle regole del gioco del solitario """
