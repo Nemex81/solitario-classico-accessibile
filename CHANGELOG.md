@@ -5,6 +5,42 @@ Tutte le modifiche rilevanti a questo progetto saranno documentate in questo fil
 Il formato è basato su [Keep a Changelog](https://keepachangelog.com/it/1.0.0/),
 e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.2.0] - 2026-02-05
+
+### 🐛 Bug Fix
+- **Fix F3 timer decrement**: F3 ora decrementa correttamente il timer di 5 minuti (simmetrico a F4)
+  - `change_game_time()` ora accetta parametro `increment` (True/False)
+  - F3 decrementa (-5 min), F4 incrementa (+5 min)
+  - Limiti: minimo 5 minuti, massimo 60 minuti
+  - Al minimo, decrementare disabilita il timer
+
+### ✨ Nuove Funzionalità
+- **F5: Toggle modalità riciclo scarti**
+  - Due modalità disponibili per riciclo scarti quando il mazzo finisce:
+    - **INVERSIONE SEMPLICE** (default): comportamento originale - le carte vengono invertite
+    - **MESCOLATA CASUALE** (nuova): le carte vengono mischiate casualmente
+  - F5 alterna tra le due modalità (solo con opzioni aperte, tasto O)
+  - Feedback vocale chiaro per entrambe le modalità
+  - Modalità si resetta a default (inversione) ad ogni nuova partita
+  - Non modificabile durante partita in corso
+
+- **I: Visualizza impostazioni correnti**
+  - Nuovo comando `I` per leggere le impostazioni di gioco:
+    - Livello di difficoltà
+    - Stato timer (attivo/disattivato e durata)
+    - Modalità riciclo scarti (inversione/mescolata)
+
+### 🎨 Miglioramenti UX
+- Messaggi vocali distinti per inversione vs mescolata durante riciclo
+- Report completo impostazioni con `get_settings_info()`
+
+### 🔧 Modifiche Tecniche
+- Aggiunto flag `shuffle_discards` in `EngineData.__init__()`
+- Nuovo metodo `toggle_shuffle_mode()` per alternare modalità
+- Nuovo metodo `get_shuffle_mode_status()` per query stato
+- `riordina_scarti(shuffle_mode=False)` ora supporta entrambe le modalità
+- Import `random` in `game_table.py` per shuffle casuale
+
 ## [1.1.0] - 2026-02-05
 
 ### 🐛 Correzioni Critiche

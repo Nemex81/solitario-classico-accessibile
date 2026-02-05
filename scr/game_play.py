@@ -258,6 +258,7 @@ INFORMAZIONI:
 - S: ultima carta negli scarti
 - M: numero carte nel mazzo
 - C: carte selezionate
+- I: visualizza impostazioni correnti
 - H: questo aiuto
 
 IMPOSTAZIONI:
@@ -265,7 +266,9 @@ IMPOSTAZIONI:
 - O: apri/chiudi opzioni
 - F1: cambia tipo mazzo (francesi/napoletane)
 - F2: cambia difficoltà (1-3)
-- F3: cambia tempo limite
+- F3: decrementa tempo limite (-5 min)
+- F4: incrementa tempo limite (+5 min)
+- F5: alterna modalità riciclo scarti (inversione/mescolata)
 - CTRL+F3: disabilita timer
 - ESC: abbandona partita / esci dal gioco
 

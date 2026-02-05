@@ -62,6 +62,51 @@ print(controller.get_current_state_formatted())
 | `recycle` | Rimescola gli scarti nel mazzo |
 | `move_to_foundation` | Sposta una carta alla base |
 
+### ⌨️ Comandi Tastiera (Versione Legacy `scr/`)
+
+#### Navigazione
+- **Frecce SU/GIÙ**: Muovi cursore nella pila
+- **Frecce SINISTRA/DESTRA**: Cambia pila
+- **TAB**: Salta a tipo di pila diverso
+- **Numeri 1-7**: Vai alla pila base corrispondente
+
+#### Azioni di Gioco
+- **INVIO**: Seleziona carta sotto il cursore
+- **CTRL+INVIO**: Seleziona carta dagli scarti
+- **SPAZIO**: Sposta le carte selezionate
+- **CANC**: Annulla selezione
+- **D** o **P**: Pesca dal mazzo
+
+#### Informazioni
+- **F**: Posizione cursore attuale
+- **G**: Stato tavolo completo
+- **R**: Report partita (tempo, mosse, rimischiate)
+- **T**: Tempo rimanente
+- **X**: Dettagli carta sotto cursore
+- **S**: Ultima carta negli scarti
+- **M**: Numero carte nel mazzo
+- **C**: Carte selezionate
+- **I**: Visualizza impostazioni correnti
+- **H**: Aiuto comandi
+
+#### Impostazioni
+- **N**: Nuova partita
+- **O**: Apri/chiudi opzioni
+- **F1**: Cambia tipo mazzo (francesi/napoletane)
+- **F2**: Cambia difficoltà (1-3)
+- **F3**: Decrementa tempo limite (-5 min, min 5 min)
+- **F4**: Incrementa tempo limite (+5 min, max 60 min)
+- **F5**: Alterna modalità riciclo scarti (inversione/mescolata)
+- **CTRL+F3**: Disabilita timer
+- **ESC**: Abbandona partita / Esci dal gioco
+
+#### Modalità Riciclo Scarti
+Quando il mazzo finisce, le carte degli scarti vengono riciclate. Puoi scegliere tra:
+- **INVERSIONE SEMPLICE** (default): Le carte vengono invertite (comportamento prevedibile)
+- **MESCOLATA CASUALE**: Le carte vengono mischiate casualmente (maggiore varietà)
+
+Usa **F5** per alternare tra le due modalità (solo con opzioni aperte, tasto **O**).
+
 ## 🏗️ Architettura
 
 Il progetto segue una **Clean Architecture** con quattro livelli:
