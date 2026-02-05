@@ -525,11 +525,15 @@ class EngineSolitario(EngineData):
 
 	def disable_timer(self):
 		""" disabilitiamo il timer """
-
+		
 		if not self.is_game_running and self.change_settings:
 			self.max_time_game = -1
-		#self.create_alert_box("il timer è stato disattivato!  \n", "disattivazione del timer")
 			return "il timer è stato disattivato!  \n"
+		
+		if self.is_game_running:
+			return "Non puoi disabilitare il timer durante una partita!  \n"
+		else:
+			return "Devi prima aprire le opzioni con il tasto O!  \n"
 
 	def change_time_over(self):
 		""" permette di personalizzare il tempo limite per il tempo di gioco """
