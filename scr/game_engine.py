@@ -55,20 +55,33 @@ class EngineSolitario(EngineData):
 		super().__init__(tavolo)
 
 	def validate_cursor_position(self):
-		"""Valida e corregge automaticamente la posizione del cursore se non è valida"""
+		"""Valida e corregge automaticamente la posizione del cursore se non è valida
+		
+		Effetti collaterali:
+		- Modifica self.cursor_pos[0] e self.cursor_pos[1] in place
+		- Se la colonna non è valida, viene impostata a 0
+		- Se la riga non è valida, viene corretta al valore valido più vicino
+		- Per pile vuote, la riga viene impostata a 0
+		"""
 		# Valida colonna
 		col = self.cursor_pos[1]
 		if col < 0 or col >= len(self.tavolo.pile):
+			logger.warning(f"Colonna cursore non valida corretta: {col} -> 0")
 			self.cursor_pos[1] = 0
 			col = 0
 		
 		# Valida riga
 		pila = self.tavolo.pile[col]
 		if pila.is_empty_pile():
-			self.cursor_pos[0] = 0
+			if self.cursor_pos[0] != 0:
+				logger.debug(f"Riga cursore su pila vuota corretta: {self.cursor_pos[0]} -> 0")
+				self.cursor_pos[0] = 0
 		elif self.cursor_pos[0] >= len(pila.carte):
+			old_row = self.cursor_pos[0]
 			self.cursor_pos[0] = len(pila.carte) - 1
+			logger.warning(f"Riga cursore oltre limite corretta: {old_row} -> {self.cursor_pos[0]}")
 		elif self.cursor_pos[0] < 0:
+			logger.warning(f"Riga cursore negativa corretta: {self.cursor_pos[0]} -> 0")
 			self.cursor_pos[0] = 0
 
 	def test_set_time_out(self):
@@ -214,9 +227,7 @@ class EngineSolitario(EngineData):
 		return string
 
 	def get_string_riga(self):
-		# VALIDAZIONE CURSORE
 		self.validate_cursor_position()
-
 		row, col = self.cursor_pos
 		current_card = self.tavolo.get_card_position(row, col)
 		if not current_card:
@@ -227,9 +238,7 @@ class EngineSolitario(EngineData):
 
 	def get_focus(self):
 		# vocalizziamo la posizione del cursore di navigazione
-		# VALIDAZIONE CURSORE
 		self.validate_cursor_position()
-
 		row, col = self.cursor_pos
 		pila = self.tavolo.pile[col]
 		if pila.is_empty_pile():
@@ -706,9 +715,7 @@ class EngineSolitario(EngineData):
 		if self.selected_card:
 			return "Hai già selezionato le carte da spostare!  premi canc per annullare la selezione.\n"
 
-		# VALIDAZIONE CURSORE
 		self.validate_cursor_position()
-
 		row , col = self.cursor_pos
 		pile = self.tavolo.pile[col]
 		if pile.is_empty_pile():
