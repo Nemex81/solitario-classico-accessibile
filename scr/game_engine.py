@@ -572,26 +572,40 @@ class EngineSolitario(EngineData):
 		if not pila.is_pila_base():
 			return "non sei su una pila base.\n"
 
-		if pila.is_empty_pile():# and self.cursor_pos[0] == 0:
+		if pila.is_empty_pile():
+			self.cursor_pos[0] = 0
 			return "La pila è vuota!  \n"
+
+		# Valida prima l'indice corrente
+		if self.cursor_pos[0] >= len(pila.carte):
+			self.cursor_pos[0] = len(pila.carte) - 1
 
 		if self.cursor_pos[0] > 0:
 			self.cursor_pos[0] -= 1
 			speack =self.get_string_riga()
 			return speack
+		else:
+			return "Sei già alla prima carta della pila!\n"
 
 	def move_cursor_down(self):
 		pila = self.tavolo.pile[self.cursor_pos[1]]
 		if not pila.is_pila_base():
 			return "non sei su una pila base.\n"
 
-		if pila.is_empty_pile():# and self.cursor_pos[0] == 0:
+		if pila.is_empty_pile():
+			self.cursor_pos[0] = 0
 			return "La pila è vuota!  \n"
+
+		# Valida prima l'indice corrente
+		if self.cursor_pos[0] >= len(pila.carte):
+			self.cursor_pos[0] = len(pila.carte) - 1
 
 		if self.cursor_pos[0] < len(pila.carte) - 1:
 			self.cursor_pos[0] += 1
 			speack = self.get_string_riga()
 			return speack
+		else:
+			return "Sei già all'ultima carta della pila!\n"
 
 	def move_cursor_left(self):
 		pile = self.tavolo.pile
@@ -794,9 +808,13 @@ class EngineSolitario(EngineData):
 				if ver_win:
 					string += ver_win
 
-		# aggiorno la posizione del cursore
+		# CORREZIONE: Aggiorno la posizione del cursore con validazione
 		self.cursor_pos[1] = self.dest_pile.id
-		self.cursor_pos[0] = self.dest_pile.get_last_card_index()
+		if not self.dest_pile.is_empty_pile():
+			self.cursor_pos[0] = self.dest_pile.get_last_card_index()
+		else:
+			self.cursor_pos[0] = 0
+
 		self.reset_data_moving() # resettiamo anche i dati di spostamento
 		return string
 
