@@ -103,6 +103,18 @@ class ProtoDeck:
 		if len(self.cards) == 0:
 			return True
 
+	def is_king(self, card):
+		""" 
+		Verifica se la carta è un Re indipendentemente dal tipo di mazzo.
+		Funziona confrontando il valore numerico con il valore del Re per questo mazzo.
+		
+		Returns:
+			bool: True se la carta è un Re, False altrimenti
+		"""
+		# Il Re è sempre nell'array FIGURE_VALUES con chiave "Re"
+		king_value = self.FIGURE_VALUES.get("Re")
+		return card.get_value == king_value
+
 	def reset(self):
 		""" Resetta il mazzo """
 		self.cards = []
