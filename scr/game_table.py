@@ -189,21 +189,19 @@ class TavoloSolitario:
 		else:
 			card = select_card[-1]
 
-		if card.get_value > 1 and not dest_pila.is_empty_pile():
-			if card.get_color == dest_pila.carte[-1].get_color :
+		# Verifica su pila vuota: solo il Re può essere posizionato
+		if dest_pila.is_empty_pile():
+			return self.mazzo.is_king(card)
+
+		# Verifica su pila non vuota: colore diverso e valore decrescente
+		if card.get_value > 1:
+			if card.get_color == dest_pila.carte[-1].get_color:
 				return False
 
-		elif card.get_value < 13 and dest_pila.is_empty_pile():
+		dest_card = dest_pila.carte[-1]
+		dest_value = dest_card.get_value - 1
+		if card.get_value != dest_value:
 			return False
-
-		elif card.get_value == 13 and dest_pila.is_empty_pile():
-			return True
-
-		if not dest_pila.is_empty_pile():
-			dest_card = dest_pila.carte[-1]
-			dest_value = dest_card.get_value - 1
-			if card.get_value != dest_value:
-				return False
 
 		return True
 

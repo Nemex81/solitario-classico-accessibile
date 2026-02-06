@@ -15,17 +15,35 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 - Problema: Con mazzo napoletano (40 carte) tentava di distribuire 28+24=52 carte ma ne aveva solo 40
 - Soluzione: Calcolo dinamico `carte_rimanenti = self.mazzo.get_total_cards() - 28`
 
+**Fix Spostamento Re Napoletano in Pila Vuota**
+- Risolto bug critico: Re napoletano (valore 10) bloccato su pile vuote con messaggio "mossa non consentita"
+- Causa: `put_to_base()` aveva check hardcoded `card.get_value == 13` per permettere spostamento in pila vuota
+- Problema: Funzionava solo con Re francese (13), bloccava Re napoletano (valore 10)
+- Soluzione: Aggiunto metodo semantico `is_king()` in `ProtoDeck` che verifica se carta è un Re indipendentemente dal valore numerico
+- Impatto gameplay: Scenario bloccante eliminato - ora è possibile spostare Re napoletano per scoprire carte sottostanti
+
 ### 🔧 Modifiche Tecniche
 
 **File: `scr/game_table.py`**
 - `distribuisci_carte()`: rimosso hardcoded `range(24)`, ora usa `range(carte_rimanenti)`
 - Calcolo dinamico carte rimanenti: 24 per mazzo francese, 12 per mazzo napoletano
 - Aggiunti commenti esplicativi per il calcolo dinamico
+- `put_to_base()`: sostituito check `card.get_value == 13` con `self.mazzo.is_king(card)`
+- Logica semplificata con early return per pila vuota
+- Codice più leggibile e manutenibile
+
+**File: `scr/decks.py`**
+- Aggiunto metodo `is_king(card)` in classe `ProtoDeck`
+- Verifica semantica: confronta valore carta con `FIGURE_VALUES["Re"]` del mazzo
+- Funziona correttamente per entrambi i mazzi:
+  - FrenchDeck: `Re = 13` ✅
+  - NeapolitanDeck: `Re = 10` ✅
+- Gestione sicura con check `king_value is None`
 
 ### 🧪 Testing
 
 **Nuovo file test: `tests/unit/scr/test_distribuisci_carte_deck_switching.py`**
-- 6 test completi per verificare il fix:
+- 6 test completi per verificare il fix distribuzione carte:
   - `test_distribuisci_carte_french_deck`: verifica 24 carte riserve
   - `test_distribuisci_carte_neapolitan_deck`: verifica 12 carte riserve
   - `test_cambio_mazzo_french_to_neapolitan`: test F1 francese→napoletano
@@ -33,21 +51,32 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
   - `test_cambio_mazzo_multiplo`: test cambi multipli consecutivi
   - `test_no_index_error_on_neapolitan_deck`: test regressione per IndexError
 
+**Nuovo file test: `tests/unit/scr/test_king_to_empty_base_pile.py`**
+- 14 test completi per verificare il fix spostamento Re:
+  - 6 test per `is_king()`: verifica riconoscimento Re per entrambi i mazzi
+  - 5 test per spostamento Re in pile vuote: francese, napoletano, blocco figure non-Re
+  - 3 test di regressione: mosse normali su pile non vuote, stesso colore bloccato, valore scorretto bloccato
+
 ### 📊 Impatto
 
-**Prima del fix:**
+**Prima dei fix:**
 - ❌ F1 con mazzo napoletano → crash immediato
+- ❌ Re napoletano bloccato in pile vuote → gameplay impossibile
 - ❌ Impossibile usare la feature mazzo napoletano della v1.3.2
 
-**Dopo il fix:**
+**Dopo i fix:**
 - ✅ F1 funziona correttamente con entrambi i mazzi
 - ✅ Distribuzione dinamica: 24 carte (francese) o 12 carte (napoletano) nel mazzo riserve
+- ✅ Re napoletano (10) e Re francese (13) entrambi funzionanti in pile vuote
+- ✅ Regina/Cavallo napoletani (8, 9) correttamente bloccati in pile vuote
 - ✅ Cambio mazzo fluido senza crash
+- ✅ Mazzo napoletano completamente giocabile
 
 ### ✅ Backward Compatibility
 
 - Zero breaking changes
 - Mazzo francese continua a funzionare esattamente come prima
+- Tutte le mosse esistenti su pile non vuote invariate
 - Fix non altera nessuna altra funzionalità
 
 ## [1.3.2] - 2026-02-06
