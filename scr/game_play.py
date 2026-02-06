@@ -106,6 +106,16 @@ class GamePlay(DialogBox):
 		if string:
 			self.vocalizza(string)
 
+	def home_press(self):
+		"""Handler per tasto HOME: vai a prima carta pila corrente"""
+		string = self.engine.move_cursor_to_first()
+		self.vocalizza(string)
+
+	def end_press(self):
+		"""Handler per tasto END: vai a ultima carta pila corrente"""
+		string = self.engine.move_cursor_to_last()
+		self.vocalizza(string)
+
 	def enter_press(self):
 		if pygame.key.get_mods() & KMOD_CTRL:
 			string = self.engine.select_scarto()
@@ -389,6 +399,8 @@ DEBUG:
 			pygame.K_RIGHT: self.right_press,
 			pygame.K_UP: self.up_press,
 			pygame.K_DOWN: self.down_press,
+			pygame.K_HOME: self.home_press,
+			pygame.K_END: self.end_press,
 			pygame.K_RETURN: self.enter_press,
 			pygame.K_SPACE: self.space_press,
 			pygame.K_TAB: self.tab_press,
