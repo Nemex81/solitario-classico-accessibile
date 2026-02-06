@@ -865,6 +865,87 @@ class EngineSolitario(EngineData):
 		else:
 			return "Questa pila non è consultabile con le frecce.\n"
 
+	def move_cursor_to_first(self):
+		"""Sposta il cursore alla prima carta della pila corrente (tasto HOME).
+		
+		Supportato su:
+		- Pile base (0-6)
+		- Pila scarti (11)
+		
+		Bloccato su:
+		- Pile semi (7-10) - usa SHIFT+(1-4) per accesso rapido
+		- Mazzo (12) - non consultabile
+		
+		Returns:
+			str: Messaggio vocale per screen reader
+		"""
+		self.last_quick_move_pile = None
+		col = self.cursor_pos[1]
+		pila = self.tavolo.pile[col]
+		
+		# Pile base e scarti: supportate
+		if pila.is_pila_base() or col == 11:
+			if pila.is_empty_pile():
+				return "La pila è vuota!\n"
+			
+			self.cursor_pos[0] = 0
+			carta = pila.carte[0]
+			
+			if col == 11:  # Scarti
+				totale = len(pila.carte)
+				return f"1 di {totale}: {carta.get_name} Prima carta.\n"
+			else:  # Pila base
+				return f"1: {carta.get_name} Prima carta.\n"
+		
+		# Mazzo: non consultabile
+		elif col == 12:
+			return "Il mazzo non è consultabile.\n"
+		
+		# Pile semi: suggerisci alternativa
+		else:
+			return "Pile semi non consultabili. Usa SHIFT+(1-4) per accesso rapido.\n"
+
+	def move_cursor_to_last(self):
+		"""Sposta il cursore all'ultima carta della pila corrente (tasto END).
+		
+		Supportato su:
+		- Pile base (0-6)
+		- Pila scarti (11)
+		
+		Bloccato su:
+		- Pile semi (7-10) - usa SHIFT+(1-4) per accesso rapido
+		- Mazzo (12) - non consultabile
+		
+		Returns:
+			str: Messaggio vocale per screen reader
+		"""
+		self.last_quick_move_pile = None
+		col = self.cursor_pos[1]
+		pila = self.tavolo.pile[col]
+		
+		# Pile base e scarti: supportate
+		if pila.is_pila_base() or col == 11:
+			if pila.is_empty_pile():
+				return "La pila è vuota!\n"
+			
+			self.cursor_pos[0] = len(pila.carte) - 1
+			carta = pila.carte[-1]
+			
+			if col == 11:  # Scarti
+				totale = len(pila.carte)
+				hint = " Premi CTRL+INVIO per selezionare." if totale > 0 else ""
+				return f"{totale} di {totale}: {carta.get_name} Ultima carta.{hint}\n"
+			else:  # Pila base
+				return f"{len(pila.carte)}: {carta.get_name} Ultima carta.\n"
+		
+		# Mazzo: non consultabile
+		elif col == 12:
+			return "Il mazzo non è consultabile.\n"
+		
+		# Pile semi: suggerisci alternativa
+		else:
+			return "Pile semi non consultabili. Usa SHIFT+(1-4) per accesso rapido.\n"
+
 	def move_cursor_left(self):
 		self.last_quick_move_pile = None  # Reset tracking on manual movement
 		pile = self.tavolo.pile
