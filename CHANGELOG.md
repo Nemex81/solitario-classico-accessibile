@@ -5,6 +5,66 @@ Tutte le modifiche rilevanti a questo progetto saranno documentate in questo fil
 Il formato è basato su [Keep a Changelog](https://keepachangelog.com/it/1.0.0/),
 e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.3.2] - 2026-02-06
+
+### ✨ Nuove Funzionalità
+
+**Supporto Autentico Mazzo Napoletano (40 carte)**
+- Implementato mazzo napoletano autentico da 40 carte (4 semi × 10 valori)
+- Valori corretti: Asso, 2-7, Regina, Cavallo, Re (eliminati 8, 9, 10)
+- Figure napoletane con valori autentici: Regina=8, Cavallo=9, Re=10
+- Compatibilità: entrambi i mazzi (francese 52, napoletano 40) coesistono
+
+### 🐛 Bug Fix Critici
+
+**Fix Verifica Vittoria**
+- Risolto bug critico: il controllo vittoria ora verifica TUTTE e 4 le pile semi
+- Prima: `range(7, 10)` controllava solo 3 pile, ignorando la pila 10
+- Dopo: `range(7, 11)` controlla correttamente tutte le pile (7, 8, 9, 10)
+- Vittoria ora dinamica: 13 carte/seme (francese) o 10 carte/seme (napoletano)
+
+### 🎨 Miglioramenti
+
+**Statistiche Dinamiche**
+- Le statistiche si adattano automaticamente al tipo di mazzo in uso
+- Nomi semi dinamici: Cuori/Quadri/Fiori/Picche o Bastoni/Coppe/Denari/Spade
+- Conteggi corretti: "X su 10 carte" (napoletano) o "X su 13 carte" (francese)
+- Percentuali di completamento accurate: base 40 o 52 carte
+
+### 🔧 Modifiche Tecniche
+
+**File: `scr/decks.py`**
+- `NeapolitanDeck.VALUES`: rimossi 8, 9, 10 → array da 10 elementi
+- `NeapolitanDeck.FIGURE_VALUES`: Regina=8, Cavallo=9, Re=10 (era 11, 12, 13)
+- Aggiunto `get_total_cards()` a entrambe le classi (40 per napoletano, 52 per francese)
+
+**File: `scr/game_table.py`**
+- `verifica_vittoria()`: fix range + controllo dinamico `len(self.mazzo.VALUES)`
+- Documentazione inline dettagliata
+
+**File: `scr/game_engine.py`**
+- `aggiorna_statistiche_semi()`: logica dinamica per entrambi i mazzi
+- `get_statistiche_semi()`: nomi e conteggi dinamici
+- `get_report_game()`: percentuali calcolate su base corretta (40 o 52)
+
+### 📊 Impatto
+
+**Mazzo Napoletano:**
+- Totale carte: 52 → 40
+- Carte nelle pile base: 28 (invariato)
+- Carte nel mazzo riserve: 24 → 12
+- Vittoria richiede: 40 carte nelle pile semi (10 per seme)
+
+**Mazzo Francese:**
+- Nessuna modifica (52 carte, 13 per seme)
+- Comportamento invariato
+
+### ✅ Backward Compatibility
+
+- Zero breaking changes
+- Entrambi i mazzi funzionano correttamente
+- Tutte le funzionalità esistenti preservate
+
 ## [1.3.1] - 2026-02-06
 
 ### 🐛 Bug Fix
@@ -388,6 +448,9 @@ Questo progetto segue il [Semantic Versioning](https://semver.org/lang/it/):
 - ✅ **Tests**: Aggiunte o modifiche ai test
 - 📚 **Documentation**: Modifiche alla documentazione
 
+[1.3.2]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v1.3.1...v1.3.2
+[1.3.1]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v1.3.0...v1.3.1
+[1.3.0]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Nemex81/solitario-classico-accessibile/releases/tag/v1.0.0

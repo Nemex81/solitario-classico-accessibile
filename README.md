@@ -7,7 +7,9 @@ Un gioco di carte Solitario (Klondike) in versione accessibile per non vedenti, 
 - **Accessibilità completa**: Supporto per screen reader con output testuale dettagliato
 - **Navigazione intuitiva**: Sistema di cursore per navigare tra le pile di carte
 - **Feedback vocale**: Descrizioni in italiano di ogni azione e stato del gioco
-- **Due mazzi supportati**: Mazzo francese (♥♦♣♠) e mazzo napoletano (🍷🪙🗡️🏑)
+- **Due mazzi supportati**: 
+  - **Mazzo francese** (♥♦♣♠) - 52 carte: Asso, 2-10, Jack, Regina, Re per ogni seme
+  - **Mazzo napoletano** (🍷🪙🗡️🏑) - 40 carte autentiche: Asso, 2-7, Regina (8), Cavallo (9), Re (10) per ogni seme
 - **Undo/Redo**: Possibilità di annullare e ripetere le mosse
 - **Architettura modulare**: Design pulito con separazione dei livelli
 
@@ -181,6 +183,25 @@ Quando il mazzo finisce, le carte degli scarti vengono riciclate automaticamente
 **Verifica modalità attiva**: Premi **I** per visualizzare le impostazioni correnti
 
 **🎯 Auto-Draw**: Dopo ogni rimescolamento degli scarti, viene pescata automaticamente una carta dal mazzo. Non è necessario premere nuovamente D o P per continuare a giocare.
+
+### 🃏 Mazzi di Carte
+
+Il gioco supporta due tipi di mazzo con regole di vittoria automaticamente adattate:
+
+#### Mazzo Francese (52 carte)
+- **Semi**: Cuori (♥), Quadri (♦), Fiori (♣), Picche (♠)
+- **Valori**: Asso, 2, 3, 4, 5, 6, 7, 8, 9, 10, Jack (11), Regina (12), Re (13)
+- **Vittoria**: 13 carte per seme (52 totali nelle pile semi)
+
+#### Mazzo Napoletano (40 carte)
+- **Semi**: Bastoni (🏑), Coppe (🍷), Denari (🪙), Spade (🗡️)
+- **Valori**: Asso (1), 2, 3, 4, 5, 6, 7, Regina (8), Cavallo (9), Re (10)
+- **Caratteristiche autentiche**: 
+  - Eliminate le carte 8, 9, 10 numeriche
+  - Figure con valori sequenziali dopo il 7
+  - Vittoria: 10 carte per seme (40 totali nelle pile semi)
+
+**Cambio mazzo**: Premi **F1** nel menu opzioni per alternare tra i due mazzi.
 
 ## 🏗️ Architettura
 
