@@ -115,13 +115,17 @@ class NeapolitanDeck(ProtoDeck):
 
 	# costanti
 	SUITES = ["bastoni", "coppe", "denari", "spade"]
-	VALUES = ["Asso", "2", "3", "4", "5", "6", "7", "8", "9", "10", "regina", "cavallo", "Re"]
-	FIGURE_VALUES = {"regina": 11, "cavallo": 12, "Re": 13, "Asso" : 1}
+	VALUES = ["Asso", "2", "3", "4", "5", "6", "7", "Regina", "Cavallo", "Re"]
+	FIGURE_VALUES = {"Regina": 8, "Cavallo": 9, "Re": 10, "Asso": 1}
 
 	def __init__(self):
 		self.tipo = "carte napoletane"
 		self.cards = []
 		self.reset()
+
+	def get_total_cards(self):
+		""" Restituisce il numero totale di carte nel mazzo completo """
+		return len(self.SUITES) * len(self.VALUES)  # 4 * 10 = 40
 
 	def crea(self):
 		""" Crea il mazzo di carte """
@@ -133,7 +137,7 @@ class NeapolitanDeck(ProtoDeck):
 			for valore in valori:
 				carta = Card(valore, seme)
 				carta.set_name(f"{valore} di {seme}")
-				if valore in ["regina", "cavallo", "Re", "Asso"]:
+				if valore in ["Regina", "Cavallo", "Re", "Asso"]:
 					carta.set_int_value(int(self.FIGURE_VALUES[valore]))
 				else:
 					carta.set_int_value(int(valore))
@@ -159,6 +163,10 @@ class FrenchDeck(ProtoDeck):
 		self.tipo = "carte francesi"
 		self.cards = []  # lista delle carte nel mazzo
 		self.reset()
+
+	def get_total_cards(self):
+		""" Restituisce il numero totale di carte nel mazzo completo """
+		return len(self.SUITES) * len(self.VALUES)  # 4 * 13 = 52
 
 	def crea(self):
 		""" Crea il mazzo di carte """

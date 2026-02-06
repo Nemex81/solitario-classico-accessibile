@@ -242,11 +242,20 @@ class TavoloSolitario:
 		return False
 
 	def verifica_vittoria(self):
-		# verificare la vittoria controllando che le 4 pile  semi siano composte da 13 carte
-		for i in range(7, 10):
-			if len(self.pile[i].carte) != 13:
+		""" 
+		Verifica la vittoria controllando che tutte le 4 pile semi siano complete.
+		
+		Per il mazzo francese: 13 carte per seme
+		Per il mazzo napoletano: 10 carte per seme
+		"""
+		# Ottieni il numero di carte per seme dal mazzo in uso
+		carte_per_seme = len(self.mazzo.VALUES)  # 13 per francese, 10 per napoletano
+		
+		# Controlla tutte e 4 le pile semi (indici 7, 8, 9, 10)
+		for i in range(7, 11):  # FIX: era range(7, 10) che saltava la pila 10!
+			if len(self.pile[i].carte) != carte_per_seme:
 				return False
-			
+		
 		return True
 
 
