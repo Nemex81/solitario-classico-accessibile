@@ -65,8 +65,10 @@ print(controller.get_current_state_formatted())
 ### ⌨️ Comandi Tastiera (Versione Legacy `scr/`)
 
 #### Navigazione
-- **Frecce SU/GIÙ**: Muovi cursore nella pila
+- **Frecce SU/GIÙ**: Naviga carte nella pila (pile base, scarti)
 - **Frecce SINISTRA/DESTRA**: Cambia pila
+- **HOME**: Vai alla prima carta della pila corrente
+- **END**: Vai all'ultima carta della pila corrente
 - **TAB**: Salta a tipo di pila diverso
 - **Numeri 1-7**: Vai alla pila base + **doppio tocco seleziona** ✨ NUOVO
 - **SHIFT+1-4**: Vai alla pila semi (Cuori/Quadri/Fiori/Picche) + **doppio tocco seleziona** ✨ NUOVO

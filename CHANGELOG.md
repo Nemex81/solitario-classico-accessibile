@@ -5,6 +5,72 @@ Tutte le modifiche rilevanti a questo progetto saranno documentate in questo fil
 Il formato è basato su [Keep a Changelog](https://keepachangelog.com/it/1.0.0/),
 e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.3.1] - 2026-02-06
+
+### 🐛 Bug Fix
+
+**Navigazione Frecce su Pila Scarti**
+- Risolto: Frecce SU/GIÙ ora funzionano correttamente sulla pila scarti
+- Prima: Messaggio "non sei su una pila base" bloccava navigazione
+- Dopo: Tutte le carte scoperte negli scarti sono consultabili
+- Feedback vocale: "N di M: [Nome carta]" con posizione chiara
+- Hint "Premi CTRL+INVIO per selezionare" solo su ultima carta
+
+### ✨ Nuove Funzionalità
+
+**Comandi HOME e END per Navigazione Rapida**
+- **HOME**: Salta alla prima carta della pila corrente
+- **END**: Salta all'ultima carta della pila corrente
+- Supporto per pile base (0-6) e pila scarti (11)
+- Messaggi informativi per pile non consultabili (semi, mazzo)
+- Utile per pile con molte carte (navigazione veloce)
+
+### 🎨 Miglioramenti UX
+
+**Feedback Vocale Posizionale**
+- Navigazione scarti mostra posizione "N di M"
+- Esempio: "5 di 12: Fante di Cuori"
+- HOME/END confermano con "Prima carta" / "Ultima carta"
+- Messaggi chiari e concisi per screen reader
+
+**Gestione Edge Cases**
+- Scarti vuoti: messaggio chiaro "Scarti vuoti, nessuna carta da consultare"
+- Pile semi/mazzo: suggerimenti alternativi (SHIFT+1-4, SHIFT+M)
+- Validazione automatica bounds cursor_pos[0]
+
+### 🔧 Modifiche Tecniche
+
+**File: `scr/game_engine.py`**
+- Refactoring `move_cursor_up()`: supporto pila scarti (col == 11)
+- Refactoring `move_cursor_down()`: supporto pila scarti
+- Nuovo metodo `move_cursor_to_first()`: implementa comando HOME
+- Nuovo metodo `move_cursor_to_last()`: implementa comando END
+- Logica unificata con feedback posizionale per scarti
+
+**File: `scr/game_play.py`**
+- Nuovi handler: `home_press()`, `end_press()`
+- Integrazione in `handle_keyboard_EVENTS()`: K_HOME, K_END
+- Aggiornato `h_press()` con documentazione nuovi comandi
+
+### ✅ Backward Compatibility
+
+**Zero breaking changes:**
+- ✅ Comportamento pile base invariato (solo refactoring interno)
+- ✅ Tutti i comandi esistenti funzionano come prima
+- ✅ Logica double-tap (v1.3.0) intatta
+- ✅ SHIFT shortcuts (v1.3.0) intatti
+
+### 📊 Test Coverage
+
+**Casi testati manualmente:**
+- ✅ Frecce SU/GIÙ su pile base (comportamento invariato)
+- ✅ Frecce SU/GIÙ su pila scarti con 10+ carte
+- ✅ HOME/END su pile base
+- ✅ HOME/END su pila scarti
+- ✅ Messaggi blocco per pile semi/mazzo
+- ✅ Edge cases: scarti vuoti, limiti navigazione
+- ✅ Feedback vocale posizionale chiaro
+
 ## [1.3.0] - 2026-02-06
 
 ### ✨ Nuove Funzionalità
