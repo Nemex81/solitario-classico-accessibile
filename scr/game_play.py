@@ -131,37 +131,37 @@ class GamePlay(DialogBox):
 			self.vocalizza(string)
 
 	def press_1(self):
-		string = self.engine.move_cursor("0")
+		string = self.engine.move_cursor_to_pile_with_select(0)
 		if string:
 			self.vocalizza(string)
 
 	def press_2(self):
-		string = self.engine.move_cursor("1")
+		string = self.engine.move_cursor_to_pile_with_select(1)
 		if string:
 			self.vocalizza(string)
 
 	def press_3(self):
-		string = self.engine.move_cursor("2")
+		string = self.engine.move_cursor_to_pile_with_select(2)
 		if string:
 			self.vocalizza(string)
 
 	def press_4(self):
-		string = self.engine.move_cursor("3")
+		string = self.engine.move_cursor_to_pile_with_select(3)
 		if string:
 			self.vocalizza(string)
 
 	def press_5(self):
-		string = self.engine.move_cursor("4")
+		string = self.engine.move_cursor_to_pile_with_select(4)
 		if string:
 			self.vocalizza(string)
 
 	def press_6(self):
-		string = self.engine.move_cursor("5")
+		string = self.engine.move_cursor_to_pile_with_select(5)
 		if string:
 			self.vocalizza(string)
 
 	def press_7(self):
-		string = self.engine.move_cursor("6")
+		string = self.engine.move_cursor_to_pile_with_select(6)
 		if string:
 			self.vocalizza(string)
 
@@ -240,14 +240,17 @@ NAVIGAZIONE:
 - Frecce SU/GIÙ: muovi cursore nella pila
 - Frecce SINISTRA/DESTRA: cambia pila
 - TAB: salta a tipo di pila diverso
-- Numeri 1-7: vai alla pila base corrispondente
+- Numeri 1-7: vai alla pila base + doppio tocco seleziona
+- SHIFT+1-4: vai alla pila semi (Cuori/Quadri/Fiori/Picche) + doppio tocco seleziona
+- SHIFT+S: sposta cursore su scarti
+- SHIFT+M: sposta cursore su mazzo
 
 AZIONI:
-- INVIO: seleziona carta sotto il cursore
+- INVIO: seleziona carta sotto cursore (su mazzo: pesca carte)
 - CTRL+INVIO: seleziona carta dagli scarti
 - SPAZIO: sposta le carte selezionate
 - CANC: annulla selezione
-- D o P: pesca dal mazzo
+- D o P: pesca dal mazzo (da qualunque posizione)
 
 INFORMAZIONI:
 - F: posizione cursore attuale
@@ -255,8 +258,8 @@ INFORMAZIONI:
 - R: report partita (tempo, mosse, rimischiate)
 - T: tempo rimanente
 - X: dettagli carta sotto cursore
-- S: ultima carta negli scarti
-- M: numero carte nel mazzo
+- S: ultima carta negli scarti (read-only)
+- M: numero carte nel mazzo (read-only)
 - C: carte selezionate
 - I: visualizza impostazioni correnti
 - H: questo aiuto
@@ -286,6 +289,46 @@ DEBUG:
 
 		else:
 			self.quit_app()
+
+	# NUOVI HANDLER: Pile Semi (SHIFT+1-4)
+
+	def shift_1_press(self):
+		"""SHIFT+1: Pila semi Cuori (indice 7)"""
+		string = self.engine.move_cursor_to_pile_with_select(7)
+		if string:
+			self.vocalizza(string)
+
+	def shift_2_press(self):
+		"""SHIFT+2: Pila semi Quadri (indice 8)"""
+		string = self.engine.move_cursor_to_pile_with_select(8)
+		if string:
+			self.vocalizza(string)
+
+	def shift_3_press(self):
+		"""SHIFT+3: Pila semi Fiori (indice 9)"""
+		string = self.engine.move_cursor_to_pile_with_select(9)
+		if string:
+			self.vocalizza(string)
+
+	def shift_4_press(self):
+		"""SHIFT+4: Pila semi Picche (indice 10)"""
+		string = self.engine.move_cursor_to_pile_with_select(10)
+		if string:
+			self.vocalizza(string)
+
+	# NUOVI HANDLER: Scarti e Mazzo (SHIFT+S, SHIFT+M)
+
+	def shift_s_press(self):
+		"""SHIFT+S: Sposta cursore su pila scarti (11)"""
+		string = self.engine.move_cursor_to_pile_with_select(11)
+		if string:
+			self.vocalizza(string)
+
+	def shift_m_press(self):
+		"""SHIFT+M: Sposta cursore su pila mazzo (12)"""
+		string = self.engine.move_cursor_to_pile_with_select(12)
+		if string:
+			self.vocalizza(string)
 
 	#@@# sezione metodi per verifiche di fine partita
 
@@ -354,14 +397,37 @@ DEBUG:
 		}
 
 	def handle_keyboard_EVENTS(self, event):
-		""" gestione eventi da tastiera """
-
-		# verifichiamo se è stato premuto un tasto di comando valido
+		"""gestione eventi da tastiera con supporto modificatori"""
+		
 		if event.type == pygame.KEYDOWN:
+			# Check modificatori
+			mods = pygame.key.get_mods()
+			
+			# --- SHIFT + 1/2/3/4/S/M (PRIORITÀ SU COMANDI NORMALI) ---
+			if mods & KMOD_SHIFT:
+				if event.key == pygame.K_1:
+					self.shift_1_press()
+					return  # IMPORTANTE: return per non eseguire press_1() normale
+				elif event.key == pygame.K_2:
+					self.shift_2_press()
+					return
+				elif event.key == pygame.K_3:
+					self.shift_3_press()
+					return
+				elif event.key == pygame.K_4:
+					self.shift_4_press()
+					return
+				elif event.key == pygame.K_s:
+					self.shift_s_press()
+					return
+				elif event.key == pygame.K_m:
+					self.shift_m_press()
+					return
+			
+			# --- Gestione normale (senza SHIFT) ---
 			if self.callback_dict.get(event.key):
 				self.callback_dict[event.key]()
-
-		# verifichiamo se è stato rilasciato un tasto di comando valido
+		
 		if event.type == pygame.KEYUP:
 			pass
 
