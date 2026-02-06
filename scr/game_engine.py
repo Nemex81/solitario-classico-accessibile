@@ -34,6 +34,7 @@ class EngineData(DialogBox):
 		self.max_time_game = -1 # tempo di gioco impostato dal giocatore
 		self.conta_giri = 0 # contatore per gestire il numero di mosse fatte dal player
 		self.conta_rimischiate = 0 # contatore per gestire il numero di rimischiate fatte dal player
+		self.shuffle_discards = False # modalità riciclo scarti: False=inversione (default), True=mescolata
 		# Tracciamento carte per seme (live)
 		# Indici: 0=Cuori, 1=Quadri, 2=Fiori, 3=Picche
 		self.carte_per_seme = [0, 0, 0, 0]
@@ -188,6 +189,7 @@ class EngineSolitario(EngineData):
 		self.target_card = None
 		self.origin_pile = None
 		self.dest_pile = None
+		self.shuffle_discards = False  # Reset modalità shuffle
 
 	def chiudi_partita(self):
 		""" Chiude la partita aperta del solitario. """
@@ -627,7 +629,7 @@ class EngineSolitario(EngineData):
 		#self.create_alert_box(f"Livello di difficoltà impostato a {self.difficulty_level}\n", "difficoltà cambiata")
 		return F"livello di difficoltà impostato a:  {self.difficulty_level}.  \n"
 
-	def change_game_time(self):
+	def change_game_time(self, increment=True):
 		""" cambiamo il limite massimo di tempo iocabile """
 
 		if self.is_game_running:
@@ -635,7 +637,7 @@ class EngineSolitario(EngineData):
 
 		elif not self.is_game_running and self.change_settings:
 			#timer = self.set_game_timer()
-			timer = self.change_time_over()
+			timer = self.change_time_over(increment)
 			secondi = int(timer) * 60
 			minuti = int(timer)
 			if secondi > 0:
@@ -662,21 +664,30 @@ class EngineSolitario(EngineData):
 		else:
 			return "Devi prima aprire le opzioni con il tasto O!  \n"
 
-	def change_time_over(self):
+	def change_time_over(self, increment=True):
 		""" permette di personalizzare il tempo limite per il tempo di gioco """
 
 		timer = 0
+		min_settable = 5 * 60  # minimo durata per il timer 5 minuti
 		max_settable = 60 * 60 # massima durata pe ril timer 60 minuti
+		
 		if self.max_time_game < 0:
 			timer = 5
 
-		elif self.max_time_game >= max_settable:
+		elif increment and self.max_time_game >= max_settable:
 			timer = self.max_time_game // 60
+			timer = -1
+
+		elif not increment and self.max_time_game <= min_settable:
+			# Se siamo al minimo e stiamo decrementando, disabilitiamo il timer
 			timer = -1
 
 		else:
 			timer = self.max_time_game // 60
-			timer += 5
+			if increment:
+				timer += 5
+			else:
+				timer -= 5
 
 		return timer
 
@@ -691,6 +702,50 @@ class EngineSolitario(EngineData):
 					return timer
 
 		return -1
+
+	def toggle_shuffle_mode(self):
+		""" alterna tra modalità inversione e mescolata per riciclo scarti """
+		
+		if self.is_game_running:
+			return "Non puoi modificare la modalità di riciclo scarti durante una partita!  \n"
+		
+		elif not self.is_game_running and self.change_settings:
+			self.shuffle_discards = not self.shuffle_discards
+			if self.shuffle_discards:
+				return "Modalità riciclo scarti: MESCOLATA CASUALE.  \n"
+			else:
+				return "Modalità riciclo scarti: INVERSIONE SEMPLICE.  \n"
+		
+		else:
+			return "Devi prima aprire le opzioni con il tasto O!  \n"
+
+	def get_shuffle_mode_status(self):
+		""" restituisce lo stato della modalità riciclo scarti """
+		
+		if self.shuffle_discards:
+			return "Modalità riciclo scarti: MESCOLATA CASUALE"
+		else:
+			return "Modalità riciclo scarti: INVERSIONE SEMPLICE"
+
+	def get_settings_info(self):
+		""" vocalizza le impostazioni correnti di gioco """
+		
+		string = "Impostazioni di gioco:  \n"
+		
+		# Livello di difficoltà
+		string += f"Livello di difficoltà: {self.difficulty_level}.  \n"
+		
+		# Timer
+		if self.max_time_game < 0:
+			string += "Timer: disattivato.  \n"
+		else:
+			minuti = self.max_time_game // 60
+			string += f"Timer: {minuti} minuti.  \n"
+		
+		# Modalità riciclo scarti
+		string += f"{self.get_shuffle_mode_status()}.  \n"
+		
+		return string
 
 
 	def change_game_settings(self):
@@ -902,9 +957,12 @@ class EngineSolitario(EngineData):
 		liv = int(self.difficulty_level)
 		ver = self.tavolo.pescata(liv)
 		if not ver:
-			self.tavolo.riordina_scarti()
+			self.tavolo.riordina_scarti(self.shuffle_discards)
 			self.conta_rimischiate += 1
-			return "Rimescolo gli scarti in mazzo riserve!  \n"
+			if self.shuffle_discards:
+				return "Rimescolo gli scarti in modo casuale nel mazzo riserve!  \n"
+			else:
+				return "Rimescolo gli scarti in mazzo riserve!  \n"
 
 		# se la pescata è andata a buon fine ritorno la stringa da vocalizzare con le carte pescate
 		carte = self.execute_draw()

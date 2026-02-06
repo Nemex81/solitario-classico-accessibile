@@ -74,16 +74,16 @@ class GamePlay(DialogBox):
 		if pygame.key.get_mods() & KMOD_CTRL:
 			string = self.engine.disable_timer()
 		else:
-			string = self.engine.change_game_time()
+			string = self.engine.change_game_time(increment=False)
 
 		self.vocalizza(string)
 
 	def f4_press(self):
-		string = self.engine.change_game_time()
+		string = self.engine.change_game_time(increment=True)
 		self.vocalizza(string)
 
 	def f5_press(self):
-		string = ""
+		string = self.engine.toggle_shuffle_mode()
 		self.vocalizza(string)
 
 	def up_press(self):
@@ -184,6 +184,11 @@ class GamePlay(DialogBox):
 		if string:
 			self.vocalizza(string)
 
+	def i_press(self):
+		string = self.engine.get_settings_info()
+		if string:
+			self.vocalizza(string)
+
 	def m_press(self):
 		string = self.engine.get_tot_dek()
 		if string:
@@ -253,6 +258,7 @@ INFORMAZIONI:
 - S: ultima carta negli scarti
 - M: numero carte nel mazzo
 - C: carte selezionate
+- I: visualizza impostazioni correnti
 - H: questo aiuto
 
 IMPOSTAZIONI:
@@ -260,7 +266,9 @@ IMPOSTAZIONI:
 - O: apri/chiudi opzioni
 - F1: cambia tipo mazzo (francesi/napoletane)
 - F2: cambia difficoltà (1-3)
-- F3: cambia tempo limite
+- F3: decrementa tempo limite (-5 min)
+- F4: incrementa tempo limite (+5 min)
+- F5: alterna modalità riciclo scarti (inversione/mescolata)
 - CTRL+F3: disabilita timer
 - ESC: abbandona partita / esci dal gioco
 
@@ -319,6 +327,7 @@ DEBUG:
 			pygame.K_d: self.d_press,
 			pygame.K_f: self.f_press,
 			pygame.K_g: self.g_press,
+			pygame.K_i: self.i_press,
 			pygame.K_m: self.m_press,
 			pygame.K_n: self.n_press,
 			pygame.K_o: self.o_press,
