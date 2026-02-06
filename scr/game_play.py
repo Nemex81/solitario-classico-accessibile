@@ -247,8 +247,10 @@ class GamePlay(DialogBox):
 		help_text = """COMANDI DI GIOCO:
 
 NAVIGAZIONE:
-- Frecce SU/GIÙ: muovi cursore nella pila
+- Frecce SU/GIÙ: naviga carte nella pila (pile base, scarti)
 - Frecce SINISTRA/DESTRA: cambia pila
+- HOME: vai alla prima carta della pila
+- END: vai all'ultima carta della pila
 - TAB: salta a tipo di pila diverso
 - Numeri 1-7: vai alla pila base + doppio tocco seleziona
 - SHIFT+1-4: vai alla pila semi (Cuori/Quadri/Fiori/Picche) + doppio tocco seleziona
