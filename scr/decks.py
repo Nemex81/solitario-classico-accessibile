@@ -123,6 +123,10 @@ class NeapolitanDeck(ProtoDeck):
 		self.cards = []
 		self.reset()
 
+	def get_total_cards(self):
+		""" Restituisce il numero totale di carte nel mazzo completo """
+		return len(self.SUITES) * len(self.VALUES)  # 4 * 10 = 40
+
 	def crea(self):
 		""" Crea il mazzo di carte """
 		semi = self.SUITES
@@ -159,6 +163,10 @@ class FrenchDeck(ProtoDeck):
 		self.tipo = "carte francesi"
 		self.cards = []  # lista delle carte nel mazzo
 		self.reset()
+
+	def get_total_cards(self):
+		""" Restituisce il numero totale di carte nel mazzo completo """
+		return len(self.SUITES) * len(self.VALUES)  # 4 * 13 = 52
 
 	def crea(self):
 		""" Crea il mazzo di carte """
