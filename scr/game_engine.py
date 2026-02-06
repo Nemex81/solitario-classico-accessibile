@@ -567,6 +567,9 @@ class EngineSolitario(EngineData):
 		if not self.is_game_running:
 			return
 		
+		# Ottieni il numero di carte necessarie per completare un seme
+		carte_per_seme_completo = len(self.tavolo.mazzo.VALUES)  # 13 o 10
+		
 		# Reset contatore semi completati per ricalcolo
 		self.semi_completati = 0
 		
@@ -579,8 +582,8 @@ class EngineSolitario(EngineData):
 			num_carte = pila_seme.get_len()
 			self.carte_per_seme[i] = num_carte
 			
-			# Un seme è completo se ha 13 carte (A-K)
-			if num_carte == 13:
+			# Un seme è completo se ha tutte le carte (13 per francese, 10 per napoletano)
+			if num_carte == carte_per_seme_completo:
 				self.semi_completati += 1
 
 	def copri_tutto(self):
