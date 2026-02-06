@@ -365,13 +365,17 @@ class EngineSolitario(EngineData):
 		if not self.is_game_running:
 			return "Nessuna partita in corso.\n"
 		
-		nomi_semi = ["Cuori", "Quadri", "Fiori", "Picche"]
+		# Nomi dinamici in base al mazzo
+		nomi_semi_raw = self.tavolo.get_type_deck()  # ["cuori", ...] o ["bastoni", ...]
+		nomi_semi = [seme.capitalize() for seme in nomi_semi_raw]
+		carte_per_seme_completo = len(self.tavolo.mazzo.VALUES)  # 13 o 10
+		
 		string = "Statistiche pile semi:  \n"
 		
 		for i in range(4):
 			num_carte = self.carte_per_seme[i]
 			nome_seme = nomi_semi[i]
-			string += f"{nome_seme}: {num_carte} su 13 carte.  \n"
+			string += f"{nome_seme}: {num_carte} su {carte_per_seme_completo} carte.  \n"
 		
 		string += f"\nHai completato {self.semi_completati} semi su 4.  \n"
 		
@@ -446,8 +450,10 @@ class EngineSolitario(EngineData):
 			
 			# Percentuale completamento totale
 			totale_carte_semi = sum(self.final_carte_per_seme)
-			percentuale = (totale_carte_semi / 52) * 100
-			string += f"Completamento totale: {totale_carte_semi}/52 carte ({percentuale:.1f}%).  \n"
+			# Calcola totale carte del mazzo in uso
+			totale_carte_mazzo = self.tavolo.mazzo.get_total_cards()  # 52 o 40
+			percentuale = (totale_carte_semi / totale_carte_mazzo) * 100
+			string += f"Completamento totale: {totale_carte_semi}/{totale_carte_mazzo} carte ({percentuale:.1f}%).  \n"
 		
 		# Se la partita è in corso, usa i contatori live
 		else:
@@ -477,8 +483,10 @@ class EngineSolitario(EngineData):
 			string += f"\nSemi completati: {self.semi_completati} su 4.  \n"
 			
 			totale_carte_semi = sum(self.carte_per_seme)
-			percentuale = (totale_carte_semi / 52) * 100
-			string += f"Completamento totale: {totale_carte_semi}/52 carte ({percentuale:.1f}%).  \n"
+			# Calcola totale carte del mazzo in uso
+			totale_carte_mazzo = self.tavolo.mazzo.get_total_cards()  # 52 o 40
+			percentuale = (totale_carte_semi / totale_carte_mazzo) * 100
+			string += f"Completamento totale: {totale_carte_semi}/{totale_carte_mazzo} carte ({percentuale:.1f}%).  \n"
 		
 		return string
 
