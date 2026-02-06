@@ -5,7 +5,7 @@ Tutte le modifiche rilevanti a questo progetto saranno documentate in questo fil
 Il formato è basato su [Keep a Changelog](https://keepachangelog.com/it/1.0.0/),
 e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/).
 
-## [1.2.0] - 2026-02-05
+## [1.2.0] - 2026-02-06
 
 ### 🐛 Bug Fix
 - **Fix F3 timer decrement**: F3 ora decrementa correttamente il timer di 5 minuti (simmetrico a F4)
@@ -13,6 +13,12 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
   - F3 decrementa (-5 min), F4 incrementa (+5 min)
   - Limiti: minimo 5 minuti, massimo 60 minuti
   - Al minimo, decrementare disabilita il timer
+
+- **Fix Auto-draw dopo rimescolamento** (🐛 CRITICAL FIX)
+  - Risolto bug critico: la pescata automatica dopo rimescolamento ora funziona correttamente
+  - Implementati nuovi metodi helper: `_genera_messaggio_carte_pescate()` e `_esegui_rimescolamento_e_pescata()`
+  - Eliminata necessità di premere il comando pesca una seconda volta dopo il rimescolamento
+  - Gestione robusta del caso limite: mazzo vuoto anche dopo rimescolamento
 
 ### ✨ Nuove Funzionalità
 - **F5: Toggle modalità riciclo scarti**
@@ -24,11 +30,11 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
   - Modalità si resetta a default (inversione) ad ogni nuova partita
   - Non modificabile durante partita in corso
 
-- **Auto-draw dopo rimescolamento** (🎯 NEW)
+- **Auto-draw dopo rimescolamento**
   - Dopo ogni rimescolamento degli scarti nel mazzo, viene pescata automaticamente una carta
   - Elimina la necessità di premere nuovamente D/P per continuare a giocare
   - Migliora l'esperienza utente riducendo i passaggi richiesti
-  - Annuncio vocale della carta pescata automaticamente
+  - Annuncio vocale della carta pescata automaticamente: "Pescata automatica: hai pescato: [nome carta]"
   - Gestione robusta dei casi limite (mazzo vuoto dopo rimescolamento)
 
 - **I: Visualizza impostazioni correnti**
@@ -41,6 +47,7 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 - Messaggi vocali distinti per inversione vs mescolata durante riciclo
 - Report completo impostazioni con `get_settings_info()`
 - Flusso di gioco più fluido con auto-draw integrato
+- Singola pressione tasto pesca ora completa l'intera operazione (rimescolamento + pescata)
 
 ### 🔧 Modifiche Tecniche
 - Aggiunto flag `shuffle_discards` in `EngineData.__init__()`
@@ -48,7 +55,9 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 - Nuovo metodo `get_shuffle_mode_status()` per query stato
 - `riordina_scarti(shuffle_mode=False)` ora supporta entrambe le modalità
 - Import `random` in `game_table.py` per shuffle casuale
-- Logica auto-draw integrata in `pesca()` per chiamata automatica dopo rimescolamento
+- Refactoring metodo `pesca()` con nuovi helper methods per auto-draw:
+  - `_genera_messaggio_carte_pescate()`: genera messaggio vocale per carte pescate
+  - `_esegui_rimescolamento_e_pescata()`: gestisce rimescolamento + pescata automatica
 
 ### 📝 Documentazione
 - Aggiunte sezioni README.md per gestione timer (⏱️) e modalità shuffle (🔀)
@@ -57,8 +66,11 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 ### ✅ Testing
 - Creata suite di test `tests/unit/scr/test_game_engine_f3_f5.py`
-- 10+ test per coverage completo di F3, F5 e auto-draw
+- 14 test per coverage completo di F3, F5 e auto-draw
 - Test per edge cases (timer=0, mazzo vuoto, toggle durante partita)
+- Nuovi test specifici per auto-draw:
+  - `test_auto_draw_verifica_carte_spostate`: verifica spostamento effettivo carte
+  - `test_auto_draw_mazzo_vuoto_dopo_rimescolamento`: gestione caso limite
 
 ## [1.1.0] - 2026-02-05
 
@@ -207,6 +219,7 @@ Questo progetto segue il [Semantic Versioning](https://semver.org/lang/it/):
 - ✅ **Tests**: Aggiunte o modifiche ai test
 - 📚 **Documentation**: Modifiche alla documentazione
 
+[1.2.0]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Nemex81/solitario-classico-accessibile/releases/tag/v1.0.0
 [0.8.0]: https://github.com/Nemex81/solitario-classico-accessibile/releases/tag/v0.8.0
