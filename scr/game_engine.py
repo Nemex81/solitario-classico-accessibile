@@ -951,26 +951,50 @@ class EngineSolitario(EngineData):
 		carte.reverse() # inverto l'ordine degli scarti
 		return carte
 
+	def _genera_messaggio_carte_pescate(self, lista_carte):
+		"""Genera il messaggio vocale per le carte pescate."""
+		msg = "hai pescato: "
+		for c in lista_carte:
+			msg += "%s,  \n" % c.get_name
+		return msg
+
+	def _esegui_rimescolamento_e_pescata(self):
+		"""Rimescola gli scarti nel mazzo e pesca automaticamente."""
+		self.tavolo.riordina_scarti(self.shuffle_discards)
+		self.conta_rimischiate += 1
+		
+		# Prepara messaggio rimescolamento
+		if self.shuffle_discards:
+			msg_rimescola = "Rimescolo gli scarti in modo casuale nel mazzo riserve!  \n"
+		else:
+			msg_rimescola = "Rimescolo gli scarti in mazzo riserve!  \n"
+		
+		# Auto-draw: tenta pescata automatica dopo rimescolamento
+		livello = int(self.difficulty_level)
+		pescata_ok = self.tavolo.pescata(livello)
+		
+		if not pescata_ok:
+			# Mazzo ancora vuoto dopo rimescolamento (edge case)
+			return msg_rimescola + "Attenzione: mazzo vuoto, nessuna carta da pescare!  \n"
+		
+		# Pescata riuscita: ottieni carte e genera messaggio completo
+		carte_pescate = self.execute_draw()
+		msg_pescata = self._genera_messaggio_carte_pescate(carte_pescate)
+		
+		return msg_rimescola + "Pescata automatica: " + msg_pescata
+
 	def pesca(self):
 		""" pesca le carte dal mazzo riserve """
-		carte = []
-		liv = int(self.difficulty_level)
-		ver = self.tavolo.pescata(liv)
-		if not ver:
-			self.tavolo.riordina_scarti(self.shuffle_discards)
-			self.conta_rimischiate += 1
-			if self.shuffle_discards:
-				return "Rimescolo gli scarti in modo casuale nel mazzo riserve!  \n"
-			else:
-				return "Rimescolo gli scarti in mazzo riserve!  \n"
+		livello = int(self.difficulty_level)
+		pescata_riuscita = self.tavolo.pescata(livello)
+		
+		if not pescata_riuscita:
+			# Mazzo vuoto: rimescola scarti e pesca automaticamente
+			return self._esegui_rimescolamento_e_pescata()
 
-		# se la pescata è andata a buon fine ritorno la stringa da vocalizzare con le carte pescate
-		carte = self.execute_draw()
-		string = "hai pescato: "
-		for carta in carte:
-			string += "%s,  \n" % carta.get_name
-
-		return string
+		# Pescata normale andata a buon fine
+		carte_pescate = self.execute_draw()
+		return self._genera_messaggio_carte_pescate(carte_pescate)
 
 	def set_destination_pile(self):
 		row , col = self.cursor_pos

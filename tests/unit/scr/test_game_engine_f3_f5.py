@@ -217,6 +217,56 @@ class TestAutoDraw:
         assert isinstance(risultato, str), "Deve ritornare una stringa"
         assert len(risultato) > 0, "Messaggio non deve essere vuoto"
 
+    def test_auto_draw_verifica_carte_spostate(self):
+        """Test: verifica che le carte vengano effettivamente spostate dopo auto-draw."""
+        # Setup: mazzo vuoto, 3 carte negli scarti
+        self.engine.tavolo.crea_pile_gioco()
+        self.engine.tavolo.pile[12].carte.clear()  # Svuota mazzo riserve
+        
+        # Crea 3 carte mock per gli scarti
+        carte_iniziali = []
+        for idx in range(3):
+            carta_mock = Mock()
+            carta_mock.flip = Mock()
+            carta_mock.set_uncover = Mock()
+            carta_mock.get_name = f"TestCard{idx}"
+            carte_iniziali.append(carta_mock)
+            self.engine.tavolo.pile[11].carte.append(carta_mock)
+        
+        # Conta scarti prima dell'operazione
+        scarti_iniziali = len(self.engine.tavolo.pile[11].carte)
+        assert scarti_iniziali == 3, "Dovrebbero esserci 3 carte negli scarti"
+        
+        # Esegui pesca (trigger rimescolamento + auto-draw)
+        self.engine.difficulty_level = 1  # Pesca singola carta
+        messaggio = self.engine.pesca()
+        
+        # Verifica: messaggio contiene sia rimescolamento che pescata
+        assert "rimescol" in messaggio.lower(), "Messaggio deve contenere info rimescolamento"
+        assert "pescato" in messaggio.lower() or "pescata" in messaggio.lower(), \
+            "Messaggio deve contenere info sulla carta pescata automaticamente"
+        
+        # Verifica: dopo auto-draw, una carta deve essere negli scarti (pescata)
+        scarti_dopo = len(self.engine.tavolo.pile[11].carte)
+        mazzo_dopo = len(self.engine.tavolo.pile[12].carte)
+        
+        # Con difficulty_level=1: 1 carta pescata negli scarti, 2 nel mazzo
+        assert scarti_dopo == 1, f"Dovrebbe esserci 1 carta negli scarti dopo auto-draw, trovate {scarti_dopo}"
+        assert mazzo_dopo == 2, f"Dovrebbero esserci 2 carte nel mazzo dopo auto-draw, trovate {mazzo_dopo}"
+
+    def test_auto_draw_mazzo_vuoto_dopo_rimescolamento(self):
+        """Test edge case: mazzo vuoto anche dopo rimescolamento (scarti vuoti)."""
+        # Setup: sia mazzo che scarti vuoti
+        self.engine.tavolo.crea_pile_gioco()
+        self.engine.tavolo.pile[12].carte.clear()
+        self.engine.tavolo.pile[11].carte.clear()
+        
+        # Esegui pesca
+        messaggio = self.engine.pesca()
+        
+        # Verifica: gestione corretta caso limite
+        assert isinstance(messaggio, str), "Deve ritornare una stringa anche in caso di errore"
+
 
 class TestEdgeCases:
     """Test per casi limite delle funzionalità F3/F5."""
