@@ -1,4 +1,92 @@
-# F3/F5 Feature Implementation - Progress Summary
+# 🚧 Double-Tap Navigation & Quick Selection (v1.3.0) - Implementation Status
+
+**Branch**: `copilot/implement-double-tap-navigation`  
+**Issue**: Feature Request - Double-Tap Navigation & Quick Selection System  
+**Ultimo aggiornamento**: 2026-02-06
+
+---
+
+## ✅ Checklist Implementazione (v1.3.0)
+
+### 🔧 File: `scr/game_engine.py`
+
+- [ ] **EngineData.__init__()**: Aggiungi `self.last_quick_move_pile = None`
+- [ ] **Nuovo metodo**: `move_cursor_to_pile_with_select(pile_index)`
+  - [ ] Logica double-tap detection
+  - [ ] Gestione pile base (0-6)
+  - [ ] Gestione pile semi (7-10)
+  - [ ] Gestione scarti (11)
+  - [ ] Gestione mazzo (12)
+  - [ ] Hint vocali contestuali
+  - [ ] Auto-deseleziona vecchia selezione
+- [ ] **Modifica select_card()**: Aggiungi logica ENTER su mazzo (pesca)
+- [ ] **Reset tracking** in:
+  - [ ] `move_cursor_up()`
+  - [ ] `move_cursor_down()`
+  - [ ] `move_cursor_left()`
+  - [ ] `move_cursor_right()`
+  - [ ] `move_cursor_pile_type()` (TAB)
+  - [ ] `cancel_selected_cards()`
+  - [ ] `sposta_carte()`
+
+### 🎮 File: `scr/game_play.py`
+
+- [ ] **Modifica handler esistenti** (1-7):
+  - [ ] `press_1()`: move_cursor("0") → move_cursor_to_pile_with_select(0)
+  - [ ] `press_2()`: move_cursor("1") → move_cursor_to_pile_with_select(1)
+  - [ ] `press_3()`: move_cursor("2") → move_cursor_to_pile_with_select(2)
+  - [ ] `press_4()`: move_cursor("3") → move_cursor_to_pile_with_select(3)
+  - [ ] `press_5()`: move_cursor("4") → move_cursor_to_pile_with_select(4)
+  - [ ] `press_6()`: move_cursor("5") → move_cursor_to_pile_with_select(5)
+  - [ ] `press_7()`: move_cursor("6") → move_cursor_to_pile_with_select(6)
+- [ ] **Nuovi handler pile semi**:
+  - [ ] `shift_1_press()`: Pila Cuori (7)
+  - [ ] `shift_2_press()`: Pila Quadri (8)
+  - [ ] `shift_3_press()`: Pila Fiori (9)
+  - [ ] `shift_4_press()`: Pila Picche (10)
+- [ ] **Nuovi handler speciali**:
+  - [ ] `shift_s_press()`: Scarti (11)
+  - [ ] `shift_m_press()`: Mazzo (12)
+- [ ] **Modifica handle_keyboard_EVENTS()**:
+  - [ ] Aggiungi check SHIFT prima di callback_dict
+  - [ ] Gestisci SHIFT+1/2/3/4
+  - [ ] Gestisci SHIFT+S
+  - [ ] Gestisci SHIFT+M
+- [ ] **Aggiorna h_press()**: Nuovi comandi in help text
+
+### 🧪 Testing
+
+- [ ] Test 1: Double-tap pile base (1-7)
+- [ ] Test 2: Auto-deseleziona selezione precedente
+- [ ] Test 3: Reset tracking con movimento frecce
+- [ ] Test 4: Pile semi SHIFT+1-4
+- [ ] Test 5: Navigazione scarti SHIFT+S
+- [ ] Test 6: ENTER su mazzo pesca
+- [ ] Test 7: Comandi info (S, M) non interferiscono
+- [ ] Test 8: Pila vuota double-tap
+- [ ] Test 9: Carta coperta double-tap
+- [ ] Test 10: Double-tap stesso posto
+
+### 📚 Documentazione
+
+- [ ] Aggiorna `CHANGELOG.md` (versione 1.3.0)
+- [ ] Aggiorna `README.md` (nuovi comandi)
+- [ ] Verifica messaggi vocali
+
+---
+
+## 📝 Note Implementazione (v1.3.0)
+
+### Commit Effettuati
+
+#### Commit 0: Initial Planning (2026-02-06)
+- Created implementation status document
+- Outlined complete implementation plan
+- Status: ✅ Complete
+
+---
+
+## Previous Implementation - F3/F5 Feature Implementation - Progress Summary
 
 ## ✅ Completato
 

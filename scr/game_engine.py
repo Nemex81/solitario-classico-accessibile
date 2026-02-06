@@ -45,6 +45,9 @@ class EngineData(DialogBox):
 		self.target_card = None # oggetto carta nel focus
 		self.origin_pile = None # salvo pila origine per gestione spostamenti
 		self.dest_pile = None # salvo pile destinazione valide per gestione spostamenti
+		
+		# Tracciamento per double-tap navigation
+		self.last_quick_move_pile = None  # Ultima pila con movimento rapido
 
 		# inizializzo il tempo di gioco
 		self.clock = pygame.time.Clock() # inizializzo il clock
@@ -765,6 +768,7 @@ class EngineSolitario(EngineData):
 	#@@# sezione metodi per il movimento del cursore di navigazione
 
 	def move_cursor_up(self):
+		self.last_quick_move_pile = None  # Reset tracking on manual movement
 		pila = self.tavolo.pile[self.cursor_pos[1]]
 		if not pila.is_pila_base():
 			return "non sei su una pila base.\n"
@@ -785,6 +789,7 @@ class EngineSolitario(EngineData):
 			return "Sei già alla prima carta della pila!\n"
 
 	def move_cursor_down(self):
+		self.last_quick_move_pile = None  # Reset tracking on manual movement
 		pila = self.tavolo.pile[self.cursor_pos[1]]
 		if not pila.is_pila_base():
 			return "non sei su una pila base.\n"
@@ -805,6 +810,7 @@ class EngineSolitario(EngineData):
 			return "Sei già all'ultima carta della pila!\n"
 
 	def move_cursor_left(self):
+		self.last_quick_move_pile = None  # Reset tracking on manual movement
 		pile = self.tavolo.pile
 		if self.cursor_pos[1] > 0:
 			self.cursor_pos[1] -= 1
@@ -815,6 +821,7 @@ class EngineSolitario(EngineData):
 			return speack
 
 	def move_cursor_right(self):
+		self.last_quick_move_pile = None  # Reset tracking on manual movement
 		pile = self.tavolo.pile
 		if self.cursor_pos[1] < len(pile) - 1:
 			self.cursor_pos[1] += 1
@@ -826,6 +833,7 @@ class EngineSolitario(EngineData):
 
 	def move_cursor_pile_type(self):
 		""" Sposta il cursore di navigazione sulla prima pila di tipo diverso da quello iniziale"""
+		self.last_quick_move_pile = None  # Reset tracking on manual movement
 		pile = self.tavolo.pile
 		pila_iniziale = pile[self.cursor_pos[1]]
 		tipo_iniziale = pila_iniziale.tipo
@@ -883,6 +891,97 @@ class EngineSolitario(EngineData):
 
 		return string
 
+	def move_cursor_to_pile_with_select(self, pile_index):
+		"""
+		Movimento rapido su pila con possibilità double-tap.
+		
+		Comportamento:
+		- 1° tap: sposta cursore su pila
+		- 2° tap consecutivo: seleziona ultima carta (pile base/semi) o azione speciale (scarti/mazzo)
+		
+		Args:
+			pile_index (int): Indice pila (0-6 base, 7-10 semi, 11 scarti, 12 mazzo)
+		
+		Returns:
+			str: Messaggio vocale per screen reader
+		"""
+		
+		current_pile = self.cursor_pos[1]
+		pila = self.tavolo.pile[pile_index]
+		
+		# --- DOUBLE-TAP DETECTED ---
+		if current_pile == pile_index and self.last_quick_move_pile == pile_index:
+			
+			# CASO SPECIALE: MAZZO (pila 12)
+			if pile_index == 12:
+				self.last_quick_move_pile = None
+				return "Cursore già su mazzo.\n"
+			
+			# CASO SPECIALE: SCARTI (pila 11)
+			if pile_index == 11:
+				self.last_quick_move_pile = None
+				return "Cursore già su scarti.\n"
+			
+			# PILE BASE/SEMI: Validazioni per selezione
+			if pila.is_empty_pile():
+				self.last_quick_move_pile = None
+				return "Pila vuota, nessuna carta da selezionare.\n"
+			
+			# Auto-deseleziona vecchia selezione se presente
+			msg_deselect = ""
+			if self.selected_card:
+				self.cancel_selected_cards()  # Reset interno (non vocalizzare)
+				msg_deselect = "Selezione precedente annullata. "
+			
+			# Sposta cursore sull'ultima carta selezionabile
+			self.cursor_pos[0] = self.move_cursor_top_card(pila)
+			
+			# Tenta selezione
+			msg = self.select_card()
+			
+			# Reset tracking dopo selezione
+			self.last_quick_move_pile = None
+			
+			return msg_deselect + msg
+		
+		# --- PRIMO TAP: SPOSTA CURSORE ---
+		else:
+			# Sposta cursore su pila
+			self.cursor_pos[1] = pile_index
+			self.cursor_pos[0] = self.move_cursor_top_card(pila)
+			
+			# Aggiorna tracking
+			self.last_quick_move_pile = pile_index
+			
+			# Genera messaggio vocale
+			msg = self.get_string_colonna()
+			
+			# HINT VOCALE: Aggiungi suggerimento appropriato
+			if pile_index == 12:
+				# MAZZO: hint per pescare
+				if not pila.is_empty_pile():
+					msg += "Premi INVIO per pescare.\n"
+				else:
+					msg += "Mazzo vuoto.\n"
+			
+			elif pile_index == 11:
+				# SCARTI: hint per navigare/selezionare
+				if not pila.is_empty_pile():
+					msg += "Usa frecce per navigare. CTRL+INVIO per selezionare ultima carta.\n"
+				else:
+					msg += "Scarti vuoti.\n"
+			
+			elif not pila.is_empty_pile():
+				# PILE BASE/SEMI: hint per selezionare
+				if pila.is_pila_base():
+					tasto = str(pile_index + 1)  # 1-7
+					msg += f"Premi ancora {tasto} per selezionare.\n"
+				elif pila.is_pila_seme():
+					seme_num = pile_index - 6  # 7->1, 8->2, 9->3, 10->4
+					msg += f"Premi ancora SHIFT+{seme_num} per selezionare.\n"
+			
+			return msg
+
 
 	#@@# sezione metodi per selezionare e deselezionare le carte
 
@@ -894,6 +993,7 @@ class EngineSolitario(EngineData):
 		self.target_card = None
 		self.origin_pile = None
 		self.dest_pile = None
+		self.last_quick_move_pile = None  # Reset tracking on cancel
 		return "annullo carte selezionate!  \n"
 
 	def select_scarto(self):
@@ -920,6 +1020,11 @@ class EngineSolitario(EngineData):
 		self.validate_cursor_position()
 		row , col = self.cursor_pos
 		pile = self.tavolo.pile[col]
+		
+		# NUOVO: ENTER su mazzo = pesca
+		if col == 12:
+			return self.pesca()
+		
 		if pile.is_empty_pile():
 			return "la pila è vuota!\n"
 
@@ -1041,6 +1146,7 @@ class EngineSolitario(EngineData):
 			self.cursor_pos[0] = 0
 
 		self.reset_data_moving() # resettiamo anche i dati di spostamento
+		self.last_quick_move_pile = None  # Reset tracking after move
 		return string
 
 	def ceck_victory(self):
