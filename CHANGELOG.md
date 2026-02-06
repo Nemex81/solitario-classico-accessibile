@@ -5,6 +5,51 @@ Tutte le modifiche rilevanti a questo progetto saranno documentate in questo fil
 Il formato è basato su [Keep a Changelog](https://keepachangelog.com/it/1.0.0/),
 e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.3.3] - 2026-02-06
+
+### 🐛 Bug Fix Critici
+
+**Fix Crash Cambio Mazzo (F1)**
+- Risolto bug critico: crash `IndexError: pop from empty list` quando si cambiava tipo di mazzo con F1
+- Causa: `distribuisci_carte()` aveva un valore hardcoded di 24 carte per il mazzo riserve
+- Problema: Con mazzo napoletano (40 carte) tentava di distribuire 28+24=52 carte ma ne aveva solo 40
+- Soluzione: Calcolo dinamico `carte_rimanenti = self.mazzo.get_total_cards() - 28`
+
+### 🔧 Modifiche Tecniche
+
+**File: `scr/game_table.py`**
+- `distribuisci_carte()`: rimosso hardcoded `range(24)`, ora usa `range(carte_rimanenti)`
+- Calcolo dinamico carte rimanenti: 24 per mazzo francese, 12 per mazzo napoletano
+- Aggiunti commenti esplicativi per il calcolo dinamico
+
+### 🧪 Testing
+
+**Nuovo file test: `tests/unit/scr/test_distribuisci_carte_deck_switching.py`**
+- 6 test completi per verificare il fix:
+  - `test_distribuisci_carte_french_deck`: verifica 24 carte riserve
+  - `test_distribuisci_carte_neapolitan_deck`: verifica 12 carte riserve
+  - `test_cambio_mazzo_french_to_neapolitan`: test F1 francese→napoletano
+  - `test_cambio_mazzo_neapolitan_to_french`: test F1 napoletano→francese
+  - `test_cambio_mazzo_multiplo`: test cambi multipli consecutivi
+  - `test_no_index_error_on_neapolitan_deck`: test regressione per IndexError
+
+### 📊 Impatto
+
+**Prima del fix:**
+- ❌ F1 con mazzo napoletano → crash immediato
+- ❌ Impossibile usare la feature mazzo napoletano della v1.3.2
+
+**Dopo il fix:**
+- ✅ F1 funziona correttamente con entrambi i mazzi
+- ✅ Distribuzione dinamica: 24 carte (francese) o 12 carte (napoletano) nel mazzo riserve
+- ✅ Cambio mazzo fluido senza crash
+
+### ✅ Backward Compatibility
+
+- Zero breaking changes
+- Mazzo francese continua a funzionare esattamente come prima
+- Fix non altera nessuna altra funzionalità
+
 ## [1.3.2] - 2026-02-06
 
 ### ✨ Nuove Funzionalità
@@ -448,6 +493,7 @@ Questo progetto segue il [Semantic Versioning](https://semver.org/lang/it/):
 - ✅ **Tests**: Aggiunte o modifiche ai test
 - 📚 **Documentation**: Modifiche alla documentazione
 
+[1.3.3]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v1.3.2...v1.3.3
 [1.3.2]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v1.2.0...v1.3.0

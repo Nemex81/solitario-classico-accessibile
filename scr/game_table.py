@@ -82,8 +82,13 @@ class TavoloSolitario:
 				carta = self.mazzo.pesca()
 				self.pile[i].aggiungi_carta(carta)
 
+		# Calcola dinamicamente quante carte restano per il mazzo riserve
+		carte_totali = self.mazzo.get_total_cards()  # 52 per francese, 40 per napoletano
+		carte_distribuite_pile_base = 28  # 1+2+3+4+5+6+7
+		carte_rimanenti = carte_totali - carte_distribuite_pile_base  # 24 o 12
+
 		# distribuisci le restanti carte alla pila mazzo riserve
-		for i in range(24):
+		for i in range(carte_rimanenti):
 			carta = self.mazzo.pesca()
 			carta.set_cover()
 			self.pile[12].aggiungi_carta(carta)
