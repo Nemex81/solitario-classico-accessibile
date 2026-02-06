@@ -769,45 +769,101 @@ class EngineSolitario(EngineData):
 
 	def move_cursor_up(self):
 		self.last_quick_move_pile = None  # Reset tracking on manual movement
-		pila = self.tavolo.pile[self.cursor_pos[1]]
-		if not pila.is_pila_base():
-			return "non sei su una pila base.\n"
-
-		if pila.is_empty_pile():
-			self.cursor_pos[0] = 0
-			return "La pila è vuota!  \n"
-
-		# Valida prima l'indice corrente
-		if self.cursor_pos[0] >= len(pila.carte):
-			self.cursor_pos[0] = len(pila.carte) - 1
-
-		if self.cursor_pos[0] > 0:
-			self.cursor_pos[0] -= 1
-			speack =self.get_string_riga()
-			return speack
+		col = self.cursor_pos[1]
+		pila = self.tavolo.pile[col]
+		
+		# Gestione pila base (comportamento esistente)
+		if pila.is_pila_base():
+			if pila.is_empty_pile():
+				self.cursor_pos[0] = 0
+				return "La pila è vuota!  \n"
+			
+			# Valida prima l'indice corrente
+			if self.cursor_pos[0] >= len(pila.carte):
+				self.cursor_pos[0] = len(pila.carte) - 1
+			
+			if self.cursor_pos[0] > 0:
+				self.cursor_pos[0] -= 1
+				speack = self.get_string_riga()
+				return speack
+			else:
+				return "Sei già alla prima carta della pila!\n"
+		
+		# Gestione pila scarti
+		elif col == 11:
+			if pila.is_empty_pile():
+				return "Scarti vuoti, nessuna carta da consultare.\n"
+			
+			# Valida prima l'indice corrente
+			if self.cursor_pos[0] >= len(pila.carte):
+				self.cursor_pos[0] = len(pila.carte) - 1
+			
+			if self.cursor_pos[0] > 0:
+				self.cursor_pos[0] -= 1
+				posizione = self.cursor_pos[0] + 1
+				totale = len(pila.carte)
+				carta = pila.carte[self.cursor_pos[0]]
+				
+				# Hint solo per ultima carta
+				is_last = (self.cursor_pos[0] == totale - 1)
+				hint = " Premi CTRL+INVIO per selezionare." if is_last else ""
+				
+				return f"{posizione} di {totale}: {carta.get_name}{hint}\n"
+			else:
+				return "Sei già alla prima carta degli scarti!\n"
+		
+		# Pile semi/mazzo non consultabili
 		else:
-			return "Sei già alla prima carta della pila!\n"
+			return "Questa pila non è consultabile con le frecce.\n"
 
 	def move_cursor_down(self):
 		self.last_quick_move_pile = None  # Reset tracking on manual movement
-		pila = self.tavolo.pile[self.cursor_pos[1]]
-		if not pila.is_pila_base():
-			return "non sei su una pila base.\n"
-
-		if pila.is_empty_pile():
-			self.cursor_pos[0] = 0
-			return "La pila è vuota!  \n"
-
-		# Valida prima l'indice corrente
-		if self.cursor_pos[0] >= len(pila.carte):
-			self.cursor_pos[0] = len(pila.carte) - 1
-
-		if self.cursor_pos[0] < len(pila.carte) - 1:
-			self.cursor_pos[0] += 1
-			speack = self.get_string_riga()
-			return speack
+		col = self.cursor_pos[1]
+		pila = self.tavolo.pile[col]
+		
+		# Gestione pila base (comportamento esistente)
+		if pila.is_pila_base():
+			if pila.is_empty_pile():
+				self.cursor_pos[0] = 0
+				return "La pila è vuota!  \n"
+			
+			# Valida prima l'indice corrente
+			if self.cursor_pos[0] >= len(pila.carte):
+				self.cursor_pos[0] = len(pila.carte) - 1
+			
+			if self.cursor_pos[0] < len(pila.carte) - 1:
+				self.cursor_pos[0] += 1
+				speack = self.get_string_riga()
+				return speack
+			else:
+				return "Sei già all'ultima carta della pila!\n"
+		
+		# Gestione pila scarti
+		elif col == 11:
+			if pila.is_empty_pile():
+				return "Scarti vuoti, nessuna carta da consultare.\n"
+			
+			# Valida prima l'indice corrente
+			if self.cursor_pos[0] >= len(pila.carte):
+				self.cursor_pos[0] = len(pila.carte) - 1
+			
+			if self.cursor_pos[0] < len(pila.carte) - 1:
+				self.cursor_pos[0] += 1
+				posizione = self.cursor_pos[0] + 1
+				totale = len(pila.carte)
+				carta = pila.carte[self.cursor_pos[0]]
+				
+				# Hint solo per ultima carta
+				is_last = (self.cursor_pos[0] == totale - 1)
+				hint = " Premi CTRL+INVIO per selezionare." if is_last else ""
+				
+				return f"{posizione} di {totale}: {carta.get_name}{hint}\n"
+			else:
+				return "Sei già all'ultima carta degli scarti!\n"
+		
+		# Pile semi/mazzo non consultabili
 		else:
-			return "Sei già all'ultima carta della pila!\n"
+			return "Questa pila non è consultabile con le frecce.\n"
 
 	def move_cursor_left(self):
 		self.last_quick_move_pile = None  # Reset tracking on manual movement
