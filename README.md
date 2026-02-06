@@ -59,7 +59,7 @@ print(controller.get_current_state_formatted())
 | Azione | Descrizione |
 |--------|-------------|
 | `draw` | Pesca carte dal mazzo |
-| `recycle` | Rimescola gli scarti nel mazzo |
+| `recycle` | Rimescola gli scarti nel mazzo e pesca automaticamente |
 | `move_to_foundation` | Sposta una carta alla base |
 
 ### ⌨️ Comandi Tastiera (Versione Legacy `scr/`)
@@ -75,7 +75,7 @@ print(controller.get_current_state_formatted())
 - **CTRL+INVIO**: Seleziona carta dagli scarti
 - **SPAZIO**: Sposta le carte selezionate
 - **CANC**: Annulla selezione
-- **D** o **P**: Pesca dal mazzo
+- **D** o **P**: Pesca dal mazzo (con auto-draw dopo rimescolamento scarti)
 
 #### Informazioni
 - **F**: Posizione cursore attuale
@@ -100,12 +100,29 @@ print(controller.get_current_state_formatted())
 - **CTRL+F3**: Disabilita timer
 - **ESC**: Abbandona partita / Esci dal gioco
 
-#### Modalità Riciclo Scarti
-Quando il mazzo finisce, le carte degli scarti vengono riciclate. Puoi scegliere tra:
+### ⏱️ Gestione Timer
+
+Il timer può essere controllato durante la partita:
+- **F4**: Incrementa di 5 minuti (massimo 60 minuti)
+- **F3**: Decrementa di 5 minuti
+  - Se timer < 5 minuti: decrementa fino a 0 con avviso
+  - Se timer = 0: comando ignorato, annuncio "Timer già scaduto"
+  - Al raggiungimento del minimo: il timer viene disattivato
+- **CTRL+F3**: Disabilita completamente il timer
+- Annunci vocali per ogni modifica dello stato del timer
+
+### 🔀 Modalità Riciclo Scarti
+
+Quando il mazzo finisce, le carte degli scarti vengono riciclate automaticamente. Sono disponibili due modalità:
+
 - **INVERSIONE SEMPLICE** (default): Le carte vengono invertite (comportamento prevedibile)
 - **MESCOLATA CASUALE**: Le carte vengono mischiate casualmente (maggiore varietà)
 
-Usa **F5** per alternare tra le due modalità (solo con opzioni aperte, tasto **O**).
+**Toggle con F5**: Alterna tra le due modalità (solo con opzioni aperte, tasto **O**)
+
+**Verifica modalità attiva**: Premi **I** per visualizzare le impostazioni correnti
+
+**🎯 Auto-Draw**: Dopo ogni rimescolamento degli scarti, viene pescata automaticamente una carta dal mazzo. Non è necessario premere nuovamente D o P per continuare a giocare.
 
 ## 🏗️ Architettura
 

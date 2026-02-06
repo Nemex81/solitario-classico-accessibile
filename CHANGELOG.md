@@ -24,6 +24,13 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
   - Modalità si resetta a default (inversione) ad ogni nuova partita
   - Non modificabile durante partita in corso
 
+- **Auto-draw dopo rimescolamento** (🎯 NEW)
+  - Dopo ogni rimescolamento degli scarti nel mazzo, viene pescata automaticamente una carta
+  - Elimina la necessità di premere nuovamente D/P per continuare a giocare
+  - Migliora l'esperienza utente riducendo i passaggi richiesti
+  - Annuncio vocale della carta pescata automaticamente
+  - Gestione robusta dei casi limite (mazzo vuoto dopo rimescolamento)
+
 - **I: Visualizza impostazioni correnti**
   - Nuovo comando `I` per leggere le impostazioni di gioco:
     - Livello di difficoltà
@@ -33,6 +40,7 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 ### 🎨 Miglioramenti UX
 - Messaggi vocali distinti per inversione vs mescolata durante riciclo
 - Report completo impostazioni con `get_settings_info()`
+- Flusso di gioco più fluido con auto-draw integrato
 
 ### 🔧 Modifiche Tecniche
 - Aggiunto flag `shuffle_discards` in `EngineData.__init__()`
@@ -40,6 +48,17 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 - Nuovo metodo `get_shuffle_mode_status()` per query stato
 - `riordina_scarti(shuffle_mode=False)` ora supporta entrambe le modalità
 - Import `random` in `game_table.py` per shuffle casuale
+- Logica auto-draw integrata in `pesca()` per chiamata automatica dopo rimescolamento
+
+### 📝 Documentazione
+- Aggiunte sezioni README.md per gestione timer (⏱️) e modalità shuffle (🔀)
+- Documentato comportamento auto-draw in tabella comandi
+- Aggiornato CHANGELOG.md con dettagli tecnici e UX improvements
+
+### ✅ Testing
+- Creata suite di test `tests/unit/scr/test_game_engine_f3_f5.py`
+- 10+ test per coverage completo di F3, F5 e auto-draw
+- Test per edge cases (timer=0, mazzo vuoto, toggle durante partita)
 
 ## [1.1.0] - 2026-02-05
 
