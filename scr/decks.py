@@ -115,8 +115,8 @@ class NeapolitanDeck(ProtoDeck):
 
 	# costanti
 	SUITES = ["bastoni", "coppe", "denari", "spade"]
-	VALUES = ["Asso", "2", "3", "4", "5", "6", "7", "8", "9", "10", "regina", "cavallo", "Re"]
-	FIGURE_VALUES = {"regina": 11, "cavallo": 12, "Re": 13, "Asso" : 1}
+	VALUES = ["Asso", "2", "3", "4", "5", "6", "7", "Regina", "Cavallo", "Re"]
+	FIGURE_VALUES = {"Regina": 8, "Cavallo": 9, "Re": 10, "Asso": 1}
 
 	def __init__(self):
 		self.tipo = "carte napoletane"
@@ -137,7 +137,7 @@ class NeapolitanDeck(ProtoDeck):
 			for valore in valori:
 				carta = Card(valore, seme)
 				carta.set_name(f"{valore} di {seme}")
-				if valore in ["regina", "cavallo", "Re", "Asso"]:
+				if valore in ["Regina", "Cavallo", "Re", "Asso"]:
 					carta.set_int_value(int(self.FIGURE_VALUES[valore]))
 				else:
 					carta.set_int_value(int(valore))
