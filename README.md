@@ -68,14 +68,17 @@ print(controller.get_current_state_formatted())
 - **Frecce SU/GIÙ**: Muovi cursore nella pila
 - **Frecce SINISTRA/DESTRA**: Cambia pila
 - **TAB**: Salta a tipo di pila diverso
-- **Numeri 1-7**: Vai alla pila base corrispondente
+- **Numeri 1-7**: Vai alla pila base + **doppio tocco seleziona** ✨ NUOVO
+- **SHIFT+1-4**: Vai alla pila semi (Cuori/Quadri/Fiori/Picche) + **doppio tocco seleziona** ✨ NUOVO
+- **SHIFT+S**: Sposta cursore su scarti ✨ NUOVO
+- **SHIFT+M**: Sposta cursore su mazzo ✨ NUOVO
 
 #### Azioni di Gioco
-- **INVIO**: Seleziona carta sotto il cursore
+- **INVIO**: Seleziona carta sotto il cursore (su mazzo: pesca carte) ✨ AGGIORNATO
 - **CTRL+INVIO**: Seleziona carta dagli scarti
 - **SPAZIO**: Sposta le carte selezionate
 - **CANC**: Annulla selezione
-- **D** o **P**: Pesca dal mazzo (con auto-draw dopo rimescolamento scarti)
+- **D** o **P**: Pesca dal mazzo da qualunque posizione (con auto-draw dopo rimescolamento scarti)
 
 #### Informazioni
 - **F**: Posizione cursore attuale
@@ -83,8 +86,8 @@ print(controller.get_current_state_formatted())
 - **R**: Report partita (tempo, mosse, rimischiate)
 - **T**: Tempo rimanente
 - **X**: Dettagli carta sotto cursore
-- **S**: Ultima carta negli scarti
-- **M**: Numero carte nel mazzo
+- **S**: Ultima carta negli scarti (read-only)
+- **M**: Numero carte nel mazzo (read-only)
 - **C**: Carte selezionate
 - **I**: Visualizza impostazioni correnti
 - **H**: Aiuto comandi
@@ -99,6 +102,59 @@ print(controller.get_current_state_formatted())
 - **F5**: Alterna modalità riciclo scarti (inversione/mescolata)
 - **CTRL+F3**: Disabilita timer
 - **ESC**: Abbandona partita / Esci dal gioco
+
+### 🎯 Double-Tap Navigation System (v1.3.0)
+
+**Navigazione Rapida con Pattern Double-Tap** ✨ NUOVO
+
+Il sistema di double-tap permette di selezionare rapidamente le carte con due pressioni consecutive dello stesso tasto:
+
+#### Come Funziona
+
+1. **Primo tap**: Sposta il cursore sulla pila
+   - Feedback vocale con nome pila e carta in cima
+   - Hint vocale: "Premi ancora [tasto] per selezionare"
+
+2. **Secondo tap consecutivo**: Seleziona automaticamente l'ultima carta
+   - Auto-deseleziona eventuali selezioni precedenti
+   - Feedback: "Carta selezionata: [nome carta]!"
+
+#### Pile Supportate
+
+- **Tasti 1-7**: Pile base (tableau)
+  - Esempio: Premi `3` → cursore su Pila 3
+  - Premi `3` di nuovo → seleziona carta in cima
+
+- **SHIFT+1-4**: Pile semi (foundation)
+  - SHIFT+1 = Cuori (♥)
+  - SHIFT+2 = Quadri (♦)
+  - SHIFT+3 = Fiori (♣)
+  - SHIFT+4 = Picche (♠)
+
+- **SHIFT+S**: Navigazione rapida scarti
+  - Sposta cursore su pila scarti
+  - Usa frecce per navigare le carte
+  - CTRL+ENTER per selezionare ultima carta
+
+- **SHIFT+M**: Navigazione rapida mazzo
+  - Sposta cursore sul mazzo
+  - ENTER per pescare direttamente
+
+#### Reset Automatico
+
+Il tracking del double-tap si resetta automaticamente quando:
+- Usi le frecce direzionali (SU/GIÙ/SINISTRA/DESTRA)
+- Premi TAB per cambiare tipo di pila
+- Annulli una selezione (CANC)
+- Completi uno spostamento (SPAZIO)
+
+#### Backward Compatibility
+
+Tutti i comandi esistenti continuano a funzionare normalmente:
+- D/P per pescare da qualunque posizione
+- Frecce per navigazione manuale dettagliata
+- TAB per salti tra tipi di pile
+- Comandi info S e M (read-only, non spostano il cursore)
 
 ### ⏱️ Gestione Timer
 

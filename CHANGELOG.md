@@ -5,6 +5,109 @@ Tutte le modifiche rilevanti a questo progetto saranno documentate in questo fil
 Il formato è basato su [Keep a Changelog](https://keepachangelog.com/it/1.0.0/),
 e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.3.0] - 2026-02-06
+
+### ✨ Nuove Funzionalità
+
+#### 🎯 Double-Tap Navigation & Quick Selection System
+
+**Navigazione Rapida con Pattern Double-Tap**
+- Primo tap: sposta cursore sulla pila + fornisce hint vocale
+- Secondo tap consecutivo: seleziona automaticamente l'ultima carta sulla pila
+- Sistema di tracking intelligente che si resetta con movimenti manuali (frecce, TAB)
+
+**Nuovi Comandi Pile Base (1-7)**
+- Tasti 1-7 ora supportano double-tap per selezione rapida
+- Feedback vocale: "Pila [N]. [Nome carta]. Premi ancora [N] per selezionare."
+- Auto-deseleziona selezione precedente quando si seleziona una nuova carta
+- Gestione edge cases: pile vuote, carte coperte
+
+**Quick Access Pile Semi (SHIFT+1-4)**
+- SHIFT+1: Vai a pila Cuori (pile 7) + double-tap seleziona
+- SHIFT+2: Vai a pila Quadri (pile 8) + double-tap seleziona
+- SHIFT+3: Vai a pila Fiori (pile 9) + double-tap seleziona
+- SHIFT+4: Vai a pila Picche (pile 10) + double-tap seleziona
+- Feedback vocale: "Pila [Seme]. [Nome carta]. Premi ancora SHIFT+[N] per selezionare."
+
+**Navigazione Rapida Scarti e Mazzo**
+- SHIFT+S: Sposta cursore su pila scarti
+  - Feedback: "Pila scarti. Carta in cima: [nome]. Usa frecce per navigare. CTRL+INVIO per selezionare ultima carta."
+  - Mantiene separazione tra comando info `S` (read-only) e navigazione `SHIFT+S`
+- SHIFT+M: Sposta cursore su pila mazzo
+  - Feedback: "Pila riserve. Carte nel mazzo: [N]. Premi INVIO per pescare."
+  - Mantiene separazione tra comando info `M` (read-only) e navigazione `SHIFT+M`
+
+**ENTER su Mazzo = Pesca Automatica**
+- Premendo ENTER quando il cursore è sul mazzo (pila 12), viene eseguita automaticamente la pescata
+- Elimina la necessità di usare sempre D/P per pescare quando si è già sul mazzo
+- Comandi D/P rimangono disponibili per pescare da qualunque posizione (backward compatibility)
+
+### 🎨 Miglioramenti UX
+
+**Hint Vocali Sempre Presenti**
+- Gli hint vocali per la selezione sono forniti ad ogni primo tap, non solo la prima volta
+- Messaggi contestuali diversi per ogni tipo di pila (base, semi, scarti, mazzo)
+- Feedback chiaro per pile vuote e carte coperte
+
+**Auto-Deseleziona Intelligente**
+- Quando si seleziona una nuova carta con double-tap, la selezione precedente viene automaticamente annullata
+- Feedback vocale: "Selezione precedente annullata. Carta selezionata: [Nome carta]!"
+
+**Coerenza Modificatori**
+- Nessun modificatore (1-7): Pile base (tableau)
+- SHIFT (SHIFT+1-4, SHIFT+S, SHIFT+M): Accesso rapido pile speciali
+- CTRL (CTRL+ENTER): Selezione diretta scarti (mantenuto esistente)
+
+### 🔧 Modifiche Tecniche
+
+**File: `scr/game_engine.py`**
+- Aggiunto attributo `self.last_quick_move_pile` in `EngineData.__init__()` per tracking double-tap
+- Nuovo metodo `move_cursor_to_pile_with_select(pile_index)` con logica double-tap completa
+- Modificato `select_card()` per supportare ENTER su mazzo (chiama `self.pesca()`)
+- Aggiunto reset tracking in tutti i metodi di movimento manuale:
+  - `move_cursor_up()`, `move_cursor_down()`
+  - `move_cursor_left()`, `move_cursor_right()`
+  - `move_cursor_pile_type()` (TAB)
+  - `cancel_selected_cards()`, `sposta_carte()`
+
+**File: `scr/game_play.py`**
+- Modificati handler `press_1()` a `press_7()` per usare `move_cursor_to_pile_with_select()`
+- Nuovi handler per pile semi: `shift_1_press()` a `shift_4_press()`
+- Nuovi handler speciali: `shift_s_press()` (scarti), `shift_m_press()` (mazzo)
+- Modificato `handle_keyboard_EVENTS()` per supporto modificatore SHIFT
+- Aggiornato `h_press()` con help text completo nuovi comandi
+
+### ✅ Backward Compatibility
+
+**Tutti i comandi esistenti rimangono funzionanti:**
+- ✅ D/P per pescare da qualunque posizione
+- ✅ Frecce SU/GIÙ/SINISTRA/DESTRA per navigazione manuale
+- ✅ TAB per cambio tipo pila
+- ✅ CTRL+ENTER per selezione scarti
+- ✅ Comandi info S e M (read-only)
+- ✅ Tutti gli altri comandi esistenti
+
+**Nuovi comandi = aggiunte, non sostituzioni:**
+- Nessuna deprecazione di comandi esistenti
+- Tutti i comandi esistenti mantengono il loro comportamento originale
+- Nuovi comandi forniscono alternative più veloci ma opzionali
+
+### 📊 Test Coverage
+
+**Casi Testati:**
+- ✅ Double-tap pile base (1-7)
+- ✅ Double-tap pile semi (SHIFT+1-4)
+- ✅ Auto-deseleziona selezione precedente
+- ✅ Reset tracking con movimenti manuali
+- ✅ Navigazione scarti (SHIFT+S)
+- ✅ Navigazione mazzo (SHIFT+M)
+- ✅ ENTER su mazzo pesca correttamente
+- ✅ Pile vuote edge case
+- ✅ Carte coperte edge case
+- ✅ Comandi info S/M non interferiscono con tracking
+
+---
+
 ## [1.2.0] - 2026-02-06
 
 ### 🐛 Bug Fix
