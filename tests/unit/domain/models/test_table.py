@@ -206,8 +206,7 @@ class TestPutToBase:
         table.pile_base[0].aggiungi_carta(king)
         
         # Try to place a Queen of same color (red)
-        queen = next((c for c in deck.cards if c.get_value == 12 and c.get_color == "rosso" and c != king), None)
-        assert queen is not None
+        queen = next(c for c in deck.cards if c.get_value == 12 and c.get_color == "rosso" and c != king)
         
         result = table.put_to_base(queen, 0)
         assert result is False
