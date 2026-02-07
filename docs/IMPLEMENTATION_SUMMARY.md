@@ -3,7 +3,7 @@
 > **Quick Progress Tracker**: Migrazione completa `scr/` → `src/` con Clean Architecture  
 > **Piano Dettagliato**: [`REFACTORING_PLAN.md`](./REFACTORING_PLAN.md)  
 > **Data Inizio**: 7 Febbraio 2026  
-> **Status**: 🚧 In Progress
+> **Status**: 🚧 In Progress - 1/13 Completed (7.7%)
 
 ---
 
@@ -11,14 +11,14 @@
 
 | Fase | Commits | Status | Completamento |
 |------|---------|--------|---------------|
-| **1. Domain Models** | 2 | ⏳ Pending | 0/2 (0%) |
+| **1. Domain Models** | 2 | 🚧 In Progress | 1/2 (50%) |
 | **2. Domain Rules/Services** | 2 | ⏳ Pending | 0/2 (0%) |
 | **3. Infrastructure** | 2 | ⏳ Pending | 0/2 (0%) |
 | **4. Application** | 2 | ⏳ Pending | 0/2 (0%) |
 | **5. Presentation** | 1 | ⏳ Pending | 0/1 (0%) |
 | **6. Integration** | 2 | ⏳ Pending | 0/2 (0%) |
 | **7. Testing/Docs** | 2 | ⏳ Pending | 0/2 (0%) |
-| **TOTALE** | **13** | ⏳ | **0/13 (0%)** |
+| **TOTALE** | **13** | 🚧 | **1/13 (7.7%)** |
 
 **Legenda**: ⏳ Pending | 🚧 In Progress | ✅ Completed | ❌ Blocked
 
@@ -38,29 +38,46 @@
 
 ## 📋 FASE 1: DOMAIN MODELS (2 commits)
 
-### ✅ Commit #1: Migrate Deck Models
-**Branch**: `feature/migrate-decks-to-domain`  
-**File Target**: `src/domain/models/deck.py`
+### ✅ Commit #1: Migrate Deck Models - **COMPLETATO**
+**Branch**: `copilot/migrate-deck-models-to-src-domain`  
+**PR**: [#32](https://github.com/Nemex81/solitario-classico-accessibile/pull/32) ✅ Merged  
+**Commit SHA**: `919c3d24daf5840c354f3aada985d7cec1ffa831`  
+**Data Completamento**: 7 Febbraio 2026, 12:03 CET
+
+**File Implementati**:
+- ✅ `src/domain/models/deck.py` (314 righe)
+- ✅ `src/domain/models/card.py` (337 righe) - BONUS
+- ✅ `tests/unit/domain/models/test_deck.py` (343 righe, 46 test)
+- ✅ `src/__init__.py`, `src/domain/__init__.py`, `src/domain/models/__init__.py`
 
 **Checklist**:
-- [ ] Copia `ProtoDeck` da `scr/decks.py` (SHA: `cb52fbf`)
-- [ ] Copia `FrenchDeck` completa (52 carte)
-- [ ] Copia `NeapolitanDeck` completa (40 carte)
-- [ ] ✅ **CRITICO**: Includi metodo `is_king()` (fix Re napoletano)
-- [ ] Aggiorna import: `from src.domain.models.card import Card`
-- [ ] Rimuovi dipendenze `my_lib`
-- [ ] Type hints completi
-- [ ] Docstrings aggiunte
-- [ ] Test: `is_king()` con entrambi i mazzi
-- [ ] Test: Creazione mazzo (52 e 40 carte)
-- [ ] Commit message come da template
+- [x] Copia `ProtoDeck` da `scr/decks.py` (SHA: `cb52fbf`)
+- [x] Copia `FrenchDeck` completa (52 carte)
+- [x] Copia `NeapolitanDeck` completa (40 carte)
+- [x] ✅ **CRITICO**: Includi metodo `is_king()` (fix Re napoletano)
+- [x] Aggiorna import: `from src.domain.models.card import Card`
+- [x] Rimuovi dipendenze `my_lib`
+- [x] Type hints completi (100%)
+- [x] Docstrings aggiunte (Google-style)
+- [x] Test: `is_king()` con entrambi i mazzi
+- [x] Test: Creazione mazzo (52 e 40 carte)
+- [x] Commit message come da template
 
-**Issues Correlate**: #28, #29 (v1.3.3 hotfix)  
-**Testing**: `pytest tests/unit/domain/models/test_deck.py -v`
+**Metriche**:
+- Test suite: 46 test (richiesti 14+) - +328%
+- Coverage: 95.5% (richiesto >80%) - +19%
+- Type hints: 100%
+- Nessun import legacy (`scr/`, `my_lib`)
+
+**Issues Risolte**: #28, #29 (v1.3.3 hotfix - Re napoletano su pile vuote)  
+**Issue Correlata**: #31 (chiusa)  
+**Testing**: `pytest tests/unit/domain/models/test_deck.py -v` ✅ Passed
+
+**Note**: Copilot ha aggiunto `card.py` modernizzato non richiesto - eccellente bonus!
 
 ---
 
-### ✅ Commit #2: Migrate Game Table
+### ⏳ Commit #2: Migrate Game Table - **PROSSIMO**
 **Branch**: `feature/migrate-game-table-to-domain`  
 **File Target**: `src/domain/models/table.py`
 
@@ -82,7 +99,7 @@
 
 ## 📋 FASE 2: DOMAIN RULES/SERVICES (2 commits)
 
-### ✅ Commit #3: Extract Move Validation Rules
+### ⏳ Commit #3: Extract Move Validation Rules
 **Branch**: `feature/extract-move-validation-rules`  
 **File Target**: `src/domain/rules/solitaire_rules.py`
 
@@ -101,7 +118,7 @@
 
 ---
 
-### ✅ Commit #4: Migrate Gameplay Logic
+### ⏳ Commit #4: Migrate Gameplay Logic
 **Branch**: `feature/migrate-gameplay-logic-to-service`  
 **File Target**: `src/domain/services/game_service.py` (AGGIORNARE)
 
@@ -122,7 +139,7 @@
 
 ## 📋 FASE 3: INFRASTRUCTURE (2 commits)
 
-### ✅ Commit #5: Migrate ScreenReader
+### ⏳ Commit #5: Migrate ScreenReader
 **Branch**: `feature/migrate-screen-reader-to-infrastructure`  
 **File Target**: `src/infrastructure/accessibility/screen_reader.py`
 
@@ -140,7 +157,7 @@
 
 ---
 
-### ✅ Commit #6: Migrate PyGame UI
+### ⏳ Commit #6: Migrate PyGame UI
 **Branch**: `feature/migrate-pygame-ui-to-infrastructure`  
 **File Target**: `src/infrastructure/ui/menu.py`
 
@@ -159,7 +176,7 @@
 
 ## 📋 FASE 4: APPLICATION (2 commits)
 
-### ✅ Commit #7: Migrate Input Handling
+### ⏳ Commit #7: Migrate Input Handling
 **Branch**: `feature/migrate-game-play-to-application`  
 **File Target**: `src/application/input_handler.py` (NUOVO)
 
@@ -179,7 +196,7 @@
 
 ---
 
-### ✅ Commit #8: Add Timer & Settings Management
+### ⏳ Commit #8: Add Timer & Settings Management
 **Branch**: `feature/add-timer-and-difficulty-management`  
 **File Target**: `src/application/game_settings.py` (NUOVO)
 
@@ -200,7 +217,7 @@
 
 ## 📋 FASE 5: PRESENTATION (1 commit)
 
-### ✅ Commit #9: Extend Formatter with Stats
+### ⏳ Commit #9: Extend Formatter with Stats
 **Branch**: `feature/extend-formatter-with-stats`  
 **File Target**: `src/presentation/game_formatter.py` (AGGIORNARE)
 
@@ -221,7 +238,7 @@
 
 ## 📋 FASE 6: INTEGRATION (2 commits)
 
-### ✅ Commit #10: Create Entry Point
+### ⏳ Commit #10: Create Entry Point
 **Branch**: `feature/create-clean-arch-entry-point`  
 **File Target**: `test.py` (RISCRIVERE COMPLETAMENTE)
 
@@ -244,7 +261,7 @@
 
 ---
 
-### ✅ Commit #11: Update DI Container
+### ⏳ Commit #11: Update DI Container
 **Branch**: `feature/update-di-container-complete`  
 **File Target**: `src/infrastructure/di_container.py` (AGGIORNARE)
 
@@ -263,7 +280,7 @@
 
 ## 📋 FASE 7: TESTING/DOCS (2 commits)
 
-### ✅ Commit #12: Add Integration Tests
+### ⏳ Commit #12: Add Integration Tests
 **Branch**: `feature/add-integration-tests`  
 **File Target**: `tests/integration/test_feature_parity.py` (NUOVO)
 
@@ -284,7 +301,7 @@
 
 ---
 
-### ✅ Commit #13: Add Migration Documentation
+### ⏳ Commit #13: Add Migration Documentation
 **Branch**: `feature/add-migration-documentation`  
 **File Target**: `docs/MIGRATION_GUIDE.md` (NUOVO)
 
@@ -316,10 +333,10 @@
 - [ ] Auto-move fondazioni (CTRL+ENTER)
 
 ### Fix Critici v1.3.3
-- [ ] Re francese (13) su pila vuota ✅
-- [ ] Re napoletano (10) su pila vuota ✅ (#28, #29)
-- [ ] Verifica vittoria 4 pile ✅ (v1.3.2)
-- [ ] Fix IndexError cambio mazzo ✅ (#25, #26)
+- [x] Re francese (13) su pila vuota ✅ (Commit #1)
+- [x] Re napoletano (10) su pila vuota ✅ (Commit #1, fix #28, #29)
+- [ ] Verifica vittoria 4 pile ✅ (v1.3.2) - Commit #2
+- [ ] Fix IndexError cambio mazzo ✅ (#25, #26) - Commit #2
 
 ### Navigation v1.3.0
 - [ ] Double-tap navigation (1-7 due volte)
@@ -347,7 +364,8 @@
 - [ ] Messaggi italiani corretti
 - [ ] Navigazione solo tastiera
 
-**Obiettivo**: 100% feature parity ✅
+**Obiettivo**: 100% feature parity ✅  
+**Progresso fix critici**: 2/4 completati (50%)
 
 ---
 
@@ -367,17 +385,18 @@
 ## 🎯 Criteri di Completamento Globale
 
 ### Definition of Done per Commit
-- [ ] Codice implementato con type hints completi
-- [ ] Docstrings aggiunte (Google style)
-- [ ] Test unitari passano (>80% coverage)
-- [ ] Nessun import `scr/` nel codice `src/`
-- [ ] Commit message segue template
-- [ ] Feature parity verificata (se applicabile)
-- [ ] `mypy` validation passa
-- [ ] `pytest` passa senza errori
+- [x] Codice implementato con type hints completi
+- [x] Docstrings aggiunte (Google style)
+- [x] Test unitari passano (>80% coverage)
+- [x] Nessun import `scr/` nel codice `src/`
+- [x] Commit message segue template
+- [x] Feature parity verificata (se applicabile)
+- [x] `mypy` validation passa
+- [x] `pytest` passa senza errori
 
 ### Definition of Done Progetto Completo
-- [ ] Tutti i 13 commit completati
+- [x] ~~Commit #1 completato~~ ✅
+- [ ] Commit #2-13 completati
 - [ ] `test.py` avviabile e funzionante
 - [ ] Tutti i test integration passano
 - [ ] Feature parity 100% con v1.3.3
@@ -390,14 +409,14 @@
 
 ## 📊 Metriche Qualità Target
 
-| Metrica | Target | Status |
-|---------|--------|--------|
-| Test Coverage `src/` | >80% | ⏳ 0% |
-| Type Hints Coverage | 100% | ⏳ 0% |
-| `mypy` Validation | Pass | ⏳ Pending |
-| Integration Tests | >20 | ⏳ 0 |
-| Feature Parity | 100% | ⏳ 0% |
-| Documentation | Complete | ⏳ 0% |
+| Metrica | Target | Status | Commit #1 |
+|---------|--------|--------|----------|
+| Test Coverage `src/` | >80% | 🚧 7.7% | 95.5% deck.py ✅ |
+| Type Hints Coverage | 100% | 🚧 7.7% | 100% ✅ |
+| `mypy` Validation | Pass | 🚧 Partial | ✅ deck.py |
+| Integration Tests | >20 | ⏳ 0 | N/A |
+| Feature Parity | 100% | 🚧 15% | 2/13 fix ✅ |
+| Documentation | Complete | 🚧 7.7% | Docstrings ✅ |
 
 ---
 
@@ -444,6 +463,28 @@ pytest tests/ --cov=src --cov-report=html
 
 ---
 
+## 📊 Commit History
+
+### ✅ Completati
+
+1. **Commit #1** - Migrate Deck Models  
+   - PR: [#32](https://github.com/Nemex81/solitario-classico-accessibile/pull/32)  
+   - SHA: `919c3d24`  
+   - Data: 2026-02-07 12:03 CET  
+   - Files: `deck.py`, `card.py`, `test_deck.py`  
+   - Metrics: 46 tests, 95.5% coverage  
+   - Fixes: #28, #29
+
+### 🚧 In Progress
+
+_Nessuno_
+
+### ⏳ Prossimi
+
+- **Commit #2** - Migrate Game Table (prossimo)
+
+---
+
 ## 📞 Support
 
 **Domande?**
@@ -451,10 +492,11 @@ pytest tests/ --cov=src --cov-report=html
 - Issues: GitHub Issues
 - Documentazione: `docs/`
 
-**Prossimo Step**: Inizia con Commit #1 (Migrate Deck Models)
+**Prossimo Step**: Commit #2 - Migrate Game Table
 
 ---
 
-**Status**: ⏳ Migration Started - 0/13 Commits Completed  
-**Last Update**: 2026-02-07 02:54 CET  
-**Next Milestone**: Commit #1 - Domain Models - Decks
+**Status**: 🚧 Migration In Progress - 1/13 Commits Completed (7.7%)  
+**Last Update**: 2026-02-07 12:03 CET  
+**Next Milestone**: Commit #2 - Domain Models - Game Table  
+**Ultima PR Merged**: [#32](https://github.com/Nemex81/solitario-classico-accessibile/pull/32) - Deck Models ✅
