@@ -4,7 +4,7 @@ Migrated from legacy scr/decks.py with all v1.3.3 fixes.
 Supports French (52 cards) and Neapolitan (40 cards) decks.
 """
 
-from typing import List, Optional
+from typing import List, Optional, Dict
 import random
 
 from src.domain.models.card import Card
@@ -27,7 +27,7 @@ class ProtoDeck:
     # Constants (to be overridden by subclasses)
     SUITES: List[str] = []
     VALUES: List[str] = []
-    FIGURE_VALUES: dict[str, int] = {}
+    FIGURE_VALUES: Dict[str, int] = {}
     
     def __init__(self) -> None:
         """Initialize an empty deck."""

@@ -1,6 +1,7 @@
 """Unit tests for Deck models."""
 
 import pytest
+from typing import Type
 
 from src.domain.models.deck import FrenchDeck, NeapolitanDeck, ProtoDeck
 from src.domain.models.card import Card
@@ -164,14 +165,14 @@ class TestDeckInterface:
     """Test common ProtoDeck API for both deck types."""
     
     @pytest.mark.parametrize("deck_class", [FrenchDeck, NeapolitanDeck])
-    def test_get_total_cards(self, deck_class) -> None:
+    def test_get_total_cards(self, deck_class: Type[ProtoDeck]) -> None:
         """Test get_total_cards returns correct value for each deck."""
         deck = deck_class()
         total = deck.get_total_cards()
         assert total in [52, 40]
     
     @pytest.mark.parametrize("deck_class", [FrenchDeck, NeapolitanDeck])
-    def test_mischia_randomizes(self, deck_class) -> None:
+    def test_mischia_randomizes(self, deck_class: Type[ProtoDeck]) -> None:
         """Test shuffle randomizes card order."""
         deck = deck_class()
         deck.crea()
@@ -184,7 +185,7 @@ class TestDeckInterface:
         assert original_ids != shuffled_ids
     
     @pytest.mark.parametrize("deck_class", [FrenchDeck, NeapolitanDeck])
-    def test_pesca_draws_card(self, deck_class) -> None:
+    def test_pesca_draws_card(self, deck_class: Type[ProtoDeck]) -> None:
         """Test pesca draws a card from the deck."""
         deck = deck_class()
         deck.crea()
@@ -194,7 +195,7 @@ class TestDeckInterface:
         assert deck.get_len() == initial_len - 1
     
     @pytest.mark.parametrize("deck_class", [FrenchDeck, NeapolitanDeck])
-    def test_reset_recreates_and_shuffles(self, deck_class) -> None:
+    def test_reset_recreates_and_shuffles(self, deck_class: Type[ProtoDeck]) -> None:
         """Test reset recreates full deck and shuffles."""
         deck = deck_class()
         # Draw some cards
@@ -207,7 +208,7 @@ class TestDeckInterface:
         assert deck.get_len() == deck.get_total_cards()
     
     @pytest.mark.parametrize("deck_class", [FrenchDeck, NeapolitanDeck])
-    def test_get_carta_valid_index(self, deck_class) -> None:
+    def test_get_carta_valid_index(self, deck_class: Type[ProtoDeck]) -> None:
         """Test get_carta returns card at valid index."""
         deck = deck_class()
         deck.crea()
@@ -217,7 +218,7 @@ class TestDeckInterface:
         assert carta is not None
     
     @pytest.mark.parametrize("deck_class", [FrenchDeck, NeapolitanDeck])
-    def test_get_carta_invalid_index(self, deck_class) -> None:
+    def test_get_carta_invalid_index(self, deck_class: Type[ProtoDeck]) -> None:
         """Test get_carta returns None for invalid index."""
         deck = deck_class()
         deck.crea()
@@ -225,7 +226,7 @@ class TestDeckInterface:
         assert carta is None
     
     @pytest.mark.parametrize("deck_class", [FrenchDeck, NeapolitanDeck])
-    def test_rimuovi_carte(self, deck_class) -> None:
+    def test_rimuovi_carte(self, deck_class: Type[ProtoDeck]) -> None:
         """Test rimuovi_carte removes and returns cards."""
         deck = deck_class()
         deck.crea()
@@ -237,7 +238,7 @@ class TestDeckInterface:
         assert deck.get_len() == initial_len - n
     
     @pytest.mark.parametrize("deck_class", [FrenchDeck, NeapolitanDeck])
-    def test_inserisci_carte(self, deck_class) -> None:
+    def test_inserisci_carte(self, deck_class: Type[ProtoDeck]) -> None:
         """Test inserisci_carte adds cards to deck."""
         deck = deck_class()
         deck.crea()
@@ -250,7 +251,7 @@ class TestDeckInterface:
         assert deck.get_len() == initial_len + len(additional_cards)
     
     @pytest.mark.parametrize("deck_class", [FrenchDeck, NeapolitanDeck])
-    def test_is_empty_dek(self, deck_class) -> None:
+    def test_is_empty_dek(self, deck_class: Type[ProtoDeck]) -> None:
         """Test is_empty_dek correctly detects empty deck."""
         deck = deck_class()
         # Initially has cards (auto-created by __init__)
@@ -263,7 +264,7 @@ class TestDeckInterface:
         assert deck.is_empty_dek() is True
     
     @pytest.mark.parametrize("deck_class", [FrenchDeck, NeapolitanDeck])
-    def test_get_suits(self, deck_class) -> None:
+    def test_get_suits(self, deck_class: Type[ProtoDeck]) -> None:
         """Test get_suits returns suit list."""
         deck = deck_class()
         suits = deck.get_suits()
