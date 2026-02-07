@@ -7,7 +7,7 @@ and state management by coordinating domain services and infrastructure.
 from typing import Optional, Tuple, Dict, Any
 
 from src.domain.models.table import GameTable
-from src.domain.models.deck import Deck, FrenchDeck
+from src.domain.models.deck import FrenchDeck
 from src.domain.models.pile import Pile
 from src.domain.services.game_service import GameService
 from src.domain.rules.solitaire_rules import SolitaireRules
@@ -84,9 +84,9 @@ class GameEngine:
         # Create domain components
         deck = FrenchDeck()
         deck.crea()
-        deck.shuffle_deck()
+        deck.mischia()
         table = GameTable(deck)
-        rules = SolitaireRules()
+        rules = SolitaireRules(deck)
         service = GameService(table, rules)
         
         # Create infrastructure (optional)
@@ -113,8 +113,24 @@ class GameEngine:
         # Reset service state
         self.service.reset_game()
         
+        # Gather all cards back to deck
+        all_cards = []
+        for pile in self.table.pile_base:
+            all_cards.extend(pile.get_all_cards())
+            pile.clear()
+        for pile in self.table.pile_semi:
+            all_cards.extend(pile.get_all_cards())
+            pile.clear()
+        if self.table.pile_mazzo:
+            all_cards.extend(self.table.pile_mazzo.get_all_cards())
+        if self.table.pile_scarti:
+            all_cards.extend(self.table.pile_scarti.get_all_cards())
+        
+        # Put cards back in deck and shuffle
+        self.table.mazzo.cards = all_cards
+        self.table.mazzo.mischia()
+        
         # Redistribute cards
-        self.table.mazzo.shuffle_deck()
         self.table.distribuisci_carte()
         
         # Start timer
@@ -292,14 +308,16 @@ class GameEngine:
         if pile is None:
             return None
         
+        top_card = pile.get_top_card() if not pile.is_empty() else None
+        
         return {
             "card_count": pile.get_card_count(),
             "is_empty": pile.is_empty(),
             "top_card": {
-                "name": pile.get_top_card().get_name,
-                "suit": pile.get_top_card().get_suit,
-                "covered": pile.get_top_card().get_covered
-            } if not pile.is_empty() else None
+                "name": top_card.get_name,
+                "suit": top_card.get_suit,
+                "covered": top_card.get_covered
+            } if top_card is not None else None
         }
     
     # ========================================
