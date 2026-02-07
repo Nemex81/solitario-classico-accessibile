@@ -75,3 +75,19 @@ class Pile:
     def clear(self) -> None:
         """Remove all cards from the pile."""
         self.cards.clear()
+    
+    def remove_last_card(self) -> Optional[Card]:
+        """Remove and return the last card from the pile (same as rimuovi_carta).
+        
+        Returns:
+            The card removed from the top, or None if pile is empty
+        """
+        return self.rimuovi_carta()
+    
+    def get_card_count(self) -> int:
+        """Get the number of cards in the pile (same as get_size).
+        
+        Returns:
+            Number of cards in the pile
+        """
+        return self.get_size()

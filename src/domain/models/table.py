@@ -21,11 +21,16 @@ class GameTable:
     Manages the complete game state including:
     - 7 tableau piles (base piles, indices 0-6)
     - 4 foundation piles (one per suit, indices 7-10)
+    - Stock pile (pile_mazzo) for drawing cards
+    - Waste pile (pile_scarti) for discarded cards
     - Game deck (French or Neapolitan)
     
     Attributes:
         mazzo: The deck being used for the game
-        pile_base: List of all 11 piles (7 tableau + 4 foundation)
+        pile_base: List of 7 tableau piles (indices 0-6)
+        pile_semi: List of 4 foundation piles (one per suit)
+        pile_mazzo: Stock pile for drawing cards
+        pile_scarti: Waste pile for discarded cards
     """
     
     def __init__(self, deck: ProtoDeck) -> None:
@@ -35,16 +40,22 @@ class GameTable:
             deck: The deck to use (FrenchDeck or NeapolitanDeck)
         """
         self.mazzo = deck
-        # 11 piles total: 7 tableau (0-6) + 4 foundations (7-10)
-        self.pile_base: List[Pile] = [Pile() for _ in range(11)]
+        # 7 tableau piles (0-6)
+        self.pile_base: List[Pile] = [Pile() for _ in range(7)]
+        # 4 foundation piles (one per suit)
+        self.pile_semi: List[Pile] = [Pile() for _ in range(4)]
+        # Stock pile (tallone coperto)
+        self.pile_mazzo: Optional[Pile] = None
+        # Waste pile (tallone scoperto)
+        self.pile_scarti: Optional[Pile] = None
         self.distribuisci_carte()
     
     def distribuisci_carte(self) -> None:
         """Distribute cards on the table at game start.
         
         Dynamic distribution based on deck type:
-        - French deck (52 cards): 28 distributed + 24 remain in deck
-        - Neapolitan deck (40 cards): 28 distributed + 12 remain in deck
+        - French deck (52 cards): 28 distributed + 24 remain in stock
+        - Neapolitan deck (40 cards): 28 distributed + 12 remain in stock
         
         The 28 cards are distributed across 7 tableau piles:
         - Pile 0: 1 card
@@ -55,11 +66,15 @@ class GameTable:
         Total: 1+2+3+4+5+6+7 = 28 cards
         
         The last card in each pile is uncovered (face-up).
-        Remaining cards stay in the deck for the stock pile.
+        Remaining cards are placed in the stock pile (pile_mazzo).
         
         Fixes #25, #26: Prevents IndexError when switching decks by not
         hardcoding the number of cards remaining for stock.
         """
+        # Initialize stock and waste piles
+        self.pile_mazzo = Pile()
+        self.pile_scarti = Pile()
+        
         # Distribute 28 cards to the 7 tableau piles
         for i in range(7):
             for j in range(i + 1):
@@ -69,10 +84,13 @@ class GameTable:
                     carta.set_uncover()
                 self.pile_base[i].aggiungi_carta(carta)
         
-        # Remaining cards stay in the deck (mazzo)
+        # Remaining cards go to stock pile (pile_mazzo)
         # French: 52 - 28 = 24 cards remain
         # Neapolitan: 40 - 28 = 12 cards remain
-        # No explicit action needed - cards are already in the deck
+        while len(self.mazzo.cards) > 0:
+            carta = self.mazzo.pesca()
+            carta.set_cover()  # Stock cards are face-down
+            self.pile_mazzo.aggiungi_carta(carta)
     
     def put_to_base(self, card: Card, pile_index: int) -> bool:
         """Place a card on a tableau pile.
@@ -127,15 +145,15 @@ class GameTable:
         
         Args:
             card: Card to place
-            pile_index: Index of target foundation pile (7-10)
+            pile_index: Index of target foundation pile (0-3)
         
         Returns:
             True if card was successfully placed, False otherwise
         """
-        if pile_index < 7 or pile_index > 10:
+        if pile_index < 0 or pile_index > 3:
             return False
         
-        target_pile = self.pile_base[pile_index]
+        target_pile = self.pile_semi[pile_index]
         
         # Empty foundation: only Aces
         if target_pile.is_empty():
@@ -172,10 +190,8 @@ class GameTable:
         if king_value is None:
             return False
         
-        # Check ALL 4 foundation piles (indices 7, 8, 9, 10)
-        for i in range(7, 11):
-            pile = self.pile_base[i]
-            
+        # Check ALL 4 foundation piles
+        for pile in self.pile_semi:
             # Empty pile = not victory
             if pile.is_empty():
                 return False
@@ -192,7 +208,7 @@ class GameTable:
         """Get a pile by index.
         
         Args:
-            index: Pile index (0-6 for tableau, 7-10 for foundation)
+            index: Pile index (0-6 for tableau)
         
         Returns:
             The pile at the given index, or None if index is invalid
@@ -206,9 +222,19 @@ class GameTable:
         
         Clears all piles, resets the deck, and redistributes cards.
         """
-        # Clear all piles
+        # Clear all tableau piles
         for pile in self.pile_base:
             pile.clear()
+        
+        # Clear all foundation piles
+        for pile in self.pile_semi:
+            pile.clear()
+        
+        # Clear stock and waste
+        if self.pile_mazzo:
+            self.pile_mazzo.clear()
+        if self.pile_scarti:
+            self.pile_scarti.clear()
         
         # Reset deck
         self.mazzo.reset()
