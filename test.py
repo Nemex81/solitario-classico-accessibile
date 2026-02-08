@@ -74,6 +74,7 @@ class SolitarioCleanArch:
         menu: Virtual main menu for navigation
         game_submenu: Secondary menu for game options (v1.4.1)
         exit_dialog: Dialog for app exit confirmation (v1.4.2)
+        return_to_main_dialog: Dialog for submenu exit confirmation (v1.4.2)
         is_menu_open: Current UI state (menu vs gameplay/options)
         is_options_mode: Options window active (v1.4.1)
         is_running: Main loop control flag
@@ -154,7 +155,8 @@ class SolitarioCleanArch:
         print("✓ Menu pronto")
         
         # Infrastructure: Dialog boxes (v1.4.2)
-        self.exit_dialog = None  # Exit confirmation dialog
+        self.exit_dialog = None  # Exit confirmation dialog (Commit #25)
+        self.return_to_main_dialog = None  # Submenu exit dialog (Commit #26)
         
         # Application state
         self.is_menu_open = True
@@ -201,7 +203,7 @@ class SolitarioCleanArch:
             selected_item: Index of selected submenu item
                 0: Start new game
                 1: Open virtual options window
-                2: Close submenu and return to main menu
+                2: Close submenu - now shows confirmation dialog (v1.4.2)
         """
         if selected_item == 0:
             # Nuova partita
@@ -211,8 +213,8 @@ class SolitarioCleanArch:
             # Opzioni
             self.open_options()
         elif selected_item == 2:
-            # Chiudi - return to main menu
-            self.menu.close_submenu()
+            # Chiudi - show confirmation dialog (Commit #26)
+            self.show_return_to_main_dialog()
     
     # === DIALOG HANDLERS (v1.4.2) ===
     
@@ -223,7 +225,7 @@ class SolitarioCleanArch:
         OK/Annulla buttons. OK has default focus.
         """
         print("\n" + "="*60)
-        print("DIALOG: Conferma uscita")
+        print("DIALOG: Conferma uscita applicazione")
         print("="*60)
         
         self.exit_dialog = VirtualDialogBox(
@@ -256,6 +258,75 @@ class SolitarioCleanArch:
         # Re-announce main menu
         if self.menu.active_submenu is None:
             self.menu._announce_menu_open()
+    
+    def show_return_to_main_dialog(self) -> None:
+        """Show return to main menu confirmation dialog (Commit #26).
+        
+        Opens dialog asking "Vuoi tornare al menu principale?" with
+        Sì/No buttons. Sì has default focus.
+        
+        Triggered by:
+        - ESC in game submenu
+        - ENTER on "Chiudi" menu item
+        """
+        print("\n" + "="*60)
+        print("DIALOG: Conferma ritorno al menu principale")
+        print("="*60)
+        
+        self.return_to_main_dialog = VirtualDialogBox(
+            message="Vuoi tornare al menu principale?",
+            buttons=["Sì", "No"],
+            default_button=0,  # Focus on Sì
+            on_confirm=self.confirm_return_to_main,
+            on_cancel=self.close_return_dialog,
+            screen_reader=self.screen_reader if self.screen_reader else self._dummy_sr()
+        )
+        
+        self.return_to_main_dialog.open()
+    
+    def confirm_return_to_main(self) -> None:
+        """Confirm return to main menu (Sì button).
+        
+        Closes game submenu and returns to main menu.
+        Re-announces main menu after closing.
+        """
+        print("Confermato - Chiusura submenu e ritorno al menu principale")
+        
+        # Close dialog
+        self.return_to_main_dialog = None
+        
+        # Close game submenu
+        self.menu.close_submenu()
+        
+        # Announce return
+        if self.screen_reader:
+            self.screen_reader.tts.speak(
+                "Ritorno al menu principale.",
+                interrupt=True
+            )
+            pygame.time.wait(400)
+            
+            # Re-announce main menu
+            self.menu._announce_menu_open()
+    
+    def close_return_dialog(self) -> None:
+        """Close return dialog and stay in game submenu (No button or ESC).
+        
+        User chose to stay in game submenu, re-announce current position.
+        """
+        print("Dialog chiuso - Resta nel menu di gioco")
+        
+        if self.screen_reader:
+            self.screen_reader.tts.speak(
+                "Resta nel menu di gioco.",
+                interrupt=True
+            )
+            pygame.time.wait(300)
+        
+        self.return_to_main_dialog = None
+        
+        # Re-announce current submenu position
+        self.game_submenu._announce_menu_open()
     
     # === MENU & GAMEPLAY HANDLERS ===
     
@@ -324,7 +395,8 @@ class SolitarioCleanArch:
         """Main event loop - process all pygame events.
         
         Routes events based on current application state:
-        - Exit dialog open: Route to dialog
+        - Exit dialog open: Route to exit dialog
+        - Return dialog open: Route to return dialog (Commit #26)
         - Menu open: Route to menu navigation (with ESC interception)
         - Options mode: Route to options controller
         - Gameplay: Route to gameplay controller
@@ -340,13 +412,23 @@ class SolitarioCleanArch:
                 self.exit_dialog.handle_keyboard_events(event)
                 continue  # Block all other input
             
+            # PRIORITY 2: Return to main dialog open (Commit #26)
+            if self.return_to_main_dialog and self.return_to_main_dialog.is_open:
+                self.return_to_main_dialog.handle_keyboard_events(event)
+                continue  # Block all other input
+            
             # Route keyboard events based on state
             if self.is_menu_open:
-                # Check for ESC in main menu (not in submenu)
+                # Check for ESC key
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    # ESC in main menu → Exit dialog
                     if self.menu.active_submenu is None:
-                        # ESC in main menu → Show exit dialog
                         self.show_exit_dialog()
+                        continue
+                    
+                    # ESC in game submenu → Return to main dialog (Commit #26)
+                    elif self.menu.active_submenu == self.game_submenu:
+                        self.show_return_to_main_dialog()
                         continue
                 
                 # Normal menu navigation (delegates to submenu if active)
@@ -374,7 +456,11 @@ class SolitarioCleanArch:
                             self.return_to_menu()
     
     def return_to_menu(self) -> None:
-        """Return from gameplay to game submenu."""
+        """Return from gameplay to game submenu (fixed in Commit #26).
+        
+        Note: Now returns to game submenu, not main menu.
+        This is the correct behavior for ESC during gameplay.
+        """
         print("\n" + "="*60)
         print("RITORNO AL MENU DI GIOCO")
         print("="*60)
@@ -387,7 +473,7 @@ class SolitarioCleanArch:
                 interrupt=True
             )
             pygame.time.wait(300)
-            # Re-announce game submenu
+            # Re-announce game submenu (not main menu!)
             self.game_submenu._announce_menu_open()
     
     def quit_app(self) -> None:
@@ -441,7 +527,8 @@ def main():
     print("✅ v1.4.2 IN PROGRESS (Commits #24-28)")
     print("   - #24: Virtual Dialog Box ✓")
     print("   - #25: ESC in Main Menu ✓")
-    print("   - #26-28: In progress...")
+    print("   - #26: ESC in Game Submenu ✓")
+    print("   - #27-28: In progress...")
     print("")
     print("Legacy version ancora disponibile: python acs.py")
     print("="*60)
