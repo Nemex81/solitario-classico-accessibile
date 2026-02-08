@@ -8,6 +8,7 @@ Extended with CursorManager and SelectionManager for gameplay.
 New in v1.4.1:
 - Virtual options window management (open/close/query)
 - Validation: options blocked during active game
+- Detailed voice formatters for draw/move/reshuffle operations
 """
 
 from typing import Optional, Tuple, Dict, Any, List
@@ -22,6 +23,7 @@ from src.domain.services.selection_manager import SelectionManager
 from src.domain.rules.solitaire_rules import SolitaireRules
 from src.infrastructure.audio.screen_reader import ScreenReader
 from src.infrastructure.audio.tts_provider import create_tts_provider
+from src.presentation.game_formatter import GameFormatter
 
 
 class GameEngine:
@@ -34,12 +36,13 @@ class GameEngine:
     - CursorManager (navigation)
     - SelectionManager (card selection)
     - ScreenReader (audio feedback)
+    - GameFormatter (detailed voice narration)
     
     Provides high-level API for:
     - Game initialization and reset
     - Cursor navigation
     - Card selection/deselection
-    - Move execution with feedback
+    - Move execution with detailed feedback
     - Game state queries
     - Statistics and progress tracking
     - Virtual options window management (v1.4.1)
@@ -463,6 +466,8 @@ class GameEngine:
     def execute_move(self) -> Tuple[bool, str]:
         """Execute move with selected cards to cursor position.
         
+        Uses detailed voice formatter for complete move narration.
+        
         Returns:
             Tuple of (success, message)
         """
@@ -472,7 +477,7 @@ class GameEngine:
                 self.screen_reader.tts.speak(msg, interrupt=True)
             return False, msg
         
-        # Get destination
+        # Get move context
         dest_pile = self.cursor.get_current_pile()
         origin_pile = self.selection.origin_pile
         cards = self.selection.selected_cards
@@ -488,6 +493,11 @@ class GameEngine:
         dest_idx = self.cursor.pile_idx
         is_foundation = 7 <= dest_idx <= 10
         
+        # Capture card under (before move)
+        card_under = None
+        if not dest_pile.is_empty():
+            card_under = dest_pile.get_top_card()
+        
         # Execute move
         success, message = self.service.move_card(
             origin_pile,
@@ -496,8 +506,25 @@ class GameEngine:
             is_foundation
         )
         
-        # Clear selection on success
+        # On success: use detailed formatter
         if success:
+            # Check revealed card in origin
+            revealed_card = None
+            if not origin_pile.is_empty():
+                top = origin_pile.get_top_card()
+                if top and not top.get_covered:
+                    revealed_card = top
+            
+            # Format detailed report
+            message = GameFormatter.format_move_report(
+                moved_cards=cards,
+                origin_pile=origin_pile,
+                dest_pile=dest_pile,
+                card_under=card_under,
+                revealed_card=revealed_card
+            )
+            
+            # Clear selection
             self.selection.clear_selection()
             
             # Move cursor to destination
@@ -572,15 +599,28 @@ class GameEngine:
         return success, message
     
     def draw_from_stock(self, count: int = 1) -> Tuple[bool, str]:
-        """Draw cards from stock to waste.
+        """Draw cards from stock to waste with detailed voice feedback.
+        
+        Uses GameFormatter.format_drawn_cards() for complete card announcement.
         
         Args:
             count: Number of cards to draw
             
         Returns:
             Tuple of (success, message)
+            
+        Example:
+            >>> success, msg = engine.draw_from_stock(3)
+            >>> print(msg)
+            "Hai pescato: 7 di Cuori, Regina di Quadri, Asso di Fiori."
         """
-        success, message, cards = self.service.draw_cards(count)
+        success, generic_msg, cards = self.service.draw_cards(count)
+        
+        # Use detailed formatter
+        if success and cards:
+            message = GameFormatter.format_drawn_cards(cards)
+        else:
+            message = generic_msg
         
         if self.screen_reader:
             self.screen_reader.tts.speak(message, interrupt=True)
@@ -588,15 +628,41 @@ class GameEngine:
         return success, message
     
     def recycle_waste(self, shuffle: bool = False) -> Tuple[bool, str]:
-        """Recycle waste pile back to stock.
+        """Recycle waste pile back to stock with auto-draw and detailed feedback.
+        
+        Uses GameFormatter.format_reshuffle_message() to announce:
+        - Shuffle mode (random/reverse)
+        - Auto-drawn cards after reshuffle
         
         Args:
-            shuffle: Whether to shuffle
+            shuffle: Whether to shuffle randomly
             
         Returns:
             Tuple of (success, message)
+            
+        Example:
+            >>> success, msg = engine.recycle_waste(shuffle=True)
+            >>> print(msg)
+            "Rimescolo gli scarti in modo casuale nel mazzo riserve!
+             Pescata automatica: Hai pescato: 9 di Quadri, Asso di Fiori."
         """
-        success, message = self.service.recycle_waste(shuffle)
+        # Execute recycle
+        success, generic_msg = self.service.recycle_waste(shuffle)
+        
+        if not success:
+            if self.screen_reader:
+                self.screen_reader.tts.speak(generic_msg, interrupt=False)
+            return success, generic_msg
+        
+        # Auto-draw after reshuffle
+        auto_success, auto_msg, auto_cards = self.service.draw_cards(1)
+        
+        # Format detailed message
+        shuffle_mode = "shuffle" if shuffle else "reverse"
+        message = GameFormatter.format_reshuffle_message(
+            shuffle_mode=shuffle_mode,
+            auto_drawn_cards=auto_cards if auto_success else None
+        )
         
         if self.screen_reader:
             self.screen_reader.tts.speak(message, interrupt=False)
