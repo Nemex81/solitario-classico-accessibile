@@ -129,7 +129,7 @@ class CursorManager:
             if self.card_idx > 0:
                 self.card_idx -= 1
                 card = pile.cards[self.card_idx]
-                return f"{self.card_idx + 1}: {card.name}\n"
+                return f"{self.card_idx + 1}: {card.get_name}\n"
             else:
                 return "Sei già alla prima carta della pila!\n"
         
@@ -146,7 +146,7 @@ class CursorManager:
                 total = len(pile.cards)
                 is_last = (self.card_idx == total - 1)
                 hint = " Premi CTRL+INVIO per selezionare." if is_last else ""
-                return f"{self.card_idx + 1} di {total}: {card.name}{hint}\n"
+                return f"{self.card_idx + 1} di {total}: {card.get_name}{hint}\n"
             else:
                 return "Sei già alla prima carta degli scarti!\n"
         
@@ -176,7 +176,7 @@ class CursorManager:
             if self.card_idx < len(pile.cards) - 1:
                 self.card_idx += 1
                 card = pile.cards[self.card_idx]
-                return f"{self.card_idx + 1}: {card.name}\n"
+                return f"{self.card_idx + 1}: {card.get_name}\n"
             else:
                 return "Sei già all'ultima carta della pila!\n"
         
@@ -193,7 +193,7 @@ class CursorManager:
                 total = len(pile.cards)
                 is_last = (self.card_idx == total - 1)
                 hint = " Premi CTRL+INVIO per selezionare." if is_last else ""
-                return f"{self.card_idx + 1} di {total}: {card.name}{hint}\n"
+                return f"{self.card_idx + 1} di {total}: {card.get_name}{hint}\n"
             else:
                 return "Sei già all'ultima carta degli scarti!\n"
         
@@ -274,9 +274,9 @@ class CursorManager:
             
             if self.pile_idx == 11:
                 total = len(pile.cards)
-                return f"1 di {total}: {card.name} Prima carta.\n"
+                return f"1 di {total}: {card.get_name} Prima carta.\n"
             else:
-                return f"1: {card.name} Prima carta.\n"
+                return f"1: {card.get_name} Prima carta.\n"
         
         elif self.pile_idx == 12:
             return "Il mazzo non è consultabile.\n"
@@ -303,9 +303,9 @@ class CursorManager:
             if self.pile_idx == 11:
                 total = len(pile.cards)
                 hint = " Premi CTRL+INVIO per selezionare."
-                return f"{total} di {total}: {card.name} Ultima carta.{hint}\n"
+                return f"{total} di {total}: {card.get_name} Ultima carta.{hint}\n"
             else:
-                return f"{len(pile.cards)}: {card.name} Ultima carta.\n"
+                return f"{len(pile.cards)}: {card.get_name} Ultima carta.\n"
         
         elif self.pile_idx == 12:
             return "Il mazzo non è consultabile.\n"
@@ -375,7 +375,7 @@ class CursorManager:
         if pile.is_empty():
             msg += "La pila è vuota!\n"
         elif card:
-            msg += f"{self.card_idx + 1}: {card.name}\n"
+            msg += f"{self.card_idx + 1}: {card.get_name}\n"
         else:
             msg += "Posizione non valida!\n"
         
@@ -394,10 +394,10 @@ class CursorManager:
             return "Non riesco ad identificare la carta alle coordinate specificate\n"
         
         info = f"Scheda carta:\n"
-        info += f"Nome: {card.name}\n"
-        info += f"Seme: {card.suit}\n"
-        info += f"Valore: {card.value}\n"
-        info += f"Stato: {'coperta' if card.covered else 'scoperta'}\n"
+        info += f"Nome: {card.get_name}\n"
+        info += f"Seme: {card.get_suit}\n"
+        info += f"Valore: {card.get_value}\n"
+        info += f"Stato: {'coperta' if card.get_covered else 'scoperta'}\n"
         info += f"Genitore: {pile.name}\n"
         info += f"Posizione in pila: {self.card_idx + 1}\n"
         
@@ -416,6 +416,6 @@ class CursorManager:
             msg += "La pila è vuota!\n"
         else:
             top_card = pile.cards[-1]
-            msg += f"Carta in cima: {top_card.name}\n"
+            msg += f"Carta in cima: {top_card.get_name}\n"
         
         return msg
