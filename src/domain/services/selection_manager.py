@@ -72,8 +72,8 @@ class SelectionManager:
         
         card = pile.cards[card_idx]
         
-        # Cannot select covered card
-        if card.covered:
+        # Cannot select covered card (use @property)
+        if card.get_covered:
             return "Non puoi selezionare una carta coperta!\n"
         
         # Select card and all above it
@@ -84,8 +84,9 @@ class SelectionManager:
         count = len(self.selected_cards)
         msg = f"Carte selezionate: {count}\n"
         
+        # Build card names list (use @property)
         for c in self.selected_cards:
-            msg += f"{c.name}, "
+            msg += f"{c.get_name}, "
         
         return msg[:-2] + "!\n"  # Remove trailing comma
     
@@ -109,7 +110,8 @@ class SelectionManager:
         self.origin_pile = waste_pile
         self.target_card = top_card
         
-        return f"Carta selezionata: {top_card.name}!\n"
+        # Use @property for card name
+        return f"Carta selezionata: {top_card.get_name}!\n"
     
     def get_selection_info(self) -> str:
         """Get info about current selection.
@@ -122,8 +124,10 @@ class SelectionManager:
         
         count = len(self.selected_cards)
         msg = f"Carte selezionate: {count}\n"
-        msg += f"Carta target: {self.target_card.name}\n"
-        msg += f"Valore: {self.target_card.value}\n"
+        
+        # Use @property for card info
+        msg += f"Carta target: {self.target_card.get_name}\n"
+        msg += f"Valore: {self.target_card.get_value}\n"
         
         if self.origin_pile:
             msg += f"Origine: {self.origin_pile.name}\n"
