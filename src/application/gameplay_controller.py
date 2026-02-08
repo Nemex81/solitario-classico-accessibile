@@ -38,6 +38,7 @@ class GamePlayController:
         # Initialize options controller
         self.options_controller = OptionsWindowController(self.settings)
         self._awaiting_save_response = False  # Dialog state
+        self._just_opened_options = False  # Prevent immediate close due to key repeat
         
         self.callback_dict = self._build_commands()
     
@@ -337,6 +338,7 @@ ESC: abbandona partita."""
                 self._vocalizza("Non puoi aprire le opzioni durante una partita! Premi N per nuova partita.", interrupt=True)
             else:
                 msg = self.options_controller.open_window()
+                self._just_opened_options = True  # Prevent immediate close from key repeat
                 self._vocalizza(msg, interrupt=True)
     
     # === OPTIONS WINDOW HANDLERS ===
@@ -354,11 +356,21 @@ ESC: abbandona partita."""
             self._handle_save_dialog(event)
             return
         
+        # Clear just_opened flag on any key except O
+        # This allows first arrow/number key to work and prevents accidental close
+        if self._just_opened_options and event.key != pygame.K_o:
+            self._just_opened_options = False
+        
         # Normal options navigation
         msg = None
         
         if event.key == pygame.K_o:
             # O: Close options (with confirmation)
+            # BUT: Ignore if just opened (prevent key repeat double-trigger)
+            if self._just_opened_options:
+                self._just_opened_options = False  # Consume the flag
+                return  # Ignore this O press
+            
             msg = self.options_controller.close_window()
             if "modifiche non salvate" in msg:
                 self._awaiting_save_response = True
