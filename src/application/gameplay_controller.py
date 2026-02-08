@@ -11,6 +11,7 @@ from pygame.locals import KMOD_SHIFT, KMOD_CTRL
 from typing import Dict, Callable, Optional
 
 from src.application.game_engine import GameEngine
+from src.application.options_controller import OptionsWindowController
 
 
 class GamePlayController:
@@ -18,7 +19,7 @@ class GamePlayController:
     
     Maps keyboard events to GameEngine operations with voice feedback.
     Supports 60+ commands including navigation, actions, info queries,
-    and settings management with virtual options window.
+    and virtual options window with HYBRID navigation.
     
     Args:
         engine: GameEngine facade for game logic
@@ -28,6 +29,11 @@ class GamePlayController:
     def __init__(self, engine: GameEngine, screen_reader):
         self.engine = engine
         self.sr = screen_reader
+        
+        # Initialize options controller
+        self.options_controller = OptionsWindowController(engine.settings)
+        self._awaiting_save_response = False  # Dialog state
+        
         self.callback_dict = self._build_commands()
     
     def _vocalizza(self, text: str, interrupt: bool = True) -> None:
@@ -46,6 +52,8 @@ class GamePlayController:
         
         Returns:
             Dictionary mapping pygame key constants to handler methods
+            
+        Note: F1-F5 keys removed - use O to open options window
         """
         return {
             # Numeri 1-7: Pile base (con double-tap in CursorManager)
@@ -89,14 +97,7 @@ class GamePlayController:
             
             # Gestione partita
             pygame.K_n: self._new_game,
-            pygame.K_o: self._toggle_options,
-            
-            # Function keys (gestiti separatamente per modalità opzioni)
-            pygame.K_F1: self._f1_handler,
-            pygame.K_F2: self._f2_handler,
-            pygame.K_F3: self._f3_handler,
-            pygame.K_F4: self._f4_handler,
-            pygame.K_F5: self._f5_handler,
+            pygame.K_o: self._handle_o_key,
             
             # ESC: Abbandona/Esci o chiude opzioni
             pygame.K_ESCAPE: self._esc_handler,
@@ -264,7 +265,7 @@ class GamePlayController:
         self._vocalizza(f"Tempo trascorso: {minutes} minuti e {seconds} secondi")
     
     def _get_settings(self) -> None:
-        """I: Get current game settings."""
+        """I: Get current game settings (outside options window)."""
         settings = "Impostazioni di gioco.\n"
         settings += "Mazzo: carte francesi.\n"
         settings += "Difficoltà: livello 1.\n"
@@ -287,9 +288,8 @@ X: info carta.
 G: stato tavolo.
 R: report partita.
 N: nuova partita.
-O: apri opzioni.
-F1 a F5: modifica impostazioni quando opzioni aperte.
-ESC: chiudi opzioni o abbandona partita."""
+O: apri finestra opzioni.
+ESC: abbandona partita."""
         
         self._vocalizza(help_text, interrupt=True)
     
@@ -308,94 +308,144 @@ ESC: chiudi opzioni o abbandona partita."""
         self.engine.new_game()
         # Message vocalized by engine.new_game()
     
-    def _toggle_options(self) -> None:
-        """O: Open/close virtual options window."""
-        if self.engine.is_options_open():
-            msg = self.engine.close_options()
-        else:
-            msg = self.engine.open_options()
+    def _handle_o_key(self) -> None:
+        """O: Open/close options window.
         
-        self._vocalizza(msg, interrupt=True)
-    
-    # === FUNCTION KEYS (Settings con modalità opzioni) ===
-    
-    def _f1_handler(self) -> None:
-        """F1: Change deck type (French/Neapolitan).
-        
-        CTRL+F1: Test victory (debug).
+        Behavior:
+        - If closed: Open window (only if no game running)
+        - If open: Close with save confirmation if modified
         """
-        mods = pygame.key.get_mods()
-        
-        if mods & KMOD_CTRL:
-            # CTRL+F1: Test vittoria (debug mode)
-            self._vocalizza("Test vittoria: funzione debug non ancora implementata")
+        if self.options_controller.is_open:
+            # Already open, close it
+            msg = self.options_controller.close_window()
+            
+            # Check if save dialog prompted
+            if "modifiche non salvate" in msg:
+                self._awaiting_save_response = True
+            
+            self._vocalizza(msg, interrupt=True)
         else:
-            # F1: Cambio mazzo (solo se opzioni aperte)
-            if self.engine.is_options_open():
-                settings = self.engine.settings
-                is_running = not self.engine.get_game_state().get('game_over', {}).get('is_over', True)
-                success, msg = settings.change_deck_type_validated(is_running)
+            # Open window (block if game running)
+            if self.engine.game_service.is_game_running:
+                self._vocalizza("Non puoi aprire le opzioni durante una partita! Premi N per nuova partita.", interrupt=True)
+            else:
+                msg = self.options_controller.open_window()
                 self._vocalizza(msg, interrupt=True)
-            else:
-                self._vocalizza("Apri prima il menu opzioni con il tasto O.")
     
-    def _f2_handler(self) -> None:
-        """F2: Change difficulty (1→2→3→1 cards draw mode)."""
-        if self.engine.is_options_open():
-            settings = self.engine.settings
-            is_running = not self.engine.get_game_state().get('game_over', {}).get('is_over', True)
-            success, msg = settings.cycle_difficulty_validated(is_running)
-            self._vocalizza(msg, interrupt=True)
-        else:
-            self._vocalizza("Apri prima il menu opzioni con il tasto O.")
+    # === OPTIONS WINDOW HANDLERS ===
     
-    def _f3_handler(self) -> None:
-        """F3: Decrease timer by 5 minutes.
+    def _handle_options_events(self, event: pygame.event.Event) -> None:
+        """Handle keyboard events when options window is open.
         
-        CTRL+F3: Disable timer.
+        Routes all input to options controller, blocking gameplay.
+        
+        Args:
+            event: Pygame keyboard event
         """
-        mods = pygame.key.get_mods()
+        # Priority: Check if in save dialog
+        if self._awaiting_save_response:
+            self._handle_save_dialog(event)
+            return
         
-        if self.engine.is_options_open():
-            settings = self.engine.settings
-            is_running = not self.engine.get_game_state().get('game_over', {}).get('is_over', True)
-            
-            if mods & KMOD_CTRL:
-                # CTRL+F3: Disabilita timer
-                success, msg = settings.disable_timer_validated(is_running)
-            else:
-                # F3: Decrementa 5 minuti
-                success, msg = settings.decrement_timer_validated(is_running, decrement=5)
-            
+        # Normal options navigation
+        msg = None
+        
+        if event.key == pygame.K_o:
+            # O: Close options (with confirmation)
+            msg = self.options_controller.close_window()
+            if "modifiche non salvate" in msg:
+                self._awaiting_save_response = True
+        
+        elif event.key == pygame.K_UP:
+            msg = self.options_controller.navigate_up()
+        
+        elif event.key == pygame.K_DOWN:
+            msg = self.options_controller.navigate_down()
+        
+        elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
+            msg = self.options_controller.modify_current_option()
+        
+        elif event.key == pygame.K_ESCAPE:
+            msg = self.options_controller.close_window()
+            if "modifiche non salvate" in msg:
+                self._awaiting_save_response = True
+        
+        # Number keys 1-5: Jump to option
+        elif event.key == pygame.K_1:
+            msg = self.options_controller.jump_to_option(0)
+        elif event.key == pygame.K_2:
+            msg = self.options_controller.jump_to_option(1)
+        elif event.key == pygame.K_3:
+            msg = self.options_controller.jump_to_option(2)
+        elif event.key == pygame.K_4:
+            msg = self.options_controller.jump_to_option(3)
+        elif event.key == pygame.K_5:
+            msg = self.options_controller.jump_to_option(4)
+        
+        # Timer controls (+/-/T)
+        elif event.key == pygame.K_PLUS or event.key == pygame.K_EQUALS:
+            msg = self.options_controller.increment_timer()
+        elif event.key == pygame.K_MINUS:
+            msg = self.options_controller.decrement_timer()
+        elif event.key == pygame.K_t:
+            msg = self.options_controller.toggle_timer()
+        
+        # Information keys (I/H)
+        elif event.key == pygame.K_i:
+            msg = self.options_controller.read_all_settings()
+        elif event.key == pygame.K_h:
+            msg = self.options_controller.show_help()
+        
+        # Vocalize response
+        if msg:
             self._vocalizza(msg, interrupt=True)
-        else:
-            self._vocalizza("Apri prima il menu opzioni con il tasto O.")
     
-    def _f4_handler(self) -> None:
-        """F4: Increase timer by 5 minutes."""
-        if self.engine.is_options_open():
-            settings = self.engine.settings
-            is_running = not self.engine.get_game_state().get('game_over', {}).get('is_over', True)
-            success, msg = settings.increment_timer_validated(is_running, increment=5)
+    def _handle_save_dialog(self, event: pygame.event.Event) -> None:
+        """Handle save confirmation dialog.
+        
+        Keys:
+        - S: Save and close
+        - N: Discard and close
+        - ESC: Cancel (stay in options)
+        
+        Args:
+            event: Pygame keyboard event
+        """
+        msg = None
+        
+        if event.key == pygame.K_s:
+            # Save and close
+            msg = self.options_controller.save_and_close()
+            self._awaiting_save_response = False
+        
+        elif event.key == pygame.K_n:
+            # Discard and close
+            msg = self.options_controller.discard_and_close()
+            self._awaiting_save_response = False
+        
+        elif event.key == pygame.K_ESCAPE:
+            # Cancel (stay in options)
+            msg = self.options_controller.cancel_close()
+            self._awaiting_save_response = False
+        
+        if msg:
             self._vocalizza(msg, interrupt=True)
-        else:
-            self._vocalizza("Apri prima il menu opzioni con il tasto O.")
-    
-    def _f5_handler(self) -> None:
-        """F5: Toggle shuffle/invert mode for waste pile recycling."""
-        if self.engine.is_options_open():
-            settings = self.engine.settings
-            is_running = not self.engine.get_game_state().get('game_over', {}).get('is_over', True)
-            success, msg = settings.toggle_shuffle_mode_validated(is_running)
-            self._vocalizza(msg, interrupt=True)
-        else:
-            self._vocalizza("Apri prima il menu opzioni con il tasto O.")
     
     def _esc_handler(self) -> None:
-        """ESC: Close options window or quit game."""
+        """ESC: Close options window or quit game.
+        
+        Priority:
+        1. If options open: Close with confirmation
+        2. Otherwise: Handled by test.py (return to menu)
+        """
         # Se opzioni aperte, chiudile
-        if self.engine.is_options_open():
-            msg = self.engine.close_options()
+        if self.options_controller.is_open:
+            msg = self.options_controller.close_window()
+            
+            # Check if save dialog prompted
+            if "modifiche non salvate" in msg:
+                self._awaiting_save_response = True
+            
             self._vocalizza(msg, interrupt=True)
         else:
             # Altrimenti gestito da test.py (ritorno al menu)
@@ -406,17 +456,25 @@ ESC: chiudi opzioni o abbandona partita."""
     def handle_keyboard_events(self, event: pygame.event.Event) -> None:
         """Main keyboard event handler.
         
-        Processes all keyboard input with support for SHIFT and CTRL
-        modifiers. Routes to appropriate command handlers.
+        Processes all keyboard input with priority routing:
+        1. PRIORITY: If options window open -> route to _handle_options_events
+        2. Otherwise: Normal gameplay commands
         
         Special modes:
-        - Options window: F1-F5 modify settings, O/ESC close
-        - Normal gameplay: All commands available
+        - Options window: Full key remapping (arrows/numbers/etc)
+        - Save dialog: Only S/N/ESC accepted
+        - Normal gameplay: All gameplay commands available
         
         Args:
             event: PyGame event to process
         """
         if event.type == pygame.KEYDOWN:
+            # === PRIORITY 1: OPTIONS WINDOW ROUTING ===
+            if self.options_controller.is_open:
+                self._handle_options_events(event)
+                return  # Block all gameplay commands
+            
+            # === NORMAL GAMEPLAY ===
             mods = pygame.key.get_mods()
             
             # === SHIFT MODIFIERS (Priority over normal commands) ===
