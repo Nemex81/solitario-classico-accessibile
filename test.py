@@ -31,6 +31,10 @@ Architecture Layers (Complete):
        - GameFormatter: Output formatting [Commit #9]
 
 All architectural components complete and ready for integration.
+
+New in v1.4.1 [Commit #15]:
+- Hierarchical menu system (Main → Game Submenu)
+- Virtual options window (F1-F5 settings management)
 """
 
 import sys
@@ -69,7 +73,8 @@ class SolitarioCleanArch:
         screen_reader: ScreenReader with TTS provider
         engine: GameEngine facade for game logic
         gameplay_controller: Keyboard commands orchestrator
-        menu: Virtual menu for navigation
+        menu: Virtual main menu for navigation
+        game_submenu: Secondary menu for game options (New in v1.4.1)
         is_menu_open: Current UI state (menu vs gameplay)
         is_running: Main loop control flag
     """
@@ -126,8 +131,10 @@ class SolitarioCleanArch:
         )
         print("✓ Controller pronto")
         
-        # Infrastructure: Virtual menu
+        # Infrastructure: Virtual menu hierarchy
         print("Inizializzazione menu...")
+        
+        # Main menu
         self.menu = VirtualMenu(
             items=[
                 "Gioca al solitario classico",
@@ -137,6 +144,20 @@ class SolitarioCleanArch:
             screen=self.screen,
             screen_reader=self.screen_reader if self.screen_reader else self._dummy_sr()
         )
+        
+        # Game submenu (new in v1.4.1)
+        self.game_submenu = VirtualMenu(
+            items=[
+                "Nuova partita",
+                "Opzioni",
+                "Chiudi"
+            ],
+            callback=self.handle_game_submenu_selection,
+            screen=self.screen,
+            screen_reader=self.screen_reader if self.screen_reader else self._dummy_sr(),
+            parent_menu=self.menu  # Link to parent for ESC handling
+        )
+        
         print("✓ Menu pronto")
         
         # Application state
@@ -145,7 +166,7 @@ class SolitarioCleanArch:
         
         print("="*60)
         print("✓ Applicazione avviata con successo!")
-        print("✓ Architettura Clean completa (10/10 commits)")
+        print("✓ Architettura Clean completa (15/15 commits)")
         print("Usa i tasti freccia per navigare il menu.")
         print("="*60)
     
@@ -162,20 +183,74 @@ class SolitarioCleanArch:
         return DummySR()
     
     def handle_menu_selection(self, selected_item: int) -> None:
-        """Handle menu item selection callback.
+        """Handle main menu item selection callback.
         
         Args:
             selected_item: Index of selected menu item
-                0: Start game
+                0: Open game submenu (new in v1.4.1)
                 1: Quit application
         """
         if selected_item == 0:
-            # Avvia partita
-            self.is_menu_open = False
-            self.start_game()
+            # Open game submenu instead of starting game directly
+            self.menu.open_submenu(self.game_submenu)
         elif selected_item == 1:
             # Esci
             self.quit_app()
+    
+    def handle_game_submenu_selection(self, selected_item: int) -> None:
+        """Handle game submenu item selection callback (new in v1.4.1).
+        
+        Args:
+            selected_item: Index of selected submenu item
+                0: Start new game
+                1: Open virtual options window
+                2: Close submenu and return to main menu
+        """
+        if selected_item == 0:
+            # Nuova partita
+            self.is_menu_open = False
+            self.start_game()
+        elif selected_item == 1:
+            # Opzioni
+            self.open_options()
+        elif selected_item == 2:
+            # Chiudi - return to main menu
+            self.menu.close_submenu()
+    
+    def open_options(self) -> None:
+        """Open virtual options window (new in v1.4.1).
+        
+        Opens interactive settings window where user can modify:
+        - F1: Deck type (French/Neapolitan)
+        - F2: Difficulty level (1-3)
+        - F3/F4: Timer (±5 min)
+        - F5: Shuffle mode (reverse/random)
+        - CTRL+F3: Disable timer
+        - O/ESC: Close options
+        
+        Implementation: Next step (will integrate with GameEngine.open_options())
+        """
+        if self.screen_reader:
+            self.screen_reader.tts.speak(
+                "Apertura opzioni di gioco.",
+                interrupt=True
+            )
+        
+        print("\n" + "="*60)
+        print("OPZIONI DI GIOCO")
+        print("="*60)
+        print("TODO: Implementare gestione opzioni (prossimo step)")
+        print("Per ora torno al menu...")
+        print("="*60)
+        
+        # Placeholder: will call self.engine.open_options() in next step
+        pygame.time.wait(1500)
+        
+        if self.screen_reader:
+            self.screen_reader.tts.speak(
+                "Ritorno al menu di gioco.",
+                interrupt=True
+            )
     
     def start_game(self) -> None:
         """Start new game session.
@@ -214,7 +289,7 @@ class SolitarioCleanArch:
             
             # Route keyboard events based on state
             if self.is_menu_open:
-                # Menu navigation
+                # Menu navigation (delegates to submenu if active)
                 self.menu.handle_keyboard_events(event)
             else:
                 # Gameplay commands
@@ -296,11 +371,12 @@ def main():
     print("Modalità: Audiogame per non vedenti")
     print("Entry point: test.py")
     print("")
-    print("✅ Commits 1-10: Tutti completati!")
+    print("✅ Commits 1-15: Tutti completati!")
     print("   - Domain Layer: Models, Rules, Services")
     print("   - Application Layer: Engine, Controllers, Settings, Input")
     print("   - Infrastructure Layer: Accessibility, UI")
     print("   - Presentation Layer: Formatters")
+    print("   - v1.4.1: Menu secondario + Finestra opzioni (in progress)")
     print("")
     print("Legacy version ancora disponibile: python acs.py")
     print("="*60)
