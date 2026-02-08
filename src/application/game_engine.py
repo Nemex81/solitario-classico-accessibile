@@ -4,6 +4,10 @@ Provides a clean interface for game initialization, move execution,
 navigation, selection, and state management.
 
 Extended with CursorManager and SelectionManager for gameplay.
+
+New in v1.4.1:
+- Virtual options window management (open/close/query)
+- Validation: options blocked during active game
 """
 
 from typing import Optional, Tuple, Dict, Any, List
@@ -38,6 +42,7 @@ class GameEngine:
     - Move execution with feedback
     - Game state queries
     - Statistics and progress tracking
+    - Virtual options window management (v1.4.1)
     
     Attributes:
         table: Game table with all piles
@@ -47,6 +52,7 @@ class GameEngine:
         selection: Selection manager
         screen_reader: Audio feedback service (optional)
         audio_enabled: Whether audio feedback is active
+        _options_open: Virtual options window state (v1.4.1)
     """
     
     def __init__(
@@ -75,6 +81,9 @@ class GameEngine:
         self.selection = selection
         self.screen_reader = screen_reader
         self.audio_enabled = screen_reader is not None
+        
+        # Virtual options window state (v1.4.1)
+        self._options_open: bool = False
     
     @classmethod
     def create(
@@ -180,6 +189,64 @@ class GameEngine:
         
         if self.screen_reader:
             self.screen_reader.tts.speak("Partita resettata", interrupt=True)
+    
+    def is_game_running(self) -> bool:
+        """Check if a game is currently active.
+        
+        Returns:
+            True if game is in progress
+        """
+        return self.service.is_game_running
+    
+    # ========================================
+    # OPTIONS WINDOW MANAGEMENT (v1.4.1)
+    # ========================================
+    
+    def open_options(self) -> str:
+        """Open virtual options window.
+        
+        Enables interactive settings modification via F1-F5 keys.
+        Blocked if game is currently running.
+        
+        Returns:
+            Announcement message for TTS
+            
+        Example:
+            >>> msg = engine.open_options()
+            "Impostazioni di gioco aperte."
+        """
+        if self.is_game_running():
+            return "Non puoi modificare le impostazioni durante una partita!\n"
+        
+        self._options_open = True
+        return "Impostazioni di gioco aperte.\n"
+    
+    def close_options(self) -> str:
+        """Close virtual options window.
+        
+        Disables settings modification mode.
+        
+        Returns:
+            Announcement message for TTS
+            
+        Example:
+            >>> msg = engine.close_options()
+            "Impostazioni di gioco chiuse."
+        """
+        self._options_open = False
+        return "Impostazioni di gioco chiuse.\n"
+    
+    def is_options_open(self) -> bool:
+        """Check if virtual options window is open.
+        
+        Returns:
+            True if options window is active
+            
+        Example:
+            >>> if engine.is_options_open():
+            ...     # Handle F1-F5 settings keys
+        """
+        return self._options_open
     
     # ========================================
     # NAVIGATION METHODS (7)
