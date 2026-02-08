@@ -13,6 +13,11 @@ New in v1.4.1:
 - Hierarchical menu support (parent/child submenus)
 - ESC key handling for submenu closure
 - Active submenu tracking and event delegation
+
+New in v1.4.2 (Commit #28):
+- Welcome message support for submenus
+- Configurable controls hint
+- Enhanced opening announcements
 """
 
 import pygame
@@ -40,6 +45,7 @@ class VirtualMenu:
     - Immediate TTS feedback on every navigation
     - Interrupt current speech for responsive navigation
     - Hierarchical submenus with ESC to close
+    - Welcome messages for better orientation (v1.4.2)
     
     Attributes:
         items: List of menu item text (in order)
@@ -48,6 +54,8 @@ class VirtualMenu:
         sr: ScreenReader instance for TTS feedback
         selected_index: Current menu selection (0-based)
         parent_menu: Parent menu reference (None if root menu)
+        welcome_message: Optional welcome text for submenu opening (v1.4.2)
+        show_controls_hint: Whether to announce navigation controls (v1.4.2)
         _active_submenu: Currently open child menu (None if no submenu)
     
     Example:
@@ -65,15 +73,18 @@ class VirtualMenu:
         ... )
         >>> # Menu automatically announces: "Menu aperto. 2 opzioni..."
         >>> 
-        >>> # Create submenu
+        >>> # Create submenu with welcome message
         >>> submenu = VirtualMenu(
         ...     items=["Nuova partita", "Opzioni", "Chiudi"],
         ...     callback=handle_submenu_selection,
         ...     screen=pygame_screen,
         ...     screen_reader=sr_instance,
-        ...     parent_menu=menu
+        ...     parent_menu=menu,
+        ...     welcome_message="Benvenuto nel menu di gioco!",
+        ...     show_controls_hint=True
         ... )
         >>> menu.open_submenu(submenu)
+        >>> # TTS: "Benvenuto! Usa frecce... Posizione: Nuova partita"
     """
     
     def __init__(
@@ -82,7 +93,9 @@ class VirtualMenu:
         callback: Callable[[int], None],
         screen: pygame.Surface,
         screen_reader: 'ScreenReader',
-        parent_menu: Optional['VirtualMenu'] = None
+        parent_menu: Optional['VirtualMenu'] = None,
+        welcome_message: Optional[str] = None,
+        show_controls_hint: bool = True
     ) -> None:
         """Initialize virtual menu.
         
@@ -92,10 +105,13 @@ class VirtualMenu:
             screen: PyGame surface (audiogame - typically blank)
             screen_reader: ScreenReader with TTS provider for voice output
             parent_menu: Parent menu for hierarchical navigation (None for root)
+            welcome_message: Optional welcome text for submenu opening (v1.4.2)
+            show_controls_hint: Whether to announce navigation controls (v1.4.2)
             
         Side Effects:
-            Immediately announces menu opening with item count and
-            first item name via TTS.
+            Immediately announces menu opening. If opened by parent via
+            open_submenu(), uses announce_welcome() if configured, otherwise
+            uses standard _announce_menu_open().
         """
         self.items = items
         self.callback = callback
@@ -103,10 +119,15 @@ class VirtualMenu:
         self.sr = screen_reader
         self.selected_index = 0
         self.parent_menu = parent_menu
+        self.welcome_message = welcome_message
+        self.show_controls_hint = show_controls_hint
         self._active_submenu: Optional['VirtualMenu'] = None
         
         # Announce menu opening on initialization
-        self._announce_menu_open()
+        # Note: If opened via open_submenu(), that method will handle announcement
+        # This is for root menu initialization
+        if parent_menu is None:
+            self._announce_menu_open()
     
     def _announce_menu_open(self) -> None:
         """Announce menu opening with item count and first item.
@@ -128,6 +149,54 @@ class VirtualMenu:
         self.sr.tts.speak(count_msg, interrupt=True)
         pygame.time.wait(300)  # Pause between announcement and first item
         self.sr.tts.speak(f"1 di {len(self.items)}: {self.items[self.selected_index]}", interrupt=False)
+    
+    def announce_welcome(self) -> None:
+        """Announce welcome message with controls hint (v1.4.2).
+        
+        Enhanced opening announcement for submenus that provides:
+        1. Welcome message (if configured)
+        2. Navigation controls hint (if enabled)
+        3. Current menu item
+        
+        This gives better orientation and guidance for blind users
+        compared to standard _announce_menu_open().
+        
+        Structure:
+            "[Welcome message]"
+            "Usa frecce su e giù per navigare tra le voci. Premi Invio per selezionare."
+            "Posizione corrente: [First item]"
+        
+        Example:
+            >>> submenu.announce_welcome()
+            # TTS announces:
+            # "Benvenuto nel menu di gioco del Solitario!"
+            # "Usa frecce su e giù per navigare. Premi Invio per selezionare."
+            # "Posizione corrente: Nuova partita."
+        """
+        # Build announcement parts
+        parts = []
+        
+        # Part 1: Welcome message (if configured)
+        if self.welcome_message:
+            parts.append(self.welcome_message)
+        
+        # Part 2: Controls hint (if enabled)
+        if self.show_controls_hint:
+            controls_hint = (
+                "Usa frecce su e giù per navigare tra le voci. "
+                "Premi Invio per selezionare."
+            )
+            parts.append(controls_hint)
+        
+        # Part 3: Current position
+        position_msg = f"Posizione corrente: {self.items[self.selected_index]}."
+        parts.append(position_msg)
+        
+        # Announce all parts with pauses
+        for i, part in enumerate(parts):
+            self.sr.tts.speak(part, interrupt=(i == 0))  # Interrupt only for first part
+            if i < len(parts) - 1:
+                pygame.time.wait(400)  # Longer pause between sections
     
     def next_item(self) -> None:
         """Move to next menu item (Arrow DOWN).
@@ -188,19 +257,34 @@ class VirtualMenu:
         events to be delegated to it. The submenu should have this
         menu set as its parent_menu for proper ESC handling.
         
+        New in v1.4.2: Uses announce_welcome() if submenu has
+        welcome_message configured, otherwise uses standard announcement.
+        
         Args:
             submenu: VirtualMenu instance to open as child
         
         Side Effects:
             - Sets _active_submenu to provided menu
-            - Submenu announces opening via its _announce_menu_open()
+            - Submenu announces opening via announce_welcome() or _announce_menu_open()
         
         Example:
+            >>> # Submenu with welcome
             >>> main_menu.open_submenu(game_submenu)
-            # TTS: "Sottomenu aperto. 3 voci disponibili. 1 di 3: Nuova partita"
+            # TTS: "Benvenuto! Usa frecce... Posizione: Nuova partita"
+            
+            >>> # Submenu without welcome
+            >>> main_menu.open_submenu(other_submenu)
+            # TTS: "Sottomenu aperto. 3 voci disponibili. 1 di 3: Prima voce"
         """
         self._active_submenu = submenu
-        # Submenu announces itself via __init__
+        
+        # Choose announcement method based on configuration
+        if submenu.welcome_message or submenu.show_controls_hint:
+            # Use enhanced welcome announcement
+            submenu.announce_welcome()
+        else:
+            # Use standard announcement
+            submenu._announce_menu_open()
     
     def close_submenu(self) -> None:
         """Close currently active submenu and return to this menu.
@@ -228,6 +312,15 @@ class VirtualMenu:
             position = self.selected_index + 1
             announcement = f"{position} di {len(self.items)}: {self.items[self.selected_index]}"
             self.sr.tts.speak(announcement, interrupt=False)
+    
+    @property
+    def active_submenu(self) -> Optional['VirtualMenu']:
+        """Get currently active submenu.
+        
+        Returns:
+            Active submenu instance or None if no submenu open
+        """
+        return self._active_submenu
     
     def handle_keyboard_events(self, event: pygame.event.Event) -> None:
         """Handle keyboard input for menu navigation.
