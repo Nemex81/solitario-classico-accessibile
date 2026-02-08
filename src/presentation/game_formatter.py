@@ -85,8 +85,8 @@ class GameFormatter:
             >>> # Pile with cards
             "Pila base 3: 5 carte, ultima Regina di quadri scoperta"
         """
-        pile_name = pile.get_name()
-        card_count = pile.get_len()
+        pile_name = pile.name
+        card_count = pile.get_size()
         
         if card_count == 0:
             return f"{pile_name}: vuota"
@@ -123,14 +123,14 @@ class GameFormatter:
         Example:
             "Pila base 2: 3 carte visibili. Dall'alto: Regina di cuori, Fante di picche, 10 di cuori."
         """
-        pile_name = pile.get_name()
-        card_count = pile.get_len()
+        pile_name = pile.name
+        card_count = pile.get_size()
         
         if card_count == 0:
             return f"{pile_name}: vuota"
         
         # Count visible (uncovered) cards
-        visible_cards = [c for c in pile.get_cards() if not c.get_covered]
+        visible_cards = [c for c in pile.get_all_cards() if not c.get_covered]
         visible_count = len(visible_cards)
         
         if visible_count == 0:
@@ -430,8 +430,8 @@ class GameFormatter:
                 msg += f"{name}.  \n"
         
         # Origin and destination
-        msg += f"Da: {origin_pile.get_name()}.  \n"
-        msg += f"A: {dest_pile.get_name()}.  \n"
+        msg += f"Da: {origin_pile.name}.  \n"
+        msg += f"A: {dest_pile.name}.  \n"
         
         # Card under (only if not King and not None)
         if card_under and card_under.get_value != 13:
@@ -439,7 +439,7 @@ class GameFormatter:
         
         # Revealed card in origin pile
         if revealed_card:
-            msg += f"Hai scoperto: {revealed_card.get_display_name()} in: {origin_pile.get_name()}.  \n"
+            msg += f"Hai scoperto: {revealed_card.get_display_name()} in: {origin_pile.name}.  \n"
         
         return msg
     
