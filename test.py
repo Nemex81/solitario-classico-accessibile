@@ -79,7 +79,8 @@ class SolitarioCleanArch:
         print("Inizializzazione motore di gioco...")
         self.engine = GameEngine.create(
             audio_enabled=(self.screen_reader is not None),
-            language="it"
+            tts_engine="auto",
+            verbose=1
         )
         print("✓ Game engine pronto")
         
