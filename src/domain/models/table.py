@@ -50,6 +50,41 @@ class GameTable:
         self.pile_scarti: Optional[Pile] = None
         self.distribuisci_carte()
     
+    @property
+    def pile(self) -> List[Pile]:
+        """Unified list of all piles for CursorManager compatibility.
+        
+        Returns list with indices:
+        - [0-6]: Tableau piles (pile_base)
+        - [7-10]: Foundation piles (pile_semi)
+        - [11]: Waste pile (pile_scarti)
+        - [12]: Stock pile (pile_mazzo)
+        
+        This property enables legacy-style access:
+            table.pile[0]  # First tableau pile
+            table.pile[7]  # First foundation pile
+            table.pile[11] # Waste pile
+            table.pile[12] # Stock pile
+        
+        Returns:
+            List of all 13 piles in order
+        """
+        piles = []
+        
+        # Tableau piles (0-6)
+        piles.extend(self.pile_base)
+        
+        # Foundation piles (7-10)
+        piles.extend(self.pile_semi)
+        
+        # Waste pile (11)
+        piles.append(self.pile_scarti if self.pile_scarti else Pile())
+        
+        # Stock pile (12)
+        piles.append(self.pile_mazzo if self.pile_mazzo else Pile())
+        
+        return piles
+    
     def distribuisci_carte(self) -> None:
         """Distribute cards on the table at game start.
         
