@@ -112,6 +112,25 @@ class Card:
             return "carta coperta"
         return self._nome
     
+    def get_display_name(self) -> str:
+        """Get formatted card name for TTS feedback.
+        
+        Returns card name in the format: "<valore> di <seme>"
+        Examples:
+            - "7 di Cuori"
+            - "Regina di Quadri"
+            - "Asso di Fiori"
+            - "carta coperta" (if face-down)
+        
+        This method provides the same output as legacy scr/cards.py
+        for detailed voice feedback during gameplay.
+        
+        Returns:
+            Formatted card name string
+        """
+        # Use existing get_name property which already formats correctly
+        return self.get_name
+    
     @property
     def get_id(self) -> Optional[int]:
         """Get card ID (legacy interface)."""
