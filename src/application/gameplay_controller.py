@@ -12,6 +12,7 @@ from typing import Dict, Callable, Optional
 
 from src.application.game_engine import GameEngine
 from src.application.options_controller import OptionsWindowController
+from src.domain.services.game_settings import GameSettings
 
 
 class GamePlayController:
@@ -30,8 +31,12 @@ class GamePlayController:
         self.engine = engine
         self.sr = screen_reader
         
+        # Create GameSettings instance (not available in GameEngine yet)
+        # TODO: In future, bind to engine.game_service.game_state for validation
+        self.settings = GameSettings()
+        
         # Initialize options controller
-        self.options_controller = OptionsWindowController(engine.settings)
+        self.options_controller = OptionsWindowController(self.settings)
         self._awaiting_save_response = False  # Dialog state
         
         self.callback_dict = self._build_commands()
@@ -326,7 +331,9 @@ ESC: abbandona partita."""
             self._vocalizza(msg, interrupt=True)
         else:
             # Open window (block if game running)
-            if self.engine.game_service.is_game_running:
+            # TODO: Use self.engine.is_game_running() when available
+            # For now, check game_state from settings
+            if self.settings.game_state.is_running:
                 self._vocalizza("Non puoi aprire le opzioni durante una partita! Premi N per nuova partita.", interrupt=True)
             else:
                 msg = self.options_controller.open_window()
