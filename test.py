@@ -117,8 +117,13 @@ class SolitarioCleanArch:
     def _dummy_sr(self):
         """Create dummy screen reader for silent mode."""
         class DummySR:
-            def speak(self, text, interrupt=True):
-                print(f"[TTS] {text}")
+            class DummyTTS:
+                def speak(self, text, interrupt=True):
+                    print(f"[TTS] {text}")
+            
+            def __init__(self):
+                self.tts = self.DummyTTS()
+        
         return DummySR()
     
     def handle_menu_selection(self, selected_item: int) -> None:
@@ -151,7 +156,7 @@ class SolitarioCleanArch:
         self.engine.new_game()
         
         if self.screen_reader:
-            self.screen_reader.speak(
+            self.screen_reader.tts.speak(
                 "Nuova partita avviata! Usa H per l'aiuto comandi.",
                 interrupt=True
             )
@@ -194,7 +199,7 @@ class SolitarioCleanArch:
         self.is_menu_open = True
         
         if self.screen_reader:
-            self.screen_reader.speak(
+            self.screen_reader.tts.speak(
                 "Ritorno al menu principale.",
                 interrupt=True
             )
@@ -212,7 +217,7 @@ class SolitarioCleanArch:
         print("="*60)
         
         if self.screen_reader:
-            self.screen_reader.speak("Chiusura in corso.", interrupt=True)
+            self.screen_reader.tts.speak("Chiusura in corso.", interrupt=True)
             pygame.time.wait(800)
         
         self.is_running = False

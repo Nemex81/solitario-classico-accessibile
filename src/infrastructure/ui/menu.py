@@ -21,7 +21,7 @@ class VirtualMenu:
         items: List of menu item strings
         callback: Function called with selected index on ENTER
         screen: PyGame surface (audiogame - blank screen)
-        screen_reader: TTS provider for voice feedback
+        screen_reader: ScreenReader with TTS provider for voice feedback
     """
     
     def __init__(
@@ -43,9 +43,9 @@ class VirtualMenu:
     def _announce_menu_open(self) -> None:
         """Announce menu opening with item count and first item."""
         count_msg = f"Menu aperto. {len(self.items)} opzioni disponibili."
-        self.sr.speak(count_msg, interrupt=True)
+        self.sr.tts.speak(count_msg, interrupt=True)
         pygame.time.wait(300)
-        self.sr.speak(self.items[self.selected_index], interrupt=False)
+        self.sr.tts.speak(self.items[self.selected_index], interrupt=False)
     
     def next_item(self) -> None:
         """Move to next menu item (Arrow DOWN).
@@ -57,7 +57,7 @@ class VirtualMenu:
         else:
             self.selected_index = 0  # Wrap to beginning
         
-        self.sr.speak(self.items[self.selected_index], interrupt=True)
+        self.sr.tts.speak(self.items[self.selected_index], interrupt=True)
     
     def prev_item(self) -> None:
         """Move to previous menu item (Arrow UP).
@@ -69,7 +69,7 @@ class VirtualMenu:
         else:
             self.selected_index = len(self.items) - 1  # Wrap to end
         
-        self.sr.speak(self.items[self.selected_index], interrupt=True)
+        self.sr.tts.speak(self.items[self.selected_index], interrupt=True)
     
     def execute(self) -> None:
         """Execute callback for selected item (ENTER key)."""

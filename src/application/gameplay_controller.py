@@ -22,7 +22,7 @@ class GamePlayController:
     
     Args:
         engine: GameEngine facade for game logic
-        screen_reader: TTS provider for voice feedback
+        screen_reader: ScreenReader with TTS provider for voice feedback
     """
     
     def __init__(self, engine: GameEngine, screen_reader):
@@ -42,7 +42,7 @@ class GamePlayController:
             interrupt: Whether to interrupt current speech
         """
         if text:
-            self.sr.speak(text, interrupt=interrupt)
+            self.sr.tts.speak(text, interrupt=interrupt)
             pygame.time.wait(100)
     
     def _build_commands(self) -> Dict[int, Callable]:
@@ -193,7 +193,7 @@ class GamePlayController:
         """SPACE: Move selected cards to target pile."""
         # TODO: Implementare spostamento con GameEngine
         result = self.engine.auto_move_to_foundation()
-        if result:
+        if result[0]:  # success
             self._vocalizza("Carte spostate")
         else:
             self._vocalizza("Impossibile spostare")
@@ -204,9 +204,8 @@ class GamePlayController:
     
     def _draw_cards(self) -> None:
         """D or P: Draw cards from stock pile."""
-        result = self.engine.draw_from_stock()
-        msg = f"Pescate {result.get('cards_drawn', 0)} carte"
-        self._vocalizza(msg)
+        success, message = self.engine.draw_from_stock()
+        self._vocalizza(message)
     
     # === QUERY INFORMAZIONI ===
     
@@ -219,14 +218,16 @@ class GamePlayController:
     def _get_table_info(self) -> None:
         """G: Get complete table state."""
         state = self.engine.get_game_state()
-        # TODO: Formattare info tavolo completo
-        info = f"Tavolo: {state.get('moves', 0)} mosse"
+        moves = state.get('statistics', {}).get('move_count', 0)
+        info = f"Mosse effettuate: {moves}"
         self._vocalizza(info)
     
     def _get_game_report(self) -> None:
         """R: Get game report (time, moves, stats)."""
         state = self.engine.get_game_state()
-        report = f"Mosse: {state.get('moves', 0)}"
+        stats = state.get('statistics', {})
+        moves = stats.get('move_count', 0)
+        report = f"Report partita. Mosse: {moves}"
         self._vocalizza(report)
     
     def _get_card_info(self) -> None:
@@ -236,7 +237,7 @@ class GamePlayController:
     
     def _get_selected_cards(self) -> None:
         """C: Get list of currently selected cards."""
-        self._vocalizza("Carte selezionate")
+        self._vocalizza("Nessuna carta selezionata")
     
     def _get_scarto_top(self) -> None:
         """S: Get top card from waste pile (read-only)."""
@@ -245,7 +246,7 @@ class GamePlayController:
     def _get_deck_count(self) -> None:
         """M: Get remaining cards in stock pile."""
         state = self.engine.get_game_state()
-        count = state.get('stock_count', 0)
+        count = state.get('piles', {}).get('stock', 0)
         self._vocalizza(f"{count} carte nel mazzo")
     
     def _get_timer(self) -> None:
@@ -274,7 +275,9 @@ ESC: abbandona partita."""
     def _new_game(self) -> None:
         """N: Start new game (with confirmation if game running)."""
         state = self.engine.get_game_state()
-        if state.get('is_running', False):
+        game_over = state.get('game_over', {}).get('is_over', True)
+        
+        if not game_over:
             # TODO: Aggiungere conferma con dialog
             self._vocalizza("Partita in corso. Premi N di nuovo per confermare.")
         else:
