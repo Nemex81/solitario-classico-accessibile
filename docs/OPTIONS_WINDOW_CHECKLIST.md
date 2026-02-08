@@ -13,18 +13,18 @@
 ┌──────────────────────┬────────┬─────────────────┐
 │ Commit               │ Status │ Completamento   │
 ├──────────────────────┼────────┼─────────────────┤
-│ #17 Domain Layer     │ ⬜ TODO │ [ ] 0%          │
-│ #18 Presentation     │ ⬜ TODO │ [ ] 0%          │
+│ #17 Domain Layer     │ ✅ DONE │ [x] 100%        │
+│ #18 Presentation     │ 🔄 WIP  │ [ ] 0%          │
 │ #19 Application      │ ⬜ TODO │ [ ] 0%          │
 │ #20 Integration      │ ⬜ TODO │ [ ] 0%          │
 ├──────────────────────┼────────┼─────────────────┤
-│ TOTALE               │ ⬜ TODO │ [ ] 0/4 (0%)    │
+│ TOTALE               │ 🔄 WIP  │ [x] 1/4 (25%)   │
 └──────────────────────┴────────┴─────────────────┘
 ```
 
 ---
 
-## 🔵 COMMIT #17: DOMAIN LAYER
+## 🔵 COMMIT #17: DOMAIN LAYER ✅ COMPLETATO
 
 **File**: `src/domain/services/game_settings.py`
 
@@ -32,31 +32,34 @@
 
 ### Implementazione
 
-- [ ] Aggiungi import `Tuple` da typing
-- [ ] Implementa metodo `toggle_timer()` con docstring completa
-- [ ] Logica: OFF (-1) → ON (300s / 5min)
-- [ ] Logica: ON (>0) → OFF (-1)
-- [ ] Validazione: blocca se `is_game_running=True`
-- [ ] Return tuple: `(bool, str)` con (success, message)
-- [ ] Messaggio ON: "Timer attivato a: 5 minuti."
-- [ ] Messaggio OFF: "Timer disattivato."
-- [ ] Messaggio error: "Non puoi modificare il timer durante una partita!"
+- [x] Aggiungi import `Tuple` da typing
+- [x] Implementa metodo `toggle_timer()` con docstring completa
+- [x] Logica: OFF (-1) → ON (300s / 5min)
+- [x] Logica: ON (>0) → OFF (-1)
+- [x] Validazione: blocca se `is_game_running=True`
+- [x] Return tuple: `(bool, str)` con (success, message)
+- [x] Messaggio ON: "Timer attivato a: 5 minuti."
+- [x] Messaggio OFF: "Timer disattivato."
+- [x] Messaggio error: "Non puoi modificare il timer durante una partita!"
 
 ### Testing
 
-- [ ] Test: toggle OFF → ON (risultato: 300s)
-- [ ] Test: toggle ON → OFF (risultato: -1)
-- [ ] Test: toggle bloccato durante partita
-- [ ] Test: messaggi TTS corretti
+- [x] Test: toggle OFF → ON (risultato: 300s)
+- [x] Test: toggle ON → OFF (risultato: -1)
+- [x] Test: toggle bloccato durante partita
+- [x] Test: messaggi TTS corretti
 
 ### Commit
 
-- [ ] Commit con messaggio: `feat(domain): Add toggle_timer() to GameSettings`
-- [ ] Push su branch `refactoring-engine`
+- [x] Commit con messaggio: `feat(domain): Add toggle_timer() to GameSettings`
+- [x] Push su branch `refactoring-engine`
+
+**Commit SHA**: `9816d9a5`
+**Data completamento**: 08/02/2026 16:04
 
 ---
 
-## 🔵 COMMIT #18: PRESENTATION LAYER
+## 🔵 COMMIT #18: PRESENTATION LAYER 🔄 IN PROGRESS
 
 **File**: `src/presentation/options_formatter.py` (NUOVO)
 
@@ -420,8 +423,9 @@
 
 *(Documenta eventuali deviazioni dal roadmap)*
 
-- [ ] Modifica #1: [Descrizione e motivazione]
-- [ ] Modifica #2: [Descrizione e motivazione]
+- [x] Modifica #1: Creato `game_settings.py` completo (non solo toggle_timer)
+  - **Motivazione**: Centralizzare tutte le impostazioni in un unico service (Clean Architecture)
+  - **Impatto**: Commit #17 più robusto, include increment/decrement_timer e tutti i toggle
 
 ### Miglioramenti Futuri
 
@@ -436,7 +440,10 @@
 
 ## ✅ APPROVAZIONE FINALE
 
-- [ ] Tutti i commit #17-20 completati
+- [x] Commit #17 Domain Layer completato
+- [ ] Commit #18 Presentation Layer completato
+- [ ] Commit #19 Application Layer completato
+- [ ] Commit #20 Integration completato
 - [ ] Testing manuale completo superato
 - [ ] Nessun bug critico rilevato
 - [ ] Documentazione aggiornata
@@ -448,6 +455,6 @@
 
 **CHECKLIST ATTIVA**: Aggiorna questa checklist ad ogni step completato usando `[x]` per marcare le voci.
 
-**Ultima modifica**: [Aggiorna data ad ogni commit]
+**Ultima modifica**: 08/02/2026 16:05 CET
 
-**Status branch**: 🔄 IN PROGRESS → ✅ COMPLETATO
+**Status branch**: 🔄 IN PROGRESS (1/4 commits) → ✅ COMPLETATO
