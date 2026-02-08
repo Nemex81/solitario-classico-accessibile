@@ -29,10 +29,6 @@ class GamePlayController:
         self.engine = engine
         self.sr = screen_reader
         self.callback_dict = self._build_commands()
-        
-        # State per double-tap detection (SHIFT+1-4)
-        self.last_pile_access: Optional[int] = None
-        self.last_access_time: float = 0.0
     
     def _vocalizza(self, text: str, interrupt: bool = True) -> None:
         """Wrapper for TTS with delay.
@@ -52,7 +48,7 @@ class GamePlayController:
             Dictionary mapping pygame key constants to handler methods
         """
         return {
-            # Numeri 1-7: Pile base (con double-tap)
+            # Numeri 1-7: Pile base (con double-tap in CursorManager)
             pygame.K_1: lambda: self._nav_pile_base(0),
             pygame.K_2: lambda: self._nav_pile_base(1),
             pygame.K_3: lambda: self._nav_pile_base(2),
@@ -111,11 +107,9 @@ class GamePlayController:
     def _nav_pile_base(self, pile_idx: int) -> None:
         """Navigate to base pile (1-7 keys).
         
-        Double-tap on same pile selects top card.
+        Double-tap detection handled by CursorManager.
         """
-        # TODO: Implementare con GameEngine
-        # Per ora placeholder
-        self._vocalizza(f"Pila base {pile_idx + 1}")
+        self.engine.jump_to_pile(pile_idx)
     
     def _nav_pile_semi(self, pile_idx: int) -> None:
         """Navigate to foundation pile (SHIFT+1-4).
@@ -123,52 +117,45 @@ class GamePlayController:
         Args:
             pile_idx: Foundation pile index (7-10)
         """
-        suit_names = ["Cuori", "Quadri", "Fiori", "Picche"]
-        suit_idx = pile_idx - 7
-        if 0 <= suit_idx < 4:
-            self._vocalizza(f"Pila semi {suit_names[suit_idx]}")
+        self.engine.jump_to_pile(pile_idx)
     
     def _nav_pile_scarti(self) -> None:
         """Navigate to waste pile (SHIFT+S)."""
-        self._vocalizza("Pila scarti")
+        self.engine.jump_to_pile(11)
     
     def _nav_pile_mazzo(self) -> None:
         """Navigate to stock pile (SHIFT+M)."""
-        self._vocalizza("Mazzo")
+        self.engine.jump_to_pile(12)
     
     # === NAVIGAZIONE CURSORE ===
     
     def _cursor_up(self) -> None:
         """Arrow UP: Previous card in current pile."""
-        # TODO: Implementare navigazione carta precedente
-        self._vocalizza("Carta precedente")
+        self.engine.move_cursor("up")
     
     def _cursor_down(self) -> None:
         """Arrow DOWN: Next card in current pile."""
-        # TODO: Implementare navigazione carta successiva
-        self._vocalizza("Carta successiva")
+        self.engine.move_cursor("down")
     
     def _cursor_left(self) -> None:
         """Arrow LEFT: Previous pile."""
-        # TODO: Implementare navigazione pila precedente
-        self._vocalizza("Pila precedente")
+        self.engine.move_cursor("left")
     
     def _cursor_right(self) -> None:
         """Arrow RIGHT: Next pile."""
-        # TODO: Implementare navigazione pila successiva
-        self._vocalizza("Pila successiva")
+        self.engine.move_cursor("right")
     
     def _cursor_home(self) -> None:
         """HOME: First card in current pile."""
-        self._vocalizza("Prima carta della pila")
+        self.engine.move_cursor("home")
     
     def _cursor_end(self) -> None:
         """END: Last card in current pile."""
-        self._vocalizza("Ultima carta della pila")
+        self.engine.move_cursor("end")
     
     def _cursor_tab(self) -> None:
         """TAB: Jump to different pile type."""
-        self._vocalizza("Cambio tipo pila")
+        self.engine.move_cursor("tab")
     
     # === AZIONI CARTE ===
     
@@ -184,79 +171,106 @@ class GamePlayController:
         
         if mods & KMOD_CTRL:
             # CTRL+ENTER: Seleziona da scarti
-            self._vocalizza("Seleziona da scarti")
+            self.engine.select_from_waste()
         else:
             # ENTER normale: Seleziona carta o pesca
-            self._vocalizza("Carta selezionata")
+            self.engine.select_card_at_cursor()
     
     def _move_cards(self) -> None:
         """SPACE: Move selected cards to target pile."""
-        # TODO: Implementare spostamento con GameEngine
-        result = self.engine.auto_move_to_foundation()
-        if result[0]:  # success
-            self._vocalizza("Carte spostate")
-        else:
-            self._vocalizza("Impossibile spostare")
+        success, message = self.engine.execute_move()
+        # Message already vocalized by engine
     
     def _cancel_selection(self) -> None:
         """DELETE: Cancel current card selection."""
-        self._vocalizza("Selezione annullata")
+        self.engine.clear_selection()
     
     def _draw_cards(self) -> None:
         """D or P: Draw cards from stock pile."""
         success, message = self.engine.draw_from_stock()
-        self._vocalizza(message)
+        # Message already vocalized by engine
     
     # === QUERY INFORMAZIONI ===
     
     def _get_focus(self) -> None:
         """F: Get current cursor position."""
-        state = self.engine.get_game_state()
-        # TODO: Formattare posizione cursore
-        self._vocalizza("Posizione cursore")
+        self.engine.get_cursor_info()
     
     def _get_table_info(self) -> None:
         """G: Get complete table state."""
-        state = self.engine.get_game_state()
-        moves = state.get('statistics', {}).get('move_count', 0)
-        info = f"Mosse effettuate: {moves}"
-        self._vocalizza(info)
+        self.engine.get_table_overview()
     
     def _get_game_report(self) -> None:
         """R: Get game report (time, moves, stats)."""
         state = self.engine.get_game_state()
         stats = state.get('statistics', {})
         moves = stats.get('move_count', 0)
-        report = f"Report partita. Mosse: {moves}"
-        self._vocalizza(report)
+        elapsed = int(stats.get('elapsed_time', 0))
+        
+        # Format time as MM:SS
+        minutes = elapsed // 60
+        seconds = elapsed % 60
+        time_str = f"{minutes}:{seconds:02d}"
+        
+        report = f"Report partita.\n"
+        report += f"Mosse: {moves}.\n"
+        report += f"Tempo trascorso: {time_str}.\n"
+        
+        # Foundation progress
+        foundations = state.get('piles', {}).get('foundations', [])
+        total_in_foundations = sum(foundations)
+        report += f"Carte nelle pile semi: {total_in_foundations}.\n"
+        
+        self._vocalizza(report, interrupt=True)
     
     def _get_card_info(self) -> None:
         """X: Get detailed info about card under cursor."""
-        # TODO: Info carta dettagliata
-        self._vocalizza("Informazioni carta")
+        self.engine.get_card_at_cursor()
     
     def _get_selected_cards(self) -> None:
         """C: Get list of currently selected cards."""
-        self._vocalizza("Nessuna carta selezionata")
+        self.engine.get_selected_info()
     
     def _get_scarto_top(self) -> None:
         """S: Get top card from waste pile (read-only)."""
-        self._vocalizza("Carta in cima agli scarti")
+        pile_info = self.engine.get_pile_info(11)  # Waste pile
+        
+        if pile_info and pile_info.get('top_card'):
+            card_name = pile_info['top_card']['name']
+            self._vocalizza(f"Carta in cima agli scarti: {card_name}")
+        else:
+            self._vocalizza("Pila scarti vuota")
     
     def _get_deck_count(self) -> None:
         """M: Get remaining cards in stock pile."""
         state = self.engine.get_game_state()
         count = state.get('piles', {}).get('stock', 0)
-        self._vocalizza(f"{count} carte nel mazzo")
+        
+        if count == 0:
+            self._vocalizza("Il mazzo è vuoto")
+        elif count == 1:
+            self._vocalizza("Rimane 1 carta nel mazzo")
+        else:
+            self._vocalizza(f"Rimangono {count} carte nel mazzo")
     
     def _get_timer(self) -> None:
-        """T: Get remaining time if timer enabled."""
-        # TODO: Implementare timer
-        self._vocalizza("Timer non attivo")
+        """T: Get elapsed time."""
+        state = self.engine.get_game_state()
+        elapsed = int(state.get('statistics', {}).get('elapsed_time', 0))
+        
+        minutes = elapsed // 60
+        seconds = elapsed % 60
+        
+        self._vocalizza(f"Tempo trascorso: {minutes} minuti e {seconds} secondi")
     
     def _get_settings(self) -> None:
         """I: Get current game settings."""
-        self._vocalizza("Impostazioni di gioco")
+        settings = "Impostazioni di gioco.\n"
+        settings += "Mazzo: carte francesi.\n"
+        settings += "Difficoltà: livello 1.\n"
+        settings += "Timer: disabilitato.\n"
+        
+        self._vocalizza(settings)
     
     def _show_help(self) -> None:
         """H: Show available commands help."""
@@ -264,11 +278,18 @@ class GamePlayController:
 Frecce: navigazione carte e pile.
 1 a 7: vai alla pila base.
 SHIFT più 1 a 4: vai alla pila semi.
+INVIO: seleziona carta.
+SPAZIO: sposta carte selezionate.
+CANC: annulla selezione.
 D o P: pesca dal mazzo.
-SPAZIO: sposta carte.
-H: aiuto completo.
+F: posizione cursore.
+X: info carta.
+G: stato tavolo.
+R: report partita.
+N: nuova partita.
 ESC: abbandona partita."""
-        self._vocalizza(help_text)
+        
+        self._vocalizza(help_text, interrupt=True)
     
     # === GESTIONE PARTITA ===
     
@@ -278,17 +299,17 @@ ESC: abbandona partita."""
         game_over = state.get('game_over', {}).get('is_over', True)
         
         if not game_over:
-            # TODO: Aggiungere conferma con dialog
-            self._vocalizza("Partita in corso. Premi N di nuovo per confermare.")
-        else:
-            self.engine.reset_game()
-            self.engine.new_game()
-            self._vocalizza("Nuova partita avviata!")
+            # TODO: Implementare dialog conferma in futuro
+            # Per ora avvia direttamente
+            pass
+        
+        self.engine.new_game()
+        # Message vocalized by engine.new_game()
     
     def _toggle_options(self) -> None:
         """O: Open/close options menu."""
-        # TODO: Implementare menu opzioni
-        self._vocalizza("Menu opzioni")
+        # TODO: Implementare menu opzioni in futuro
+        self._vocalizza("Menu opzioni non ancora implementato. Usa F1-F5 per cambiare impostazioni.")
     
     # === FUNCTION KEYS (Settings) ===
     
@@ -300,17 +321,17 @@ ESC: abbandona partita."""
         mods = pygame.key.get_mods()
         
         if mods & KMOD_CTRL:
-            # CTRL+F1: Test vittoria
-            self._vocalizza("Test vittoria attivato")
+            # CTRL+F1: Test vittoria (debug mode)
+            self._vocalizza("Test vittoria: funzione debug non ancora implementata")
         else:
             # F1: Cambio mazzo
-            # TODO: Implementare cambio mazzo
-            self._vocalizza("Cambio tipo mazzo")
+            # TODO: Implementare cambio mazzo in futuro
+            self._vocalizza("Cambio tipo mazzo: funzione non ancora implementata")
     
     def _f2_handler(self) -> None:
         """F2: Change difficulty (1 or 3 cards draw mode)."""
-        # TODO: Implementare cambio difficoltà
-        self._vocalizza("Cambio difficoltà")
+        # TODO: Implementare cambio difficoltà in futuro
+        self._vocalizza("Cambio difficoltà: funzione non ancora implementata")
     
     def _f3_handler(self) -> None:
         """F3: Decrease timer by 5 minutes.
@@ -321,24 +342,25 @@ ESC: abbandona partita."""
         
         if mods & KMOD_CTRL:
             # CTRL+F3: Disabilita timer
-            self._vocalizza("Timer disabilitato")
+            self._vocalizza("Timer: funzione non ancora implementata")
         else:
             # F3: Decrementa 5 minuti
-            self._vocalizza("Timer decrementato di 5 minuti")
+            self._vocalizza("Timer: funzione non ancora implementata")
     
     def _f4_handler(self) -> None:
         """F4: Increase timer by 5 minutes."""
-        self._vocalizza("Timer incrementato di 5 minuti")
+        self._vocalizza("Timer: funzione non ancora implementata")
     
     def _f5_handler(self) -> None:
         """F5: Toggle shuffle/invert mode for waste pile recycling."""
         # TODO: Implementare toggle shuffle mode
-        self._vocalizza("Modalità riciclo scarti cambiata")
+        self._vocalizza("Modalità riciclo scarti: funzione non ancora implementata")
     
     def _esc_handler(self) -> None:
         """ESC: Quit game (with confirmation)."""
-        # TODO: Aggiungere conferma
-        self._vocalizza("Uscita dal gioco")
+        # TODO: Implementare conferma in futuro
+        self._vocalizza("Uscita dal gioco. Premi ancora ESC per confermare.")
+        # Per ora non fa nulla, gestito da test.py
     
     # === EVENT HANDLER PRINCIPALE ===
     
