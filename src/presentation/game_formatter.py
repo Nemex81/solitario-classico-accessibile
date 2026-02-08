@@ -33,6 +33,8 @@ class GameFormatter:
         "Sette di cuori, scoperta"
     """
     
+    # ===== ORIGINAL FORMATTERS (unchanged) =====
+    
     @staticmethod
     def format_card(
         card: Card,
@@ -339,3 +341,148 @@ class GameFormatter:
             "Timer: attivato, 10 minuti"
         """
         return f"{setting_name}: {new_value}"
+    
+    # ===== NEW DETAILED FEEDBACK FORMATTERS (Commit #16) =====
+    
+    @staticmethod
+    def format_drawn_cards(cards: List[Card]) -> str:
+        """Format detailed card draw announcement.
+        
+        Announces all drawn cards by their full names, matching
+        legacy scr/game_engine.py behavior exactly.
+        
+        Args:
+            cards: List of cards drawn from stock
+        
+        Returns:
+            Formatted announcement in Italian
+        
+        Examples:
+            >>> cards = [Card("7", "cuori"), Card("Regina", "quadri")]
+            >>> GameFormatter.format_drawn_cards(cards)
+            "Hai pescato: 7 di Cuori, Regina di Quadri."
+            
+            >>> GameFormatter.format_drawn_cards([])
+            "Nessuna carta pescata."
+        
+        Reference:
+            Legacy: scr/game_engine.py lines 758-762
+        """
+        if not cards:
+            return "Nessuna carta pescata."
+        
+        msg = "Hai pescato: "
+        card_names = [card.get_display_name() for card in cards]
+        msg += ", ".join(card_names) + ".  \n"
+        
+        return msg
+    
+    @staticmethod
+    def format_move_report(
+        moved_cards: List[Card],
+        origin_pile: Pile,
+        dest_pile: Pile,
+        card_under: Optional[Card] = None,
+        revealed_card: Optional[Card] = None
+    ) -> str:
+        """Format complete move narration with all details.
+        
+        Provides comprehensive move feedback matching legacy behavior:
+        - Cards moved (with count if more than 2)
+        - Origin pile name
+        - Destination pile name
+        - Card underneath (if not King)
+        - Revealed card in origin pile (if any)
+        
+        Args:
+            moved_cards: Cards that were moved
+            origin_pile: Source pile
+            dest_pile: Destination pile
+            card_under: Card in destination that moved cards sit on (optional)
+            revealed_card: Card revealed in origin after move (optional)
+        
+        Returns:
+            Complete move narration in Italian
+        
+        Examples:
+            >>> # Single card move
+            "Sposti: Asso di Cuori. Da: Pila base 1. A: Pila semi Cuori. 
+             Sopra alla carta: Re di Cuori. Hai scoperto: 5 di Picche in: Pila base 1."
+            
+            >>> # Multiple cards
+            "Sposti: 7 di Fiori e altre 3 carte. Da: Pila base 2. A: Pila base 3."
+        
+        Reference:
+            Legacy: scr/game_engine.py lines 526-556
+        """
+        if not moved_cards:
+            return "Nessuna carta spostata."
+        
+        msg = "Sposti: "
+        
+        # Format cards: if >2 show only first + count
+        tot_cards = len(moved_cards)
+        if tot_cards > 2:
+            msg += f"{moved_cards[0].get_display_name()} e altre {tot_cards - 1} carte.  \n"
+        else:
+            card_names = [card.get_display_name() for card in moved_cards]
+            for name in card_names:
+                msg += f"{name}.  \n"
+        
+        # Origin and destination
+        msg += f"Da: {origin_pile.get_name()}.  \n"
+        msg += f"A: {dest_pile.get_name()}.  \n"
+        
+        # Card under (only if not King and not None)
+        if card_under and card_under.get_value != 13:
+            msg += f"Sopra alla carta: {card_under.get_display_name()}.  \n"
+        
+        # Revealed card in origin pile
+        if revealed_card:
+            msg += f"Hai scoperto: {revealed_card.get_display_name()} in: {origin_pile.get_name()}.  \n"
+        
+        return msg
+    
+    @staticmethod
+    def format_reshuffle_message(
+        shuffle_mode: str,
+        auto_drawn_cards: Optional[List[Card]] = None
+    ) -> str:
+        """Format reshuffle announcement with auto-draw.
+        
+        Announces waste pile recycling mode and any automatically
+        drawn cards after the reshuffle.
+        
+        Args:
+            shuffle_mode: "shuffle" (random) or "reverse" (simple inversion)
+            auto_drawn_cards: Cards automatically drawn after reshuffle (optional)
+        
+        Returns:
+            Complete reshuffle + draw announcement in Italian
+        
+        Examples:
+            >>> # Random shuffle with auto-draw
+            "Rimescolo gli scarti in modo casuale nel mazzo riserve!
+             Pescata automatica: Hai pescato: 9 di Quadri, Asso di Fiori."
+            
+            >>> # Reverse without auto-draw (empty deck)
+            "Rimescolo gli scarti in mazzo riserve!
+             Attenzione: mazzo vuoto, nessuna carta da pescare!"
+        
+        Reference:
+            Legacy: scr/game_engine.py lines 779-803
+        """
+        # Announce shuffle mode
+        if shuffle_mode == "shuffle":
+            msg = "Rimescolo gli scarti in modo casuale nel mazzo riserve!  \n"
+        else:
+            msg = "Rimescolo gli scarti in mazzo riserve!  \n"
+        
+        # Auto-draw announcement
+        if auto_drawn_cards:
+            msg += "Pescata automatica: "
+            msg += GameFormatter.format_drawn_cards(auto_drawn_cards)
+        else:
+            msg += "Attenzione: mazzo vuoto, nessuna carta da pescare!  \n"
+        
+        return msg
