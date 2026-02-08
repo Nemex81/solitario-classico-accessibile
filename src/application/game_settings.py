@@ -7,7 +7,7 @@ Provides type-safe access to settings with validation and
 default values.
 """
 
-from typing import Optional, Literal
+from typing import Optional, Literal, Tuple
 from dataclasses import dataclass, field
 import json
 from pathlib import Path
@@ -35,6 +35,7 @@ class GameSettings:
     
     3. Gameplay Options
        - shuffle_enabled: Auto-shuffle stock when empty
+       - difficulty_level: 1-3 (cards drawn per draw)
     
     4. Audio Preferences
        - audio_enabled: Master audio toggle
@@ -47,6 +48,7 @@ class GameSettings:
         timer_minutes: Timer duration
         timer_warnings: Enable timer warnings
         shuffle_enabled: Auto-shuffle when stock exhausted
+        difficulty_level: Cards drawn per draw (1-3)
         audio_enabled: Master audio toggle
         audio_volume: Volume level (0.0-1.0)
         verbosity: TTS detail level (0-2)
@@ -63,16 +65,19 @@ class GameSettings:
     
     # Timer configuration
     timer_enabled: bool = False
-    timer_minutes: int = 10  # Default: 10 minutes
+    timer_minutes: int = 20  # Default: 20 minutes
     timer_warnings: bool = True
     
     # Gameplay options
-    shuffle_enabled: bool = True
+    shuffle_enabled: bool = False  # Default: reverse mode (legacy behavior)
+    difficulty_level: int = 1  # Default: 1 card per draw
     
     # Audio preferences
     audio_enabled: bool = True
     audio_volume: float = 1.0
     verbosity: int = 1  # 0=minimal, 1=normal, 2=detailed
+    
+    # ===== ORIGINAL METHODS (unchanged) =====
     
     def set_deck_type(self, deck_type: DeckType) -> None:
         """Set card deck type.
@@ -194,6 +199,150 @@ class GameSettings:
                 raise ValueError(f"Verbosity must be 0-2, got {verbosity}")
             self.verbosity = verbosity
     
+    # ===== VALIDATED METHODS FOR OPTIONS WINDOW (NEW) =====
+    
+    def change_deck_type_validated(self, is_game_running: bool) -> Tuple[bool, str]:
+        """Change deck type with game-running validation.
+        
+        Args:
+            is_game_running: True if game is active
+        
+        Returns:
+            (success, message): Tuple with result and announcement
+        
+        Example:
+            >>> settings.change_deck_type_validated(is_game_running=False)
+            (True, "Tipo di mazzo impostato a: carte napoletane.")
+            >>> settings.change_deck_type_validated(is_game_running=True)
+            (False, "Non puoi modificare il tipo di mazzo durante una partita!")
+        """
+        if is_game_running:
+            return (False, "Non puoi modificare il tipo di mazzo durante una partita!  \n")
+        
+        # Toggle deck type
+        new_type = self.toggle_deck_type()
+        
+        # Format message
+        deck_names = {"french": "carte francesi", "neapolitan": "carte napoletane"}
+        msg = f"Tipo di mazzo impostato a: {deck_names[new_type]}.  \n"
+        
+        return (True, msg)
+    
+    def cycle_difficulty_validated(self, is_game_running: bool) -> Tuple[bool, str]:
+        """Cycle difficulty level 1→2→3→1 with validation.
+        
+        Args:
+            is_game_running: True if game is active
+        
+        Returns:
+            (success, message): Tuple with result and announcement
+        """
+        if is_game_running:
+            return (False, "Non puoi modificare il livello di difficoltà durante una partita!  \n")
+        
+        # Cycle: 1 → 2 → 3 → 1
+        self.difficulty_level = (self.difficulty_level % 3) + 1
+        
+        msg = f"Livello di difficoltà impostato a: {self.difficulty_level}.  \n"
+        return (True, msg)
+    
+    def increment_timer_validated(self, is_game_running: bool, increment: int = 5) -> Tuple[bool, str]:
+        """Increment timer with validation and cap at 60 minutes.
+        
+        Args:
+            is_game_running: True if game is active
+            increment: Minutes to add (default 5)
+        
+        Returns:
+            (success, message): Tuple with result and announcement
+        """
+        if is_game_running:
+            return (False, "Non puoi modificare il limite massimo per il tempo di gioco durante una partita!  \n")
+        
+        # Increment with 60 min cap
+        old_minutes = self.timer_minutes
+        new_minutes = old_minutes + increment
+        
+        # Cap at 60, or disable if exceeding
+        if new_minutes > 60:
+            self.timer_enabled = False
+            msg = "Il timer è stato disattivato!  \n"
+        else:
+            self.timer_minutes = new_minutes
+            self.timer_enabled = True
+            msg = f"Timer impostato a: {new_minutes} minuti.  \n"
+        
+        return (True, msg)
+    
+    def decrement_timer_validated(self, is_game_running: bool, decrement: int = 5) -> Tuple[bool, str]:
+        """Decrement timer with validation and floor at 5 minutes.
+        
+        Args:
+            is_game_running: True if game is active
+            decrement: Minutes to subtract (default 5)
+        
+        Returns:
+            (success, message): Tuple with result and announcement
+        """
+        if is_game_running:
+            return (False, "Non puoi modificare il limite massimo per il tempo di gioco durante una partita!  \n")
+        
+        # Decrement with 5 min floor
+        old_minutes = self.timer_minutes
+        new_minutes = old_minutes - decrement
+        
+        # Floor at 5, or disable if below
+        if new_minutes < 5:
+            self.timer_enabled = False
+            msg = "Il timer è stato disattivato!  \n"
+        else:
+            self.timer_minutes = new_minutes
+            self.timer_enabled = True
+            msg = f"Timer impostato a: {new_minutes} minuti.  \n"
+        
+        return (True, msg)
+    
+    def toggle_shuffle_mode_validated(self, is_game_running: bool) -> Tuple[bool, str]:
+        """Toggle shuffle mode with validation.
+        
+        Args:
+            is_game_running: True if game is active
+        
+        Returns:
+            (success, message): Tuple with result and announcement
+        """
+        if is_game_running:
+            return (False, "Non puoi modificare la modalità di riciclo scarti durante una partita!  \n")
+        
+        # Toggle shuffle
+        self.shuffle_enabled = not self.shuffle_enabled
+        
+        if self.shuffle_enabled:
+            msg = "Modalità riciclo scarti: MESCOLATA CASUALE.  \n"
+        else:
+            msg = "Modalità riciclo scarti: INVERSIONE SEMPLICE.  \n"
+        
+        return (True, msg)
+    
+    def disable_timer_validated(self, is_game_running: bool) -> Tuple[bool, str]:
+        """Disable timer explicitly with validation.
+        
+        Args:
+            is_game_running: True if game is active
+        
+        Returns:
+            (success, message): Tuple with result and announcement
+        """
+        if is_game_running:
+            return (False, "Non puoi disabilitare il timer durante una partita!  \n")
+        
+        self.timer_enabled = False
+        msg = "Il timer è stato disattivato!  \n"
+        
+        return (True, msg)
+    
+    # ===== SERIALIZATION METHODS (updated) =====
+    
     def to_dict(self) -> dict:
         """Export settings to dictionary.
         
@@ -206,6 +355,7 @@ class GameSettings:
             "timer_minutes": self.timer_minutes,
             "timer_warnings": self.timer_warnings,
             "shuffle_enabled": self.shuffle_enabled,
+            "difficulty_level": self.difficulty_level,
             "audio_enabled": self.audio_enabled,
             "audio_volume": self.audio_volume,
             "verbosity": self.verbosity
