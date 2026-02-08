@@ -14,11 +14,23 @@ class Pile:
     
     A pile is a collection of cards that can be added to or removed from.
     Used for tableau piles, foundation piles, stock, and waste in Solitaire.
+    
+    Attributes:
+        cards: List of cards in the pile
+        name: Human-readable name for voice feedback (e.g., "Pila base 1")
+        pile_type: Type identifier ("base", "semi", "mazzo", "scarti")
     """
     
-    def __init__(self) -> None:
-        """Initialize an empty pile."""
+    def __init__(self, name: str = "Pila senza nome", pile_type: str = "unknown") -> None:
+        """Initialize a pile.
+        
+        Args:
+            name: Human-readable name for the pile (for TTS feedback)
+            pile_type: Type identifier ("base", "semi", "mazzo", "scarti")
+        """
         self.cards: List[Card] = []
+        self.name: str = name
+        self.pile_type: str = pile_type
     
     def aggiungi_carta(self, card: Card) -> None:
         """Add a card to the top of the pile.

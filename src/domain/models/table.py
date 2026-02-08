@@ -40,10 +40,20 @@ class GameTable:
             deck: The deck to use (FrenchDeck or NeapolitanDeck)
         """
         self.mazzo = deck
-        # 7 tableau piles (0-6)
-        self.pile_base: List[Pile] = [Pile() for _ in range(7)]
+        
+        # 7 tableau piles (0-6) with descriptive names
+        self.pile_base: List[Pile] = [
+            Pile(name=f"Pila base {i+1}", pile_type="base")
+            for i in range(7)
+        ]
+        
         # 4 foundation piles (one per suit)
-        self.pile_semi: List[Pile] = [Pile() for _ in range(4)]
+        suit_names = ["Cuori", "Quadri", "Fiori", "Picche"]
+        self.pile_semi: List[Pile] = [
+            Pile(name=f"Pila semi {suit}", pile_type="semi")
+            for suit in suit_names
+        ]
+        
         # Stock pile (tallone coperto)
         self.pile_mazzo: Optional[Pile] = None
         # Waste pile (tallone scoperto)
@@ -78,10 +88,10 @@ class GameTable:
         piles.extend(self.pile_semi)
         
         # Waste pile (11)
-        piles.append(self.pile_scarti if self.pile_scarti else Pile())
+        piles.append(self.pile_scarti if self.pile_scarti else Pile(name="Scarti", pile_type="scarti"))
         
         # Stock pile (12)
-        piles.append(self.pile_mazzo if self.pile_mazzo else Pile())
+        piles.append(self.pile_mazzo if self.pile_mazzo else Pile(name="Mazzo", pile_type="mazzo"))
         
         return piles
     
@@ -106,9 +116,9 @@ class GameTable:
         Fixes #25, #26: Prevents IndexError when switching decks by not
         hardcoding the number of cards remaining for stock.
         """
-        # Initialize stock and waste piles
-        self.pile_mazzo = Pile()
-        self.pile_scarti = Pile()
+        # Initialize stock and waste piles with names
+        self.pile_mazzo = Pile(name="Mazzo", pile_type="mazzo")
+        self.pile_scarti = Pile(name="Scarti", pile_type="scarti")
         
         # Distribute 28 cards to the 7 tableau piles
         for i in range(7):
