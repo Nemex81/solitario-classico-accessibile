@@ -26,6 +26,7 @@ class GameService:
     Attributes:
         table: The game table with all piles
         rules: Game rules validator
+        is_game_running: Flag indicating if game is active
         move_count: Number of moves made
         start_time: Game start timestamp (None if not started)
         draw_count: Number of times drawn from stock
@@ -40,6 +41,7 @@ class GameService:
         """
         self.table = table
         self.rules = rules
+        self.is_game_running = False
         self.move_count = 0
         self.start_time: Optional[float] = None
         self.draw_count = 0
@@ -49,12 +51,14 @@ class GameService:
     # ========================================
     
     def start_game(self) -> None:
-        """Start the game timer."""
+        """Start the game timer and set running flag."""
+        self.is_game_running = True
         if self.start_time is None:
             self.start_time = time.time()
     
     def reset_game(self) -> None:
         """Reset game state for new game."""
+        self.is_game_running = False
         self.move_count = 0
         self.start_time = None
         self.draw_count = 0
