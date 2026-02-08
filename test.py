@@ -98,8 +98,9 @@ class SolitarioCleanArch:
     
     def new_game(self):
         """Start a new game."""
-        success, message = self.engine.new_game()
-        print(f"🎮 {message}")
+        # Note: new_game() returns None, not a tuple
+        self.engine.new_game()
+        print(f"🎮 Nuova partita iniziata")
         self.selected_pile = None
         self.show_game_info()
     
@@ -111,31 +112,44 @@ class SolitarioCleanArch:
         print("\n" + "=" * 60)
         print(f"📊 GAME STATUS")
         print("=" * 60)
-        print(f"Moves: {stats['moves_count']}")
+        print(f"Moves: {stats['move_count']}")
         print(f"Time: {stats['elapsed_time']:.0f}s")
         
         # Foundation status
         print("\n🏆 Foundations:")
-        foundations = state['piles']['foundations']
-        for i, foundation in enumerate(foundations):
-            count = foundation['card_count']
-            top = foundation['top_card'] if foundation['top_card'] else "Empty"
+        foundations_data = state['piles']['foundations']
+        for i, count in enumerate(foundations_data):
+            # Get pile info for top card
+            pile_info = self.engine.get_pile_info(i + 7)
+            if pile_info and pile_info['top_card']:
+                top = pile_info['top_card']['name']
+            else:
+                top = "Empty"
             print(f"  [{i+7}] Foundation {i}: {count} cards (top: {top})")
         
         # Tableau status
         print("\n🃏 Tableau:")
-        tableaus = state['piles']['tableaus']
-        for i, tableau in enumerate(tableaus):
-            count = tableau['card_count']
-            top = tableau['top_card'] if tableau['top_card'] else "Empty"
+        tableaus_data = state['piles']['tableau']
+        for i, count in enumerate(tableaus_data):
+            # Get pile info for top card
+            pile_info = self.engine.get_pile_info(i)
+            if pile_info and pile_info['top_card']:
+                top = pile_info['top_card']['name']
+            else:
+                top = "Empty"
             print(f"  [{i}] Pile {i}: {count} cards (top: {top})")
         
         # Stock and waste
-        stock = state['piles']['stock']
-        waste = state['piles']['waste']
+        stock_count = state['piles']['stock']
+        waste_count = state['piles']['waste']
+        waste_info = self.engine.get_pile_info(12)
+        waste_top = "Empty"
+        if waste_info and waste_info['top_card']:
+            waste_top = waste_info['top_card']['name']
+        
         print("\n📚 Stock & Waste:")
-        print(f"  [11] Stock: {stock['card_count']} cards")
-        print(f"  [12] Waste: {waste['card_count']} cards (top: {waste['top_card'] or 'Empty'})")
+        print(f"  [11] Stock: {stock_count} cards")
+        print(f"  [12] Waste: {waste_count} cards (top: {waste_top})")
         
         print("=" * 60 + "\n")
         
@@ -154,7 +168,10 @@ class SolitarioCleanArch:
             self.selected_pile = pile_idx
             pile_info = self.engine.get_pile_info(pile_idx)
             if pile_info:
-                print(f"\n✅ Selected pile {pile_idx}: {pile_info}")
+                card_str = f"{pile_info['card_count']} cards"
+                if pile_info['top_card']:
+                    card_str = f"{pile_info['card_count']} cards (top: {pile_info['top_card']['name']})"
+                print(f"\n✅ Selected pile {pile_idx}: {card_str}")
                 print("   Press another pile number to move card(s)\n")
             else:
                 print(f"\n❌ Invalid pile: {pile_idx}\n")
@@ -190,8 +207,8 @@ class SolitarioCleanArch:
         if success:
             # Show waste pile info
             waste_info = self.engine.get_pile_info(12)  # Waste pile
-            if waste_info:
-                print(f"   Waste pile: {waste_info}\n")
+            if waste_info and waste_info['top_card']:
+                print(f"   Waste pile: {waste_info['card_count']} cards (top: {waste_info['top_card']['name']})\n")
     
     def recycle_waste(self):
         """Recycle waste pile back to stock."""
