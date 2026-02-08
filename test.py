@@ -32,10 +32,11 @@ Architecture Layers (Complete):
 
 All architectural components complete and ready for integration.
 
-New in v1.4.2 [Commits #24-28]:
+New in v1.4.2 [Commits #24-28] - COMPLETE:
 - Virtual dialog boxes for confirmations
 - ESC confirmation in all contexts
 - Welcome message in game submenu
+- Double-ESC quick exit during gameplay
 """
 
 import sys
@@ -73,7 +74,7 @@ class SolitarioCleanArch:
         engine: GameEngine facade for game logic
         gameplay_controller: Keyboard commands orchestrator
         menu: Virtual main menu for navigation
-        game_submenu: Secondary menu for game options (v1.4.1)
+        game_submenu: Secondary menu with welcome message (v1.4.2)
         exit_dialog: Dialog for app exit confirmation (v1.4.2)
         return_to_main_dialog: Dialog for submenu exit confirmation (v1.4.2)
         abandon_game_dialog: Dialog for gameplay exit confirmation (v1.4.2)
@@ -142,7 +143,7 @@ class SolitarioCleanArch:
             screen_reader=self.screen_reader if self.screen_reader else self._dummy_sr()
         )
         
-        # Game submenu (v1.4.1)
+        # Game submenu with welcome message (v1.4.2 - Commit #28)
         self.game_submenu = VirtualMenu(
             items=[
                 "Nuova partita",
@@ -152,7 +153,9 @@ class SolitarioCleanArch:
             callback=self.handle_game_submenu_selection,
             screen=self.screen,
             screen_reader=self.screen_reader if self.screen_reader else self._dummy_sr(),
-            parent_menu=self.menu  # Link to parent for ESC handling
+            parent_menu=self.menu,
+            welcome_message="Benvenuto nel menu di gioco del Solitario Classico!",
+            show_controls_hint=True
         )
         
         print("✓ Menu pronto")
@@ -387,8 +390,8 @@ class SolitarioCleanArch:
             )
             pygame.time.wait(400)
             
-            # Re-announce game submenu
-            self.game_submenu._announce_menu_open()
+            # Re-announce game submenu with welcome message
+            self.game_submenu.announce_welcome()
     
     def close_abandon_dialog(self) -> None:
         """Close abandon dialog and resume gameplay (No button or first ESC).
@@ -640,12 +643,12 @@ def main():
     print("Modalità: Audiogame per non vedenti")
     print("Entry point: test.py")
     print("")
-    print("✅ v1.4.2 IN PROGRESS (Commits #24-28)")
+    print("✅✅✅ v1.4.2 COMPLETE! (Commits #24-28)")
     print("   - #24: Virtual Dialog Box ✓")
     print("   - #25: ESC in Main Menu ✓")
     print("   - #26: ESC in Game Submenu ✓")
     print("   - #27: ESC in Gameplay + Double-ESC ✓")
-    print("   - #28: Welcome Message (in progress...)")
+    print("   - #28: Welcome Message ✓")
     print("")
     print("Legacy version ancora disponibile: python acs.py")
     print("="*60)
