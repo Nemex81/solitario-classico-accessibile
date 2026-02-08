@@ -281,7 +281,7 @@ class GameEngine:
         
         if not pile.is_empty():
             top = pile.get_top_card()
-            msg += f"In cima: {top.name}\n"
+            msg += f"In cima: {top.get_name}\n"
         
         if self.screen_reader:
             self.screen_reader.tts.speak(msg, interrupt=True)
@@ -301,7 +301,7 @@ class GameEngine:
         for i, pile in enumerate(self.table.pile_base):
             if not pile.is_empty():
                 top = pile.get_top_card()
-                msg += f"  Pila {i+1}: {top.name}\n"
+                msg += f"  Pila {i+1}: {top.get_name}\n"
             else:
                 msg += f"  Pila {i+1}: vuota\n"
         
@@ -591,9 +591,9 @@ class GameEngine:
             "card_count": pile.get_card_count(),
             "is_empty": pile.is_empty(),
             "top_card": {
-                "name": top_card.name,
-                "suit": top_card.suit,
-                "covered": top_card.covered
+                "name": top_card.get_name,
+                "suit": top_card.get_suit,
+                "covered": top_card.get_covered
             } if top_card is not None else None
         }
     
