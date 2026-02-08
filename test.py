@@ -34,7 +34,7 @@ All architectural components complete and ready for integration.
 
 New in v1.4.1 [Commit #15]:
 - Hierarchical menu system (Main → Game Submenu)
-- Virtual options window (F1-F5 settings management)
+- Virtual options window (O key settings management)
 """
 
 import sys
@@ -60,7 +60,7 @@ from src.infrastructure.accessibility.tts_provider import create_tts_provider
 class SolitarioCleanArch:
     """Main application class - Audiogame for blind users.
     
-    Manages application lifecycle and orchestrates menu ↔ gameplay flow.
+    Manages application lifecycle and orchestrates menu ↔ gameplay ↔ options flow.
     Uses Clean Architecture with dependency injection.
     
     Architecture Notes:
@@ -75,7 +75,8 @@ class SolitarioCleanArch:
         gameplay_controller: Keyboard commands orchestrator
         menu: Virtual main menu for navigation
         game_submenu: Secondary menu for game options (New in v1.4.1)
-        is_menu_open: Current UI state (menu vs gameplay)
+        is_menu_open: Current UI state (menu vs gameplay/options)
+        is_options_mode: Options window active (v1.4.1)
         is_running: Main loop control flag
     """
     
@@ -162,6 +163,7 @@ class SolitarioCleanArch:
         
         # Application state
         self.is_menu_open = True
+        self.is_options_mode = False  # New: Options window state
         self.is_running = True
         
         print("="*60)
@@ -220,37 +222,57 @@ class SolitarioCleanArch:
     def open_options(self) -> None:
         """Open virtual options window (new in v1.4.1).
         
-        Opens interactive settings window where user can modify:
-        - F1: Deck type (French/Neapolitan)
-        - F2: Difficulty level (1-3)
-        - F3/F4: Timer (±5 min)
-        - F5: Shuffle mode (reverse/random)
-        - CTRL+F3: Disable timer
-        - O/ESC: Close options
+        Opens interactive settings window managed by GamePlayController.
+        User can modify settings using keyboard commands documented in
+        OptionsWindowController.
         
-        Implementation: Next step (will integrate with GameEngine.open_options())
+        Flow:
+        1. Close menu and enter options mode
+        2. Open options via gameplay_controller
+        3. Route all input to options controller until closed
+        4. Return to menu when options closed
         """
-        if self.screen_reader:
-            self.screen_reader.tts.speak(
-                "Apertura opzioni di gioco.",
-                interrupt=True
-            )
-        
         print("\n" + "="*60)
-        print("OPZIONI DI GIOCO")
-        print("="*60)
-        print("TODO: Implementare gestione opzioni (prossimo step)")
-        print("Per ora torno al menu...")
+        print("APERTURA FINESTRA OPZIONI")
         print("="*60)
         
-        # Placeholder: will call self.engine.open_options() in next step
-        pygame.time.wait(1500)
+        # Switch to options mode
+        self.is_menu_open = False
+        self.is_options_mode = True
         
+        # Open options through controller
+        msg = self.gameplay_controller.options_controller.open_window()
+        
+        # Vocalize opening
+        if self.screen_reader:
+            self.screen_reader.tts.speak(msg, interrupt=True)
+        
+        print("Finestra opzioni aperta.")
+        print("Usa frecce ↑↓ o tasti 1-5 per navigare.")
+        print("Premi O o ESC per chiudere.")
+        print("="*60)
+    
+    def close_options_and_return_to_menu(self) -> None:
+        """Close options window and return to game submenu.
+        
+        Called when user closes options from within the window.
+        """
+        print("\n" + "="*60)
+        print("CHIUSURA OPZIONI - RITORNO AL MENU")
+        print("="*60)
+        
+        # Exit options mode
+        self.is_options_mode = False
+        self.is_menu_open = True
+        
+        # Re-announce game submenu
         if self.screen_reader:
             self.screen_reader.tts.speak(
                 "Ritorno al menu di gioco.",
                 interrupt=True
             )
+            pygame.time.wait(300)
+            self.game_submenu._announce_menu_open()
     
     def start_game(self) -> None:
         """Start new game session.
@@ -278,8 +300,10 @@ class SolitarioCleanArch:
     def handle_events(self) -> None:
         """Main event loop - process all pygame events.
         
-        Routes events to menu or gameplay controller based on
-        current application state.
+        Routes events based on current application state:
+        - Menu open: Route to menu navigation
+        - Options mode: Route to options controller
+        - Gameplay: Route to gameplay controller
         """
         for event in pygame.event.get():
             # Window close event
@@ -291,14 +315,27 @@ class SolitarioCleanArch:
             if self.is_menu_open:
                 # Menu navigation (delegates to submenu if active)
                 self.menu.handle_keyboard_events(event)
+            
+            elif self.is_options_mode:
+                # Options window mode - route to gameplay controller
+                self.gameplay_controller.handle_keyboard_events(event)
+                
+                # Check if options was closed
+                if event.type == pygame.KEYDOWN:
+                    if not self.gameplay_controller.options_controller.is_open:
+                        # Options closed, return to menu
+                        self.close_options_and_return_to_menu()
+            
             else:
-                # Gameplay commands
+                # Normal gameplay commands
                 self.gameplay_controller.handle_keyboard_events(event)
                 
                 # Check ESC to return to menu
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
-                        self.return_to_menu()
+                        # Only return to menu if options not open
+                        if not self.gameplay_controller.options_controller.is_open:
+                            self.return_to_menu()
     
     def return_to_menu(self) -> None:
         """Return from gameplay to main menu."""
@@ -376,7 +413,7 @@ def main():
     print("   - Application Layer: Engine, Controllers, Settings, Input")
     print("   - Infrastructure Layer: Accessibility, UI")
     print("   - Presentation Layer: Formatters")
-    print("   - v1.4.1: Menu secondario + Finestra opzioni (in progress)")
+    print("   - v1.4.1: Menu secondario + Finestra opzioni (COMPLETA!)")
     print("")
     print("Legacy version ancora disponibile: python acs.py")
     print("="*60)
