@@ -39,6 +39,7 @@ New in v1.4.2 [Commits #24-28]:
 """
 
 import sys
+import time
 import pygame
 from pygame.locals import QUIT
 
@@ -75,6 +76,8 @@ class SolitarioCleanArch:
         game_submenu: Secondary menu for game options (v1.4.1)
         exit_dialog: Dialog for app exit confirmation (v1.4.2)
         return_to_main_dialog: Dialog for submenu exit confirmation (v1.4.2)
+        abandon_game_dialog: Dialog for gameplay exit confirmation (v1.4.2)
+        last_esc_time: Timestamp of last ESC press for double-ESC feature
         is_menu_open: Current UI state (menu vs gameplay/options)
         is_options_mode: Options window active (v1.4.1)
         is_running: Main loop control flag
@@ -157,6 +160,11 @@ class SolitarioCleanArch:
         # Infrastructure: Dialog boxes (v1.4.2)
         self.exit_dialog = None  # Exit confirmation dialog (Commit #25)
         self.return_to_main_dialog = None  # Submenu exit dialog (Commit #26)
+        self.abandon_game_dialog = None  # Gameplay exit dialog (Commit #27)
+        
+        # Double-ESC feature (Commit #27)
+        self.last_esc_time = 0  # Timestamp of last ESC press
+        self.DOUBLE_ESC_THRESHOLD = 2.0  # Seconds for double-ESC detection
         
         # Application state
         self.is_menu_open = True
@@ -328,6 +336,79 @@ class SolitarioCleanArch:
         # Re-announce current submenu position
         self.game_submenu._announce_menu_open()
     
+    def show_abandon_game_dialog(self) -> None:
+        """Show abandon game confirmation dialog (Commit #27).
+        
+        Opens dialog asking "Vuoi abbandonare la partita e tornare al menu di gioco?" with
+        Sì/No buttons. Sì has default focus.
+        
+        Triggered by:
+        - ESC during gameplay
+        
+        Note: Returns to GAME SUBMENU, not main menu!
+        """
+        print("\n" + "="*60)
+        print("DIALOG: Conferma abbandono partita")
+        print("="*60)
+        
+        self.abandon_game_dialog = VirtualDialogBox(
+            message="Vuoi abbandonare la partita e tornare al menu di gioco?",
+            buttons=["Sì", "No"],
+            default_button=0,  # Focus on Sì
+            on_confirm=self.confirm_abandon_game,
+            on_cancel=self.close_abandon_dialog,
+            screen_reader=self.screen_reader if self.screen_reader else self._dummy_sr()
+        )
+        
+        self.abandon_game_dialog.open()
+    
+    def confirm_abandon_game(self) -> None:
+        """Confirm abandon game (Sì button).
+        
+        Abandons current game and returns to GAME SUBMENU (not main menu!).
+        Re-announces game submenu after abandoning.
+        """
+        print("Confermato - Abbandono partita e ritorno al menu di gioco")
+        
+        # Close dialog
+        self.abandon_game_dialog = None
+        
+        # Reset ESC timer
+        self.last_esc_time = 0
+        
+        # Return to game submenu
+        self.is_menu_open = True
+        
+        # Announce return
+        if self.screen_reader:
+            self.screen_reader.tts.speak(
+                "Partita abbandonata. Ritorno al menu di gioco.",
+                interrupt=True
+            )
+            pygame.time.wait(400)
+            
+            # Re-announce game submenu
+            self.game_submenu._announce_menu_open()
+    
+    def close_abandon_dialog(self) -> None:
+        """Close abandon dialog and resume gameplay (No button or first ESC).
+        
+        User chose to continue playing, announce resume.
+        """
+        print("Dialog chiuso - Ripresa gioco")
+        
+        if self.screen_reader:
+            self.screen_reader.tts.speak(
+                "Ripresa gioco.",
+                interrupt=True
+            )
+            pygame.time.wait(300)
+        
+        self.abandon_game_dialog = None
+        
+        # Reset ESC timer
+        self.last_esc_time = 0
+    
     # === MENU & GAMEPLAY HANDLERS ===
     
     def open_options(self) -> None:
@@ -381,6 +462,9 @@ class SolitarioCleanArch:
         self.engine.reset_game()
         self.engine.new_game()
         
+        # Reset ESC timer
+        self.last_esc_time = 0
+        
         if self.screen_reader:
             self.screen_reader.tts.speak(
                 "Nuova partita avviata! Usa H per l'aiuto comandi.",
@@ -389,7 +473,7 @@ class SolitarioCleanArch:
         
         print("Partita in corso...")
         print("Premi H per l'aiuto comandi.")
-        print("Premi ESC per tornare al menu.")
+        print("Premi ESC per tornare al menu (doppio ESC per uscita rapida).")
     
     def handle_events(self) -> None:
         """Main event loop - process all pygame events.
@@ -397,9 +481,10 @@ class SolitarioCleanArch:
         Routes events based on current application state:
         - Exit dialog open: Route to exit dialog
         - Return dialog open: Route to return dialog (Commit #26)
+        - Abandon dialog open: Route to abandon dialog (Commit #27)
         - Menu open: Route to menu navigation (with ESC interception)
         - Options mode: Route to options controller
-        - Gameplay: Route to gameplay controller
+        - Gameplay: Route to gameplay controller (with double-ESC detection)
         """
         for event in pygame.event.get():
             # Window close event
@@ -415,6 +500,30 @@ class SolitarioCleanArch:
             # PRIORITY 2: Return to main dialog open (Commit #26)
             if self.return_to_main_dialog and self.return_to_main_dialog.is_open:
                 self.return_to_main_dialog.handle_keyboard_events(event)
+                continue  # Block all other input
+            
+            # PRIORITY 3: Abandon game dialog open (Commit #27)
+            if self.abandon_game_dialog and self.abandon_game_dialog.is_open:
+                # Check for double-ESC (instant confirm)
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    current_time = time.time()
+                    if current_time - self.last_esc_time <= self.DOUBLE_ESC_THRESHOLD:
+                        # Double-ESC detected!
+                        print("\n[DOUBLE-ESC] Uscita rapida!")
+                        
+                        if self.screen_reader:
+                            self.screen_reader.tts.speak(
+                                "Uscita rapida!",
+                                interrupt=True
+                            )
+                            pygame.time.wait(300)
+                        
+                        # Auto-confirm abandon
+                        self.confirm_abandon_game()
+                        continue
+                
+                # Normal dialog handling
+                self.abandon_game_dialog.handle_keyboard_events(event)
                 continue  # Block all other input
             
             # Route keyboard events based on state
@@ -445,24 +554,31 @@ class SolitarioCleanArch:
                         self.close_options_and_return_to_menu()
             
             else:
+                # GAMEPLAY MODE - with double-ESC detection (Commit #27)
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    # Only handle ESC if options not open
+                    if not self.gameplay_controller.options_controller.is_open:
+                        current_time = time.time()
+                        
+                        # Check if this is first ESC or dialog was just closed
+                        if self.last_esc_time == 0 or current_time - self.last_esc_time > self.DOUBLE_ESC_THRESHOLD:
+                            # First ESC - show dialog
+                            self.last_esc_time = current_time
+                            self.show_abandon_game_dialog()
+                        
+                        continue  # Don't pass to gameplay controller
+                
                 # Normal gameplay commands
                 self.gameplay_controller.handle_keyboard_events(event)
-                
-                # Check ESC to return to menu
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
-                        # Only return to menu if options not open
-                        if not self.gameplay_controller.options_controller.is_open:
-                            self.return_to_menu()
     
     def return_to_menu(self) -> None:
-        """Return from gameplay to game submenu (fixed in Commit #26).
+        """Return from gameplay to game submenu.
         
-        Note: Now returns to game submenu, not main menu.
-        This is the correct behavior for ESC during gameplay.
+        Note: This method is now only called by gameplay_controller in legacy code paths.
+        New behavior: ESC during gameplay shows abandon dialog (Commit #27).
         """
         print("\n" + "="*60)
-        print("RITORNO AL MENU DI GIOCO")
+        print("RITORNO AL MENU DI GIOCO (legacy path)")
         print("="*60)
         
         self.is_menu_open = True
@@ -473,7 +589,7 @@ class SolitarioCleanArch:
                 interrupt=True
             )
             pygame.time.wait(300)
-            # Re-announce game submenu (not main menu!)
+            # Re-announce game submenu
             self.game_submenu._announce_menu_open()
     
     def quit_app(self) -> None:
@@ -528,7 +644,8 @@ def main():
     print("   - #24: Virtual Dialog Box ✓")
     print("   - #25: ESC in Main Menu ✓")
     print("   - #26: ESC in Game Submenu ✓")
-    print("   - #27-28: In progress...")
+    print("   - #27: ESC in Gameplay + Double-ESC ✓")
+    print("   - #28: Welcome Message (in progress...)")
     print("")
     print("Legacy version ancora disponibile: python acs.py")
     print("="*60)
