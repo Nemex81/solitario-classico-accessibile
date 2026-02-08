@@ -5,6 +5,325 @@ Tutte le modifiche rilevanti a questo progetto saranno documentate in questo fil
 Il formato è basato su [Keep a Changelog](https://keepachangelog.com/it/1.0.0/),
 e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.4.2] - 2026-02-09
+
+### ✨ Nuova Funzionalità: UX Improvements per Audiogame
+
+**🎯 FEATURE COMPLETA**: Sistema di dialog conferma e welcome messages per migliorare l'esperienza utente
+
+#### 🏗️ Architettura Clean Architecture (5 Commits Atomici)
+
+**Commit #24: Virtual Dialog Box Component** (`048b7dd8`)
+- Creato `src/infrastructure/ui/dialog.py` (~215 linee)
+- Componente riusabile per dialog di conferma con accessibilità completa
+- **Features**:
+  - Navigazione keyboard completa (↑↓←→ + INVIO/ESC)
+  - Button focus management con wrap-around
+  - Single-key shortcuts (S/N/O/A)
+  - TTS announcements per screen reader
+  - Configurable callbacks (on_confirm/on_cancel)
+  - Supporto 2+ pulsanti
+- **API Usage**:
+  ```python
+  dialog = VirtualDialogBox(
+      message="Vuoi continuare?",
+      buttons=["Sì", "No"],
+      default_button=0,  # Focus su Sì
+      on_confirm=lambda: action(),
+      on_cancel=lambda: cancel(),
+      screen_reader=sr
+  )
+  dialog.open()
+  ```
+
+**Commit #25: ESC Confirmation in Main Menu** (`1151d4e1`)
+- Implementato dialog "Vuoi uscire dall'applicazione?" quando ESC premuto nel menu principale
+- **Flow**: Main Menu → ESC → Dialog → OK/Annulla → Azione
+- **Features**:
+  - Pulsanti: OK (focus) / Annulla
+  - Shortcuts: O=OK, A=Annulla
+  - Arrow navigation + ENTER/ESC
+  - OK → Chiude applicazione
+  - Annulla/ESC → Ritorna al menu principale
+- **Modifica**: `test.py` +60 linee
+
+**Commit #26: ESC Confirmation in Game Submenu** (`1b5eeda1`)
+- Implementato dialog "Vuoi tornare al menu principale?" quando:
+  - ESC premuto nel game submenu
+  - INVIO su voce "Chiudi"
+- **Flow**: Game Submenu → ESC/"Chiudi" → Dialog → Sì/No → Azione
+- **Features**:
+  - Pulsanti: Sì (focus) / No
+  - Shortcuts: S=Sì, N=No
+  - Arrow navigation + ENTER/ESC
+  - Sì → Chiude submenu, ritorna al main menu
+  - No → Resta nel game submenu
+- **Fix**: `return_to_menu()` ora va al game submenu (non main)
+- **Modifica**: `test.py` +75 linee
+
+**Commit #27: ESC Confirmation During Gameplay + Double-ESC** (`cd36df4c`)
+- Implementato dialog "Vuoi abbandonare la partita?" quando ESC premuto durante gameplay
+- **Flow**: Gameplay → ESC → Dialog → Sì/No → Azione
+- **Features**:
+  - Pulsanti: Sì (focus) / No
+  - Shortcuts: S=Sì, N=No
+  - Arrow navigation + ENTER/ESC
+  - Sì → Abbandona partita, ritorna al game submenu (non main!)
+  - No → Riprendi gameplay
+- **BONUS: Double-ESC Feature**:
+  - Primo ESC: Apre dialog
+  - Secondo ESC entro 2 secondi: Conferma automatica Sì
+  - Annuncio TTS: "Uscita rapida"
+  - Timer reset dopo 2s o dopo azione
+- **Modifica**: `test.py` +85 linee
+
+**Commit #28: Welcome Message in Game Submenu** (`8d693961` + `fa034726`)
+- Aggiunto sistema di welcome messages per sottomenu
+- **Implementazione Part 1** (`8d693961`): `menu.py` +45 linee
+  - Parametri opzionali: `welcome_message`, `show_controls_hint`
+  - Nuovo metodo `announce_welcome()` per rich announcements
+  - Modifica `open_submenu()` per usare welcome se configurato
+- **Implementazione Part 2** (`fa034726`): `test.py` +8 linee
+  - Attivato welcome message per game_submenu
+  - Messaggio completo:
+    ```
+    "Benvenuto nel menu di gioco del Solitario Classico!
+     Usa frecce su e giù per navigare tra le voci. Premi Invio per selezionare.
+     Posizione corrente: Nuova partita."
+    ```
+
+### 🎮 UX Improvements
+
+**Prima (v1.4.1)**:
+- ❌ ESC chiudeva direttamente senza conferma (rischio chiusure accidentali)
+- ❌ Apertura submenu con annuncio generico: "Sottomenu aperto. 3 voci disponibili. 1 di 3: Nuova partita"
+- ❌ Nessuna guida per utenti nuovi all'apertura menu
+
+**Dopo (v1.4.2)**:
+- ✅ ESC in tutti i contesti richiede conferma (safety)
+- ✅ Welcome message ricco con guida comandi (accessibilità)
+- ✅ Double-ESC per power users (velocità)
+- ✅ Feedback TTS chiaro in tutti i dialog
+- ✅ Navigation consistente in tutti i dialog (↑↓←→)
+- ✅ Shortcuts singolo tasto per conferme rapide (S/N/O/A)
+
+### 📊 Flussi Completi
+
+#### **Main Menu ESC Flow**
+```
+Main Menu → ESC
+  ↓
+Dialog: "Vuoi uscire dall'applicazione?"
+  [OK (focus)] / [Annulla]
+  ↓
+OK → Quit app
+Annulla/ESC → Ritorna al main menu (re-announce)
+```
+
+#### **Game Submenu ESC/"Chiudi" Flow**
+```
+Game Submenu → ESC o INVIO su "Chiudi"
+  ↓
+Dialog: "Vuoi tornare al menu principale?"
+  [Sì (focus)] / [No]
+  ↓
+Sì → Chiude submenu → Main menu
+No/ESC → Resta in game submenu (re-announce)
+```
+
+#### **Gameplay ESC Flow**
+```
+Gameplay → ESC
+  ↓
+Dialog: "Vuoi abbandonare la partita?"
+  [Sì (focus)] / [No]
+  ↓
+Sì → Abbandona → Game submenu
+No/ESC → Riprendi gameplay
+
+SHORTCUT: Gameplay → ESC → ESC (entro 2s)
+  ↓
+"Uscita rapida" → Auto-conferma → Game submenu
+```
+
+### 🔧 Modifiche Tecniche
+
+**Statistiche Implementazione**:
+- Totale linee codice: ~420
+- File creati: 1 nuovo (`dialog.py`)
+- File modificati: 2 (`test.py`, `menu.py`)
+- Commit atomici: 5
+- Tempo sviluppo: ~3 ore
+- Dialog components: 3 istanze separate
+
+**Architettura**:
+```
+Infrastructure (dialog.py)
+   ↓
+Application (test.py - dialog management)
+   ↓
+Presentation (menu.py - welcome messages)
+```
+
+**State Management**:
+- `exit_dialog`: Dialog uscita app (main menu ESC)
+- `return_to_main_dialog`: Dialog ritorno main (game submenu ESC)
+- `abandon_game_dialog`: Dialog abbandono partita (gameplay ESC)
+- `last_esc_time`: Timestamp per double-ESC detection
+
+**Event Priority**:
+```python
+# Priority 1: Dialog open
+if dialog.is_open:
+    dialog.handle_keyboard_events(event)
+    return  # Block all other input
+
+# Priority 2: Menu navigation
+if is_menu_open:
+    # Check ESC intercept
+    menu.handle_keyboard_events(event)
+
+# Priority 3: Gameplay/Options
+else:
+    controller.handle_keyboard_events(event)
+```
+
+### ✅ Dialog Component API
+
+**Constructor Parameters**:
+- `message`: Dialog message text
+- `buttons`: List di label (e.g., ["Sì", "No"])
+- `default_button`: Index button con focus iniziale
+- `on_confirm`: Callback per primo pulsante (index 0)
+- `on_cancel`: Callback per altri pulsanti o ESC
+- `screen_reader`: ScreenReader instance per TTS
+
+**Navigation**:
+- ↑↓←→: Muove focus tra pulsanti (wrap-around)
+- INVIO/SPAZIO: Conferma pulsante corrente
+- ESC: Annulla (chiama on_cancel)
+- S/N/O/A: Shortcuts diretti per pulsanti
+
+**TTS Announcements**:
+- Open: "{message}\n{current_button}."
+- Navigate: "{new_button}."
+- Confirm: Chiude e esegue callback
+- Ogni cambio focus interrompe TTS precedente
+
+### 🎨 Welcome Message System
+
+**Configurazione**:
+```python
+game_submenu = VirtualMenu(
+    items=["Nuova partita", "Opzioni", "Chiudi"],
+    callback=handler,
+    screen_reader=sr,
+    welcome_message="Benvenuto nel menu di gioco del Solitario Classico!",
+    show_controls_hint=True
+)
+```
+
+**Announcement Structure**:
+1. Welcome message (se configurato)
+2. Controls hint (se abilitato): "Usa frecce su e giù per navigare..."
+3. Current item: "Posizione corrente: {item}"
+
+**Benefici**:
+- Orientamento immediato per utenti nuovi
+- Guida comandi sempre disponibile all'apertura
+- Sostituisce annuncio generico con messaggio ricco
+
+### 🧪 Testing
+
+**Test Manuali Eseguiti**:
+- ✅ ESC in main menu → Dialog OK/Annulla
+- ✅ ESC in game submenu → Dialog Sì/No
+- ✅ INVIO su "Chiudi" → Stesso dialog Sì/No
+- ✅ ESC durante gameplay → Dialog Sì/No
+- ✅ Double-ESC entro 2s → Auto-conferma
+- ✅ Double-ESC oltre 2s → Dialog normale
+- ✅ Navigation frecce in tutti i dialog
+- ✅ Shortcuts S/N/O/A funzionanti
+- ✅ ESC nei dialog chiude correttamente
+- ✅ TTS announcements chiari e completi
+- ✅ Welcome message in game submenu
+- ✅ Re-announce dopo chiusura dialog
+
+**Edge Cases Testati**:
+- ✅ Chiusura dialog con ESC → Ritorna a contesto originale
+- ✅ Cambi focus rapidi → TTS interrupt corretto
+- ✅ Dialog aperto blocca input sottostante
+- ✅ Timer double-ESC reset corretto
+- ✅ Welcome message non sovrascrive navigation normale
+
+### 🎯 Backward Compatibility
+
+**Breaking Changes**: Nessuno ✅
+- ✅ Tutti i comandi esistenti funzionano identicamente
+- ✅ ESC ora richiede conferma (miglioramento UX, non breaking)
+- ✅ Menu navigation invariata
+- ✅ Gameplay commands invariati
+- ✅ Nessuna API pubblica modificata
+
+**Additive Changes**:
+- Nuovi dialog components (addizione)
+- Welcome messages (addizione)
+- Double-ESC feature (addizione)
+- Tutti retrocompatibili
+
+### 📚 Documentazione
+
+**File Completati**:
+- `docs/UX_IMPROVEMENTS_ROADMAP.md`: Piano implementazione dettagliato
+- `docs/UX_IMPROVEMENTS_CHECKLIST.md`: Tracking completo task (5/5 ✅)
+
+**Documentazione Commit**:
+- 5 commit messages dettagliati con features/flow/statistics
+- Inline code comments per logica complessa
+- Docstrings completi per VirtualDialogBox
+
+### 🚀 Benefici
+
+**Safety**:
+- ❌ Prima: ESC chiudeva direttamente (chiusure accidentali)
+- ✅ Dopo: Conferma richiesta in tutti i contesti
+
+**Accessibility**:
+- ❌ Prima: Annunci generici, nessuna guida
+- ✅ Dopo: Welcome messages ricchi, guida comandi sempre presente
+
+**Usability**:
+- ❌ Prima: Un solo modo per uscire (lento)
+- ✅ Dopo: Dialog normale O double-ESC (velocità + safety)
+
+**Consistency**:
+- ❌ Prima: Comportamento ESC inconsistente
+- ✅ Dopo: Pattern uniforme in tutti i contesti
+
+### 📊 Prossimi Passi
+
+**Testing Estensivo**:
+- [ ] Test con screen reader reali (NVDA, JAWS)
+- [ ] Feedback utenti su dialog flow
+- [ ] Test welcome message efficacia
+- [ ] Double-ESC usability evaluation
+
+**Potenziali Miglioramenti**:
+- Configurabile double-ESC timeout (ora 2s fisso)
+- Audio cues per dialog open/close
+- Customizable welcome messages per altri menu
+- Persistent preference "non chiedere più"
+
+### 🎉 Credits
+
+Feature implementata seguendo richieste utente specifiche:
+- Dialog conferma ESC in tutti i contesti (safety)
+- Welcome message con guida comandi (accessibilità)
+- Double-ESC per utenti esperti (velocità)
+- TTS announcements chiari e completi
+
+---
+
 ## [1.4.1] - 2026-02-08
 
 ### ✨ Nuova Funzionalità: Finestra Virtuale Opzioni
@@ -1016,6 +1335,7 @@ Questo progetto segue il [Semantic Versioning](https://semver.org/lang/it/):
 - ✅ **Tests**: Aggiunte o modifiche ai test
 - 📚 **Documentation**: Modifiche alla documentazione
 
+[1.4.2]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v1.4.1...v1.4.2
 [1.4.1]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v1.3.3...v1.4.0
 [1.3.3]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v1.3.2...v1.3.3
