@@ -25,10 +25,10 @@ from pygame.locals import QUIT
 from src.application.game_engine import GameEngine
 from src.application.gameplay_controller import GamePlayController
 
-# Infrastructure layer
+# Infrastructure layer - UPDATED IMPORTS (Commit #5)
 from src.infrastructure.ui.menu import VirtualMenu
-from src.infrastructure.audio.screen_reader import ScreenReader
-from src.infrastructure.audio.tts_provider import create_tts_provider
+from src.infrastructure.accessibility.screen_reader import ScreenReader
+from src.infrastructure.accessibility.tts_provider import create_tts_provider
 
 
 class SolitarioCleanArch:
