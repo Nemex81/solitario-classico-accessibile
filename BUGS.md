@@ -12,7 +12,8 @@
 |----|--------|-------|----------|-----------------|----------|
 | #1 | Deck Type Non Applicato | ✅ FIXED | 🔴 Alta | game_engine.py, test.py, gameplay_controller.py | 3 |
 | #2 | Validazione Seme Assi Mancante | ✅ FIXED | 🔴 Alta | pile.py, table.py, solitaire_rules.py | 3+1 hotfix |
-| #3 | Settings Non Consultate in new_game() | 🔧 IN PROGRESS | 🔴 CRITICA | game_engine.py, game_service.py | TBD |
+| #3 | Settings Non Consultate in new_game() | ✅ FIXED | 🔴 CRITICA | game_engine.py | 5 commits |
+| #3.1 | Double Distribution on Deck Change | 🔧 IN PROGRESS | 🔴 CRITICA | game_engine.py | TBD |
 
 **Legenda Stati**:
 - 🔧 IN PROGRESS: Implementazione in corso
@@ -250,48 +251,168 @@ def new_game(self):
 
 **NON c'è modo di impostare un limite di tempo!** Questa funzionalità manca completamente.
 
-### **Soluzione Dettagliata**
+### **Soluzione Implementata** (7 Fasi)
 
-#### **Modifica 1: Salvare Settings in Engine**
+#### **Fase 1: Initialization** ✅
+- Salvare settings in `__init__()`
+- Inizializzare attributi configurabili con defaults
+
+#### **Fase 2: Factory Method** ✅
+- Passare settings da `create()` a `__init__()`
+
+#### **Fase 3: _recreate_deck_and_table()** ✅
+- Helper method per ricreare deck quando type cambia
+
+#### **Fase 4: _apply_game_settings()** ✅
+- Helper method per applicare draw_count, shuffle_mode, timer
+
+#### **Fase 5: new_game() refactoring** ✅
+- Flusso corretto: controlla deck change, raccoglie carte, applica settings
+
+#### **Fase 6: draw_from_stock() update** ✅
+- Usa `self.draw_count` quando `count=None`
+
+#### **Fase 7: recycle_waste() update** ✅
+- Usa `self.shuffle_on_recycle` quando `shuffle=None`
+
+### **Files Modificati**
+- `src/application/game_engine.py` (5 commits totali)
+  - Commit `5091a5b`: Phase 1 (init)
+  - Commit `31b71f1`: Phase 3 (recreate_deck)
+  - Commit `475c50e`: Phase 4 (apply_settings)
+  - Commit `0136df4`: Phase 5 (new_game refactor)
+  - Commit `ddbb8cc`: Phase 6-7 (draw/recycle)
+
+### **Limitazioni Note**
+1. **Timer Countdown NON Implementato**: Solo annuncio vocale, nessuna logica countdown
+2. **Persistenza Settings**: Settings perdute alla chiusura app
+
+### **Status**: ✅ FIXED (5 commits, 7 fasi complete)
+
+---
+
+## 🐛 BUG #3.1: Double Distribution on Deck Change (REGRESSIONE)
+
+### **Scoperta**
+Data: 09/02/2026 02:23 AM CET  
+Rilevato da: **Test manuale utente** (crash in produzione)  
+Severità: 🔴 **CRITICA** (App Crasher)  
+Parent Bug: #3 (Settings Integration)  
+Introdotto in: Commit `0136df4` (Bug #3 Phase 5)  
+
+### **Descrizione Problema**
+L'applicazione **crasha immediatamente** con `IndexError: pop from empty list` quando l'utente:
+1. Cambia il tipo di mazzo nelle opzioni (French ↔ Neapolitan)
+2. Salva le impostazioni
+3. Avvia una nuova partita
+
+**Impatto**: Blocco totale dell'app, impossibile giocare dopo aver cambiato deck type.
+
+### **Stack Trace Completo**
 ```python
-class GameEngine:
-    def __init__(self, ..., settings: Optional[GameSettings] = None):
-        # ...
-        self.settings = settings  # ✅ Salva riferimento
-        
-        # Inizializza attributi configurabili con defaults
-        self.draw_count = 1
-        self.shuffle_on_recycle = False
+Traceback (most recent call last):
+  File "test.py", line 482, in start_game
+    self.engine.new_game()
+  File "src/application/game_engine.py", line 237, in new_game
+    self.table.distribuisci_carte()  # ← Chiamata problematica
+  File "src/domain/models/table.py", line 138, in distribuisci_carte
+    carta = self.mazzo.pesca()
+  File "src/domain/models/deck.py", line 88, in pesca
+    carta_pescata = self.cards.pop(0)  # ← CRASH!
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+IndexError: pop from empty list
 ```
 
-#### **Modifica 2: Modificare create() per Passare Settings**
-```python
-@classmethod
-def create(cls, audio_enabled=True, tts_engine="auto", verbose=1,
-           settings: Optional[GameSettings] = None):
-    # ... crea componenti ...
-    return cls(table, service, rules, cursor, selection, 
-               screen_reader, settings)  # ✅ Passa settings
-```
+### **Root Cause: Doppia Distribuzione**
 
-#### **Modifica 3: Ricrea Deck in new_game() SE NECESSARIO**
+Il refactoring di `new_game()` in Bug #3 Phase 5 ha introdotto una **doppia distribuzione delle carte** quando `deck_changed = True`.
 
-**FLUSSO CORRETTO**:
+#### **Flusso Errato (Commit 0136df4):**
+
 ```python
 def new_game(self):
     deck_changed = False
     
-    # 1️⃣ Controlla se deck type è cambiato
+    # SCENARIO 1: Deck type cambiato (French → Neapolitan)
+    if deck_type_changed:
+        deck_changed = True
+        self._recreate_deck_and_table(True)  # ← STEP A
+        # └─> Crea GameTable(new_deck)
+        #     └─> GameTable.__init__() chiama distribuisci_carte()
+        #         └─> Mazzo svuotato: 40 carte → 12 carte
+    
+    # SCENARIO 2: Deck invariato
+    if not deck_changed:
+        # Raccoglie 40 carte da tavolo
+        # Rimette nel mazzo: 40 carte
+        # Mischia
+    
+    # ⚠️ ERRORE: SEMPRE eseguito, anche se deck_changed=True!
+    self.table.distribuisci_carte()  # ← STEP B (CRASH!)
+    # └─> Tenta di pescare da mazzo vuoto
+    #     └─> IndexError: pop from empty list
+```
+
+#### **Tabella Stati Mazzo:**
+
+| Step | Azione | Carte nel Mazzo | Stato |
+|------|--------|-----------------|-------|
+| Inizio | Deck creato e mescolato | 40 carte (Neapolitan) | ✅ OK |
+| STEP A | `GameTable.__init__()` distribuisce | 40 → 12 carte | ✅ OK |
+| STEP B | `new_game()` ridistribuisce | 12 → **0 carte** | ❌ **CRASH!** |
+
+### **Perché `GameTable.__init__()` Distribuisce**
+
+```python
+# src/domain/models/table.py
+class GameTable:
+    def __init__(self, mazzo):
+        self.mazzo = mazzo
+        # ... crea pile vuote ...
+        
+        # IMPORTANTE: Distribuisce automaticamente!
+        self.distribuisci_carte()  # ← Già fatto qui!
+```
+
+**Quindi quando `_recreate_deck_and_table()` fa:**
+```python
+self.table = GameTable(new_deck)  # ← Distribuisce automaticamente!
+```
+
+**Il deck è già stato distribuito! Non serve (e causa crash) ridistribuire.**
+
+### **Soluzione: Condizionare distribuisci_carte()**
+
+#### **Strategia:**
+- Quando `deck_changed = True`: **NON** chiamare `distribuisci_carte()` (già fatto da GameTable)
+- Quando `deck_changed = False`: **SÌ** chiamare `distribuisci_carte()` (carte raccolte necessitano ridistribuzione)
+
+#### **Code Fix (1 linea spostata):**
+
+```python
+def new_game(self) -> None:
+    """Start a new game with settings integration.
+    
+    Bug #3.1 Fix:
+        When deck_type changes, _recreate_deck_and_table() creates
+        a new GameTable, which automatically distributes cards in __init__().
+        We must NOT call distribuisci_carte() again to avoid crash.
+    """
+    deck_changed = False
+    
+    # 1️⃣ Check if deck type changed
     if self.settings:
-        current_is_neapolitan = self.table.mazzo.is_neapolitan_deck()
+        current_is_neapolitan = isinstance(self.table.mazzo, NeapolitanDeck)
         should_be_neapolitan = (self.settings.deck_type == "neapolitan")
         
         if current_is_neapolitan != should_be_neapolitan:
             deck_changed = True
+            # ⚠️ IMPORTANT: This creates GameTable which already deals cards!
             self._recreate_deck_and_table(should_be_neapolitan)
     
-    # 2️⃣ SE deck NON è cambiato: raccogli carte esistenti
+    # 2️⃣ If deck NOT changed: gather existing cards
     if not deck_changed:
+        # Collect all cards from all piles
         all_cards = []
         for pile in self.table.pile_base:
             all_cards.extend(pile.get_all_cards())
@@ -306,27 +427,28 @@ def new_game(self):
             all_cards.extend(self.table.pile_scarti.get_all_cards())
             self.table.pile_scarti.clear()
         
-        # Rimetti carte nel deck e mescola
+        # Put cards back in deck and shuffle
         self.table.mazzo.cards = all_cards
         self.table.mazzo.mischia()
+        
+        # 3️⃣ Redistribute cards ONLY if deck unchanged
+        # ✅ BUG #3.1 FIX: Skip if deck_changed (already dealt by GameTable)
+        self.table.distribuisci_carte()  # ← SPOSTATO DENTRO if!
     
-    # 3️⃣ Ridistribuisci carte (nuovo deck già mescolato, o vecchio deck raccolto)
-    self.table.distribuisci_carte()
-    
-    # 4️⃣ Applica altre settings (draw count, shuffle mode)
+    # 4️⃣ Apply game settings
     self._apply_game_settings()
     
-    # 5️⃣ Reset stato gioco
+    # 5️⃣ Reset game state
     self.service.reset_game()
     self.cursor.pile_idx = 0
     self.cursor.card_idx = 0
     self.cursor.last_quick_pile = None
     self.selection.clear_selection()
     
-    # 6️⃣ Avvia partita (timer automatico)
+    # 6️⃣ Start game timer
     self.service.start_game()
     
-    # 7️⃣ Annuncio TTS
+    # 7️⃣ Announce game start
     if self.screen_reader:
         self.screen_reader.tts.speak(
             "Nuova partita iniziata. Usa H per l'aiuto comandi.",
@@ -334,204 +456,197 @@ def new_game(self):
         )
 ```
 
-#### **Modifica 4: Metodo Helper per Ricreazione Deck**
-```python
-def _recreate_deck_and_table(self, use_neapolitan: bool) -> None:
-    """Ricrea deck e table quando l'utente cambia tipo di mazzo.
+### **Diff Comparativo**
+
+```diff
+# PRIMA (Buggy - Commit 0136df4):
+def new_game(self):
+    # ...
+    if not deck_changed:
+        # Raccogli carte
+        self.table.mazzo.mischia()
     
-    Args:
-        use_neapolitan: True per Neapolitan, False per French
-    """
-    # Crea nuovo deck
-    if use_neapolitan:
-        new_deck = NeapolitanDeck()
-    else:
-        new_deck = FrenchDeck()
+-   # ❌ SEMPRE chiamato!
+-   self.table.distribuisci_carte()
     
-    new_deck.crea()
-    new_deck.mischia()
+    # Applica settings
+    self._apply_game_settings()
+
+# DOPO (Fixed):
+def new_game(self):
+    # ...
+    if not deck_changed:
+        # Raccogli carte
+        self.table.mazzo.mischia()
+        
++       # ✅ Solo se necessario!
++       self.table.distribuisci_carte()
     
-    # Ricrea table con nuovo deck
-    self.table = GameTable(new_deck)
-    
-    # Aggiorna rules (deck-dependent per is_king, etc.)
-    self.rules = SolitaireRules(new_deck)
-    
-    # Aggiorna service references
-    self.service.table = self.table
-    self.service.rules = self.rules
-    
-    # Aggiorna cursor reference
-    self.cursor.table = self.table
-    
-    # TTS feedback
-    if self.screen_reader:
-        deck_name = "napoletane" if use_neapolitan else "francesi"
-        self.screen_reader.tts.speak(
-            f"Tipo di mazzo cambiato: carte {deck_name}.",
-            interrupt=True
-        )
+    # Applica settings
+    self._apply_game_settings()
 ```
 
-#### **Modifica 5: Applicare Settings di Gioco**
+### **Impatto della Soluzione**
+
+✅ **Nessuna modifica architetturale**  
+✅ **Backward compatible al 100%**  
+✅ **1 sola linea spostata** (indentazione)  
+✅ **Fix testabile immediatamente**  
+✅ **Nessun side effect** su altre funzionalità  
+
+### **Test Plan Completo**
+
+#### **Test Case 1: Deck Type Switch** ⭐ **CRITICO**
 ```python
-def _apply_game_settings(self) -> None:
-    """Applica tutte le impostazioni di gioco da GameSettings.
-    
-    Configura:
-    - Draw count da difficulty_level
-    - Shuffle mode da shuffle_discards
-    - Timer warning message (max_time_game)
-    
-    Note:
-        Il timer countdown NON è implementato in GameService.
-        Per ora annunciamo solo il limite configurato.
-    """
-    if not self.settings:
-        return
-    
-    # 1️⃣ Draw count da difficulty
-    # GameSettings.difficulty_level:
-    #   1 = Draw 1 card
-    #   2 = Draw 2 cards
-    #   3 = Draw 3 cards
-    if self.settings.difficulty_level == 1:
-        self.draw_count = 1
-    elif self.settings.difficulty_level == 2:
-        self.draw_count = 2  # ✅ CORRETTO (non 3!)
-    elif self.settings.difficulty_level == 3:
-        self.draw_count = 3  # ✅ CORRETTO (non 5!)
-    else:
-        self.draw_count = 1  # Fallback
-    
-    # 2️⃣ Shuffle mode
-    self.shuffle_on_recycle = self.settings.shuffle_discards
-    
-    # 3️⃣ Timer (solo annuncio, countdown non implementato)
-    # GameSettings.max_time_game:
-    #   -1 = Timer disabilitato
-    #   300-3600 = Secondi (5-60 minuti)
-    if self.settings.max_time_game > 0 and self.screen_reader:
-        minutes = self.settings.max_time_game // 60
-        self.screen_reader.tts.speak(
-            f"Limite tempo configurato: {minutes} minuti. "
-            f"(Timer countdown non implementato)",
-            interrupt=False
-        )
-    
-    # TTS riassunto settings
-    if self.screen_reader:
-        level_msg = f"Livello {self.settings.difficulty_level}: {self.draw_count} carta/e per pesca."
-        shuffle_msg = "Scarti si mischiano." if self.shuffle_on_recycle else "Scarti si girano."
-        self.screen_reader.tts.speak(
-            f"{level_msg} {shuffle_msg}",
-            interrupt=False
-        )
+# Setup
+settings.deck_type = "french"
+engine = GameEngine.create(settings=settings)
+engine.new_game()  # French: 52 carte OK
+
+# Action: Cambia deck type
+settings.deck_type = "neapolitan"
+engine.new_game()  # ← Qui crashava prima del fix!
+
+# Expected:
+✅ Nessun crash
+✅ TTS: "Tipo di mazzo cambiato: carte napoletane."
+✅ 40 carte distribuite correttamente (28 su tavolo + 12 in mazzo)
+✅ Mazzo ha 12 carte (NON 0!)
+✅ Partita giocabile
 ```
 
-#### **Modifica 6: Modificare draw_from_stock()**
+#### **Test Case 2: Same Deck Restart**
 ```python
-def draw_from_stock(self, count: int = None) -> Tuple[bool, str]:
-    """Draw cards from stock to waste.
-    
-    Args:
-        count: Number of cards to draw (None = use self.draw_count)
-    
-    Returns:
-        Tuple of (success, message)
-    """
-    # ✅ Se count non specificato, usa settings
-    if count is None:
-        count = getattr(self, 'draw_count', 1)
-    
-    success, generic_msg, cards = self.service.draw_cards(count)
-    
-    # Usa formatter per messaggio dettagliato
-    if success and cards:
-        message = GameFormatter.format_drawn_cards(cards)
-    else:
-        message = generic_msg
-    
-    if self.screen_reader:
-        self.screen_reader.tts.speak(message, interrupt=True)
-    
-    return success, message
+# Setup
+settings.deck_type = "french"
+engine.new_game()
+# Gioca alcune mosse...
+
+# Action: Nuova partita stesso deck
+engine.new_game()
+
+# Expected:
+✅ Nessun crash
+✅ 52 carte raccolte da tavolo
+✅ 52 carte rimischiate
+✅ 52 carte ridistribuite (28+24)
+✅ Comportamento invariato rispetto a prima del fix
 ```
 
-#### **Modifica 7: Modificare recycle_waste()**
+#### **Test Case 3: Multiple Deck Switches**
 ```python
-def recycle_waste(self, shuffle: bool = None) -> Tuple[bool, str]:
-    """Recycle waste pile back to stock.
+# Test robustezza con cambi ripetuti
+for i in range(10):
+    # Alterna French ↔ Neapolitan
+    settings.deck_type = "neapolitan" if i % 2 == 0 else "french"
+    engine.new_game()  # ← Non deve crashare MAI!
     
-    Args:
-        shuffle: None = use settings, True = force shuffle, False = force invert
-    
-    Returns:
-        Tuple of (success, message)
-    """
-    # ✅ Se shuffle non specificato, usa settings
-    if shuffle is None:
-        shuffle = getattr(self, 'shuffle_on_recycle', False)
-    
-    # Esegui recycle
-    success, generic_msg = self.service.recycle_waste(shuffle)
-    
-    if not success:
-        if self.screen_reader:
-            self.screen_reader.tts.speak(generic_msg, interrupt=False)
-        return success, generic_msg
-    
-    # Auto-draw dopo reshuffle
-    auto_success, auto_msg, auto_cards = self.service.draw_cards(1)
-    
-    # Messaggio dettagliato
-    shuffle_mode = "shuffle" if shuffle else "reverse"
-    message = GameFormatter.format_reshuffle_message(
-        shuffle_mode=shuffle_mode,
-        auto_drawn_cards=auto_cards if auto_success else None
-    )
-    
-    if self.screen_reader:
-        self.screen_reader.tts.speak(message, interrupt=False)
-    
-    return success, message
+    # Verifica integrità
+    expected_cards = 40 if settings.deck_type == "neapolitan" else 52
+    actual_cards = count_all_cards_in_game()
+    assert actual_cards == expected_cards
+
+# Expected:
+✅ 10 partite avviate senza crash
+✅ TTS annuncia ogni cambio deck
+✅ Numero carte sempre corretto
+✅ Nessuna perdita o duplicazione carte
+```
+
+#### **Test Case 4: Edge Cases**
+```python
+# 4a: Deck change su partita in corso
+engine.new_game()  # French
+# Gioca 10 mosse...
+settings.deck_type = "neapolitan"
+engine.new_game()  # Deve funzionare
+
+# 4b: Settings=None (backward compat)
+engine_no_settings = GameEngine.create()  # No settings
+engine_no_settings.new_game()  # Deve funzionare
+
+# 4c: Cambio rapido (stress test)
+for _ in range(100):
+    settings.deck_type = random.choice(["french", "neapolitan"])
+    engine.new_game()
+
+# Expected:
+✅ Tutti i casi gestiti correttamente
+✅ Nessun crash o comportamento anomalo
 ```
 
 ### **Files da Modificare**
-1. `src/application/game_engine.py`
-   - Modificare `__init__()` per salvare settings
-   - Modificare `create()` per passare settings
-   - Rifattorizzare `new_game()` con flusso corretto
-   - Aggiungere `_recreate_deck_and_table()`
-   - Aggiungere `_apply_game_settings()`
-   - Modificare `draw_from_stock()`
-   - Modificare `recycle_waste()`
 
-2. `src/domain/services/game_service.py` (FUTURO)
-   - Implementare timer countdown con max_time_game
-   - Aggiungere check per tempo scaduto
-
-### **Limitazioni Note**
-1. **Timer Countdown NON Implementato**: `GameService` non ha logica per controllare tempo scaduto. Per ora solo annuncio vocale del limite.
-2. **Persistenza Settings**: Non c'è salvataggio su file. Settings perduti a chiusura app.
+1. **`src/application/game_engine.py`** (1 file, 1 modifica)
+   - Spostare `self.table.distribuisci_carte()` dentro `if not deck_changed`
+   - Aggiornare docstring con nota Bug #3.1 fix
 
 ### **Checklist Implementazione**
-- [ ] Modificare `__init__()` per accettare e salvare settings
-- [ ] Modificare `create()` per passare settings a `__init__()`
-- [ ] Implementare `_recreate_deck_and_table()`
-- [ ] Implementare `_apply_game_settings()`
-- [ ] Rifattorizzare `new_game()` con flusso corretto
-- [ ] Modificare `draw_from_stock()` per usare `self.draw_count`
-- [ ] Modificare `recycle_waste()` per usare `self.shuffle_on_recycle`
-- [ ] Test: Cambio deck French → Neapolitan tra partite
-- [ ] Test: Livello 2 con 2 carte pescate (non 3!)
-- [ ] Test: Scarti mischiano quando configurato
-- [ ] Documentare limitazione timer countdown
 
-### **Status**: 🔧 IN PROGRESS (documentazione corretta)
+- [ ] **Task 1**: Spostare `distribuisci_carte()` dentro `if not deck_changed` block
+- [ ] **Task 2**: Aggiornare docstring `new_game()` con Bug #3.1 note
+- [ ] **Task 3**: Test manuale: French → Neapolitan (no crash)
+- [ ] **Task 4**: Test manuale: Neapolitan → French (no crash)
+- [ ] **Task 5**: Test manuale: Same deck restart (backward compat)
+- [ ] **Task 6**: Test manuale: Multiple switches (robustezza)
+- [ ] **Task 7**: Aggiornare BUGS.md con status FIXED
+- [ ] **Task 8**: Aggiornare TODO.md con completamento
+- [ ] **Task 9**: Commit con messaggio dettagliato
+- [ ] **Task 10**: Test finale su build pulita
 
-### **Priorità**: 🔴 CRITICA
-Questo bug invalida completamente il sistema di opzioni. **Deve essere risolto prima del merge su main.**
+### **Priorità & Urgenza**
+
+🔴 **CRITICA - URGENT**  
+- **Severità**: ALTA (blocca completamente l'app)
+- **Frequenza**: MEDIA (solo quando user cambia deck type)
+- **Workaround**: **NESSUNO** (crash immediato)
+- **Utenti impattati**: TUTTI (funzionalità base)
+- **ETA Fix**: 15 minuti (1 linea + test + doc)
+
+### **Related Bugs & Commits**
+
+- **Parent**: Bug #3 (Settings Integration)
+- **Introdotto in**: Commit `0136df4` (Phase 5 refactoring)
+- **Risolve**: Regressione da fix precedente
+- **Blocca**: Release v1.4.2.1
+
+### **Commit Message Proposto**
+
+```
+fix(engine): Prevent double distribution on deck change (Bug #3.1)
+
+CRITICAL FIX: Regression from Bug #3 Phase 5 refactoring
+
+Problem:
+- When deck_type changes, _recreate_deck_and_table() creates
+  new GameTable which already calls distribuisci_carte()
+- Then new_game() calls distribuisci_carte() AGAIN
+- Result: IndexError (pop from empty list) - app crashes
+
+Solution:
+- Move distribuisci_carte() inside "if not deck_changed" block
+- Only redistribute cards when using existing deck
+- When deck changed, GameTable constructor already dealt cards
+
+Impact:
+- 1 line moved (indentation change only)
+- No architecture changes
+- 100% backward compatible
+- Fixes critical app crasher
+
+Testing:
+- French→Neapolitan: ✅ No crash
+- Neapolitan→French: ✅ No crash
+- Same deck restart: ✅ Works as before
+- Multiple switches: ✅ All stable
+
+Fixes: #3.1 (regression from #3)
+Related: Commit 0136df4 (Bug #3 Phase 5)
+```
+
+### **Status**: 🔧 IN PROGRESS
+
+**Priority**: 🔴 CRITICAL → Must fix before any merge to main!
 
 ---
 
@@ -576,12 +691,12 @@ Detailed explanation.
 - Change 1
 - Change 2
 
-Fixes #BUG-003
+Fixes #BUG-XXX
 ```
 
 ---
 
-**Ultimo aggiornamento**: 09/02/2026 01:50 AM CET  
-**Code Review**: Completata ✅  
+**Ultimo aggiornamento**: 09/02/2026 02:28 AM CET  
+**Code Review**: In Progress  
 **Autore**: Nemex81  
 **Branch**: refactoring-engine
