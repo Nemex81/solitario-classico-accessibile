@@ -10,19 +10,20 @@ New in v1.4.1:
 - Validation: options blocked during active game
 - Detailed voice formatters for draw/move/reshuffle operations
 
-New in v1.4.2.1 (Bug Fix):
+New in v1.4.2.1 (Bug Fix #3 - Phase 1/7):
 - Dynamic deck type selection from GameSettings
 - Support for both FrenchDeck and NeapolitanDeck
+- Settings integration for draw count and shuffle mode
 """
 
 from typing import Optional, Tuple, Dict, Any, List
 
 from src.domain.models.table import GameTable
-from src.domain.models.deck import FrenchDeck, NeapolitanDeck  # Added NeapolitanDeck
+from src.domain.models.deck import FrenchDeck, NeapolitanDeck
 from src.domain.models.pile import Pile
 from src.domain.models.card import Card
 from src.domain.services.game_service import GameService
-from src.domain.services.game_settings import GameSettings  # NEW IMPORT
+from src.domain.services.game_settings import GameSettings
 from src.domain.services.cursor_manager import CursorManager
 from src.domain.services.selection_manager import SelectionManager
 from src.domain.rules.solitaire_rules import SolitaireRules
@@ -51,6 +52,7 @@ class GameEngine:
     - Game state queries
     - Statistics and progress tracking
     - Virtual options window management (v1.4.1)
+    - Settings integration (v1.4.2.1 Bug #3)
     
     Attributes:
         table: Game table with all piles
@@ -60,6 +62,9 @@ class GameEngine:
         selection: Selection manager
         screen_reader: Audio feedback service (optional)
         audio_enabled: Whether audio feedback is active
+        settings: Game settings instance (v1.4.2.1)
+        draw_count: Number of cards to draw from stock (v1.4.2.1)
+        shuffle_on_recycle: Whether to shuffle waste on recycle (v1.4.2.1)
         _options_open: Virtual options window state (v1.4.1)
     """
     
@@ -70,7 +75,8 @@ class GameEngine:
         rules: SolitaireRules,
         cursor: CursorManager,
         selection: SelectionManager,
-        screen_reader: Optional[ScreenReader] = None
+        screen_reader: Optional[ScreenReader] = None,
+        settings: Optional[GameSettings] = None  # NEW (Phase 1/7)
     ):
         """Initialize game engine.
         
@@ -81,6 +87,7 @@ class GameEngine:
             cursor: Cursor manager
             selection: Selection manager
             screen_reader: Optional screen reader for audio feedback
+            settings: Optional game settings for configuration (NEW v1.4.2.1)
         """
         self.table = table
         self.service = service
@@ -89,6 +96,14 @@ class GameEngine:
         self.selection = selection
         self.screen_reader = screen_reader
         self.audio_enabled = screen_reader is not None
+        
+        # Settings integration (Phase 1/7 - Bug #3)
+        self.settings = settings
+        
+        # Configurable attributes with defaults (Phase 1/7)
+        # These will be updated from settings in new_game()
+        self.draw_count: int = 1  # Default: 1 carta
+        self.shuffle_on_recycle: bool = False  # Default: si girano (no shuffle)
         
         # Virtual options window state (v1.4.1)
         self._options_open: bool = False
@@ -99,7 +114,7 @@ class GameEngine:
         audio_enabled: bool = True,
         tts_engine: str = "auto",
         verbose: int = 1,
-        settings: Optional[GameSettings] = None  # NEW PARAMETER (v1.4.2.1)
+        settings: Optional[GameSettings] = None
     ) -> "GameEngine":
         """Factory method to create fully initialized game engine.
         
@@ -107,7 +122,7 @@ class GameEngine:
             audio_enabled: Enable audio feedback
             tts_engine: TTS engine ("auto", "nvda", "sapi5")
             verbose: Audio verbosity level (0-2)
-            settings: GameSettings instance for deck type (NEW in v1.4.2.1)
+            settings: GameSettings instance for configuration
             
         Returns:
             Initialized GameEngine instance ready to play
@@ -147,7 +162,7 @@ class GameEngine:
                 # Graceful degradation if TTS not available
                 screen_reader = None
         
-        return cls(table, service, rules, cursor, selection, screen_reader)
+        return cls(table, service, rules, cursor, selection, screen_reader, settings)
     
     # ========================================
     # GAME LIFECYCLE
