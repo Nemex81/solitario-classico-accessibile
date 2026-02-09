@@ -2,6 +2,9 @@
 
 Implements all game rules for move validation following DDD principles.
 Rules are independent from game state and can be tested in isolation.
+
+New in v1.4.2.1 (Bug Fix #2):
+- Foundation suit validation for aces on empty piles
 """
 
 from typing import List, Optional
@@ -146,8 +149,12 @@ class SolitaireRules:
         """Check if a card can be placed on a foundation pile.
         
         Rules:
-        - Empty pile: only Aces (value == 1)
+        - Empty pile: only Aces (value == 1) OF THE CORRECT SUIT (v1.4.2.1)
         - Non-empty pile: same suit + ascending value (value + 1)
+        
+        CRITICAL FIX (v1.4.2.1): Empty foundations now validate ace suit!
+        - If pile has assigned_suit: ace must match that suit
+        - If pile has no assigned_suit: any ace accepted (backward compat)
         
         Args:
             card: Card to place
@@ -157,16 +164,27 @@ class SolitaireRules:
             True if move is valid
             
         Examples:
-            >>> rules.can_place_on_foundation(ace_hearts, empty)      # True
-            >>> rules.can_place_on_foundation(two_hearts, empty)      # False
+            >>> # FIXED (v1.4.2.1): Suit validation
+            >>> rules.can_place_on_foundation(ace_hearts, hearts_pile)  # True
+            >>> rules.can_place_on_foundation(ace_spades, hearts_pile)  # False (FIXED!)
+            >>> 
+            >>> # Non-empty pile behavior unchanged
             >>> rules.can_place_on_foundation(two_hearts, pile_ace)   # True
-            >>> rules.can_place_on_foundation(two_spades, pile_ace)   # False (different suit)
+            >>> rules.can_place_on_foundation(two_spades, pile_ace)   # False
         """
-        # CRITICAL: Empty foundation accepts only Aces
+        # CRITICAL: Empty foundation accepts only Aces OF CORRECT SUIT (v1.4.2.1)
         if target_pile.is_empty():
-            return card.get_value == 1
+            is_ace = card.get_value == 1
+            
+            # NEW (v1.4.2.1): Validate suit if pile has assigned suit
+            if hasattr(target_pile, 'assigned_suit') and target_pile.assigned_suit is not None:
+                correct_suit = card.get_suit == target_pile.assigned_suit
+                return is_ace and correct_suit
+            
+            # Backward compatibility: no assigned suit = any ace accepted
+            return is_ace
         
-        # Non-empty foundation: get top card
+        # Non-empty foundation: get top card (unchanged behavior)
         top_card = target_pile.get_top_card()
         if top_card is None:
             return False
