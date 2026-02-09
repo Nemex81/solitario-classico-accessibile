@@ -6,6 +6,9 @@ Manages 7 tableau piles and 4 foundation piles for Solitaire game.
 This implementation includes critical fixes:
 - #25, #26: Dynamic card distribution based on deck type
 - #28, #29: Polymorphic King placement using deck.is_king()
+
+New in v1.4.2.1 (Bug Fix #2):
+- Foundation piles have fixed assigned suits from deck
 """
 
 from typing import List, Optional
@@ -47,11 +50,18 @@ class GameTable:
             for i in range(7)
         ]
         
-        # 4 foundation piles (one per suit)
-        suit_names = ["Cuori", "Quadri", "Fiori", "Picche"]
+        # 4 foundation piles (one per suit) with FIXED suit assignment (v1.4.2.1)
+        # Use deck.SEMI to get correct suit names for deck type:
+        # - FrenchDeck: ["Cuori", "Quadri", "Fiori", "Picche"]
+        # - NeapolitanDeck: ["Denari", "Coppe", "Spade", "Bastoni"]
+        deck_suits = deck.SEMI
         self.pile_semi: List[Pile] = [
-            Pile(name=f"Pila semi {suit}", pile_type="semi")
-            for suit in suit_names
+            Pile(
+                name=f"Pila semi {suit}", 
+                pile_type="semi",
+                assigned_suit=suit  # NEW (v1.4.2.1): Fixed suit per foundation
+            )
+            for suit in deck_suits
         ]
         
         # Stock pile (tallone coperto)
