@@ -14,7 +14,7 @@ Architecture Layers (Complete):
     ✅ Domain Layer:
        - models/: Card, Pile, Deck, Table
        - rules/: SolitaireRules, MoveValidator
-       - services/: GameService
+       - services/: GameService, GameSettings
     
     ✅ Application Layer:
        - GameEngine: Main game facade
@@ -37,6 +37,10 @@ New in v1.4.2 [Commits #24-28] - COMPLETE:
 - ESC confirmation in all contexts
 - Welcome message in game submenu
 - Double-ESC quick exit during gameplay
+
+New in v1.4.2.1 [Bug Fix] - IN PROGRESS:
+- Dynamic deck type from GameSettings (#BUG-001)
+- Fixed suit validation for foundations (#BUG-002)
 """
 
 import sys
@@ -47,6 +51,9 @@ from pygame.locals import QUIT
 # Application layer
 from src.application.game_engine import GameEngine
 from src.application.gameplay_controller import GamePlayController
+
+# Domain layer - Configuration
+from src.domain.services.game_settings import GameSettings  # NEW IMPORT (v1.4.2.1)
 
 # Infrastructure layer - UI components
 from src.infrastructure.ui.menu import VirtualMenu
@@ -71,6 +78,7 @@ class SolitarioCleanArch:
     Attributes:
         screen: PyGame surface (blank white for audiogame)
         screen_reader: ScreenReader with TTS provider
+        settings: GameSettings for configuration management (v1.4.2.1)
         engine: GameEngine facade for game logic
         gameplay_controller: Keyboard commands orchestrator
         menu: Virtual main menu for navigation
@@ -112,20 +120,27 @@ class SolitarioCleanArch:
             # Fallback: silent mode
             self.screen_reader = None
         
-        # Application: Game engine setup
+        # Domain: Game settings (v1.4.2.1 - Bug Fix #1)
+        print("Inizializzazione impostazioni di gioco...")
+        self.settings = GameSettings()
+        print("✓ Impostazioni pronte")
+        
+        # Application: Game engine setup (now with settings!)
         print("Inizializzazione motore di gioco...")
         self.engine = GameEngine.create(
             audio_enabled=(self.screen_reader is not None),
             tts_engine="auto",
-            verbose=1
+            verbose=1,
+            settings=self.settings  # NEW PARAMETER (v1.4.2.1)
         )
         print("✓ Game engine pronto")
         
-        # Application: Gameplay controller
+        # Application: Gameplay controller (now with settings!)
         print("Inizializzazione controller gameplay...")
         self.gameplay_controller = GamePlayController(
             engine=self.engine,
-            screen_reader=self.screen_reader if self.screen_reader else self._dummy_sr()
+            screen_reader=self.screen_reader if self.screen_reader else self._dummy_sr(),
+            settings=self.settings  # NEW PARAMETER (v1.4.2.1)
         )
         print("✓ Controller pronto")
         
@@ -177,6 +192,7 @@ class SolitarioCleanArch:
         print("="*60)
         print("✓ Applicazione avviata con successo!")
         print("✓ Architettura Clean completa")
+        print("✓ GameSettings integrato (v1.4.2.1)")
         print("Usa i tasti freccia per navigare il menu.")
         print("="*60)
     
@@ -649,6 +665,10 @@ def main():
     print("   - #26: ESC in Game Submenu ✓")
     print("   - #27: ESC in Gameplay + Double-ESC ✓")
     print("   - #28: Welcome Message ✓")
+    print("")
+    print("🐛 v1.4.2.1 BUG FIX IN PROGRESS...")
+    print("   - #29: Deck type from settings [1/3 COMPLETE]")
+    print("   - #30: Ace suit validation [PENDING]")
     print("")
     print("Legacy version ancora disponibile: python acs.py")
     print("="*60)
