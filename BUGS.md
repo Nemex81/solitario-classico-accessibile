@@ -171,20 +171,20 @@ Rilasciato in: Testing v1.4.2.1
 2. ❌ **Timer** usa sempre default (anche se utente ha impostato 10 minuti)
 3. ❌ **Livello difficoltà** sempre livello 1 (ignora livello 2 o 3)
 4. ❌ **Scarti mischiano** usa comportamento default (ignora configurazione)
-5. ❌ **Draw count** sempre default (ignora se utente vuole pescarne 3)
+5. ❌ **Draw count** sempre 1 carta (ignora se utente vuole pescarne 2 o 3)
 
 ### **Test Case Fallito**
 ```
 Utente ha impostato:
 - Mazzo: Napoletane ✓ (salvato)
-- Timer: 10 minuti ✓ (salvato)
+- Timer: 10 minuti (600 secondi) ✓ (salvato)
 - Livello: 2 ✓ (salvato)
 - Scarti: Si mischiano ✓ (salvato)
 
 Nuova partita avviata:
 - Mazzo: FRANCESI ❌ (dovrebbe essere Napoletane)
-- Timer: DISABILITATO ❌ (dovrebbe essere 10 minuti)
-- Livello: 1 ❌ (dovrebbe essere 2)
+- Timer: NESSUN LIMITE ❌ (dovrebbe avere 10 minuti)
+- Livello: 1 ❌ (dovrebbe essere 2 con 2 carte pescate)
 - Scarti: SI GIRANO ❌ (dovrebbe mischiarsi)
 ```
 
@@ -237,17 +237,18 @@ def __init__(self, table, service, rules, cursor, selection, screen_reader):
 
 Quindi anche se settings venisse passato, `new_game()` non potrebbe consultarlo!
 
-#### **Problema 3: Service Non Usa Settings**
+#### **Problema 3: Timer Non Configurato**
 ```python
 def new_game(self):
-    self.service.reset_game()  # ❌ Non riceve settings
-    self.service.start_game()  # ❌ Usa timer default
+    self.service.reset_game()  # ❌ Resetta start_time = None
+    self.service.start_game()  # ❌ Imposta start_time = now (nessun limite)
 ```
 
-`GameService` non ha riferimento a settings, quindi non può:
-- Configurare timer
-- Configurare livello difficoltà
-- Configurare draw count
+`GameService` **non ha timer_manager separato**! Il timer è solo:
+- `start_time: Optional[float]` - timestamp inizio
+- `get_elapsed_time()` - calcola tempo trascorso
+
+**NON c'è modo di impostare un limite di tempo!** Questa funzionalità manca completamente.
 
 ### **Soluzione Dettagliata**
 
@@ -257,119 +258,277 @@ class GameEngine:
     def __init__(self, ..., settings: Optional[GameSettings] = None):
         # ...
         self.settings = settings  # ✅ Salva riferimento
+        
+        # Inizializza attributi configurabili con defaults
+        self.draw_count = 1
+        self.shuffle_on_recycle = False
 ```
 
 #### **Modifica 2: Modificare create() per Passare Settings**
 ```python
 @classmethod
-def create(cls, settings: Optional[GameSettings] = None, ...):
-    # ... crea deck, table, service ...
-    return cls(table, service, rules, cursor, selection, screen_reader, settings)  # ✅ Passa settings
+def create(cls, audio_enabled=True, tts_engine="auto", verbose=1,
+           settings: Optional[GameSettings] = None):
+    # ... crea componenti ...
+    return cls(table, service, rules, cursor, selection, 
+               screen_reader, settings)  # ✅ Passa settings
 ```
 
-#### **Modifica 3: Ricrea Deck in new_game() se Necessario**
+#### **Modifica 3: Ricrea Deck in new_game() SE NECESSARIO**
+
+**FLUSSO CORRETTO**:
 ```python
 def new_game(self):
-    # ✅ CONTROLLA se deck type è cambiato
+    deck_changed = False
+    
+    # 1️⃣ Controlla se deck type è cambiato
     if self.settings:
         current_is_neapolitan = self.table.mazzo.is_neapolitan_deck()
         should_be_neapolitan = (self.settings.deck_type == "neapolitan")
         
         if current_is_neapolitan != should_be_neapolitan:
-            # ✅ RICREA DECK!
-            if should_be_neapolitan:
-                new_deck = NeapolitanDeck()
-            else:
-                new_deck = FrenchDeck()
-            
-            new_deck.crea()
-            new_deck.mischia()
-            
-            # ✅ RICREA TABLE con nuovo deck
-            self.table = GameTable(new_deck)
-            
-            # ✅ AGGIORNA RULES (deck-dependent)
-            self.rules = SolitaireRules(new_deck)
-            
-            # ✅ AGGIORNA SERVICE
-            self.service.table = self.table
-            self.service.rules = self.rules
-            
-            # ✅ AGGIORNA CURSOR
-            self.cursor.table = self.table
+            deck_changed = True
+            self._recreate_deck_and_table(should_be_neapolitan)
     
-    # ... resto del metodo (raccolta carte, ridistribuzione)
-```
-
-#### **Modifica 4: Applicare Timer Settings**
-```python
-def new_game(self):
-    # ... (dopo ricreazione deck)
-    
-    # ✅ Applica impostazioni timer
-    if self.settings:
-        if self.settings.timer_enabled:
-            self.service.timer_manager.set_enabled(True)
-            self.service.timer_manager.set_duration(self.settings.timer_duration * 60)
-        else:
-            self.service.timer_manager.set_enabled(False)
-    
-    # Avvia partita
-    self.service.start_game()
-```
-
-#### **Modifica 5: Configurare Altre Settings**
-```python
-def new_game(self):
-    # ... (dopo timer)
-    
-    if self.settings:
-        # ✅ Livello difficoltà (influenza draw count)
-        if self.settings.difficulty_level == 1:
-            self.draw_count = 1  # Facile: 1 carta
-        elif self.settings.difficulty_level == 2:
-            self.draw_count = 3  # Medio: 3 carte
-        else:
-            self.draw_count = 5  # Difficile: 5 carte
+    # 2️⃣ SE deck NON è cambiato: raccogli carte esistenti
+    if not deck_changed:
+        all_cards = []
+        for pile in self.table.pile_base:
+            all_cards.extend(pile.get_all_cards())
+            pile.clear()
+        for pile in self.table.pile_semi:
+            all_cards.extend(pile.get_all_cards())
+            pile.clear()
+        if self.table.pile_mazzo:
+            all_cards.extend(self.table.pile_mazzo.get_all_cards())
+            self.table.pile_mazzo.clear()
+        if self.table.pile_scarti:
+            all_cards.extend(self.table.pile_scarti.get_all_cards())
+            self.table.pile_scarti.clear()
         
-        # ✅ Scarti mischiano (usato in recycle_waste)
-        self.shuffle_on_recycle = self.settings.waste_shuffle
+        # Rimetti carte nel deck e mescola
+        self.table.mazzo.cards = all_cards
+        self.table.mazzo.mischia()
+    
+    # 3️⃣ Ridistribuisci carte (nuovo deck già mescolato, o vecchio deck raccolto)
+    self.table.distribuisci_carte()
+    
+    # 4️⃣ Applica altre settings (draw count, shuffle mode)
+    self._apply_game_settings()
+    
+    # 5️⃣ Reset stato gioco
+    self.service.reset_game()
+    self.cursor.pile_idx = 0
+    self.cursor.card_idx = 0
+    self.cursor.last_quick_pile = None
+    self.selection.clear_selection()
+    
+    # 6️⃣ Avvia partita (timer automatico)
+    self.service.start_game()
+    
+    # 7️⃣ Annuncio TTS
+    if self.screen_reader:
+        self.screen_reader.tts.speak(
+            "Nuova partita iniziata. Usa H per l'aiuto comandi.",
+            interrupt=True
+        )
 ```
 
-#### **Modifica 6: Usare Settings in recycle_waste()**
+#### **Modifica 4: Metodo Helper per Ricreazione Deck**
+```python
+def _recreate_deck_and_table(self, use_neapolitan: bool) -> None:
+    """Ricrea deck e table quando l'utente cambia tipo di mazzo.
+    
+    Args:
+        use_neapolitan: True per Neapolitan, False per French
+    """
+    # Crea nuovo deck
+    if use_neapolitan:
+        new_deck = NeapolitanDeck()
+    else:
+        new_deck = FrenchDeck()
+    
+    new_deck.crea()
+    new_deck.mischia()
+    
+    # Ricrea table con nuovo deck
+    self.table = GameTable(new_deck)
+    
+    # Aggiorna rules (deck-dependent per is_king, etc.)
+    self.rules = SolitaireRules(new_deck)
+    
+    # Aggiorna service references
+    self.service.table = self.table
+    self.service.rules = self.rules
+    
+    # Aggiorna cursor reference
+    self.cursor.table = self.table
+    
+    # TTS feedback
+    if self.screen_reader:
+        deck_name = "napoletane" if use_neapolitan else "francesi"
+        self.screen_reader.tts.speak(
+            f"Tipo di mazzo cambiato: carte {deck_name}.",
+            interrupt=True
+        )
+```
+
+#### **Modifica 5: Applicare Settings di Gioco**
+```python
+def _apply_game_settings(self) -> None:
+    """Applica tutte le impostazioni di gioco da GameSettings.
+    
+    Configura:
+    - Draw count da difficulty_level
+    - Shuffle mode da shuffle_discards
+    - Timer warning message (max_time_game)
+    
+    Note:
+        Il timer countdown NON è implementato in GameService.
+        Per ora annunciamo solo il limite configurato.
+    """
+    if not self.settings:
+        return
+    
+    # 1️⃣ Draw count da difficulty
+    # GameSettings.difficulty_level:
+    #   1 = Draw 1 card
+    #   2 = Draw 2 cards
+    #   3 = Draw 3 cards
+    if self.settings.difficulty_level == 1:
+        self.draw_count = 1
+    elif self.settings.difficulty_level == 2:
+        self.draw_count = 2  # ✅ CORRETTO (non 3!)
+    elif self.settings.difficulty_level == 3:
+        self.draw_count = 3  # ✅ CORRETTO (non 5!)
+    else:
+        self.draw_count = 1  # Fallback
+    
+    # 2️⃣ Shuffle mode
+    self.shuffle_on_recycle = self.settings.shuffle_discards
+    
+    # 3️⃣ Timer (solo annuncio, countdown non implementato)
+    # GameSettings.max_time_game:
+    #   -1 = Timer disabilitato
+    #   300-3600 = Secondi (5-60 minuti)
+    if self.settings.max_time_game > 0 and self.screen_reader:
+        minutes = self.settings.max_time_game // 60
+        self.screen_reader.tts.speak(
+            f"Limite tempo configurato: {minutes} minuti. "
+            f"(Timer countdown non implementato)",
+            interrupt=False
+        )
+    
+    # TTS riassunto settings
+    if self.screen_reader:
+        level_msg = f"Livello {self.settings.difficulty_level}: {self.draw_count} carta/e per pesca."
+        shuffle_msg = "Scarti si mischiano." if self.shuffle_on_recycle else "Scarti si girano."
+        self.screen_reader.tts.speak(
+            f"{level_msg} {shuffle_msg}",
+            interrupt=False
+        )
+```
+
+#### **Modifica 6: Modificare draw_from_stock()**
+```python
+def draw_from_stock(self, count: int = None) -> Tuple[bool, str]:
+    """Draw cards from stock to waste.
+    
+    Args:
+        count: Number of cards to draw (None = use self.draw_count)
+    
+    Returns:
+        Tuple of (success, message)
+    """
+    # ✅ Se count non specificato, usa settings
+    if count is None:
+        count = getattr(self, 'draw_count', 1)
+    
+    success, generic_msg, cards = self.service.draw_cards(count)
+    
+    # Usa formatter per messaggio dettagliato
+    if success and cards:
+        message = GameFormatter.format_drawn_cards(cards)
+    else:
+        message = generic_msg
+    
+    if self.screen_reader:
+        self.screen_reader.tts.speak(message, interrupt=True)
+    
+    return success, message
+```
+
+#### **Modifica 7: Modificare recycle_waste()**
 ```python
 def recycle_waste(self, shuffle: bool = None) -> Tuple[bool, str]:
-    # ✅ Se shuffle non specificato, usa settings
-    if shuffle is None and self.settings:
-        shuffle = self.settings.waste_shuffle
+    """Recycle waste pile back to stock.
     
-    success, msg = self.service.recycle_waste(shuffle)
-    # ...
+    Args:
+        shuffle: None = use settings, True = force shuffle, False = force invert
+    
+    Returns:
+        Tuple of (success, message)
+    """
+    # ✅ Se shuffle non specificato, usa settings
+    if shuffle is None:
+        shuffle = getattr(self, 'shuffle_on_recycle', False)
+    
+    # Esegui recycle
+    success, generic_msg = self.service.recycle_waste(shuffle)
+    
+    if not success:
+        if self.screen_reader:
+            self.screen_reader.tts.speak(generic_msg, interrupt=False)
+        return success, generic_msg
+    
+    # Auto-draw dopo reshuffle
+    auto_success, auto_msg, auto_cards = self.service.draw_cards(1)
+    
+    # Messaggio dettagliato
+    shuffle_mode = "shuffle" if shuffle else "reverse"
+    message = GameFormatter.format_reshuffle_message(
+        shuffle_mode=shuffle_mode,
+        auto_drawn_cards=auto_cards if auto_success else None
+    )
+    
+    if self.screen_reader:
+        self.screen_reader.tts.speak(message, interrupt=False)
+    
+    return success, message
 ```
 
 ### **Files da Modificare**
 1. `src/application/game_engine.py`
-   - Salvare `self.settings`
+   - Modificare `__init__()` per salvare settings
    - Modificare `create()` per passare settings
-   - Rifattorizzare `new_game()` con controlli settings
-   - Modificare `recycle_waste()` per usare settings
+   - Rifattorizzare `new_game()` con flusso corretto
+   - Aggiungere `_recreate_deck_and_table()`
+   - Aggiungere `_apply_game_settings()`
+   - Modificare `draw_from_stock()`
+   - Modificare `recycle_waste()`
 
-2. `src/domain/services/game_service.py` (opzionale)
-   - Passare settings a service per configurazioni avanzate
+2. `src/domain/services/game_service.py` (FUTURO)
+   - Implementare timer countdown con max_time_game
+   - Aggiungere check per tempo scaduto
+
+### **Limitazioni Note**
+1. **Timer Countdown NON Implementato**: `GameService` non ha logica per controllare tempo scaduto. Per ora solo annuncio vocale del limite.
+2. **Persistenza Settings**: Non c'è salvataggio su file. Settings perduti a chiusura app.
 
 ### **Checklist Implementazione**
 - [ ] Modificare `__init__()` per accettare e salvare settings
 - [ ] Modificare `create()` per passare settings a `__init__()`
-- [ ] Implementare logica ricreazione deck in `new_game()`
-- [ ] Applicare timer settings in `new_game()`
-- [ ] Applicare difficulty/draw count settings
-- [ ] Modificare `recycle_waste()` per waste_shuffle setting
+- [ ] Implementare `_recreate_deck_and_table()`
+- [ ] Implementare `_apply_game_settings()`
+- [ ] Rifattorizzare `new_game()` con flusso corretto
+- [ ] Modificare `draw_from_stock()` per usare `self.draw_count`
+- [ ] Modificare `recycle_waste()` per usare `self.shuffle_on_recycle`
 - [ ] Test: Cambio deck French → Neapolitan tra partite
-- [ ] Test: Timer 10 minuti applicato
-- [ ] Test: Livello 2 con 3 carte pescate
+- [ ] Test: Livello 2 con 2 carte pescate (non 3!)
 - [ ] Test: Scarti mischiano quando configurato
+- [ ] Documentare limitazione timer countdown
 
-### **Status**: 🔧 IN PROGRESS
+### **Status**: 🔧 IN PROGRESS (documentazione corretta)
 
 ### **Priorità**: 🔴 CRITICA
 Questo bug invalida completamente il sistema di opzioni. **Deve essere risolto prima del merge su main.**
@@ -377,6 +536,25 @@ Questo bug invalida completamente il sistema di opzioni. **Deve essere risolto p
 ---
 
 ## 📝 NOTE TECNICHE
+
+### **GameSettings Attributi Reali**
+```python
+class GameSettings:
+    deck_type: str           # "french" o "neapolitan"
+    difficulty_level: int    # 1, 2, o 3
+    max_time_game: int       # -1=OFF, o 300-3600 (secondi)
+    shuffle_discards: bool   # True=shuffle, False=invert
+```
+
+### **Mapping Draw Count**
+- Livello 1: **1 carta** ✅
+- Livello 2: **2 carte** ✅ (non 3!)
+- Livello 3: **3 carte** ✅ (non 5!)
+
+### **GameService Timer**
+- **NON esiste `timer_manager`**
+- Solo `start_time: float` (timestamp)
+- **Countdown non implementato**
 
 ### **Backward Compatibility**
 Tutte le modifiche mantengono backward compatibility:
@@ -398,11 +576,12 @@ Detailed explanation.
 - Change 1
 - Change 2
 
-Fixes #BUG-XXX
+Fixes #BUG-003
 ```
 
 ---
 
-**Ultimo aggiornamento**: 09/02/2026 01:35 AM CET  
+**Ultimo aggiornamento**: 09/02/2026 01:50 AM CET  
+**Code Review**: Completata ✅  
 **Autore**: Nemex81  
 **Branch**: refactoring-engine
