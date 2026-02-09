@@ -2,6 +2,9 @@
 
 Provides a simple pile structure compatible with legacy scr/pile.py interface.
 Manages collections of cards for tableau, foundation, stock, and waste piles.
+
+New in v1.4.2.1 (Bug Fix #2):
+- assigned_suit attribute for foundation piles with fixed suit assignment
 """
 
 from typing import List, Optional
@@ -19,18 +22,30 @@ class Pile:
         cards: List of cards in the pile
         name: Human-readable name for voice feedback (e.g., "Pila base 1")
         pile_type: Type identifier ("base", "semi", "mazzo", "scarti")
+        assigned_suit: Fixed suit for foundation piles (e.g., "Cuori", "Denari")
+            NEW in v1.4.2.1: Used to validate ace placement on empty foundations
     """
     
-    def __init__(self, name: str = "Pila senza nome", pile_type: str = "unknown") -> None:
+    def __init__(
+        self, 
+        name: str = "Pila senza nome", 
+        pile_type: str = "unknown",
+        assigned_suit: Optional[str] = None  # NEW (v1.4.2.1)
+    ) -> None:
         """Initialize a pile.
         
         Args:
             name: Human-readable name for the pile (for TTS feedback)
             pile_type: Type identifier ("base", "semi", "mazzo", "scarti")
+            assigned_suit: Fixed suit for foundation piles (optional)
+                NEW in v1.4.2.1: When set, foundation only accepts aces/cards of this suit
+                Examples: "Cuori" (French), "Denari" (Neapolitan)
+                If None, no suit restriction (backward compatible)
         """
         self.cards: List[Card] = []
         self.name: str = name
         self.pile_type: str = pile_type
+        self.assigned_suit: Optional[str] = assigned_suit  # NEW (v1.4.2.1)
     
     def aggiungi_carta(self, card: Card) -> None:
         """Add a card to the top of the pile.
