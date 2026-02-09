@@ -9,6 +9,7 @@ This implementation includes critical fixes:
 
 New in v1.4.2.1 (Bug Fix #2):
 - Foundation piles have fixed assigned suits from deck
+- HOTFIX: Use deck.SUITES instead of deck.SEMI
 """
 
 from typing import List, Optional
@@ -51,15 +52,16 @@ class GameTable:
         ]
         
         # 4 foundation piles (one per suit) with FIXED suit assignment (v1.4.2.1)
-        # Use deck.SEMI to get correct suit names for deck type:
-        # - FrenchDeck: ["Cuori", "Quadri", "Fiori", "Picche"]
-        # - NeapolitanDeck: ["Denari", "Coppe", "Spade", "Bastoni"]
-        deck_suits = deck.SEMI
+        # HOTFIX: Use deck.SUITES (not deck.SEMI) to get suit names:
+        # - FrenchDeck.SUITES: ["cuori", "quadri", "fiori", "picche"]
+        # - NeapolitanDeck.SUITES: ["bastoni", "coppe", "denari", "spade"]
+        deck_suits = deck.SUITES  # FIXED: was deck.SEMI
+        
         self.pile_semi: List[Pile] = [
             Pile(
-                name=f"Pila semi {suit}", 
+                name=f"Pila semi {suit.capitalize()}",  # Display: "Cuori", "Denari"
                 pile_type="semi",
-                assigned_suit=suit  # NEW (v1.4.2.1): Fixed suit per foundation
+                assigned_suit=suit  # Validation: "cuori", "denari" (lowercase)
             )
             for suit in deck_suits
         ]
