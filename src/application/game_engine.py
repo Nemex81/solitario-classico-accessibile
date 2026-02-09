@@ -9,15 +9,20 @@ New in v1.4.1:
 - Virtual options window management (open/close/query)
 - Validation: options blocked during active game
 - Detailed voice formatters for draw/move/reshuffle operations
+
+New in v1.4.2.1 (Bug Fix):
+- Dynamic deck type selection from GameSettings
+- Support for both FrenchDeck and NeapolitanDeck
 """
 
 from typing import Optional, Tuple, Dict, Any, List
 
 from src.domain.models.table import GameTable
-from src.domain.models.deck import FrenchDeck
+from src.domain.models.deck import FrenchDeck, NeapolitanDeck  # Added NeapolitanDeck
 from src.domain.models.pile import Pile
 from src.domain.models.card import Card
 from src.domain.services.game_service import GameService
+from src.domain.services.game_settings import GameSettings  # NEW IMPORT
 from src.domain.services.cursor_manager import CursorManager
 from src.domain.services.selection_manager import SelectionManager
 from src.domain.rules.solitaire_rules import SolitaireRules
@@ -93,7 +98,8 @@ class GameEngine:
         cls,
         audio_enabled: bool = True,
         tts_engine: str = "auto",
-        verbose: int = 1
+        verbose: int = 1,
+        settings: Optional[GameSettings] = None  # NEW PARAMETER (v1.4.2.1)
     ) -> "GameEngine":
         """Factory method to create fully initialized game engine.
         
@@ -101,17 +107,28 @@ class GameEngine:
             audio_enabled: Enable audio feedback
             tts_engine: TTS engine ("auto", "nvda", "sapi5")
             verbose: Audio verbosity level (0-2)
+            settings: GameSettings instance for deck type (NEW in v1.4.2.1)
             
         Returns:
             Initialized GameEngine instance ready to play
             
         Example:
-            >>> engine = GameEngine.create(audio_enabled=True)
-            >>> engine.new_game()
-            >>> success, msg = engine.move_card(source_idx=0, target_idx=7)
+            >>> settings = GameSettings()
+            >>> settings.deck_type = "neapolitan"
+            >>> engine = GameEngine.create(settings=settings)
+            >>> engine.new_game()  # Uses Neapolitan deck
+            
+        Note:
+            If settings is None or settings.deck_type is "french",
+            defaults to FrenchDeck (backward compatible).
         """
-        # Create domain components
-        deck = FrenchDeck()
+        # Create domain components with dynamic deck selection (v1.4.2.1 fix)
+        if settings and settings.deck_type == "neapolitan":
+            deck = NeapolitanDeck()
+        else:
+            # Default to French deck (backward compatible)
+            deck = FrenchDeck()
+        
         deck.crea()
         deck.mischia()
         table = GameTable(deck)
