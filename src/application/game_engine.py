@@ -10,12 +10,13 @@ New in v1.4.1:
 - Validation: options blocked during active game
 - Detailed voice formatters for draw/move/reshuffle operations
 
-New in v1.4.2.1 (Bug Fix #3 - Phase 1-4/7):
+New in v1.4.2.1 (Bug Fix #3 - Phase 1-5/7):
 - Dynamic deck type selection from GameSettings
 - Support for both FrenchDeck and NeapolitanDeck
 - Settings integration for draw count and shuffle mode
 - Deck recreation when deck type changes between games
 - Settings application helper for difficulty, timer, shuffle
+- new_game() refactored with complete settings integration
 """
 
 from typing import Optional, Tuple, Dict, Any, List
@@ -171,45 +172,88 @@ class GameEngine:
     # ========================================
     
     def new_game(self) -> None:
-        """Start a new game.
+        """Start a new game with settings integration.
         
-        Resets game state, redistributes cards, and starts timer.
+        Flow (Phase 5/7 - Bug #3 fix):
+        1. Check if deck_type changed → recreate deck if necessary
+        2. If deck unchanged → gather existing cards
+        3. Redistribute cards (new deck already shuffled or old collected)
+        4. Apply settings (draw count, shuffle mode, timer)
+        5. Reset game state and cursor/selection
+        6. Start game timer and announce
+        
+        This method now properly consults GameSettings to:
+        - Switch between French/Neapolitan decks dynamically
+        - Configure difficulty level (draw count)
+        - Configure shuffle mode for waste recycling
+        - Announce timer limits (countdown not implemented)
+        
+        Example:
+            >>> settings.deck_type = "neapolitan"
+            >>> settings.difficulty_level = 2
+            >>> settings.shuffle_discards = True
+            >>> engine.new_game()
+            >>> # TTS: "Tipo di mazzo cambiato: carte napoletane."
+            >>> # TTS: "Livello 2: 2 carta/e per pesca. Scarti si mischiano."
         """
-        # Reset service state
-        self.service.reset_game()
+        deck_changed = False
         
-        # Gather all cards back to deck
-        all_cards = []
-        for pile in self.table.pile_base:
-            all_cards.extend(pile.get_all_cards())
-            pile.clear()
-        for pile in self.table.pile_semi:
-            all_cards.extend(pile.get_all_cards())
-            pile.clear()
-        if self.table.pile_mazzo:
-            all_cards.extend(self.table.pile_mazzo.get_all_cards())
-            self.table.pile_mazzo.clear()
-        if self.table.pile_scarti:
-            all_cards.extend(self.table.pile_scarti.get_all_cards())
-            self.table.pile_scarti.clear()
+        # 1️⃣ Check if deck type changed (Phase 3 integration)
+        if self.settings:
+            # Detect current deck type
+            current_is_neapolitan = isinstance(self.table.mazzo, NeapolitanDeck)
+            should_be_neapolitan = (self.settings.deck_type == "neapolitan")
+            
+            # Deck type mismatch → recreate deck and table
+            if current_is_neapolitan != should_be_neapolitan:
+                deck_changed = True
+                self._recreate_deck_and_table(should_be_neapolitan)
         
-        # Put cards back in deck and shuffle
-        self.table.mazzo.cards = all_cards
-        self.table.mazzo.mischia()
+        # 2️⃣ If deck NOT changed: gather existing cards
+        if not deck_changed:
+            # Collect all cards from all piles
+            all_cards = []
+            for pile in self.table.pile_base:
+                all_cards.extend(pile.get_all_cards())
+                pile.clear()
+            for pile in self.table.pile_semi:
+                all_cards.extend(pile.get_all_cards())
+                pile.clear()
+            if self.table.pile_mazzo:
+                all_cards.extend(self.table.pile_mazzo.get_all_cards())
+                self.table.pile_mazzo.clear()
+            if self.table.pile_scarti:
+                all_cards.extend(self.table.pile_scarti.get_all_cards())
+                self.table.pile_scarti.clear()
+            
+            # Put cards back in deck and shuffle
+            self.table.mazzo.cards = all_cards
+            self.table.mazzo.mischia()
         
-        # Redistribute cards
+        # 3️⃣ Redistribute cards
+        # (new deck already shuffled from _recreate_deck_and_table,
+        #  or old deck just collected and shuffled)
         self.table.distribuisci_carte()
         
-        # Reset cursor/selection
+        # 4️⃣ Apply game settings (Phase 4 integration)
+        # Configures: draw_count, shuffle_on_recycle, timer warning
+        self._apply_game_settings()
+        
+        # 5️⃣ Reset game state
+        self.service.reset_game()
+        
+        # Reset cursor position
         self.cursor.pile_idx = 0
         self.cursor.card_idx = 0
         self.cursor.last_quick_pile = None
+        
+        # ⚠️ CRITICAL: Reset selection (was missing in original!)
         self.selection.clear_selection()
         
-        # Start timer
+        # 6️⃣ Start game timer
         self.service.start_game()
         
-        # Announce game start
+        # 7️⃣ Announce game start
         if self.screen_reader:
             self.screen_reader.tts.speak(
                 "Nuova partita iniziata. Usa H per l'aiuto comandi.",
@@ -780,7 +824,7 @@ class GameEngine:
             self.screen_reader.verbose = level
     
     # ========================================
-    # HELPERS (Phase 3-4/7: Settings Integration)
+    # HELPERS (Phase 3-5/7: Settings Integration)
     # ========================================
     
     def _recreate_deck_and_table(self, use_neapolitan: bool) -> None:
