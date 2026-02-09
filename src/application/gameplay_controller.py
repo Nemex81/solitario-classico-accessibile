@@ -4,6 +4,9 @@ Maps 60+ keyboard commands to GameEngine methods with TTS feedback.
 Provides same UX as legacy scr/game_play.py for audiogame interface.
 
 Migrated from: scr/game_play.py
+
+New in v1.4.2.1 (Bug Fix):
+- Accept GameSettings parameter for proper settings binding
 """
 
 import pygame
@@ -25,15 +28,35 @@ class GamePlayController:
     Args:
         engine: GameEngine facade for game logic
         screen_reader: ScreenReader with TTS provider for voice feedback
+        settings: GameSettings instance (optional, creates new if not provided)
+            NEW in v1.4.2.1: Allows binding to shared settings instance
     """
     
-    def __init__(self, engine: GameEngine, screen_reader):
+    def __init__(
+        self, 
+        engine: GameEngine, 
+        screen_reader, 
+        settings: Optional[GameSettings] = None  # NEW PARAMETER (v1.4.2.1)
+    ):
+        """Initialize gameplay controller.
+        
+        Args:
+            engine: GameEngine facade
+            screen_reader: ScreenReader for TTS
+            settings: GameSettings instance (optional)
+                If None, creates new instance (backward compatible)
+                If provided, uses shared instance from main app
+        """
         self.engine = engine
         self.sr = screen_reader
         
-        # Create GameSettings instance (not available in GameEngine yet)
-        # TODO: In future, bind to engine.game_service.game_state for validation
-        self.settings = GameSettings()
+        # Use provided settings or create new (backward compatibility)
+        # NEW in v1.4.2.1: Proper settings binding
+        if settings is not None:
+            self.settings = settings
+        else:
+            # Fallback: Create new settings (legacy behavior)
+            self.settings = GameSettings()
         
         # Initialize options controller
         self.options_controller = OptionsWindowController(self.settings)
