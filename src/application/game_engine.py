@@ -10,10 +10,11 @@ New in v1.4.1:
 - Validation: options blocked during active game
 - Detailed voice formatters for draw/move/reshuffle operations
 
-New in v1.4.2.1 (Bug Fix #3 - Phase 1/7):
+New in v1.4.2.1 (Bug Fix #3 - Phase 1-3/7):
 - Dynamic deck type selection from GameSettings
 - Support for both FrenchDeck and NeapolitanDeck
 - Settings integration for draw count and shuffle mode
+- Deck recreation when deck type changes between games
 """
 
 from typing import Optional, Tuple, Dict, Any, List
@@ -778,8 +779,58 @@ class GameEngine:
             self.screen_reader.verbose = level
     
     # ========================================
-    # HELPERS
+    # HELPERS (Phase 3/7: Deck Recreation)
     # ========================================
+    
+    def _recreate_deck_and_table(self, use_neapolitan: bool) -> None:
+        """Recreate deck and table when user changes deck type.
+        
+        This method is called ONLY when deck_type changes between games.
+        Creates a new deck (already shuffled), recreates table, and updates
+        all references in service/cursor.
+        
+        Args:
+            use_neapolitan: True for Neapolitan deck, False for French deck
+            
+        Note:
+            This is part of Phase 3/7 for Bug #3 fix. The new deck is
+            already created, shuffled, and dealt by GameTable, so we
+            don't need to manually gather cards from old deck.
+            
+        Example:
+            >>> # User changes from French to Neapolitan in options
+            >>> engine._recreate_deck_and_table(use_neapolitan=True)
+            >>> # TTS announces: "Tipo di mazzo cambiato: carte napoletane."
+        """
+        # 1. Create new deck
+        if use_neapolitan:
+            new_deck = NeapolitanDeck()
+        else:
+            new_deck = FrenchDeck()
+        
+        new_deck.crea()
+        new_deck.mischia()
+        
+        # 2. Recreate table with new deck
+        self.table = GameTable(new_deck)
+        
+        # 3. Update rules (deck-dependent for is_king, validation)
+        self.rules = SolitaireRules(new_deck)
+        
+        # 4. Update service references
+        self.service.table = self.table
+        self.service.rules = self.rules
+        
+        # 5. Update cursor reference
+        self.cursor.table = self.table
+        
+        # 6. TTS feedback
+        if self.screen_reader:
+            deck_name = "napoletane" if use_neapolitan else "francesi"
+            self.screen_reader.tts.speak(
+                f"Tipo di mazzo cambiato: carte {deck_name}.",
+                interrupt=True
+            )
     
     def _get_pile(self, idx: int) -> Optional[Pile]:
         """Get pile by index (0-12)."""
