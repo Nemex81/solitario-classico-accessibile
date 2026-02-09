@@ -10,13 +10,14 @@ New in v1.4.1:
 - Validation: options blocked during active game
 - Detailed voice formatters for draw/move/reshuffle operations
 
-New in v1.4.2.1 (Bug Fix #3 - Phase 1-5/7):
+New in v1.4.2.1 (Bug Fix #3 - Phase 1-7/7 COMPLETE!):
 - Dynamic deck type selection from GameSettings
 - Support for both FrenchDeck and NeapolitanDeck
 - Settings integration for draw count and shuffle mode
 - Deck recreation when deck type changes between games
 - Settings application helper for difficulty, timer, shuffle
 - new_game() refactored with complete settings integration
+- draw_from_stock() and recycle_waste() respect settings
 """
 
 from typing import Optional, Tuple, Dict, Any, List
@@ -676,22 +677,34 @@ class GameEngine:
         
         return success, message
     
-    def draw_from_stock(self, count: int = 1) -> Tuple[bool, str]:
+    def draw_from_stock(self, count: Optional[int] = None) -> Tuple[bool, str]:
         """Draw cards from stock to waste with detailed voice feedback.
+        
+        Phase 6/7: Now uses self.draw_count from settings when count is None.
         
         Uses GameFormatter.format_drawn_cards() for complete card announcement.
         
         Args:
-            count: Number of cards to draw
+            count: Number of cards to draw (None = use self.draw_count from settings)
             
         Returns:
             Tuple of (success, message)
             
         Example:
-            >>> success, msg = engine.draw_from_stock(3)
+            >>> # With difficulty_level = 2 in settings
+            >>> success, msg = engine.draw_from_stock()  # Draws 2 cards
+            >>> print(msg)
+            "Hai pescato: 7 di Cuori, Regina di Quadri."
+            
+            >>> # Or with explicit count (overrides settings)
+            >>> success, msg = engine.draw_from_stock(count=3)
             >>> print(msg)
             "Hai pescato: 7 di Cuori, Regina di Quadri, Asso di Fiori."
         """
+        # ✅ Phase 6: Use settings if count not specified
+        if count is None:
+            count = self.draw_count
+        
         success, generic_msg, cards = self.service.draw_cards(count)
         
         # Use detailed formatter
@@ -705,25 +718,39 @@ class GameEngine:
         
         return success, message
     
-    def recycle_waste(self, shuffle: bool = False) -> Tuple[bool, str]:
+    def recycle_waste(self, shuffle: Optional[bool] = None) -> Tuple[bool, str]:
         """Recycle waste pile back to stock with auto-draw and detailed feedback.
+        
+        Phase 7/7: Now uses self.shuffle_on_recycle from settings when shuffle is None.
         
         Uses GameFormatter.format_reshuffle_message() to announce:
         - Shuffle mode (random/reverse)
         - Auto-drawn cards after reshuffle
         
         Args:
-            shuffle: Whether to shuffle randomly
+            shuffle: Shuffle mode (None = use self.shuffle_on_recycle from settings,
+                    True = force shuffle, False = force reverse)
             
         Returns:
             Tuple of (success, message)
             
         Example:
-            >>> success, msg = engine.recycle_waste(shuffle=True)
+            >>> # With shuffle_discards = True in settings
+            >>> success, msg = engine.recycle_waste()  # Shuffles
             >>> print(msg)
             "Rimescolo gli scarti in modo casuale nel mazzo riserve!
-             Pescata automatica: Hai pescato: 9 di Quadri, Asso di Fiori."
+             Pescata automatica: Hai pescato: 9 di Quadri."
+            
+            >>> # Or with explicit mode (overrides settings)
+            >>> success, msg = engine.recycle_waste(shuffle=False)
+            >>> print(msg)
+            "Rigiro gli scarti nel mazzo riserve!
+             Pescata automatica: Hai pescato: Asso di Fiori."
         """
+        # ✅ Phase 7: Use settings if shuffle not specified
+        if shuffle is None:
+            shuffle = self.shuffle_on_recycle
+        
         # Execute recycle
         success, generic_msg = self.service.recycle_waste(shuffle)
         
@@ -824,7 +851,7 @@ class GameEngine:
             self.screen_reader.verbose = level
     
     # ========================================
-    # HELPERS (Phase 3-5/7: Settings Integration)
+    # HELPERS (Phase 3-7/7: Settings Integration COMPLETE!)
     # ========================================
     
     def _recreate_deck_and_table(self, use_neapolitan: bool) -> None:
