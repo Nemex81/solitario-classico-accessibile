@@ -10,18 +10,19 @@
 ## 🐛 BUG #3: Settings Integration in new_game()
 
 **Priorità**: 🔴 CRITICA  
-**Status**: 🔧 IN PROGRESS  
+**Status**: 🔧 IN PROGRESS - FASE 1 COMPLETATA ✅  
 **File**: `src/application/game_engine.py`  
 
 ---
 
 ### 📝 TASK BREAKDOWN
 
-#### **FASE 1: Engine Initialization** (1/7)
+#### **FASE 1: Engine Initialization** (1/7) ✅ COMPLETATA
 
-**File**: `src/application/game_engine.py`
+**File**: `src/application/game_engine.py`  
+**Commit**: [`5091a5b`](https://github.com/Nemex81/solitario-classico-accessibile/commit/5091a5b3b80cdca46d0e86d6738b36f92289b31c)
 
-- [ ] **Task 1.1**: Modificare `__init__()` signature
+- [x] **Task 1.1**: Modificare `__init__()` signature ✅
   ```python
   def __init__(
       self,
@@ -35,12 +36,12 @@
   ):
   ```
 
-- [ ] **Task 1.2**: Salvare settings come attributo
+- [x] **Task 1.2**: Salvare settings come attributo ✅
   ```python
   self.settings = settings
   ```
 
-- [ ] **Task 1.3**: Inizializzare attributi configurabili con defaults
+- [x] **Task 1.3**: Inizializzare attributi configurabili con defaults ✅
   ```python
   # Attributi modificabili da settings
   self.draw_count = 1  # Default: 1 carta
@@ -49,11 +50,12 @@
 
 ---
 
-#### **FASE 2: Factory Method Update** (2/7)
+#### **FASE 2: Factory Method Update** (2/7) ✅ GIÀ IMPLEMENTATA
 
-**File**: `src/application/game_engine.py`
+**File**: `src/application/game_engine.py`  
+**Commit**: Bug #1 fix + Phase 1
 
-- [ ] **Task 2.1**: Modificare `create()` per passare settings
+- [x] **Task 2.1**: Modificare `create()` per passare settings ✅
   ```python
   @classmethod
   def create(cls, audio_enabled=True, tts_engine="auto", verbose=1, 
@@ -63,13 +65,13 @@
                  screen_reader, settings)  # ✅ Passa settings
   ```
 
-- [ ] **Task 2.2**: Verificare che test.py passa settings correttamente
+- [x] **Task 2.2**: Verificare che test.py passa settings correttamente ✅
   - ✅ Già implementato in Bug #1 fix
-  - Verificare: `self.engine = GameEngine.create(..., settings=self.settings)`
+  - Verificato: `self.engine = GameEngine.create(..., settings=self.settings)`
 
 ---
 
-#### **FASE 3: Deck Recreation Helper** (3/7) ⭐ **NUOVO METODO**
+#### **FASE 3: Deck Recreation Helper** (3/7) ⭐ **NUOVO METODO** - PROSSIMO
 
 **File**: `src/application/game_engine.py`
 
@@ -442,8 +444,8 @@
 ### 📝 CHECKLIST FINALE
 
 **Codice**:
-- [ ] Task 1.1-1.3 completati (Initialization)
-- [ ] Task 2.1-2.2 completati (Factory Method)
+- [x] Task 1.1-1.3 completati (Initialization) ✅
+- [x] Task 2.1-2.2 completati (Factory Method) ✅
 - [ ] Task 3.1 completato (_recreate_deck_and_table)
 - [ ] Task 4.1 completato (_apply_game_settings)
 - [ ] Task 5.1 completato (new_game refactoring)
@@ -466,13 +468,17 @@
 - [ ] Docstrings metodi modificati
 
 **Commit**:
-- [ ] Commit per ogni fase (7 commits)
-- [ ] Commit messages seguono standard
+- [x] Commit Fase 1 (5091a5b) ✅
+- [ ] Commit Fase 3 (_recreate_deck_and_table)
+- [ ] Commit Fase 4 (_apply_game_settings)
+- [ ] Commit Fase 5 (new_game refactoring)
+- [ ] Commit Fase 6 (draw_from_stock)
+- [ ] Commit Fase 7 (recycle_waste)
 - [ ] Branch push su GitHub
 
 **Review**:
 - [x] Code review completata
-- [ ] Attributi GameSettings corretti
+- [x] Attributi GameSettings corretti ✅
 - [ ] Draw count mapping corretto (1, 2, 3)
 - [ ] Nessuna regressione Bug #1 e #2
 - [ ] UX non vedenti preservata
@@ -519,7 +525,7 @@ Settings **non vengono salvate su file**. Perdute a chiusura app.
 1. [ ] Review finale codice
 2. [ ] Tutti i 5 test scenario passati
 3. [ ] Update CHANGELOG.md con v1.4.2.1 notes
-4. [ ] Squash commits se necessario (7 → 1-2)
+4. [ ] Squash commits se necessario (6 → 1-2)
 5. [ ] Create Pull Request: `refactoring-engine` → `main`
 6. [ ] Final testing su branch main
 7. [ ] Tag release: `v1.4.2.1`
@@ -527,7 +533,7 @@ Settings **non vengono salvate su file**. Perdute a chiusura app.
 
 ---
 
-**Ultimo aggiornamento**: 09/02/2026 01:51 AM CET  
+**Ultimo aggiornamento**: 09/02/2026 02:00 AM CET  
 **Code Review**: ✅ Completata  
-**Prossima milestone**: Fase 1 Implementation  
-**ETA**: 2-3 ore sviluppo + 1 ora testing
+**Fase Corrente**: FASE 1 ✅ COMPLETATA → Prossima: FASE 3  
+**ETA Rimanente**: ~2 ore sviluppo + 1 ora testing
