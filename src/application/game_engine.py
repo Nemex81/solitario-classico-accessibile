@@ -10,11 +10,12 @@ New in v1.4.1:
 - Validation: options blocked during active game
 - Detailed voice formatters for draw/move/reshuffle operations
 
-New in v1.4.2.1 (Bug Fix #3 - Phase 1-3/7):
+New in v1.4.2.1 (Bug Fix #3 - Phase 1-4/7):
 - Dynamic deck type selection from GameSettings
 - Support for both FrenchDeck and NeapolitanDeck
 - Settings integration for draw count and shuffle mode
 - Deck recreation when deck type changes between games
+- Settings application helper for difficulty, timer, shuffle
 """
 
 from typing import Optional, Tuple, Dict, Any, List
@@ -779,7 +780,7 @@ class GameEngine:
             self.screen_reader.verbose = level
     
     # ========================================
-    # HELPERS (Phase 3/7: Deck Recreation)
+    # HELPERS (Phase 3-4/7: Settings Integration)
     # ========================================
     
     def _recreate_deck_and_table(self, use_neapolitan: bool) -> None:
@@ -830,6 +831,67 @@ class GameEngine:
             self.screen_reader.tts.speak(
                 f"Tipo di mazzo cambiato: carte {deck_name}.",
                 interrupt=True
+            )
+    
+    def _apply_game_settings(self) -> None:
+        """Apply all game settings from GameSettings.
+        
+        Configures:
+        - Draw count from difficulty_level (1→1, 2→2, 3→3)
+        - Shuffle mode from shuffle_discards
+        - Timer warning announcement (max_time_game)
+        
+        Note:
+            Timer countdown is NOT implemented in GameService.
+            This method only announces the configured time limit.
+            
+        This is part of Phase 4/7 for Bug #3 fix.
+        Called from new_game() after deck recreation/card redistribution.
+        
+        Example:
+            >>> # In new_game() after distribuisci_carte()
+            >>> self._apply_game_settings()
+            >>> # TTS announces: "Livello 2: 2 carta/e per pesca. Scarti si mischiano."
+        """
+        if not self.settings:
+            return
+        
+        # 1️⃣ Draw count from difficulty
+        # CRITICAL: Correct mapping!
+        #   Level 1 = 1 card
+        #   Level 2 = 2 cards (NOT 3!)
+        #   Level 3 = 3 cards (NOT 5!)
+        if self.settings.difficulty_level == 1:
+            self.draw_count = 1
+        elif self.settings.difficulty_level == 2:
+            self.draw_count = 2  # ✅ CORRECT
+        elif self.settings.difficulty_level == 3:
+            self.draw_count = 3  # ✅ CORRECT
+        else:
+            # Fallback for invalid values
+            self.draw_count = 1
+        
+        # 2️⃣ Shuffle mode
+        # CRITICAL: Correct attribute is shuffle_discards (not waste_shuffle!)
+        self.shuffle_on_recycle = self.settings.shuffle_discards
+        
+        # 3️⃣ Timer warning (countdown not implemented)
+        # max_time_game: -1 = OFF, 300-3600 = seconds (5-60 min)
+        if self.settings.max_time_game > 0 and self.screen_reader:
+            minutes = self.settings.max_time_game // 60
+            self.screen_reader.tts.speak(
+                f"Attenzione: limite tempo configurato a {minutes} minuti. "
+                f"Timer countdown non ancora implementato.",
+                interrupt=False
+            )
+        
+        # 4️⃣ TTS summary of settings
+        if self.screen_reader:
+            level_msg = f"Livello {self.settings.difficulty_level}: {self.draw_count} carta/e per pesca."
+            shuffle_msg = "Scarti si mischiano." if self.shuffle_on_recycle else "Scarti si girano."
+            self.screen_reader.tts.speak(
+                f"{level_msg} {shuffle_msg}",
+                interrupt=False
             )
     
     def _get_pile(self, idx: int) -> Optional[Pile]:
