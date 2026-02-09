@@ -10,7 +10,7 @@ New in v1.4.1:
 - Validation: options blocked during active game
 - Detailed voice formatters for draw/move/reshuffle operations
 
-New in v1.4.2.1 (Bug Fix #3 - Phase 1-7/7 COMPLETE!):
+New in v1.4.2.1 (Bug Fix #3 - Phase 1-7/7 COMPLETE! + Bug #3.1 FIX):
 - Dynamic deck type selection from GameSettings
 - Support for both FrenchDeck and NeapolitanDeck
 - Settings integration for draw count and shuffle mode
@@ -18,6 +18,7 @@ New in v1.4.2.1 (Bug Fix #3 - Phase 1-7/7 COMPLETE!):
 - Settings application helper for difficulty, timer, shuffle
 - new_game() refactored with complete settings integration
 - draw_from_stock() and recycle_waste() respect settings
+- Bug #3.1 FIX: Prevent double distribution on deck change
 """
 
 from typing import Optional, Tuple, Dict, Any, List
@@ -56,7 +57,7 @@ class GameEngine:
     - Game state queries
     - Statistics and progress tracking
     - Virtual options window management (v1.4.1)
-    - Settings integration (v1.4.2.1 Bug #3)
+    - Settings integration (v1.4.2.1 Bug #3 + #3.1)
     
     Attributes:
         table: Game table with all piles
@@ -175,13 +176,18 @@ class GameEngine:
     def new_game(self) -> None:
         """Start a new game with settings integration.
         
-        Flow (Phase 5/7 - Bug #3 fix):
+        Flow (Phase 5/7 - Bug #3 fix + Bug #3.1 fix):
         1. Check if deck_type changed → recreate deck if necessary
-        2. If deck unchanged → gather existing cards
-        3. Redistribute cards (new deck already shuffled or old collected)
+        2. If deck unchanged → gather existing cards AND redistribute
+        3. If deck changed → skip redistribution (already dealt by GameTable)
         4. Apply settings (draw count, shuffle mode, timer)
         5. Reset game state and cursor/selection
         6. Start game timer and announce
+        
+        Bug #3.1 Fix:
+            When deck_type changes, _recreate_deck_and_table() creates
+            a new GameTable, which automatically distributes cards in __init__().
+            We must NOT call distribuisci_carte() again to avoid crash.
         
         This method now properly consults GameSettings to:
         - Switch between French/Neapolitan decks dynamically
@@ -208,6 +214,7 @@ class GameEngine:
             # Deck type mismatch → recreate deck and table
             if current_is_neapolitan != should_be_neapolitan:
                 deck_changed = True
+                # ⚠️ IMPORTANT: This creates GameTable which already deals cards!
                 self._recreate_deck_and_table(should_be_neapolitan)
         
         # 2️⃣ If deck NOT changed: gather existing cards
@@ -230,11 +237,10 @@ class GameEngine:
             # Put cards back in deck and shuffle
             self.table.mazzo.cards = all_cards
             self.table.mazzo.mischia()
-        
-        # 3️⃣ Redistribute cards
-        # (new deck already shuffled from _recreate_deck_and_table,
-        #  or old deck just collected and shuffled)
-        self.table.distribuisci_carte()
+            
+            # 3️⃣ Redistribute cards ONLY if deck unchanged
+            # ✅ BUG #3.1 FIX: Skip if deck_changed (already dealt by GameTable)
+            self.table.distribuisci_carte()
         
         # 4️⃣ Apply game settings (Phase 4 integration)
         # Configures: draw_count, shuffle_on_recycle, timer warning
