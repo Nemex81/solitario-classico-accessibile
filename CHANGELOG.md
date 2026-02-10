@@ -122,18 +122,17 @@ if stock.is_empty() and not waste.is_empty():
 - **Descrizione**: Tasti numerici 1-5 per accesso diretto alle voci di menu
 - **Menu Principale**:
   - Tasto `1`: Avvia "Gioca al solitario classico"
-  - Visualizzazione: Prefissi numerici aggiunti alle voci (es. "1. Gioca al solitario classico")
-- **Menu Solitario In-Game** (aperto con ESC):
+  - Menu routing gestito in `test.py` (già corretto, nessuna modifica necessaria)
+- **Menu Solitario In-Game** (sottomenu aperto da menu principale):
   - Tasto `1`: Nuova partita
   - Tasto `2`: Opzioni
   - Tasto `3`: Chiudi partita
-  - ESC durante partita: Apre/chiude menu (toggle) invece di conferma immediata
-- **Gestione Conflitti**: Context-aware handlers
-  - Menu aperto: Tasti 1-3 eseguono azioni menu
-  - Menu chiuso: Tasti 1-7 spostano cursore su pile base (comportamento originale)
+- **Gestione Conflitti**: Context-aware routing in `test.py`
+  - Menu aperto (`is_menu_open = True`): Tasti 1-5 eseguono azioni menu via `VirtualMenu`
+  - Menu chiuso (gameplay mode): Tasti 1-7 spostano cursore su pile base (comportamento originale)
 - **Files modificati**:
-  - `scr/pygame_menu.py`: Aggiunti metodi `press_1()` - `press_5()` e mappature tastiera
-  - `scr/game_play.py`: Aggiunto flag `is_solitaire_menu_open` e metodi `open/close_solitaire_menu()`
+  - `src/infrastructure/ui/menu.py`: Aggiunti metodi `press_1()` - `press_5()` e mappature tastiera in `key_handlers` dict
+  - `test.py`: Nessuna modifica (routing già corretto con `is_menu_open` flag)
 - **Benefici UX**:
   - ⚡ Navigazione menu più veloce
   - 🎯 Riduce necessità di navigare con frecce

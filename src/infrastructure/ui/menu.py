@@ -123,11 +123,41 @@ class VirtualMenu:
         self.show_controls_hint = show_controls_hint
         self._active_submenu: Optional['VirtualMenu'] = None
         
+        # Build keyboard command mappings (v1.4.3: added numeric shortcuts)
+        self._build_key_handlers()
+        
         # Announce menu opening on initialization
         # Note: If opened via open_submenu(), that method will handle announcement
         # This is for root menu initialization
         if parent_menu is None:
             self._announce_menu_open()
+    
+    def _build_key_handlers(self) -> None:
+        """Build keyboard command mappings for menu navigation.
+        
+        Maps keyboard events to handler methods, including:
+        - Arrow keys for navigation (UP/DOWN)
+        - ENTER for selection
+        - ESC for closing submenu (if has parent)
+        - Numeric keys 1-5 for direct item selection (v1.4.3)
+        
+        The key_handlers dict is used by handle_keyboard_events()
+        for efficient event dispatching.
+        
+        New in v1.4.3: Added numeric shortcuts K_1 through K_5
+        for rapid menu item access without arrow navigation.
+        """
+        self.key_handlers = {
+            pygame.K_DOWN: self.next_item,
+            pygame.K_UP: self.prev_item,
+            pygame.K_RETURN: self.execute,
+            pygame.K_ESCAPE: self._handle_esc,
+            pygame.K_1: self.press_1,
+            pygame.K_2: self.press_2,
+            pygame.K_3: self.press_3,
+            pygame.K_4: self.press_4,
+            pygame.K_5: self.press_5,
+        }
     
     def _announce_menu_open(self) -> None:
         """Announce menu opening with item count and first item.
@@ -250,6 +280,81 @@ class VirtualMenu:
         """
         self.callback(self.selected_index)
     
+    # === NUMERIC SHORTCUTS (v1.4.3) ===
+    
+    def press_1(self) -> None:
+        """Shortcut: select first menu item and execute.
+        
+        Equivalent to navigating to item 1 and pressing ENTER.
+        Provides rapid access without arrow navigation.
+        
+        New in v1.4.3: Numeric menu shortcuts for accessibility.
+        """
+        if len(self.items) >= 1:
+            self.selected_index = 0
+            self.execute()
+    
+    def press_2(self) -> None:
+        """Shortcut: select second menu item and execute.
+        
+        Equivalent to navigating to item 2 and pressing ENTER.
+        Provides rapid access without arrow navigation.
+        
+        New in v1.4.3: Numeric menu shortcuts for accessibility.
+        """
+        if len(self.items) >= 2:
+            self.selected_index = 1
+            self.execute()
+    
+    def press_3(self) -> None:
+        """Shortcut: select third menu item and execute.
+        
+        Equivalent to navigating to item 3 and pressing ENTER.
+        Provides rapid access without arrow navigation.
+        
+        New in v1.4.3: Numeric menu shortcuts for accessibility.
+        """
+        if len(self.items) >= 3:
+            self.selected_index = 2
+            self.execute()
+    
+    def press_4(self) -> None:
+        """Shortcut: select fourth menu item and execute.
+        
+        Equivalent to navigating to item 4 and pressing ENTER.
+        Provides rapid access without arrow navigation.
+        
+        New in v1.4.3: Numeric menu shortcuts for accessibility.
+        """
+        if len(self.items) >= 4:
+            self.selected_index = 3
+            self.execute()
+    
+    def press_5(self) -> None:
+        """Shortcut: select fifth menu item and execute.
+        
+        Equivalent to navigating to item 5 and pressing ENTER.
+        Provides rapid access without arrow navigation.
+        
+        New in v1.4.3: Numeric menu shortcuts for accessibility.
+        """
+        if len(self.items) >= 5:
+            self.selected_index = 4
+            self.execute()
+    
+    def _handle_esc(self) -> None:
+        """Handle ESC key - close menu if has parent.
+        
+        Helper method for ESC key handling in key_handlers dict.
+        Only closes menu if it has a parent (is a submenu).
+        
+        New in v1.4.3: Extracted to separate method for key_handlers dict.
+        """
+        if self.parent_menu:
+            self.parent_menu.close_submenu()
+    
+    # === SUBMENU MANAGEMENT ===
+    
     def open_submenu(self, submenu: 'VirtualMenu') -> None:
         """Open a child submenu.
         
@@ -323,9 +428,10 @@ class VirtualMenu:
         return self._active_submenu
     
     def handle_keyboard_events(self, event: pygame.event.Event) -> None:
-        """Handle keyboard input for menu navigation.
+        """Handle keyboard input for menu navigation with numeric shortcuts.
         
-        Processes PyGame keyboard events and maps them to menu actions.
+        Processes PyGame keyboard events and maps them to menu actions
+        using the key_handlers dictionary for efficient dispatch.
         Only handles KEYDOWN events; ignores other event types.
         
         If a submenu is active, delegates all events to it.
@@ -339,9 +445,13 @@ class VirtualMenu:
             - K_UP (Arrow Up): Move to previous menu item
             - K_RETURN (Enter): Execute selected item callback
             - K_ESCAPE (Escape): Close submenu (if active)
+            - K_1 through K_5: Direct item selection shortcuts (v1.4.3)
         
         Ignored keys:
             All other keys are silently ignored (no-op).
+        
+        New in v1.4.3: Added numeric shortcuts for rapid menu access.
+        Uses key_handlers dict for efficient event dispatching.
         
         Example:
             >>> for event in pygame.event.get():
@@ -354,13 +464,6 @@ class VirtualMenu:
             return
         
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_DOWN:
-                self.next_item()
-            elif event.key == pygame.K_UP:
-                self.prev_item()
-            elif event.key == pygame.K_RETURN:
-                self.execute()
-            elif event.key == pygame.K_ESCAPE:
-                # Close this menu if it has a parent
-                if self.parent_menu:
-                    self.parent_menu.close_submenu()
+            handler = self.key_handlers.get(event.key)
+            if handler:
+                handler()
