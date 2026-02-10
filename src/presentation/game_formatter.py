@@ -466,8 +466,8 @@ class GameFormatter:
              Pescata automatica: Hai pescato: 9 di Quadri, Asso di Fiori."
             
             >>> # Reverse without auto-draw (empty deck)
-            "Rimescolo gli scarti in mazzo riserve!
-             Attenzione: nessuna carta da pescare!"
+            "Attenzione: nessuna carta da pescare!
+             Rimescolo gli scarti in mazzo riserve!"
         
         Reference:
             Legacy: scr/game_engine.py lines 779-803
@@ -482,7 +482,6 @@ class GameFormatter:
         if auto_drawn_cards:
             msg += "Pescata automatica: "
             msg += GameFormatter.format_drawn_cards(auto_drawn_cards)
-        else:
-            msg += "Attenzione: nessuna carta da pescare!  \n"
+
         
         return msg
