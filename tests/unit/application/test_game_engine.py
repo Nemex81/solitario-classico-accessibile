@@ -605,8 +605,20 @@ class TestAutoRecycleWaste:
         service.recycle_waste.assert_called_once_with(shuffle=True)
         service.draw_cards.assert_called_once_with(1)
         assert "Hai pescato" in message
-        # Verify TTS was called for both recycle and draw
-        assert screen_reader.tts.speak.call_count == 2
+        # ✅ BUG #5: Verify TTS was called 3 times (problem → solution → result)
+        assert screen_reader.tts.speak.call_count == 3
+        
+        # Verify the 3-step sequence with correct interrupt flags
+        calls = screen_reader.tts.speak.call_args_list
+        # Step 1: Problem announcement with interrupt=True
+        assert calls[0][0][0] == "Mazzo riserve vuoto."
+        assert calls[0][1]["interrupt"] is True
+        # Step 2: Recycle announcement with interrupt=False
+        assert "Rimescolo" in calls[1][0][0] or "Rigiro" in calls[1][0][0]
+        assert calls[1][1]["interrupt"] is False
+        # Step 3: Draw result with interrupt=False
+        assert "Hai pescato" in calls[2][0][0]
+        assert calls[2][1]["interrupt"] is False
     
     def test_auto_recycle_without_shuffle(self):
         """Test auto-recycle when stock empty, waste has cards, shuffle=False."""
@@ -647,6 +659,21 @@ class TestAutoRecycleWaste:
         service.recycle_waste.assert_called_once_with(shuffle=False)
         service.draw_cards.assert_called_once_with(1)
         assert "Hai pescato" in message
+        
+        # ✅ BUG #5: Verify TTS was called 3 times (problem → solution → result)
+        assert screen_reader.tts.speak.call_count == 3
+        
+        # Verify the 3-step sequence with correct interrupt flags
+        calls = screen_reader.tts.speak.call_args_list
+        # Step 1: Problem announcement with interrupt=True
+        assert calls[0][0][0] == "Mazzo riserve vuoto."
+        assert calls[0][1]["interrupt"] is True
+        # Step 2: Recycle announcement with interrupt=False
+        assert "Rimescolo" in calls[1][0][0] or "Rigiro" in calls[1][0][0]
+        assert calls[1][1]["interrupt"] is False
+        # Step 3: Draw result with interrupt=False
+        assert "Hai pescato" in calls[2][0][0]
+        assert calls[2][1]["interrupt"] is False
     
     def test_both_piles_empty(self):
         """Test when both stock and waste are empty (no recycle)."""
