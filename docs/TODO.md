@@ -117,51 +117,51 @@ if settings.command_hints_enabled and hint:
 ### Checklist Implementazione
 
 #### 2.1 Refactor Return Type - move_to_pile()
-- [ ] Aprire `src/domain/services/cursor_manager.py`
-- [ ] Trovare metodo `move_to_pile(pile_index: int) -> str`
-- [ ] Cambiare signature: `-> Tuple[str, Optional[str]]`
-- [ ] Aggiornare docstring: "Returns: (message, hint)"
-- [ ] Implementare logica hint:
+- [x] Aprire `src/domain/services/cursor_manager.py`
+- [x] Trovare metodo `move_to_pile(pile_index: int) -> str`
+- [x] Cambiare signature: `-> Tuple[str, Optional[str]]`
+- [x] Aggiornare docstring: "Returns: (message, hint)"
+- [x] Implementare logica hint:
   ```python
   hint = f"Premi ancora {pile_index} per selezionare {card_name}." if can_select else None
   return (message, hint)
   ```
 
 #### 2.2 Refactor - move_cursor_up()
-- [ ] Cambiare signature: `-> Tuple[str, Optional[str]]`
-- [ ] Implementare hint: "Premi INVIO per selezionare {card_name}." se carta selezionabile
-- [ ] Return `(message, hint)`
+- [x] Cambiare signature: `-> Tuple[str, Optional[str]]`
+- [x] Implementare hint: "Premi INVIO per selezionare {card_name}." se carta selezionabile
+- [x] Return `(message, hint)`
 
 #### 2.3 Refactor - move_cursor_down()
-- [ ] Cambiare signature: `-> Tuple[str, Optional[str]]`
-- [ ] Implementare hint identico a `move_cursor_up()`
-- [ ] Return `(message, hint)`
+- [x] Cambiare signature: `-> Tuple[str, Optional[str]]`
+- [x] Implementare hint identico a `move_cursor_up()`
+- [x] Return `(message, hint)`
 
 #### 2.4 Refactor - move_cursor_left()
-- [ ] Cambiare signature: `-> Tuple[str, Optional[str]]`
-- [ ] Implementare hint: "Usa frecce SU/GIÙ per consultare carte."
-- [ ] Return `(message, hint)`
+- [x] Cambiare signature: `-> Tuple[str, Optional[str]]`
+- [x] Implementare hint: "Usa frecce SU/GIÙ per consultare carte."
+- [x] Return `(message, hint)`
 
 #### 2.5 Refactor - move_cursor_right()
-- [ ] Cambiare signature: `-> Tuple[str, Optional[str]]`
-- [ ] Implementare hint identico a `move_cursor_left()`
-- [ ] Return `(message, hint)`
+- [x] Cambiare signature: `-> Tuple[str, Optional[str]]`
+- [x] Implementare hint identico a `move_cursor_left()`
+- [x] Return `(message, hint)`
 
 #### 2.6 Nuovo Metodo - move_cursor_pile_type() (TAB)
-- [ ] Verificare se metodo esiste (potrebbe essere in GameEngine)
-- [ ] Se necessario, aggiungere metodo con signature: `-> Tuple[str, Optional[str]]`
-- [ ] Implementare hint: "Premi TAB ancora per il prossimo tipo di pila."
-- [ ] Return `(message, hint)`
+- [x] Verificare se metodo esiste (potrebbe essere in GameEngine)
+- [x] Se necessario, aggiungere metodo con signature: `-> Tuple[str, Optional[str]]`
+- [x] Implementare hint: "Premi TAB ancora per il prossimo tipo di pila."
+- [x] Return `(message, hint)`
 
 #### 2.7 Testing - Parte 1
-- [ ] Creare file `tests/unit/src/test_cursor_manager_hints.py`
-- [ ] Test `test_move_to_pile_returns_tuple()` → verifica tipo return
-- [ ] Test `test_move_to_pile_hint_present()` → verifica hint generato
-- [ ] Test `test_move_to_pile_hint_none_when_no_card()` → pile vuota
-- [ ] Test `test_move_cursor_up_hint()` → verifica hint navigazione
-- [ ] Test `test_move_cursor_down_hint()` → verifica hint navigazione
-- [ ] Test `test_move_cursor_left_hint()` → verifica hint cambio pila
-- [ ] Test `test_move_cursor_right_hint()` → verifica hint cambio pila
+- [x] Creare file `tests/unit/domain/services/test_cursor_manager_hints.py`
+- [x] Test `test_move_to_pile_returns_tuple()` → verifica tipo return
+- [x] Test `test_move_to_pile_hint_present()` → verifica hint generato
+- [x] Test `test_move_to_pile_hint_none_when_no_card()` → pile vuota
+- [x] Test `test_move_cursor_up_hint()` → verifica hint navigazione
+- [x] Test `test_move_cursor_down_hint()` → verifica hint navigazione
+- [x] Test `test_move_cursor_left_hint()` → verifica hint cambio pila
+- [x] Test `test_move_cursor_right_hint()` → verifica hint cambio pila
 
 **Checkpoint Fase 2**: ✅ CursorManager return types aggiornati, test passing
 
