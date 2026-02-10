@@ -499,27 +499,54 @@ class GameService:
         
         return (message, None)
     
-    def get_timer_info(self) -> Tuple[str, Optional[str]]:
-        """Get timer info with options menu hint.
+    def get_timer_info(self, max_time: Optional[int] = None) -> Tuple[str, Optional[str]]:
+        """Get timer info - elapsed or countdown based on max_time (v1.5.1).
+        
+        Args:
+            max_time: Maximum game time in seconds (optional)
+                If None or <= 0: Shows elapsed time
+                If > 0: Shows countdown (remaining time)
         
         Returns:
             Tuple[str, Optional[str]]: (message, hint)
-            - message: Current elapsed time
-            - hint: Options menu hint (v1.5.0)
+            - message: Elapsed time or countdown
+            - hint: None (no hint during gameplay per v1.5.1)
         
         Examples:
-            >>> message, hint = service.get_timer_info()
-            >>> # message: "Tempo trascorso: 12 minuti e 34 secondi."
-            >>> # hint: "Premi O per modificare il timer nelle opzioni."
+            >>> # Timer OFF
+            >>> message, hint = service.get_timer_info(max_time=None)
+            >>> # "Tempo trascorso: 5 minuti e 23 secondi."
+            
+            >>> # Timer ON (10 minutes = 600 seconds)
+            >>> message, hint = service.get_timer_info(max_time=600)
+            >>> # "Tempo rimanente: 4 minuti e 37 secondi."
+            
+            >>> # Timer expired
+            >>> message, hint = service.get_timer_info(max_time=300)
+            >>> # elapsed = 305, remaining = 0
+            >>> # "Tempo scaduto!"
         """
         elapsed = int(self.get_elapsed_time())
-        minutes = elapsed // 60
-        seconds = elapsed % 60
         
-        message = f"Tempo trascorso: {minutes} minuti e {seconds} secondi."
-        hint = "Premi O per modificare il timer nelle opzioni."
+        # Determine mode: countdown vs elapsed
+        if max_time is not None and max_time > 0:
+            # Timer attivo → countdown
+            remaining = max(0, max_time - elapsed)  # Prevent negative
+            minutes = remaining // 60
+            seconds = remaining % 60
+            
+            if remaining > 0:
+                message = f"Tempo rimanente: {minutes} minuti e {seconds} secondi."
+            else:
+                message = "Tempo scaduto!"
+        else:
+            # Timer disattivo → elapsed
+            minutes = elapsed // 60
+            seconds = elapsed % 60
+            message = f"Tempo trascorso: {minutes} minuti e {seconds} secondi."
         
-        return (message, hint)
+        # No hint during gameplay (v1.5.1 user request)
+        return (message, None)
     
     def get_settings_info(self) -> Tuple[str, Optional[str]]:
         """Get settings summary with options menu hint.

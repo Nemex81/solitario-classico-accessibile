@@ -378,8 +378,21 @@ class GamePlayController:
         self._speak_with_hint(msg, hint)
     
     def _get_timer(self) -> None:
-        """T: Get elapsed time with hint support (v1.5.0)."""
-        msg, hint = self.engine.service.get_timer_info()
+        """T: Get timer info (elapsed or countdown based on settings) - v1.5.1.
+        
+        Behavior:
+        - Timer OFF: Shows elapsed time
+        - Timer ON: Shows countdown (remaining time)
+        - Timer expired: Shows "Tempo scaduto!"
+        
+        No hint vocalized during gameplay (v1.5.1 user request).
+        """
+        # Pass max_time from settings to service (v1.5.1)
+        msg, hint = self.engine.service.get_timer_info(
+            max_time=self.settings.max_time_game
+        )
+        
+        # Vocalize (hint will be None, so only message speaks)
         self._speak_with_hint(msg, hint)
     
     def _get_settings(self) -> None:
