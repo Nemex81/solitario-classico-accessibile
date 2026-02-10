@@ -467,7 +467,7 @@ class GameFormatter:
             
             >>> # Reverse without auto-draw (empty deck)
             "Rimescolo gli scarti in mazzo riserve!
-             Attenzione: mazzo vuoto, nessuna carta da pescare!"
+             Attenzione: nessuna carta da pescare!"
         
         Reference:
             Legacy: scr/game_engine.py lines 779-803
@@ -483,6 +483,6 @@ class GameFormatter:
             msg += "Pescata automatica: "
             msg += GameFormatter.format_drawn_cards(auto_drawn_cards)
         else:
-            msg += "Attenzione: mazzo vuoto, nessuna carta da pescare!  \n"
+            msg += "Attenzione: nessuna carta da pescare!  \n"
         
         return msg

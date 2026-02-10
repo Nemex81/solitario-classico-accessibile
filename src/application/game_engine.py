@@ -726,7 +726,7 @@ class GameEngine:
             # ✅ BUG #5 FIX: Announce problem first to provide context
             if self.screen_reader:
                 self.screen_reader.tts.speak(
-                    "Mazzo riserve vuoto.",
+                    "Mazzo vuoto.",
                     interrupt=True
                 )
             
