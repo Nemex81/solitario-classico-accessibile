@@ -367,3 +367,179 @@ class GameService:
             "foundation_progress": foundation_progress,
             "total_foundation_cards": sum(foundation_progress)
         }
+    
+    # ========================================
+    # INFO METHODS WITH HINTS (v1.5.0)
+    # ========================================
+    
+    def get_waste_info(self) -> Tuple[str, Optional[str]]:
+        """Get waste pile info with navigation hint.
+        
+        Returns:
+            Tuple[str, Optional[str]]: (message, hint)
+            - message: Current waste pile status
+            - hint: Navigation command hint (v1.5.0)
+        
+        Examples:
+            >>> message, hint = service.get_waste_info()
+            >>> # message: "Scarti: 8 carte. Carta in cima: Nove di Cuori."
+            >>> # hint: "Usa SHIFT+S per muovere il cursore sugli scarti."
+        """
+        waste_pile = self.table.pile_scarti
+        
+        if waste_pile.is_empty():
+            message = "Pila scarti vuota."
+            hint = None
+        else:
+            count = waste_pile.get_card_count()
+            top_card = waste_pile.get_top_card()
+            card_name = top_card.get_name if top_card else "sconosciuta"
+            
+            if count == 1:
+                message = f"Scarti: 1 carta. Carta in cima: {card_name}."
+            else:
+                message = f"Scarti: {count} carte. Carta in cima: {card_name}."
+            
+            hint = "Usa SHIFT+S per muovere il cursore sugli scarti."
+        
+        return (message, hint)
+    
+    def get_stock_info(self) -> Tuple[str, Optional[str]]:
+        """Get stock pile info with draw hint.
+        
+        Returns:
+            Tuple[str, Optional[str]]: (message, hint)
+            - message: Remaining cards in stock
+            - hint: Draw command hint (v1.5.0)
+        
+        Examples:
+            >>> message, hint = service.get_stock_info()
+            >>> # message: "Mazzo riserve: 12 carte rimanenti."
+            >>> # hint: "Premi D o P per pescare una carta."
+        """
+        stock_pile = self.table.pile_mazzo
+        count = stock_pile.get_card_count()
+        
+        if count == 0:
+            message = "Il mazzo è vuoto."
+            hint = None
+        elif count == 1:
+            message = "Rimane 1 carta nel mazzo."
+            hint = "Premi D o P per pescare una carta."
+        else:
+            message = f"Rimangono {count} carte nel mazzo."
+            hint = "Premi D o P per pescare una carta."
+        
+        return (message, hint)
+    
+    def get_game_report(self) -> Tuple[str, Optional[str]]:
+        """Get complete game report (no hint - report is complete).
+        
+        Returns:
+            Tuple[str, Optional[str]]: (message, None)
+            - message: Complete game statistics
+            - hint: None (report is self-contained)
+        
+        Examples:
+            >>> message, hint = service.get_game_report()
+            >>> # message: "Report partita. Mosse: 42. Tempo: 5:30. ..."
+            >>> # hint: None
+        """
+        stats = self.get_statistics()
+        elapsed = int(stats['elapsed_time'])
+        minutes = elapsed // 60
+        seconds = elapsed % 60
+        time_str = f"{minutes}:{seconds:02d}"
+        
+        report = "Report partita.\n"
+        report += f"Mosse: {stats['move_count']}.\n"
+        report += f"Tempo trascorso: {time_str}.\n"
+        report += f"Carte nelle pile semi: {stats['total_foundation_cards']}.\n"
+        
+        return (report, None)
+    
+    def get_table_info(self) -> Tuple[str, Optional[str]]:
+        """Get complete table overview (no hint - info is complete).
+        
+        Returns:
+            Tuple[str, Optional[str]]: (message, None)
+            - message: Complete table state
+            - hint: None (comprehensive info)
+        
+        Examples:
+            >>> message, hint = service.get_table_info()
+            >>> # message: "Panoramica tavolo. Pile base: 7 pile. ..."
+            >>> # hint: None
+        """
+        message = "Panoramica tavolo.\n"
+        
+        # Base piles
+        message += f"Pile base: {len(self.table.pile_base)} pile.\n"
+        for i, pile in enumerate(self.table.pile_base):
+            count = pile.get_card_count()
+            message += f"Pila {i+1}: {count} carte. "
+            if not pile.is_empty():
+                top = pile.get_top_card()
+                if top:
+                    message += f"In cima: {top.get_name}.\n"
+            else:
+                message += "Vuota.\n"
+        
+        # Foundation piles
+        message += f"Pile semi: {len(self.table.pile_semi)} pile.\n"
+        for pile in self.table.pile_semi:
+            count = pile.get_card_count()
+            message += f"{pile.name}: {count} carte.\n"
+        
+        # Stock and waste
+        stock_count = self.table.pile_mazzo.get_card_count()
+        waste_count = self.table.pile_scarti.get_card_count()
+        message += f"Mazzo: {stock_count} carte.\n"
+        message += f"Scarti: {waste_count} carte.\n"
+        
+        return (message, None)
+    
+    def get_timer_info(self) -> Tuple[str, Optional[str]]:
+        """Get timer info with options menu hint.
+        
+        Returns:
+            Tuple[str, Optional[str]]: (message, hint)
+            - message: Current elapsed time
+            - hint: Options menu hint (v1.5.0)
+        
+        Examples:
+            >>> message, hint = service.get_timer_info()
+            >>> # message: "Tempo trascorso: 12 minuti e 34 secondi."
+            >>> # hint: "Premi O per modificare il timer nelle opzioni."
+        """
+        elapsed = int(self.get_elapsed_time())
+        minutes = elapsed // 60
+        seconds = elapsed % 60
+        
+        message = f"Tempo trascorso: {minutes} minuti e {seconds} secondi."
+        hint = "Premi O per modificare il timer nelle opzioni."
+        
+        return (message, hint)
+    
+    def get_settings_info(self) -> Tuple[str, Optional[str]]:
+        """Get settings summary with options menu hint.
+        
+        Returns:
+            Tuple[str, Optional[str]]: (message, hint)
+            - message: Current game settings summary
+            - hint: Options menu hint (v1.5.0)
+        
+        Examples:
+            >>> message, hint = service.get_settings_info()
+            >>> # message: "Impostazioni di gioco. Mazzo: carte francesi. ..."
+            >>> # hint: "Premi O per aprire il menu opzioni."
+        """
+        # Note: This will need to access actual settings when integrated
+        message = "Impostazioni di gioco.\n"
+        message += "Mazzo: carte francesi.\n"
+        message += "Difficoltà: livello 1.\n"
+        message += "Timer: disabilitato.\n"
+        
+        hint = "Premi O per aprire il menu opzioni."
+        
+        return (message, hint)

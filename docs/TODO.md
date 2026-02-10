@@ -4,7 +4,7 @@
 
 Implementare la feature **"Suggerimenti Comandi"** come Opzione #5 nelle impostazioni di gioco. Questa funzionalità aggiunge hint vocali contestuali durante il gameplay per aiutare gli utenti (specialmente non vedenti) a comprendere meglio i comandi disponibili in ogni contesto.
 
-**Status**: 🚧 **IN PIANIFICAZIONE** (10 Febbraio 2026)
+**Status**: 🚧 **IN CORSO - Fase 3/6 Completata** (10 Febbraio 2026)
 
 ---
 
@@ -176,45 +176,45 @@ if settings.command_hints_enabled and hint:
 ### Checklist Implementazione
 
 #### 3.1 Refactor - get_waste_info() (S)
-- [ ] Aprire `src/domain/services/game_service.py`
-- [ ] Trovare metodo `get_waste_info() -> str`
-- [ ] Cambiare signature: `-> Tuple[str, Optional[str]]`
-- [ ] Implementare hint: "Usa SHIFT+S per muovere il cursore sugli scarti."
-- [ ] Return `(message, hint)`
+- [x] Aprire `src/domain/services/game_service.py`
+- [x] Trovare metodo `get_waste_info() -> str`
+- [x] Cambiare signature: `-> Tuple[str, Optional[str]]`
+- [x] Implementare hint: "Usa SHIFT+S per muovere il cursore sugli scarti."
+- [x] Return `(message, hint)`
 
 #### 3.2 Refactor - get_stock_info() (M)
-- [ ] Cambiare signature: `-> Tuple[str, Optional[str]]`
-- [ ] Implementare hint: "Premi D o P per pescare una carta."
-- [ ] Return `(message, hint)`
+- [x] Cambiare signature: `-> Tuple[str, Optional[str]]`
+- [x] Implementare hint: "Premi D o P per pescare una carta."
+- [x] Return `(message, hint)`
 
 #### 3.3 Refactor - get_game_report() (R)
-- [ ] Cambiare signature: `-> Tuple[str, Optional[str]]`
-- [ ] Implementare hint: `None` (report completo, no azione suggerita)
-- [ ] Return `(message, None)`
+- [x] Cambiare signature: `-> Tuple[str, Optional[str]]`
+- [x] Implementare hint: `None` (report completo, no azione suggerita)
+- [x] Return `(message, None)`
 
 #### 3.4 Refactor - get_table_info() (G)
-- [ ] Cambiare signature: `-> Tuple[str, Optional[str]]`
-- [ ] Implementare hint: `None` (info completa, no azione)
-- [ ] Return `(message, None)`
+- [x] Cambiare signature: `-> Tuple[str, Optional[str]]`
+- [x] Implementare hint: `None` (info completa, no azione)
+- [x] Return `(message, None)`
 
 #### 3.5 Refactor - get_timer_info() (T)
-- [ ] Cambiare signature: `-> Tuple[str, Optional[str]]`
-- [ ] Implementare hint: "Premi O per modificare il timer nelle opzioni."
-- [ ] Return `(message, hint)`
+- [x] Cambiare signature: `-> Tuple[str, Optional[str]]`
+- [x] Implementare hint: "Premi O per modificare il timer nelle opzioni."
+- [x] Return `(message, hint)`
 
 #### 3.6 Refactor - get_settings_info() (I)
-- [ ] Cambiare signature: `-> Tuple[str, Optional[str]]`
-- [ ] Implementare hint: "Premi O per aprire il menu opzioni."
-- [ ] Return `(message, hint)`
+- [x] Cambiare signature: `-> Tuple[str, Optional[str]]`
+- [x] Implementare hint: "Premi O per aprire il menu opzioni."
+- [x] Return `(message, hint)`
 
 #### 3.7 Testing - Parte 2
-- [ ] Aggiornare `tests/unit/src/test_cursor_manager_hints.py` (o creare nuovo file)
-- [ ] Test `test_get_waste_info_hint()` → verifica hint SHIFT+S
-- [ ] Test `test_get_stock_info_hint()` → verifica hint D/P
-- [ ] Test `test_get_game_report_no_hint()` → verifica None
-- [ ] Test `test_get_table_info_no_hint()` → verifica None
-- [ ] Test `test_get_timer_info_hint()` → verifica hint opzioni
-- [ ] Test `test_get_settings_info_hint()` → verifica hint menu opzioni
+- [x] Aggiornare `tests/unit/domain/services/test_game_service_hints.py` (creato nuovo file)
+- [x] Test `test_get_waste_info_hint()` → verifica hint SHIFT+S
+- [x] Test `test_get_stock_info_hint()` → verifica hint D/P
+- [x] Test `test_get_game_report_no_hint()` → verifica None
+- [x] Test `test_get_table_info_no_hint()` → verifica None
+- [x] Test `test_get_timer_info_hint()` → verifica hint opzioni
+- [x] Test `test_get_settings_info_hint()` → verifica hint menu opzioni
 
 **Checkpoint Fase 3**: ✅ GameService info methods estesi, test passing
 
