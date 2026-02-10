@@ -5,6 +5,48 @@ Tutte le modifiche rilevanti a questo progetto saranno documentate in questo fil
 Il formato è basato su [Keep a Changelog](https://keepachangelog.com/it/1.0.0/),
 e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.5.1] - 2026-02-10
+
+### 🎨 Miglioramenti UX - Timer System
+
+**Timer Cycling Improvement**
+- INVIO sull'opzione Timer ora cicla con incrementi di 5 minuti e wrap-around
+- Comportamento: OFF → 5min → 10min → 15min → ... → 60min → 5min (loop continuo)
+- Eliminato sistema preset fissi (OFF → 10 → 20 → 30 → OFF)
+- Controlli disponibili:
+  - **INVIO**: ciclo incrementale con wrap-around
+  - **+**: incrementa +5min (cap a 60, no wrap)
+  - **-**: decrementa -5min (fino a OFF)
+  - **T**: toggle rapido OFF ↔ 5min
+- Benefit: navigazione più intuitiva, raggiungere qualsiasi valore con singolo comando
+- File modificati: `options_controller.py`, `options_formatter.py`
+- Test: 9 unit tests (100% passing)
+
+**Timer Display Enhancement**
+- Comando T durante partita ora mostra info contestuale:
+  - **Timer OFF**: "Tempo trascorso: X minuti e Y secondi"
+  - **Timer ON**: "Tempo rimanente: X minuti e Y secondi" (countdown)
+  - **Timer scaduto**: "Tempo scaduto!"
+- Hint vocali rimossi per comando T durante gameplay (info self-contained)
+- Benefit: feedback immediato su quanto tempo manca per completare partita
+- Implementazione: parametro opzionale `max_time` in `get_timer_info()`
+- File modificati: `game_service.py`, `gameplay_controller.py`
+- Test: 9 unit tests (100% passing)
+- Clean Architecture: domain layer indipendente, pass-through parameter
+
+### 🔧 Modifiche Tecniche
+
+**Statistiche Implementazione:**
+- Modifiche: 2 problemi UX risolti
+- File codice: 4 modificati
+- Test: 18 unit tests (100% passing)
+- Complessità: BASSA
+- Tempo sviluppo: ~60 minuti
+- Breaking changes: NESSUNO
+- Backward compatibility: 100%
+
+---
+
 ## [1.5.0] - 2026-02-10
 
 ### ✨ Nuova Feature: Suggerimenti Comandi (Command Hints)
