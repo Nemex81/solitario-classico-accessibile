@@ -340,58 +340,65 @@ class GameEngine:
     # NAVIGATION METHODS (7)
     # ========================================
     
-    def move_cursor(self, direction: str) -> str:
-        """Move cursor in specified direction.
+    def move_cursor(self, direction: str) -> Tuple[str, Optional[str]]:
+        """Move cursor in specified direction with hint support (v1.5.0).
         
         Args:
             direction: "up", "down", "left", "right", "tab", "home", "end"
             
         Returns:
-            Feedback message for screen reader
+            Tuple[str, Optional[str]]: (message, hint)
+            - message: Feedback message for screen reader
+            - hint: Optional command hint (v1.5.0)
         """
         direction = direction.lower()
         
         if direction == "up":
-            msg = self.cursor.move_up()
+            msg, hint = self.cursor.move_up()
         elif direction == "down":
-            msg = self.cursor.move_down()
+            msg, hint = self.cursor.move_down()
         elif direction == "left":
-            msg = self.cursor.move_left()
+            msg, hint = self.cursor.move_left()
         elif direction == "right":
-            msg = self.cursor.move_right()
+            msg, hint = self.cursor.move_right()
         elif direction == "tab":
-            msg = self.cursor.move_tab()
+            msg, hint = self.cursor.move_tab()
         elif direction == "home":
             msg = self.cursor.move_home()
+            hint = None
         elif direction == "end":
             msg = self.cursor.move_end()
+            hint = None
         else:
             msg = "Direzione non valida!\n"
+            hint = None
         
         if self.screen_reader:
             self.screen_reader.tts.speak(msg, interrupt=True)
         
-        return msg
+        return (msg, hint)
     
-    def jump_to_pile(self, pile_idx: int) -> str:
-        """Jump to specific pile with double-tap auto-selection support.
+    def jump_to_pile(self, pile_idx: int) -> Tuple[str, Optional[str]]:
+        """Jump to specific pile with double-tap auto-selection support (v1.5.0).
         
         Args:
             pile_idx: Pile index (0-12)
         
         Returns:
-            Feedback message for screen reader
+            Tuple[str, Optional[str]]: (message, hint)
+            - message: Feedback message for screen reader
+            - hint: Optional command hint (v1.5.0)
         
         Behavior:
-            First tap: Move cursor to pile top card + announce pile info
+            First tap: Move cursor to pile top card + announce pile info + hint
             Second tap (tableau/foundation): 
                 - Cancel previous selection if present (silent)
                 - Auto-select top card
                 - Announce: "Selezione precedente annullata. carte selezionate: 1. [nome carta]"
             Second tap (stock/waste): No action (hint only)
         """
-        # Get cursor movement feedback and auto-selection flag
-        msg, should_auto_select = self.cursor.jump_to_pile(pile_idx, enable_double_tap=True)
+        # Get cursor movement feedback, auto-selection flag, and hint (v1.5.0)
+        msg, should_auto_select, hint = self.cursor.jump_to_pile(pile_idx, enable_double_tap=True)
         
         # ═══════════════════════════════════════════════════════════
         # 🔥 SECOND TAP: Execute automatic card selection
@@ -413,6 +420,7 @@ class GameEngine:
             
             # Combine messages: deselection (if any) + selection feedback
             msg = msg_deselect + msg_select
+            hint = None  # No hint after auto-selection
         
         # ═══════════════════════════════════════════════════════════
         # 🔊 Vocal announcement
@@ -420,7 +428,7 @@ class GameEngine:
         if self.screen_reader and msg:
             self.screen_reader.tts.speak(msg, interrupt=True)
         
-        return msg
+        return (msg, hint)
     
     def get_cursor_position(self) -> Tuple[int, int]:
         """Get current cursor position.

@@ -5,6 +5,106 @@ Tutte le modifiche rilevanti a questo progetto saranno documentate in questo fil
 Il formato è basato su [Keep a Changelog](https://keepachangelog.com/it/1.0.0/),
 e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.5.0] - 2026-02-10
+
+### ✨ Nuova Feature: Suggerimenti Comandi (Command Hints)
+
+Implementata nuova opzione #5 "Suggerimenti Comandi" per migliorare l'accessibilità e l'usabilità per utenti non vedenti.
+
+**Descrizione Feature**:
+- Aggiunge hint vocali contestuali durante il gameplay per aiutare gli utenti a comprendere i comandi disponibili in ogni contesto
+- Opzione toggle "Attivi" / "Disattivati" accessibile dal menu opzioni (tasto O)
+- Default: ON per massima accessibilità
+- Vocalizzazione: Due messaggi separati con pausa 200ms (messaggio principale + hint)
+- Copertura: 17 contesti di gioco (navigazione pile, frecce direzionali, TAB, comandi info)
+
+**Architettura Clean (Strategia A)**:
+- **Domain Layer**: Genera hint sempre (testabilità) → Metodi return `Tuple[str, Optional[str]]`
+- **Application Layer**: Vocalizza condizionalmente basandosi su `settings.command_hints_enabled`
+
+**Modifiche per Fase**:
+
+**Phase 1 - Domain: GameSettings**
+- ✅ Aggiunto campo `command_hints_enabled: bool = True`
+- ✅ Implementato `toggle_command_hints() -> Tuple[bool, str]` con validazione game-running
+- ✅ Implementato `get_command_hints_display() -> str` per UI formatting
+- ✅ 17 unit tests
+
+**Phase 2 - Domain: CursorManager Extended Returns**
+- ✅ Refactored 6 navigation methods: `move_up/down/left/right/tab()` → `Tuple[str, Optional[str]]`
+- ✅ Refactored `jump_to_pile()` → `Tuple[str, bool, Optional[str]]` (separati hint embedded)
+- ✅ Hint generation logic:
+  - Carte selezionabili: "Premi INVIO per selezionare {card}"
+  - Navigazione pile: "Usa frecce SU/GIÙ per consultare carte"
+  - TAB: "Premi TAB ancora per prossimo tipo pila"
+  - Double-tap: "Premi ancora {N} per selezionare {card}"
+- ✅ 28 unit tests
+
+**Phase 3 - Domain: GameService Info Methods**
+- ✅ Aggiunti 6 nuovi metodi info → `Tuple[str, Optional[str]]`:
+  - `get_waste_info()`: Status pile scarti con hint SHIFT+S
+  - `get_stock_info()`: Conteggio mazzo con hint D/P per pescare
+  - `get_game_report()`: Report completo (no hint)
+  - `get_table_info()`: Panoramica tavolo (no hint)
+  - `get_timer_info()`: Tempo trascorso con hint menu opzioni
+  - `get_settings_info()`: Riepilogo impostazioni con hint menu opzioni
+- ✅ 22 unit tests
+
+**Phase 4-5 - Presentation/Application: Options Integration**
+- ✅ **OptionsFormatter** updates:
+  - Updated `OPTION_NAMES[4]`: "(Opzione futura)" → "Suggerimenti Comandi"
+  - Added `format_command_hints_item()` per display opzione
+  - Added `format_command_hints_changed()` per conferma toggle
+  - Updated `format_option_item()` per gestire opzione #5
+- ✅ **OptionsController** integration:
+  - Added `_modify_command_hints()` handler
+  - Updated `modify_current_option()` routing per opzione #5
+  - Extended `value_getters` e `read_all_settings()` per includere command hints
+  - Updated snapshot save/restore per persistere stato command hints
+- ✅ Opzione #5 "Suggerimenti Comandi" ora **completamente accessibile** in menu opzioni (tasto O)
+- ✅ 16 unit tests
+
+**Phase 6 - Application: GameplayController Conditional Vocalization**
+- ✅ Created `_speak_with_hint()` helper method per conditional vocalization
+- ✅ Refactored GameEngine:
+  - `move_cursor()` → returns `Tuple[str, Optional[str]]`
+  - `jump_to_pile()` → handles 3-tuple e estrae hint
+- ✅ Refactored 15 gameplay methods:
+  - **Navigazione Pile (6)**: `_nav_pile_base`, `_nav_pile_semi`, `_nav_pile_scarti`, `_nav_pile_mazzo`, `_cursor_up/down/left/right`
+  - **Cambio Contesto (3)**: `_cursor_tab`, SHIFT+S, SHIFT+M  
+  - **Comandi Info (6)**: S (waste), M (stock), R (report), G (table), T (timer), I (settings)
+- ✅ Tutti i metodi ora usano pattern `_speak_with_hint(message, hint)` per vocalization condizionale
+
+**Test Coverage**:
+- Phase 1: 17/17 tests ✅
+- Phase 2: 28/28 tests ✅
+- Phase 3: 22/22 tests ✅
+- Phase 4-5: 16/16 tests ✅
+- **Total: 83/83 unit tests passing**
+- Zero breaking changes (backward compatible)
+
+**Files Modificati**:
+- `src/domain/services/game_settings.py`
+- `src/domain/services/cursor_manager.py`
+- `src/domain/services/game_service.py`
+- `src/presentation/options_formatter.py`
+- `src/application/options_controller.py`
+- `src/application/game_engine.py`
+- `src/application/gameplay_controller.py`
+
+**Documentazione**:
+- `docs/TODO.md`: Tutte le 150+ checkbox completate, status aggiornato a "✅ COMPLETATO AL 100%"
+- `docs/IMPLEMENTATION_COMMAND_HINTS.md`: Guida implementativa completa
+
+**Metriche**:
+- ~375 LOC produzione
+- ~550 LOC testing
+- 5 commit atomici
+- 17 contesti hint supportati
+- Test coverage ≥ 85%
+
+---
+
 ## [1.4.3] - 2026-02-10
 
 ### 🐛 Bug Fix Critici

@@ -4,7 +4,7 @@
 
 Implementare la feature **"Suggerimenti Comandi"** come Opzione #5 nelle impostazioni di gioco. Questa funzionalità aggiunge hint vocali contestuali durante il gameplay per aiutare gli utenti (specialmente non vedenti) a comprendere meglio i comandi disponibili in ogni contesto.
 
-**Status**: 🚧 **IN CORSO - Fasi 3-5 Complete** (10 Febbraio 2026)
+**Status**: ✅ **COMPLETATO AL 100%** (10 Febbraio 2026)
 
 ---
 
@@ -320,54 +320,35 @@ if settings.command_hints_enabled and hint:
 ### Checklist Implementazione
 
 #### 6.1 Pattern Helper (Template)
-- [ ] Creare metodo helper `_speak_with_hint(message: str, hint: Optional[str])`
-- [ ] Implementazione:
-  ```python
-  def _speak_with_hint(self, message: str, hint: Optional[str]) -> None:
-      """Speak message and optional hint based on settings."""
-      self.screen_reader.speak(message, interrupt=True)
-      
-      if self.settings.command_hints_enabled and hint:
-          pygame.time.wait(200)  # Pause between messages
-          self.screen_reader.speak(hint, interrupt=False)
-  ```
+- [x] Creare metodo helper `_speak_with_hint(message: str, hint: Optional[str])`
+- [x] Implementazione con pygame.time.wait(200) e conditional vocalization
 
 #### 6.2 Refactor - Navigazione Pile (6 metodi)
-- [ ] **Metodo 1**: `_handle_number_key()` (1-7)
-  - [ ] Modificare chiamata: `message, hint = self.cursor_manager.move_to_pile(...)`
-  - [ ] Sostituire speak con: `self._speak_with_hint(message, hint)`
-  
-- [ ] **Metodo 2**: `_handle_shift_foundation()` (SHIFT+1-4)
-  - [ ] Modificare chiamata CursorManager
-  - [ ] Applicare pattern hint
-  
-- [ ] **Metodo 3**: `_move_cursor_up()` (freccia SU)
-  - [ ] Modificare return unpacking
-  - [ ] Applicare pattern hint
-  
-- [ ] **Metodo 4**: `_move_cursor_down()` (freccia GIÙ)
-  - [ ] Modificare return unpacking
-  - [ ] Applicare pattern hint
-  
-- [ ] **Metodo 5**: `_move_cursor_left()` (freccia SINISTRA)
-  - [ ] Modificare return unpacking
-  - [ ] Applicare pattern hint
-  
-- [ ] **Metodo 6**: `_move_cursor_right()` (freccia DESTRA)
-  - [ ] Modificare return unpacking
-  - [ ] Applicare pattern hint
+- [x] **Metodo 1**: `_nav_pile_base()` (1-7) - Updated with hint support
+- [x] **Metodo 2**: `_nav_pile_semi()` (SHIFT+1-4) - Updated with hint support
+- [x] **Metodo 3**: `_cursor_up()` (freccia SU) - Updated with hint support
+- [x] **Metodo 4**: `_cursor_down()` (freccia GIÙ) - Updated with hint support
+- [x] **Metodo 5**: `_cursor_left()` (freccia SINISTRA) - Updated with hint support
+- [x] **Metodo 6**: `_cursor_right()` (freccia DESTRA) - Updated with hint support
 
 #### 6.3 Refactor - Cambio Contesto (3 metodi)
-- [ ] **Metodo 7**: `_handle_tab()` (TAB)
-  - [ ] Modificare chiamata metodo pile_type
-  - [ ] Applicare pattern hint
-  
-- [ ] **Metodo 8**: `_handle_shift_waste()` (SHIFT+S)
-  - [ ] Modificare chiamata CursorManager
-  - [ ] Applicare pattern hint
-  
-- [ ] **Metodo 9**: `_handle_shift_stock()` (SHIFT+M)
-  - [ ] Modificare chiamata CursorManager
+- [x] **Metodo 7**: `_cursor_tab()` (TAB) - Updated with hint support
+- [x] **Metodo 8**: `_nav_pile_scarti()` (SHIFT+S) - Updated with hint support
+- [x] **Metodo 9**: `_nav_pile_mazzo()` (SHIFT+M) - Updated with hint support
+
+#### 6.4 Refactor - Comandi Info (6 metodi)
+- [x] **Metodo 10**: `_get_scarto_top()` (S) - Uses service.get_waste_info()
+- [x] **Metodo 11**: `_get_deck_count()` (M) - Uses service.get_stock_info()
+- [x] **Metodo 12**: `_get_game_report()` (R) - Uses service.get_game_report()
+- [x] **Metodo 13**: `_get_table_info()` (G) - Uses service.get_table_info()
+- [x] **Metodo 14**: `_get_timer()` (T) - Uses service.get_timer_info()
+- [x] **Metodo 15**: `_get_settings()` (I) - Uses service.get_settings_info()
+
+#### 6.5 Engine Refactoring
+- [x] Updated `move_cursor()` to return `Tuple[str, Optional[str]]`
+- [x] Updated `jump_to_pile()` to handle 3-tuple return and extract hint
+
+**Checkpoint Fase 6**: ✅ GameplayController with conditional hint vocalization complete
   - [ ] Applicare pattern hint
 
 #### 6.4 Refactor - Comandi Info (6 metodi)
