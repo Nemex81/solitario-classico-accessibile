@@ -30,19 +30,19 @@
 
 ### Step 2.1: Modifica CursorManager (`src/domain/services/cursor_manager.py`)
 
-- [ ] **Aprire file**: `src/domain/services/cursor_manager.py`
-- [ ] **Import**: Aggiornare `from typing import Tuple, Optional, Dict, Any`
-- [ ] **Metodo `jump_to_pile()`** (riga ~380):
-  - [ ] Cambiare signature: `def jump_to_pile(...) -> Tuple[str, bool]`
-  - [ ] Implementare double-tap detection: `if pile_idx == last_quick_pile`
-  - [ ] Gestire pile stock/waste: ritorno `("Cursore già sulla pila.", False)`
-  - [ ] Gestire pile tableau/foundation vuote: ritorno `("Pila vuota...", False)`
-  - [ ] Gestire pile tableau/foundation con carte:
-    - [ ] Chiamare `move_to_top_card()`
-    - [ ] Ritornare `("", True)` per triggare auto-selection
-  - [ ] Aggiornare hint primo tap: "Premi ancora [numero] per selezionare"
-  - [ ] Reset `last_quick_pile = None` dopo secondo tap
-- [ ] **Test isolato**: Verificare ritorno Tuple corretto in vari scenari
+- [x] **Aprire file**: `src/domain/services/cursor_manager.py`
+- [x] **Import**: Aggiornare `from typing import Tuple, Optional, Dict, Any` (già presente)
+- [x] **Metodo `jump_to_pile()`** (riga ~315):
+  - [x] Cambiare signature: `def jump_to_pile(...) -> Tuple[str, bool]`
+  - [x] Implementare double-tap detection: `if pile_idx == last_quick_pile`
+  - [x] Gestire pile stock/waste: ritorno `("Cursore già sulla pila.", False)`
+  - [x] Gestire pile tableau/foundation vuote: ritorno `("Pila vuota...", False)`
+  - [x] Gestire pile tableau/foundation con carte:
+    - [x] Chiamare `move_to_top_card()`
+    - [x] Ritornare `("", True)` per triggare auto-selection
+  - [x] Aggiornare hint primo tap: "Premi ancora [numero] per selezionare"
+  - [x] Reset `last_quick_pile = None` dopo secondo tap
+- [x] **Test isolato**: Verificare ritorno Tuple corretto in vari scenari
 
 #### Test Checklist Step 2.1
 - [ ] T1: Primo tap → ritorna `(messaggio, False)`
@@ -54,17 +54,17 @@
 
 ### Step 2.2: Modifica GameEngine (`src/application/game_engine.py`)
 
-- [ ] **Aprire file**: `src/application/game_engine.py`
-- [ ] **Metodo `jump_to_pile()`** (riga ~497):
-  - [ ] Gestire ritorno Tuple: `msg, should_auto_select = self.cursor.jump_to_pile(...)`
-  - [ ] Implementare blocco `if should_auto_select:`
-    - [ ] Verificare selezione precedente: `if self.selection.has_selection()`
-    - [ ] Annullare selezione: `self.selection.clear_selection()`
-    - [ ] Creare messaggio: `msg_deselect = "Selezione precedente annullata. "`
-    - [ ] Eseguire auto-selection: `success, msg_select = self.select_card_at_cursor()`
-    - [ ] Combinare messaggi: `msg = msg_deselect + msg_select`
-  - [ ] Mantenere vocal feedback: `self.screen_reader.tts.speak(msg, interrupt=True)`
-- [ ] **Test integrazione**: CursorManager + GameEngine
+- [x] **Aprire file**: `src/application/game_engine.py`
+- [x] **Metodo `jump_to_pile()`** (riga ~376):
+  - [x] Gestire ritorno Tuple: `msg, should_auto_select = self.cursor.jump_to_pile(...)`
+  - [x] Implementare blocco `if should_auto_select:`
+    - [x] Verificare selezione precedente: `if self.selection.has_selection()`
+    - [x] Annullare selezione: `self.selection.clear_selection()`
+    - [x] Creare messaggio: `msg_deselect = "Selezione precedente annullata. "`
+    - [x] Eseguire auto-selection: `success, msg_select = self.select_card_at_cursor()`
+    - [x] Combinare messaggi: `msg = msg_deselect + msg_select`
+  - [x] Mantenere vocal feedback: `self.screen_reader.tts.speak(msg, interrupt=True)`
+- [x] **Test integrazione**: CursorManager + GameEngine
 
 #### Test Checklist Step 2.2
 - [ ] T5: Secondo tap senza selezione precedente → seleziona carta

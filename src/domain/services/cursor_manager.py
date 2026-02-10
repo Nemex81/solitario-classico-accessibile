@@ -312,52 +312,91 @@ class CursorManager:
         else:
             return "Pile semi non consultabili. Usa SHIFT+(1-4) per accesso rapido.\n"
     
-    def jump_to_pile(self, pile_idx: int, enable_double_tap: bool = True) -> str:
-        """Jump to specific pile with optional double-tap selection.
+    def jump_to_pile(self, pile_idx: int, enable_double_tap: bool = True) -> Tuple[str, bool]:
+        """Jump to specific pile with optional double-tap auto-selection.
         
         Args:
             pile_idx: Target pile index (0-12)
-            enable_double_tap: Enable double-tap detection for selection
+                - 0-6: Tableau (base) piles
+                - 7-10: Foundation (semi) piles
+                - 11: Waste (scarti) pile
+                - 12: Stock (mazzo) pile
+            enable_double_tap: Enable double-tap detection for auto-selection
         
         Returns:
-            Feedback message
+            Tuple of (feedback_message, should_auto_select)
+            - feedback_message: String for screen reader announcement
+            - should_auto_select: True if second tap should trigger automatic card selection
+        
+        Behavior:
+            First tap: Move cursor to pile top card + announce hint
+            Second tap (tableau/foundation): Auto-select top card (empty message + flag True)
+            Second tap (stock/waste): No action (hint message + flag False)
         """
         if pile_idx < 0 or pile_idx >= len(self.table.pile):
-            return "Indice pila non valido!\n"
+            return ("Indice pila non valido!\n", False)
         
-        # Double-tap detection: already on same pile
+        # ═══════════════════════════════════════════════════════════
+        # 🔥 DOUBLE-TAP DETECTION: Second press on same pile
+        # ═══════════════════════════════════════════════════════════
         if enable_double_tap and self.pile_idx == pile_idx and self.last_quick_pile == pile_idx:
             pile = self.table.pile[pile_idx]
             
-            # Stock/waste: no double-tap action
+            # ─────────────────────────────────────────────────────
+            # Stock/Waste: Disable auto-selection (hint only)
+            # ─────────────────────────────────────────────────────
             if pile_idx >= 11:
                 self.last_quick_pile = None
-                return "Cursore già sulla pila.\n"
+                return ("Cursore già sulla pila.\n", False)
             
-            # Tableau/foundation: suggest selection
-            if not pile.is_empty():
+            # ─────────────────────────────────────────────────────
+            # Tableau/Foundation: Enable auto-selection
+            # ─────────────────────────────────────────────────────
+            if pile.is_empty():
                 self.last_quick_pile = None
-                return "Premi INVIO per selezionare carta.\n"
-            else:
-                return "Pila vuota, nessuna carta da selezionare.\n"
+                return ("Pila vuota, nessuna carta da selezionare.\n", False)
+            
+            # ✅ Position cursor on top card BEFORE signaling selection
+            self.move_to_top_card()
+            
+            # ✅ Signal GameEngine to execute automatic selection
+            # Empty message because selection feedback will be announced by GameEngine
+            self.last_quick_pile = None
+            return ("", True)
         
-        # First tap: move cursor
+        # ═══════════════════════════════════════════════════════════
+        # 🎯 FIRST TAP: Move cursor and announce pile info
+        # ═══════════════════════════════════════════════════════════
         self.pile_idx = pile_idx
         self.move_to_top_card()
         self.last_quick_pile = pile_idx if enable_double_tap else None
         
         msg = self._get_pile_summary()
         
-        # Add hints
+        # ─────────────────────────────────────────────────────
+        # Add context-specific hints
+        # ─────────────────────────────────────────────────────
         pile = self.get_current_pile()
-        if pile_idx == 12 and not pile.is_empty():
-            msg += "Premi INVIO per pescare.\n"
-        elif pile_idx == 11 and not pile.is_empty():
-            msg += "Usa frecce per navigare. CTRL+INVIO per selezionare ultima carta.\n"
-        elif not pile.is_empty() and pile_idx <= 6:
-            msg += f"Premi ancora {pile_idx + 1} per suggerimento.\n"
         
-        return msg
+        if pile_idx == 12 and not pile.is_empty():
+            # Stock pile hint
+            msg += "Premi INVIO per pescare.\n"
+            
+        elif pile_idx == 11 and not pile.is_empty():
+            # Waste pile hint
+            msg += "Usa frecce per navigare. CTRL+INVIO per selezionare ultima carta.\n"
+            
+        elif not pile.is_empty() and pile_idx <= 10:
+            # Tableau/Foundation piles: double-tap hint
+            if pile_idx <= 6:
+                # Tableau (base) piles: number 1-7
+                msg += f"Premi ancora {pile_idx + 1} per selezionare.\n"
+            else:
+                # Foundation (semi) piles: SHIFT+1-4
+                seme_num = pile_idx - 6
+                msg += f"Premi ancora SHIFT+{seme_num} per selezionare.\n"
+        
+        return (msg, False)  # No auto-selection on first tap
     
     # === INFO METHODS ===
     
