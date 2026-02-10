@@ -1,18 +1,20 @@
 # 📋 TODO - Solitario Accessibile v1.4.3
-**Piano di Implementazione**: UX Improvements (Double-Tap Selection + Menu Shortcuts)  
+**Piano di Implementazione**: UX Improvements (Double-Tap + Menu Shortcuts + New Game Confirmation)  
 **Data Inizio**: 10 Febbraio 2026  
+**Ultimo Aggiornamento**: 10 Febbraio 2026, 12:00 CET  
 **Documentazione Completa**: `docs/IMPLEMENTATION_DOUBLE_TAP_AND_MENU_SHORTCUTS.md`
 
 ---
 
 ## 🎯 OVERVIEW
 
-**Obiettivo**: Implementare due miglioramenti UX per accessibilità:
+**Obiettivo**: Implementare tre miglioramenti UX per accessibilità:
 1. **Double-Tap Auto-Selection**: Selezione automatica carta con doppia pressione numero pila
 2. **Numeric Menu Shortcuts**: Scorciatoie numeriche per navigazione rapida menu
+3. **New Game Confirmation Dialog** ⭐ NUOVO: Dialog conferma per evitare perdita accidentale progresso
 
-**Impatto**: 4 file, ~150 righe di codice  
-**Stima Tempo**: 2.5-3.5 ore  
+**Impatto**: 5 file, ~245 righe di codice  
+**Stima Tempo**: 3-4 ore  
 **Target Release**: v1.4.3
 
 ---
@@ -21,6 +23,7 @@
 
 - [x] Creazione file `docs/IMPLEMENTATION_DOUBLE_TAP_AND_MENU_SHORTCUTS.md`
 - [x] Creazione/aggiornamento `TODO.md` con checklist
+- [x] Aggiunta FEATURE #3 (New Game Dialog) alla documentazione
 - [ ] Review piano con stakeholder (se necessario)
 - [ ] Setup branch di sviluppo (opzionale)
 
@@ -182,53 +185,272 @@
 
 ---
 
-## 🔗 FASE 4: Integration Testing
+## 🆕 FASE 4: Feature #3 - New Game Confirmation Dialog ⭐ NUOVO
+
+### 📝 Problema Identificato
+
+**Issue**: Durante testing v1.4.3, è emerso che premendo "N" (Nuova partita) durante una partita già in corso, viene immediatamente avviata una nuova partita senza chiedere conferma. Questo può causare **perdita accidentale del progresso** di gioco.
+
+**Soluzione**: Implementare dialog di conferma quando comando "N" viene premuto con partita attiva, usando il pattern già consolidato dei dialog v1.4.2 (ESC confirmations).
+
+---
+
+### Step 4.1: Aggiungere Dialog Instance (`test.py`)
+
+- [ ] **Aprire file**: `test.py`
+- [ ] **Trovare sezione**: `__init__()` dove sono definiti gli altri dialog (riga ~80-120)
+  - [ ] Verificare import: `from src.infrastructure.ui.dialog import VirtualDialogBox` (già presente v1.4.2)
+  - [ ] Trovare posizione: dopo `self.abandon_game_dialog`
+- [ ] **Aggiungere nuova dialog instance**:
+  ```python
+  # NEW GAME CONFIRMATION DIALOG (v1.4.3)
+  self.new_game_dialog = VirtualDialogBox(
+      message="Una partita è già in corso. Vuoi abbandonarla e avviarne una nuova?",
+      buttons=["Sì", "No"],
+      default_button=0,  # Focus on "Sì"
+      on_confirm=lambda: self._confirm_new_game(),
+      on_cancel=lambda: self._cancel_new_game(),
+      screen_reader=self.screen_reader
+  )
+  ```
+
+#### Test Checklist Step 4.1
+- [ ] T14: Dialog instance creato correttamente
+- [ ] T15: Nessun errore import o syntax
+
+---
+
+### Step 4.2: Modificare Handler Nuova Partita (`test.py`)
+
+- [ ] **Trovare metodo**: Handler che gestisce comando "N" (es. `handle_new_game()`, riga ~250-280)
+  - [ ] Identificare il metodo corretto che viene chiamato quando si preme "N"
+  - [ ] Verificare accesso a `self.gameplay_controller.is_game_running()`
+- [ ] **Modificare logica handler**:
+  ```python
+  def handle_new_game(self):
+      """Handle new game command (N key or menu selection).
+      
+      New in v1.4.3: Added confirmation dialog to prevent accidental game loss.
+      """
+      # CHECK: Is a game already in progress?
+      if self.gameplay_controller.is_game_running():
+          # SAFETY: Game in progress, ask for confirmation
+          self.new_game_dialog.open()
+      else:
+          # NO GAME: Start immediately (backward compatible)
+          self._start_new_game()
+  ```
+- [ ] **Estrarre logica "start game"** in metodo helper:
+  ```python
+  def _start_new_game(self):
+      """Internal method: Start new game without confirmation.
+      
+      Called by:
+      - handle_new_game() when no game is running
+      - _confirm_new_game() after user confirms dialog
+      """
+      self.gameplay_controller.new_game()
+      
+      # Get game settings for announcement
+      timer_status = self.gameplay_controller.get_timer_status()
+      
+      msg = "Nuova partita avviata."
+      if timer_status:
+          msg += f" {timer_status}"
+      
+      self.screen_reader.tts.speak(msg, interrupt=True)
+  ```
+
+#### Test Checklist Step 4.2
+- [ ] T16: Comando N senza partita → Avvia immediatamente (no dialog)
+- [ ] T17: Comando N con partita → Apre dialog conferma
+- [ ] T18: Metodo `_start_new_game()` funziona correttamente quando chiamato
+
+---
+
+### Step 4.3: Implementare Dialog Callbacks (`test.py`)
+
+- [ ] **Trovare sezione**: Dove sono implementati gli altri dialog callbacks (es. vicino a `_abandon_game()`, riga ~300-350)
+- [ ] **Implementare callback conferma**:
+  ```python
+  def _confirm_new_game(self):
+      """Callback: User confirmed starting new game (abandoning current).
+      
+      New in v1.4.3: Safety feature for preventing accidental game loss.
+      """
+      self.new_game_dialog.close()
+      
+      # Announce action
+      self.screen_reader.tts.speak(
+          "Partita precedente abbandonata.",
+          interrupt=True
+      )
+      
+      # Small pause before starting new game
+      pygame.time.wait(300)
+      
+      # Start new game
+      self._start_new_game()
+  ```
+- [ ] **Implementare callback annulla**:
+  ```python
+  def _cancel_new_game(self):
+      """Callback: User cancelled new game dialog.
+      
+      New in v1.4.3: Safety feature for preventing accidental game loss.
+      """
+      self.new_game_dialog.close()
+      
+      # Announce cancellation
+      self.screen_reader.tts.speak(
+          "Azione annullata. Torno alla partita.",
+          interrupt=True
+      )
+      
+      # No further action needed, game continues
+  ```
+
+#### Test Checklist Step 4.3
+- [ ] T19: Callback `_confirm_new_game()` eseguito correttamente
+- [ ] T20: Callback `_cancel_new_game()` eseguito correttamente
+- [ ] T21: Feedback vocale chiaro per entrambi i casi
+
+---
+
+### Step 4.4: Gestione Eventi Dialog (`test.py`)
+
+- [ ] **Trovare sezione**: `handle_events()` con priority handling altri dialog (riga ~180-220)
+- [ ] **Aggiungere check new_game_dialog** (dopo gli altri dialog):
+  ```python
+  def handle_events(self):
+      for event in pygame.event.get():
+          # ... quit event handling ...
+          
+          # DIALOG BOX EVENTS (v1.4.2 + v1.4.3)
+          if self.exit_dialog.is_open:
+              self.exit_dialog.handle_keyboard_events(event)
+              continue
+          
+          if self.return_to_main_dialog.is_open:
+              self.return_to_main_dialog.handle_keyboard_events(event)
+              continue
+          
+          if self.abandon_game_dialog.is_open:
+              self.abandon_game_dialog.handle_keyboard_events(event)
+              continue
+          
+          # NEW GAME CONFIRMATION DIALOG (v1.4.3)
+          if self.new_game_dialog.is_open:
+              self.new_game_dialog.handle_keyboard_events(event)
+              continue  # Block all other input while dialog open
+          
+          # ... rest of event handling (menu, gameplay, etc.) ...
+  ```
+
+#### Test Checklist Step 4.4
+- [ ] T22: Dialog aperto blocca tutti gli altri input
+- [ ] T23: Eventi tastiera gestiti correttamente dal dialog
+- [ ] T24: `continue` statement blocca propagazione eventi
+
+---
+
+### Step 4.5: Testing Feature #3 Completo
+
+#### Test Comportamento Base
+- [ ] **T3.1**: Premere N senza partita attiva → Nuova partita inizia immediatamente (no dialog)
+- [ ] **T3.2**: Premere N con partita in corso → Dialog "Vuoi abbandonare..." appare
+- [ ] **T3.3**: Dialog aperto, premere S → Partita precedente abbandonata, nuova inizia
+- [ ] **T3.4**: Dialog aperto, premere N → Dialog chiuso, partita corrente continua
+- [ ] **T3.5**: Dialog aperto, premere ESC → Dialog chiuso, partita corrente continua (equivalente a "No")
+
+#### Test Navigazione Dialog
+- [ ] **T3.6**: Dialog aperto, freccia DESTRA → Focus passa da "Sì" a "No"
+- [ ] **T3.7**: Dialog aperto, freccia SINISTRA → Focus passa da "No" a "Sì"
+- [ ] **T3.8**: Dialog aperto, freccia SU/GIÙ → Focus alterna tra pulsanti (wrap-around)
+- [ ] **T3.9**: Dialog aperto, ENTER su "Sì" → Conferma nuova partita
+- [ ] **T3.10**: Dialog aperto, ENTER su "No" → Annulla, torna al gioco
+
+#### Test Feedback Vocale
+- [ ] **T3.11**: Dialog aperto → TTS annuncia "Una partita è già in corso. Vuoi abbandonarla..."
+- [ ] **T3.12**: Dialog aperto, cambio focus → TTS annuncia "Sì." / "No."
+- [ ] **T3.13**: Conferma "Sì" → TTS annuncia "Partita precedente abbandonata. Nuova partita avviata."
+- [ ] **T3.14**: Annulla "No" → TTS annuncia "Azione annullata. Torno alla partita."
+
+#### Test Edge Cases
+- [ ] **T3.15**: Dialog aperto, premere altri tasti (1-7, frecce gameplay) → Ignorati, solo dialog attivo
+- [ ] **T3.16**: Aprire/chiudere dialog più volte consecutivamente → Nessun bug stato, comportamento consistente
+- [ ] **T3.17**: Dialog aperto durante timer attivo → Timer continua (pausa solo visuale)
+- [ ] **T3.18**: Conferma nuova partita → Statistiche precedenti NON salvate (abbandono volontario)
+
+#### Test Regressione
+- [ ] **T3.19**: Comando N dal menu principale (no game) → Funziona come prima (no dialog)
+- [ ] **T3.20**: Altri dialog (ESC confirmations) → Continuano a funzionare correttamente
+- [ ] **T3.21**: Tutti i comandi gameplay → Invariati, nessuna regressione
+
+---
+
+## 🔗 FASE 5: Integration Testing (ex FASE 4)
 
 - [ ] **Test Scenario 1**: Double-tap pila → ESC menu → Chiudi menu → Double-tap ancora funziona
-- [ ] **Test Scenario 2**: Menu aperto → Shortcut `1` nuova partita → Double-tap funziona su nuova partita
+- [ ] **Test Scenario 2**: Menu aperto → Shortcut `1` nuova partita → Dialog conferma (se già in gioco) → Double-tap funziona su nuova partita
 - [ ] **Test Scenario 3**: Double-tap + selezione → ESC menu → Selezione ancora attiva dopo chiusura menu
+- [ ] **Test Scenario 4**: Dialog new game aperto → Premere ESC → Annulla correttamente → Altri dialog funzionano
+- [ ] **Test Scenario 5**: Comando N con partita → Dialog aperto → Conferma Sì → Nuova partita avviata → Double-tap funziona
 - [ ] **Test Regressione Generale**:
   - [ ] Tutti i comandi esistenti (frecce, HOME, END, TAB, etc.) funzionano
   - [ ] Shortcuts pile seme (SHIFT+1-4) funzionano
   - [ ] Shortcuts scarti/mazzo (SHIFT+S/M) funzionano
   - [ ] Comandi info (F, G, R, T, X, etc.) funzionano
   - [ ] Comandi opzioni (F1-F5, O, N) funzionano
+  - [ ] Tutti i dialog (exit, return, abandon, new game) funzionano
 - [ ] **Performance Check**: Nessun lag percepibile durante interazioni rapide
 - [ ] **Accessibilità Check**: Tutti i messaggi vocali sono chiari e informativi
+- [ ] **Safety Check**: Tutte le azioni distruttive richiedono conferma esplicita
 
 ---
 
-## 📚 FASE 5: Documentation & Release
+## 📚 FASE 6: Documentation & Release (ex FASE 5)
 
 ### Aggiornamenti Documentazione
 
 - [ ] **`README.md`** (se necessario):
   - [ ] Aggiungere nota double-tap nella sezione "NAVIGAZIONE"
   - [ ] Aggiungere nota menu shortcuts nella sezione "MENU"
+  - [ ] Aggiungere nota safety feature (new game confirmation)
   - [ ] Esempio: "Premi due volte 1-7 per selezione rapida carta"
 
-- [x] **`CHANGELOG.md`** - Aggiungere sezione v1.4.3:
-  - [x] Sezione "Nuove Funzionalità: UX Improvements" aggiunta
-  - [x] Feature #1: Double-Tap Auto-Selection documentata
-  - [x] Feature #2: Numeric Menu Shortcuts documentata
+- [ ] **`CHANGELOG.md`** - Aggiornare sezione v1.4.3:
+  - [ ] Aggiungere Feature #3: New Game Confirmation Dialog
+  - [ ] Aggiornare sezione "Safety & Accessibility"
+  - [ ] Aggiornare testing count (50 test case invece di 29)
 
-- [x] **Help In-Game** - Aggiornare `h_press()` in `game_play.py`:
-  - [x] Sezione "NAVIGAZIONE" già contiene note double-tap
-  - [x] Aggiunta sezione "MENU" con info shortcuts
+- [ ] **Help In-Game** - Aggiornare `h_press()` (se necessario):
+  - [ ] Aggiungere nota: "Comando N con partita attiva richiede conferma"
 
 ### Git Operations
 
 - [ ] **Commit Finale**:
-  - [ ] Messaggio: `feat: Add double-tap auto-selection and numeric menu shortcuts (v1.4.3)`
-  - [ ] Body: Link a `docs/IMPLEMENTATION_DOUBLE_TAP_AND_MENU_SHORTCUTS.md`
+  - [ ] Messaggio: `feat(v1.4.3): Add new game confirmation dialog for safety`
+  - [ ] Body: 
+    ```
+    - Added VirtualDialogBox confirmation when pressing N with active game
+    - Prevents accidental game progress loss
+    - Consistent with v1.4.2 dialog pattern (ESC confirmations)
+    - Options: Sì (abandon + start new) / No or ESC (cancel)
+    - Full keyboard navigation + TTS feedback
+    
+    Related:
+    - docs/IMPLEMENTATION_DOUBLE_TAP_AND_MENU_SHORTCUTS.md (FEATURE #3)
+    - docs/TODO.md (FASE 4)
+    ```
 
 - [ ] **Merge** (se feature branch usato):
-  - [ ] Review codice finale
+  - [ ] Review codice finale (tutte e 3 le feature)
   - [ ] Merge su `refactoring-engine` (o main)
   - [ ] Risolvere eventuali conflitti
 
 - [ ] **Tag Release**:
-  - [ ] Creare tag: `git tag -a v1.4.3 -m "Release 1.4.3: UX Improvements"`
+  - [ ] Creare tag: `git tag -a v1.4.3 -m "Release 1.4.3: UX Improvements (3 features)"`
   - [ ] Push tag: `git push origin v1.4.3`
 
 ---
@@ -237,21 +459,23 @@
 
 ### Stato Generale
 ```
-[##########] 100% - Completato
+[########  ] 80% - In Progress (FASE 4 da implementare)
 ```
 
 ### Breakdown per Fase
 | Fase | Status | Completamento | Note |
 |------|--------|---------------|------|
-| **1. Setup** | 🟢 COMPLETATO | 100% (3/3) | Docs creati |
+| **1. Setup** | 🟢 COMPLETATO | 100% (4/4) | Docs aggiornati con Feature #3 |
 | **2. Double-Tap** | 🟢 COMPLETATO | 100% (30/30) | Feature #1 implementata |
 | **3. Menu Shortcuts** | 🟢 COMPLETATO | 100% (28/28) | Feature #2 implementata |
-| **4. Integration** | ⚠️ SKIP | N/A | Testing manuale richiesto |
-| **5. Docs & Release** | 🟢 COMPLETATO | 100% (3/3) | CHANGELOG e help aggiornati |
+| **4. New Game Dialog** | 🟡 DA FARE | 0% (0/25) | Feature #3 da implementare ⭐ |
+| **5. Integration** | ⚠️ PENDING | N/A | Dopo FASE 4 |
+| **6. Docs & Release** | ⚠️ PENDING | N/A | Dopo testing |
 
-**Totale Task Implementazione**: 64  
+**Totale Task Implementazione**: 89 (+25 rispetto a prima)  
 **Completati**: 64  
-**Rimanenti**: 0 (Testing manuale da fare dopo deployment)
+**Rimanenti**: 25 (FASE 4: New Game Dialog)  
+**Percentuale**: ~72%
 
 ---
 
@@ -264,7 +488,12 @@ _Nessuno al momento_
 _Nessuno al momento_
 
 ### Questions/Clarifications Needed
-_Nessuno al momento_
+
+**Q1**: Il metodo esatto in `test.py` che gestisce comando "N" è `handle_new_game()`?  
+**Status**: Da verificare nel codice prima di implementare FASE 4
+
+**Q2**: Il metodo `gameplay_controller.is_game_running()` esiste ed è accessibile?  
+**Status**: Da verificare prima di implementare check partita attiva
 
 ---
 
@@ -298,13 +527,22 @@ _Nessuno al momento_
 - ✅ FASE 5: Aggiornato `TODO.md` con correzioni e note
 - 🎉 **IMPLEMENTAZIONE CORRETTA COMPLETATA**: Menu shortcuts ora su Clean Architecture
 
+**2026-02-10 12:00 CET (Aggiunta Feature #3)**
+- ✅ Identificato problema durante testing: comando N senza conferma
+- ✅ Aggiunta FEATURE #3 (New Game Confirmation Dialog) alla documentazione completa
+- ✅ Aggiornato `TODO.md` con FASE 4 dedicata a Feature #3
+- ✅ Aggiornato progress tracker: 89 task totali, 25 nuovi per FASE 4
+- 🔄 **PROSSIMO STEP**: Istruire Copilot per implementare FASE 4 (New Game Dialog)
+
 ---
 
-**Implementazione Corretta Completata!**  
-Tutte le modifiche al codice sono state implementate sui **file corretti** (Clean Architecture).
-Testing manuale necessario per validare il comportamento delle feature in ambiente reale.
+**Implementazione Feature #1 e #2 Completata!**  
+**Feature #3 da Implementare (FASE 4)**
+
+Tutte le modifiche Feature #1 e #2 sono state implementate sui **file corretti** (Clean Architecture).  
+FASE 4 (New Game Dialog) pronta per implementazione Copilot seguendo documentazione completa.
 
 ---
 
 **Fine TODO**  
-Ultimo aggiornamento: 10 Febbraio 2026 - Implementazione corretta completata
+Ultimo aggiornamento: 10 Febbraio 2026, 12:00 CET - Aggiunta Feature #3
