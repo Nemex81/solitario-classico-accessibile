@@ -5,6 +5,70 @@ Tutte le modifiche rilevanti a questo progetto saranno documentate in questo fil
 Il formato è basato su [Keep a Changelog](https://keepachangelog.com/it/1.0.0/),
 e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.4.3] - 2026-02-10
+
+### 🐛 Bug Fix Critici
+
+Questa release contiene 4 bugfix critici che migliorano significativamente la stabilità dell'applicazione.
+
+**Bug #1: Deck Type Non Applicato da Settings** (3 commits)
+- **Problema**: Il tipo mazzo (French vs Neapolitan) selezionato nelle opzioni non veniva applicato
+- **Soluzione**: Risolto il metodo `GameEngine.create()` per accettare e applicare correttamente il parametro `settings`
+- **Files modificati**: `game_engine.py`, `gameplay_controller.py`, `test.py`
+- **Commits**: `c2dd2ea`, `036d630`, `856e298`
+
+**Bug #2: Validazione Seme Assi Mancante** (3 commits + 1 hotfix)
+- **Problema**: Le pile fondazione accettavano qualsiasi asso invece del solo asso del seme corretto
+- **Soluzione**: Aggiunto attributo `assigned_suit` alle pile fondazione e implementata validazione corretta
+- **Files modificati**: `pile.py`, `table.py`, `solitaire_rules.py`
+- **Commits**: `5bfd031`, `b7c60b7`, `42618c8`, `79f91a6` (hotfix `deck.SEMI` → `deck.SUITES`)
+
+**Bug #3: Settings Non Consultate in new_game()** (5 commits, 7 fasi)
+- **Problema**: Tutte le impostazioni di gioco venivano ignorate quando si avviava una nuova partita
+- **Soluzione**: Integrazione completa delle impostazioni in `new_game()` con supporto per:
+  - Deck type (French/Neapolitan)
+  - Livello difficoltà (1, 2, 3)
+  - Timer configurabile
+  - Modalità shuffle scarti
+- **Files modificati**: `game_engine.py`
+- **Metodi helper aggiunti**: `_recreate_deck_and_table()`, `_apply_game_settings()`
+- **Commits**: `5091a5b`, `31b71f1`, `475c50e`, `0136df4`, `ddbb8cc`
+
+**Bug #3.1: Double Distribution on Deck Change** ⭐ CRITICAL
+- **Problema**: App crashava con `IndexError: pop from empty list` al cambio tipo mazzo
+- **Causa**: Doppia chiamata a `distribuisci_carte()` quando deck_type cambiava
+- **Soluzione**: Spostata `distribuisci_carte()` dentro blocco condizionale `if not deck_changed`
+- **Impatto**: 1 linea modificata, 100% backward compatible, nessuna breaking change
+- **Files modificati**: `game_engine.py`
+- **Commit**: `7a58afc`
+
+### 🔧 Modifiche Tecniche
+
+- **Totale commit**: 17 commits atomici di bugfix
+- **Testing**: Tutti i fix testabili manualmente
+- **Backward compatibility**: 100% preservata
+- **Regressioni**: Nessuna (Bug #3.1 era regressione da Bug #3, ora risolta)
+
+### 📊 Riepilogo Impatto
+
+| Bug | Severità | Status | Impatto Utente |
+|-----|----------|--------|----------------|
+| #1 | 🔴 Alta | ✅ FIXED | Deck type ora funziona dalle opzioni |
+| #2 | 🔴 Alta | ✅ FIXED | Assi validati correttamente sui semi |
+| #3 | 🔴 Critica | ✅ FIXED | Tutte le impostazioni applicate correttamente |
+| #3.1 | 🔴 Critica | ✅ FIXED | Nessun crash al cambio mazzo |
+
+### ✅ Testing Eseguito
+
+- ✅ Cambio deck French → Neapolitan (no crash)
+- ✅ Cambio deck Neapolitan → French (no crash)
+- ✅ Restart stesso deck (backward compatibility)
+- ✅ Switch multipli (stress test)
+- ✅ Validazione assi su semi corretti
+- ✅ Applicazione settings in nuova partita
+
+---
+
 ## [1.4.2] - 2026-02-09
 
 ### ✨ Nuova Funzionalità: UX Improvements per Audiogame
