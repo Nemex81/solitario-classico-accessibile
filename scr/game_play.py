@@ -323,6 +323,10 @@ AZIONI:
 - CANC: annulla selezione
 - D o P: pesca dal mazzo (da qualunque posizione)
 
+MENU:
+- ESC durante partita: apri/chiudi menu pausa (1=Nuova, 2=Opzioni, 3=Chiudi)
+- Numeri 1-5 nei menu: accesso rapido alle voci menu
+
 INFORMAZIONI:
 - F: posizione cursore attuale
 - G: stato tavolo completo

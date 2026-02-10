@@ -98,6 +98,47 @@ if stock.is_empty() and not waste.is_empty():
 - ✅ Feedback TTS chiaro e separato
 - ✅ Zero breaking changes
 
+### ✨ Nuove Funzionalità: UX Improvements
+
+**Feature #1: Double-Tap Auto-Selection**
+- **Descrizione**: Seconda pressione consecutiva dello stesso numero di pila seleziona automaticamente l'ultima carta
+- **Scope**: 
+  - ✅ Pile base (1-7): Double-tap attivo
+  - ✅ Pile seme (SHIFT+1-4): Double-tap attivo  
+  - ❌ Scarti/Mazzo (SHIFT+S/M): Double-tap disabilitato (comportamento originale mantenuto)
+- **Comportamento**:
+  - Prima pressione: Sposta cursore su pila + annuncia "Premi ancora [numero] per selezionare"
+  - Seconda pressione: Seleziona automaticamente ultima carta della pila
+  - Se selezione precedente attiva: Annulla automaticamente + seleziona nuova carta
+- **Files modificati**: 
+  - `src/domain/services/cursor_manager.py`: Return type cambiato da `str` a `Tuple[str, bool]` per segnalare auto-selection
+  - `src/application/game_engine.py`: Gestione flag auto-selection con annullamento selezione precedente
+- **Benefici UX**:
+  - ⚡ Selezione più rapida per utenti con screen reader
+  - 🎯 Riduce numero pressioni tasti necessarie
+  - ♿ Migliora accessibilità e velocità interazione
+
+**Feature #2: Numeric Menu Shortcuts**
+- **Descrizione**: Tasti numerici 1-5 per accesso diretto alle voci di menu
+- **Menu Principale**:
+  - Tasto `1`: Avvia "Gioca al solitario classico"
+  - Visualizzazione: Prefissi numerici aggiunti alle voci (es. "1. Gioca al solitario classico")
+- **Menu Solitario In-Game** (aperto con ESC):
+  - Tasto `1`: Nuova partita
+  - Tasto `2`: Opzioni
+  - Tasto `3`: Chiudi partita
+  - ESC durante partita: Apre/chiude menu (toggle) invece di conferma immediata
+- **Gestione Conflitti**: Context-aware handlers
+  - Menu aperto: Tasti 1-3 eseguono azioni menu
+  - Menu chiuso: Tasti 1-7 spostano cursore su pile base (comportamento originale)
+- **Files modificati**:
+  - `scr/pygame_menu.py`: Aggiunti metodi `press_1()` - `press_5()` e mappature tastiera
+  - `scr/game_play.py`: Aggiunto flag `is_solitaire_menu_open` e metodi `open/close_solitaire_menu()`
+- **Benefici UX**:
+  - ⚡ Navigazione menu più veloce
+  - 🎯 Riduce necessità di navigare con frecce
+  - ♿ Accesso diretto alle funzioni comuni
+
 ### 🔧 Modifiche Tecniche
 
 - **Totale commit**: 21 commits atomici di bugfix (17 precedenti + 2 per Bug #4 + 2 per Bug #5)
