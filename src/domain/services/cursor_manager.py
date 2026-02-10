@@ -3,6 +3,9 @@
 Handles cursor position tracking and navigation across all piles
 with validation and feedback messages for screen reader.
 
+v1.5.0: Extended navigation methods to return (message, hint) tuples
+for conditional hint vocalization feature.
+
 Migrated logic from: scr/game_engine.py (cursor methods)
 """
 
@@ -107,13 +110,15 @@ class CursorManager:
     
     # === NAVIGATION METHODS ===
     
-    def move_up(self) -> str:
+    def move_up(self) -> Tuple[str, Optional[str]]:
         """Move cursor up (previous card in pile).
         
         Supported on tableau and waste piles.
         
         Returns:
-            Feedback message for screen reader
+            Tuple[str, Optional[str]]: (message, hint)
+            - message: Feedback for screen reader
+            - hint: Optional command hint (v1.5.0)
         """
         self.last_quick_pile = None  # Reset double-tap tracking
         pile = self.get_current_pile()
@@ -122,21 +127,29 @@ class CursorManager:
         if self.pile_idx <= 6:
             if pile.is_empty():
                 self.card_idx = 0
-                return "La pila è vuota!\n"
+                return ("La pila è vuota!\n", None)
             
             self.validate_position()
             
             if self.card_idx > 0:
                 self.card_idx -= 1
                 card = pile.cards[self.card_idx]
-                return f"{self.card_idx + 1}: {card.get_name}\n"
+                message = f"{self.card_idx + 1}: {card.get_name}\n"
+                
+                # Generate hint: suggest selection if card is selectable (uncovered)
+                if not card.get_covered:
+                    hint = f"Premi INVIO per selezionare {card.get_name}."
+                else:
+                    hint = None
+                
+                return (message, hint)
             else:
-                return "Sei già alla prima carta della pila!\n"
+                return ("Sei già alla prima carta della pila!\n", None)
         
         # Waste pile
         elif self.pile_idx == 11:
             if pile.is_empty():
-                return "Scarti vuoti, nessuna carta da consultare.\n"
+                return ("Scarti vuoti, nessuna carta da consultare.\n", None)
             
             self.validate_position()
             
@@ -145,22 +158,28 @@ class CursorManager:
                 card = pile.cards[self.card_idx]
                 total = len(pile.cards)
                 is_last = (self.card_idx == total - 1)
-                hint = " Premi CTRL+INVIO per selezionare." if is_last else ""
-                return f"{self.card_idx + 1} di {total}: {card.get_name}{hint}\n"
+                message = f"{self.card_idx + 1} di {total}: {card.get_name}\n"
+                
+                # Hint only for last card (selectable)
+                hint = "Premi CTRL+INVIO per selezionare." if is_last else None
+                
+                return (message, hint)
             else:
-                return "Sei già alla prima carta degli scarti!\n"
+                return ("Sei già alla prima carta degli scarti!\n", None)
         
         # Other piles not navigable
         else:
-            return "Questa pila non è consultabile con le frecce.\n"
+            return ("Questa pila non è consultabile con le frecce.\n", None)
     
-    def move_down(self) -> str:
+    def move_down(self) -> Tuple[str, Optional[str]]:
         """Move cursor down (next card in pile).
         
         Supported on tableau and waste piles.
         
         Returns:
-            Feedback message for screen reader
+            Tuple[str, Optional[str]]: (message, hint)
+            - message: Feedback for screen reader
+            - hint: Optional command hint (v1.5.0)
         """
         self.last_quick_pile = None
         pile = self.get_current_pile()
@@ -169,21 +188,29 @@ class CursorManager:
         if self.pile_idx <= 6:
             if pile.is_empty():
                 self.card_idx = 0
-                return "La pila è vuota!\n"
+                return ("La pila è vuota!\n", None)
             
             self.validate_position()
             
             if self.card_idx < len(pile.cards) - 1:
                 self.card_idx += 1
                 card = pile.cards[self.card_idx]
-                return f"{self.card_idx + 1}: {card.get_name}\n"
+                message = f"{self.card_idx + 1}: {card.get_name}\n"
+                
+                # Generate hint: suggest selection if card is selectable (uncovered)
+                if not card.get_covered:
+                    hint = f"Premi INVIO per selezionare {card.get_name}."
+                else:
+                    hint = None
+                
+                return (message, hint)
             else:
-                return "Sei già all'ultima carta della pila!\n"
+                return ("Sei già all'ultima carta della pila!\n", None)
         
         # Waste pile
         elif self.pile_idx == 11:
             if pile.is_empty():
-                return "Scarti vuoti, nessuna carta da consultare.\n"
+                return ("Scarti vuoti, nessuna carta da consultare.\n", None)
             
             self.validate_position()
             
@@ -192,19 +219,25 @@ class CursorManager:
                 card = pile.cards[self.card_idx]
                 total = len(pile.cards)
                 is_last = (self.card_idx == total - 1)
-                hint = " Premi CTRL+INVIO per selezionare." if is_last else ""
-                return f"{self.card_idx + 1} di {total}: {card.get_name}{hint}\n"
+                message = f"{self.card_idx + 1} di {total}: {card.get_name}\n"
+                
+                # Hint only for last card (selectable)
+                hint = "Premi CTRL+INVIO per selezionare." if is_last else None
+                
+                return (message, hint)
             else:
-                return "Sei già all'ultima carta degli scarti!\n"
+                return ("Sei già all'ultima carta degli scarti!\n", None)
         
         else:
-            return "Questa pila non è consultabile con le frecce.\n"
+            return ("Questa pila non è consultabile con le frecce.\n", None)
     
-    def move_left(self) -> str:
+    def move_left(self) -> Tuple[str, Optional[str]]:
         """Move cursor left (previous pile).
         
         Returns:
-            Feedback message with new pile info
+            Tuple[str, Optional[str]]: (message, hint)
+            - message: Feedback with new pile info
+            - hint: Navigation hint (v1.5.0)
         """
         self.last_quick_pile = None
         
@@ -212,15 +245,19 @@ class CursorManager:
             self.pile_idx -= 1
             self.validate_position()
             self.move_to_top_card()
-            return self._get_pile_summary()
+            message = self._get_pile_summary()
+            hint = "Usa frecce SU/GIÙ per consultare le altre carte della pila."
+            return (message, hint)
         else:
-            return "Sei già alla prima pila!\n"
+            return ("Sei già alla prima pila!\n", None)
     
-    def move_right(self) -> str:
+    def move_right(self) -> Tuple[str, Optional[str]]:
         """Move cursor right (next pile).
         
         Returns:
-            Feedback message with new pile info
+            Tuple[str, Optional[str]]: (message, hint)
+            - message: Feedback with new pile info
+            - hint: Navigation hint (v1.5.0)
         """
         self.last_quick_pile = None
         
@@ -228,15 +265,19 @@ class CursorManager:
             self.pile_idx += 1
             self.validate_position()
             self.move_to_top_card()
-            return self._get_pile_summary()
+            message = self._get_pile_summary()
+            hint = "Usa frecce SU/GIÙ per consultare le altre carte della pila."
+            return (message, hint)
         else:
-            return "Sei già all'ultima pila!\n"
+            return ("Sei già all'ultima pila!\n", None)
     
-    def move_tab(self) -> str:
+    def move_tab(self) -> Tuple[str, Optional[str]]:
         """Jump to next pile of different type (TAB key).
         
         Returns:
-            Feedback message with new pile type
+            Tuple[str, Optional[str]]: (message, hint)
+            - message: Feedback with new pile type
+            - hint: TAB navigation hint (v1.5.0)
         """
         self.last_quick_pile = None
         current_pile = self.get_current_pile()
@@ -248,12 +289,16 @@ class CursorManager:
             if pile.pile_type != current_type:
                 self.pile_idx = i
                 self.move_to_top_card()
-                return f"Pile {pile.pile_type}: {self._get_pile_summary()}"
+                message = f"Pile {pile.pile_type}: {self._get_pile_summary()}"
+                hint = "Premi TAB ancora per passare al prossimo tipo di pila."
+                return (message, hint)
         
         # Wrap to beginning (tableau piles)
         self.pile_idx = 0
         self.move_to_top_card()
-        return f"Pile base: {self._get_pile_summary()}"
+        message = f"Pile base: {self._get_pile_summary()}"
+        hint = "Premi TAB ancora per passare al prossimo tipo di pila."
+        return (message, hint)
     
     def move_home(self) -> str:
         """Jump to first card of current pile (HOME key).
@@ -312,7 +357,7 @@ class CursorManager:
         else:
             return "Pile semi non consultabili. Usa SHIFT+(1-4) per accesso rapido.\n"
     
-    def jump_to_pile(self, pile_idx: int, enable_double_tap: bool = True) -> Tuple[str, bool]:
+    def jump_to_pile(self, pile_idx: int, enable_double_tap: bool = True) -> Tuple[str, bool, Optional[str]]:
         """Jump to specific pile with optional double-tap auto-selection.
         
         Args:
@@ -324,17 +369,18 @@ class CursorManager:
             enable_double_tap: Enable double-tap detection for auto-selection
         
         Returns:
-            Tuple of (feedback_message, should_auto_select)
+            Tuple of (feedback_message, should_auto_select, hint)
             - feedback_message: String for screen reader announcement
             - should_auto_select: True if second tap should trigger automatic card selection
+            - hint: Optional command hint (v1.5.0)
         
         Behavior:
-            First tap: Move cursor to pile top card + announce hint
+            First tap: Move cursor to pile top card + announce + hint
             Second tap (tableau/foundation): Auto-select top card (empty message + flag True)
             Second tap (stock/waste): No action (hint message + flag False)
         """
         if pile_idx < 0 or pile_idx >= len(self.table.pile):
-            return ("Indice pila non valido!\n", False)
+            return ("Indice pila non valido!\n", False, None)
         
         # ═══════════════════════════════════════════════════════════
         # 🔥 DOUBLE-TAP DETECTION: Second press on same pile
@@ -347,14 +393,14 @@ class CursorManager:
             # ─────────────────────────────────────────────────────
             if pile_idx >= 11:
                 self.last_quick_pile = None
-                return ("Cursore già sulla pila.\n", False)
+                return ("Cursore già sulla pila.\n", False, None)
             
             # ─────────────────────────────────────────────────────
             # Tableau/Foundation: Enable auto-selection
             # ─────────────────────────────────────────────────────
             if pile.is_empty():
                 self.last_quick_pile = None
-                return ("Pila vuota, nessuna carta da selezionare.\n", False)
+                return ("Pila vuota, nessuna carta da selezionare.\n", False, None)
             
             # ✅ Position cursor on top card BEFORE signaling selection
             self.move_to_top_card()
@@ -362,41 +408,44 @@ class CursorManager:
             # ✅ Signal GameEngine to execute automatic selection
             # Empty message because selection feedback will be announced by GameEngine
             self.last_quick_pile = None
-            return ("", True)
+            return ("", True, None)
         
         # ═══════════════════════════════════════════════════════════
-        # 🎯 FIRST TAP: Move cursor and announce pile info
+        # 🎯 FIRST TAP: Move cursor and announce pile info + hint
         # ═══════════════════════════════════════════════════════════
         self.pile_idx = pile_idx
         self.move_to_top_card()
         self.last_quick_pile = pile_idx if enable_double_tap else None
         
         msg = self._get_pile_summary()
+        hint = None
         
         # ─────────────────────────────────────────────────────
-        # Add context-specific hints
+        # Generate context-specific hints (v1.5.0)
         # ─────────────────────────────────────────────────────
         pile = self.get_current_pile()
         
         if pile_idx == 12 and not pile.is_empty():
             # Stock pile hint
-            msg += "Premi INVIO per pescare.\n"
+            hint = "Premi INVIO per pescare."
             
         elif pile_idx == 11 and not pile.is_empty():
             # Waste pile hint
-            msg += "Usa frecce per navigare. CTRL+INVIO per selezionare ultima carta.\n"
+            hint = "Usa frecce per navigare. CTRL+INVIO per selezionare ultima carta."
             
         elif not pile.is_empty() and pile_idx <= 10:
             # Tableau/Foundation piles: double-tap hint
+            card_name = pile.cards[-1].get_name
+            
             if pile_idx <= 6:
                 # Tableau (base) piles: number 1-7
-                msg += f"Premi ancora {pile_idx + 1} per selezionare.\n"
+                hint = f"Premi ancora {pile_idx + 1} per selezionare {card_name}."
             else:
                 # Foundation (semi) piles: SHIFT+1-4
                 seme_num = pile_idx - 6
-                msg += f"Premi ancora SHIFT+{seme_num} per selezionare.\n"
+                hint = f"Premi ancora SHIFT+{seme_num} per selezionare {card_name}."
         
-        return (msg, False)  # No auto-selection on first tap
+        return (msg, False, hint)  # No auto-selection on first tap
     
     # === INFO METHODS ===
     

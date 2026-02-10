@@ -5,6 +5,7 @@ Manages all game configuration parameters including:
 - Difficulty level (1-3)
 - Timer settings (OFF or 5-60 minutes)
 - Shuffle mode (invert/random)
+- Command hints (v1.5.0) - contextual voice hints
 
 Provides validation to prevent modifications during active games.
 All methods return (success, message) tuples for TTS feedback.
@@ -34,6 +35,7 @@ class GameSettings:
         difficulty_level: 1, 2, or 3 (cards drawn from stock)
         max_time_game: Timer in seconds (-1=OFF, or 300-3600)
         shuffle_discards: True=random shuffle, False=invert order
+        command_hints_enabled: (v1.5.0) Enable/disable contextual voice hints
         game_state: Reference to game state for validation
     
     Design:
@@ -54,6 +56,9 @@ class GameSettings:
         self.difficulty_level = 1  # 1, 2, or 3
         self.max_time_game = -1    # -1 = OFF, or seconds (300-3600)
         self.shuffle_discards = False  # False = invert, True = random
+        
+        # Feature v1.5.0: Command hints
+        self.command_hints_enabled = True  # Enable/disable command hints during gameplay
         
         # Game state reference for validation
         self.game_state = game_state or GameState()
@@ -300,3 +305,48 @@ class GameSettings:
     def get_shuffle_mode_display(self) -> str:
         """Get human-readable shuffle mode."""
         return "Mescolata Casuale" if self.shuffle_discards else "Inversione Semplice"
+    
+    # ========================================
+    # COMMAND HINTS (v1.5.0)
+    # ========================================
+    
+    def toggle_command_hints(self) -> Tuple[bool, str]:
+        """Toggle command hints on/off.
+        
+        Command hints provide contextual voice hints during gameplay
+        to help users (especially screen reader users) discover available
+        commands in each context.
+        
+        Cannot be modified during active game for consistency.
+        
+        Returns:
+            Tuple[bool, str]: (success, message)
+        
+        Examples:
+            >>> settings.command_hints_enabled = True
+            >>> settings.toggle_command_hints()
+            (True, "Suggerimenti comandi disattivati.")
+            
+            >>> settings.toggle_command_hints()
+            (True, "Suggerimenti comandi attivi.")
+        """
+        if not self.validate_not_running():
+            return (False, "Non puoi modificare questa opzione durante una partita!")
+        
+        # Toggle
+        self.command_hints_enabled = not self.command_hints_enabled
+        
+        if self.command_hints_enabled:
+            return (True, "Suggerimenti comandi attivi.")
+        else:
+            return (True, "Suggerimenti comandi disattivati.")
+    
+    def get_command_hints_display(self) -> str:
+        """Get human-readable command hints status.
+        
+        Returns:
+            "Attivi" if enabled, "Disattivati" if disabled
+        
+        Used by OptionsFormatter for option #5 display.
+        """
+        return "Attivi" if self.command_hints_enabled else "Disattivati"

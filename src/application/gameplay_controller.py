@@ -83,6 +83,32 @@ class GamePlayController:
             self.sr.tts.speak(text, interrupt=interrupt)
             pygame.time.wait(100)
     
+    def _speak_with_hint(self, message: str, hint: Optional[str]) -> None:
+        """Vocalizza messaggio e hint opzionale basato su settings (v1.5.0).
+        
+        Implementa conditional vocalization per Command Hints feature:
+        - Messaggio principale sempre vocalizzato (interrupt=True)
+        - Hint vocalizzato SOLO se settings.command_hints_enabled (interrupt=False)
+        - Pausa 200ms tra messaggio e hint
+        
+        Args:
+            message: Messaggio principale da vocalizzare
+            hint: Hint opzionale da vocalizzare dopo pausa
+        
+        Pattern:
+            ```python
+            message, hint = cursor_manager.move_up()
+            self._speak_with_hint(message, hint)
+            ```
+        """
+        # Vocalizza messaggio principale
+        self.sr.tts.speak(message, interrupt=True)
+        
+        # Vocalizza hint se abilitato nelle impostazioni
+        if self.settings.command_hints_enabled and hint:
+            pygame.time.wait(200)  # Pausa 200ms tra messaggio e hint
+            self.sr.tts.speak(hint, interrupt=False)
+    
     def _build_commands(self) -> Dict[int, Callable]:
         """Build keyboard command mapping dictionary.
         
@@ -142,45 +168,125 @@ class GamePlayController:
     # === NAVIGAZIONE PILE ===
     
     def _nav_pile_base(self, pile_idx: int) -> None:
-        """Navigate to base pile (1-7 keys).
+        """Navigate to base pile (1-7 keys) with hint support (v1.5.0).
         
         Double-tap detection handled by CursorManager.
         """
-        self.engine.jump_to_pile(pile_idx)
+        # Temporarily disable engine's internal vocalization
+        original_sr = self.engine.screen_reader
+        self.engine.screen_reader = None
+        
+        msg, hint = self.engine.jump_to_pile(pile_idx)
+        
+        # Restore screen reader
+        self.engine.screen_reader = original_sr
+        
+        # Use conditional hint vocalization
+        self._speak_with_hint(msg, hint)
     
     def _nav_pile_semi(self, pile_idx: int) -> None:
-        """Navigate to foundation pile (SHIFT+1-4).
+        """Navigate to foundation pile (SHIFT+1-4) with hint support (v1.5.0).
         
         Args:
             pile_idx: Foundation pile index (7-10)
         """
-        self.engine.jump_to_pile(pile_idx)
+        # Temporarily disable engine's internal vocalization
+        original_sr = self.engine.screen_reader
+        self.engine.screen_reader = None
+        
+        msg, hint = self.engine.jump_to_pile(pile_idx)
+        
+        # Restore screen reader
+        self.engine.screen_reader = original_sr
+        
+        # Use conditional hint vocalization
+        self._speak_with_hint(msg, hint)
     
     def _nav_pile_scarti(self) -> None:
-        """Navigate to waste pile (SHIFT+S)."""
-        self.engine.jump_to_pile(11)
+        """Navigate to waste pile (SHIFT+S) with hint support (v1.5.0)."""
+        # Temporarily disable engine's internal vocalization
+        original_sr = self.engine.screen_reader
+        self.engine.screen_reader = None
+        
+        msg, hint = self.engine.jump_to_pile(11)
+        
+        # Restore screen reader
+        self.engine.screen_reader = original_sr
+        
+        # Use conditional hint vocalization
+        self._speak_with_hint(msg, hint)
     
     def _nav_pile_mazzo(self) -> None:
-        """Navigate to stock pile (SHIFT+M)."""
-        self.engine.jump_to_pile(12)
+        """Navigate to stock pile (SHIFT+M) with hint support (v1.5.0)."""
+        # Temporarily disable engine's internal vocalization
+        original_sr = self.engine.screen_reader
+        self.engine.screen_reader = None
+        
+        msg, hint = self.engine.jump_to_pile(12)
+        
+        # Restore screen reader
+        self.engine.screen_reader = original_sr
+        
+        # Use conditional hint vocalization
+        self._speak_with_hint(msg, hint)
     
     # === NAVIGAZIONE CURSORE ===
     
     def _cursor_up(self) -> None:
-        """Arrow UP: Previous card in current pile."""
-        self.engine.move_cursor("up")
+        """Arrow UP: Previous card in current pile with hint support (v1.5.0)."""
+        # Temporarily disable engine's internal vocalization
+        original_sr = self.engine.screen_reader
+        self.engine.screen_reader = None
+        
+        msg, hint = self.engine.move_cursor("up")
+        
+        # Restore screen reader
+        self.engine.screen_reader = original_sr
+        
+        # Use conditional hint vocalization
+        self._speak_with_hint(msg, hint)
     
     def _cursor_down(self) -> None:
-        """Arrow DOWN: Next card in current pile."""
-        self.engine.move_cursor("down")
+        """Arrow DOWN: Next card in current pile with hint support (v1.5.0)."""
+        # Temporarily disable engine's internal vocalization
+        original_sr = self.engine.screen_reader
+        self.engine.screen_reader = None
+        
+        msg, hint = self.engine.move_cursor("down")
+        
+        # Restore screen reader
+        self.engine.screen_reader = original_sr
+        
+        # Use conditional hint vocalization
+        self._speak_with_hint(msg, hint)
     
     def _cursor_left(self) -> None:
-        """Arrow LEFT: Previous pile."""
-        self.engine.move_cursor("left")
+        """Arrow LEFT: Previous pile with hint support (v1.5.0)."""
+        # Temporarily disable engine's internal vocalization
+        original_sr = self.engine.screen_reader
+        self.engine.screen_reader = None
+        
+        msg, hint = self.engine.move_cursor("left")
+        
+        # Restore screen reader
+        self.engine.screen_reader = original_sr
+        
+        # Use conditional hint vocalization
+        self._speak_with_hint(msg, hint)
     
     def _cursor_right(self) -> None:
-        """Arrow RIGHT: Next pile."""
-        self.engine.move_cursor("right")
+        """Arrow RIGHT: Next pile with hint support (v1.5.0)."""
+        # Temporarily disable engine's internal vocalization
+        original_sr = self.engine.screen_reader
+        self.engine.screen_reader = None
+        
+        msg, hint = self.engine.move_cursor("right")
+        
+        # Restore screen reader
+        self.engine.screen_reader = original_sr
+        
+        # Use conditional hint vocalization
+        self._speak_with_hint(msg, hint)
     
     def _cursor_home(self) -> None:
         """HOME: First card in current pile."""
@@ -191,8 +297,18 @@ class GamePlayController:
         self.engine.move_cursor("end")
     
     def _cursor_tab(self) -> None:
-        """TAB: Jump to different pile type."""
-        self.engine.move_cursor("tab")
+        """TAB: Jump to different pile type with hint support (v1.5.0)."""
+        # Temporarily disable engine's internal vocalization
+        original_sr = self.engine.screen_reader
+        self.engine.screen_reader = None
+        
+        msg, hint = self.engine.move_cursor("tab")
+        
+        # Restore screen reader
+        self.engine.screen_reader = original_sr
+        
+        # Use conditional hint vocalization
+        self._speak_with_hint(msg, hint)
     
     # === AZIONI CARTE ===
     
@@ -234,31 +350,14 @@ class GamePlayController:
         self.engine.get_cursor_info()
     
     def _get_table_info(self) -> None:
-        """G: Get complete table state."""
-        self.engine.get_table_overview()
+        """G: Get complete table state with hint support (v1.5.0)."""
+        msg, hint = self.engine.service.get_table_info()
+        self._speak_with_hint(msg, hint)
     
     def _get_game_report(self) -> None:
-        """R: Get game report (time, moves, stats)."""
-        state = self.engine.get_game_state()
-        stats = state.get('statistics', {})
-        moves = stats.get('move_count', 0)
-        elapsed = int(stats.get('elapsed_time', 0))
-        
-        # Format time as MM:SS
-        minutes = elapsed // 60
-        seconds = elapsed % 60
-        time_str = f"{minutes}:{seconds:02d}"
-        
-        report = f"Report partita.\n"
-        report += f"Mosse: {moves}.\n"
-        report += f"Tempo trascorso: {time_str}.\n"
-        
-        # Foundation progress
-        foundations = state.get('piles', {}).get('foundations', [])
-        total_in_foundations = sum(foundations)
-        report += f"Carte nelle pile semi: {total_in_foundations}.\n"
-        
-        self._vocalizza(report, interrupt=True)
+        """R: Get game report (time, moves, stats) with hint support (v1.5.0)."""
+        msg, hint = self.engine.service.get_game_report()
+        self._speak_with_hint(msg, hint)
     
     def _get_card_info(self) -> None:
         """X: Get detailed info about card under cursor."""
@@ -269,45 +368,37 @@ class GamePlayController:
         self.engine.get_selected_info()
     
     def _get_scarto_top(self) -> None:
-        """S: Get top card from waste pile (read-only)."""
-        pile_info = self.engine.get_pile_info(11)  # Waste pile
-        
-        if pile_info and pile_info.get('top_card'):
-            card_name = pile_info['top_card']['name']
-            self._vocalizza(f"Carta in cima agli scarti: {card_name}")
-        else:
-            self._vocalizza("Pila scarti vuota")
+        """S: Get top card from waste pile with hint support (v1.5.0)."""
+        msg, hint = self.engine.service.get_waste_info()
+        self._speak_with_hint(msg, hint)
     
     def _get_deck_count(self) -> None:
-        """M: Get remaining cards in stock pile."""
-        state = self.engine.get_game_state()
-        count = state.get('piles', {}).get('stock', 0)
-        
-        if count == 0:
-            self._vocalizza("Il mazzo è vuoto")
-        elif count == 1:
-            self._vocalizza("Rimane 1 carta nel mazzo")
-        else:
-            self._vocalizza(f"Rimangono {count} carte nel mazzo")
+        """M: Get remaining cards in stock pile with hint support (v1.5.0)."""
+        msg, hint = self.engine.service.get_stock_info()
+        self._speak_with_hint(msg, hint)
     
     def _get_timer(self) -> None:
-        """T: Get elapsed time."""
-        state = self.engine.get_game_state()
-        elapsed = int(state.get('statistics', {}).get('elapsed_time', 0))
+        """T: Get timer info (elapsed or countdown based on settings) - v1.5.1.
         
-        minutes = elapsed // 60
-        seconds = elapsed % 60
+        Behavior:
+        - Timer OFF: Shows elapsed time
+        - Timer ON: Shows countdown (remaining time)
+        - Timer expired: Shows "Tempo scaduto!"
         
-        self._vocalizza(f"Tempo trascorso: {minutes} minuti e {seconds} secondi")
+        No hint vocalized during gameplay (v1.5.1 user request).
+        """
+        # Pass max_time from settings to service (v1.5.1)
+        msg, hint = self.engine.service.get_timer_info(
+            max_time=self.settings.max_time_game
+        )
+        
+        # Vocalize (hint will be None, so only message speaks)
+        self._speak_with_hint(msg, hint)
     
     def _get_settings(self) -> None:
-        """I: Get current game settings (outside options window)."""
-        settings = "Impostazioni di gioco.\n"
-        settings += "Mazzo: carte francesi.\n"
-        settings += "Difficoltà: livello 1.\n"
-        settings += "Timer: disabilitato.\n"
-        
-        self._vocalizza(settings)
+        """I: Get current game settings with hint support (v1.5.0)."""
+        msg, hint = self.engine.service.get_settings_info()
+        self._speak_with_hint(msg, hint)
     
     def _show_help(self) -> None:
         """H: Show available commands help."""

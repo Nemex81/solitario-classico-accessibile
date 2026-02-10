@@ -27,7 +27,7 @@ class OptionsFormatter:
         "Difficoltà",
         "Timer",
         "Modalità riciclo scarti",
-        "(Opzione futura)"
+        "Suggerimenti Comandi"
     ]
     
     @staticmethod
@@ -81,16 +81,13 @@ class OptionsFormatter:
         msg = f"{position} di 5: {name}, {value}."
         
         if include_hint:
-            # Special hint for Timer (has extra keys)
+            # Special hint for Timer (has extra keys) - v1.5.1 updated
             if index == 2:  # Timer option
                 if "Disattivato" in value:
-                    msg += " Premi T per attivare."
+                    msg += " Premi T o INVIO per attivare a 5 minuti, o + e - per regolare."
                 else:
-                    msg += " Premi T per disattivare o + e - per regolare."
-            # Special message for future option
-            elif index == 4:
-                msg += " Opzione non ancora implementata."
-            # Standard hint for other options
+                    msg += " Premi INVIO per incrementare, T per disattivare, o + e - per regolare."
+            # Standard hint for all other options
             else:
                 msg += " Premi INVIO per modificare."
         
@@ -227,3 +224,52 @@ class OptionsFormatter:
     def format_future_option_blocked() -> str:
         """Format message for non-implemented option."""
         return "Opzione non ancora implementata. Sarà disponibile in un prossimo aggiornamento."
+    
+    # ========================================
+    # COMMAND HINTS OPTION (v1.5.0)
+    # ========================================
+    
+    @staticmethod
+    def format_command_hints_item(value: str, is_current: bool) -> str:
+        """Format command hints option for navigation (v1.5.0).
+        
+        Args:
+            value: Current value ("Attivi" or "Disattivati")
+            is_current: True if this is the currently selected option
+        
+        Returns:
+            Formatted option with position and modification hint
+        
+        Examples:
+            >>> format_command_hints_item("Attivi", True)
+            "5 di 5: Suggerimenti Comandi, Attivi. Premi INVIO per modificare."
+            
+            >>> format_command_hints_item("Disattivati", False)
+            "5 di 5: Suggerimenti Comandi, Disattivati."
+        """
+        position = "5 di 5" if is_current else "5 di 5"
+        msg = f"{position}: Suggerimenti Comandi, {value}."
+        
+        if is_current:
+            msg += " Premi INVIO per modificare."
+        
+        return msg
+    
+    @staticmethod
+    def format_command_hints_changed(new_value: str) -> str:
+        """Format command hints toggle confirmation (v1.5.0).
+        
+        Args:
+            new_value: New value ("Attivi" or "Disattivati")
+        
+        Returns:
+            Confirmation message
+        
+        Examples:
+            >>> format_command_hints_changed("Attivi")
+            "Suggerimenti comandi attivi."
+            
+            >>> format_command_hints_changed("Disattivati")
+            "Suggerimenti comandi disattivati."
+        """
+        return f"Suggerimenti comandi {new_value.lower()}."
