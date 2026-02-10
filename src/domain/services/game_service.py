@@ -208,7 +208,13 @@ class GameService:
         
         # Check if can draw
         if not self.rules.can_draw_from_stock(stock):
-            return False, "Tallone vuoto", []
+            # ✅ BUG #4 IMPROVEMENT: Better error message
+            if waste.is_empty():
+                # Both piles empty - true game over state
+                return False, "Tallone e scarti vuoti - impossibile pescare", []
+            else:
+                # Only stock empty - should have been recycled by caller
+                return False, "Tallone vuoto - riciclo automatico fallito", []
         
         # Draw cards
         drawn_cards: List[Card] = []
