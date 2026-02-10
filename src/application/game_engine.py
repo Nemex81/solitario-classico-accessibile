@@ -374,17 +374,50 @@ class GameEngine:
         return msg
     
     def jump_to_pile(self, pile_idx: int) -> str:
-        """Jump to specific pile (1-7 for tableau, SHIFT+1-4 for foundations).
+        """Jump to specific pile with double-tap auto-selection support.
         
         Args:
             pile_idx: Pile index (0-12)
-            
-        Returns:
-            Feedback message
-        """
-        msg = self.cursor.jump_to_pile(pile_idx, enable_double_tap=True)
         
-        if self.screen_reader:
+        Returns:
+            Feedback message for screen reader
+        
+        Behavior:
+            First tap: Move cursor to pile top card + announce pile info
+            Second tap (tableau/foundation): 
+                - Cancel previous selection if present (silent)
+                - Auto-select top card
+                - Announce: "Selezione precedente annullata. carte selezionate: 1. [nome carta]"
+            Second tap (stock/waste): No action (hint only)
+        """
+        # Get cursor movement feedback and auto-selection flag
+        msg, should_auto_select = self.cursor.jump_to_pile(pile_idx, enable_double_tap=True)
+        
+        # ═══════════════════════════════════════════════════════════
+        # 🔥 SECOND TAP: Execute automatic card selection
+        # ═══════════════════════════════════════════════════════════
+        if should_auto_select:
+            msg_deselect = ""
+            
+            # ─────────────────────────────────────────────────────
+            # Cancel previous selection if present (silent reset)
+            # ─────────────────────────────────────────────────────
+            if self.selection.has_selection():
+                self.selection.clear_selection()
+                msg_deselect = "Selezione precedente annullata. "
+            
+            # ─────────────────────────────────────────────────────
+            # Execute automatic selection
+            # ─────────────────────────────────────────────────────
+            success, msg_select = self.select_card_at_cursor()
+            
+            # Combine messages: deselection (if any) + selection feedback
+            msg = msg_deselect + msg_select
+        
+        # ═══════════════════════════════════════════════════════════
+        # 🔊 Vocal announcement
+        # ═══════════════════════════════════════════════════════════
+        if self.screen_reader and msg:
             self.screen_reader.tts.speak(msg, interrupt=True)
         
         return msg

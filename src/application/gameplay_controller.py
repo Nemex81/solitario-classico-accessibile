@@ -36,7 +36,8 @@ class GamePlayController:
         self, 
         engine: GameEngine, 
         screen_reader, 
-        settings: Optional[GameSettings] = None  # NEW PARAMETER (v1.4.2.1)
+        settings: Optional[GameSettings] = None,  # NEW PARAMETER (v1.4.2.1)
+        on_new_game_request: Optional[Callable[[], None]] = None  # NEW PARAMETER (v1.4.3)
     ):
         """Initialize gameplay controller.
         
@@ -46,9 +47,15 @@ class GamePlayController:
             settings: GameSettings instance (optional)
                 If None, creates new instance (backward compatible)
                 If provided, uses shared instance from main app
+            on_new_game_request: Callback when user requests new game with game active (v1.4.3)
+                If None, starts directly (backward compatible)
+                If provided, callback should show confirmation dialog
         """
         self.engine = engine
         self.sr = screen_reader
+        
+        # Store callback for new game confirmation (v1.4.3)
+        self.on_new_game_request = on_new_game_request
         
         # Use provided settings or create new (backward compatibility)
         # NEW in v1.4.2.1: Proper settings binding
@@ -325,15 +332,25 @@ ESC: abbandona partita."""
     # === GESTIONE PARTITA ===
     
     def _new_game(self) -> None:
-        """N: Start new game (with confirmation if game running)."""
+        """N: Start new game (with confirmation if game running).
+        
+        Behavior (v1.4.3):
+        - If game NOT running: Start immediately
+        - If game running + callback provided: Call callback (shows dialog)
+        - If game running + NO callback: Start directly (backward compatible)
+        """
         state = self.engine.get_game_state()
         game_over = state.get('game_over', {}).get('is_over', True)
         
         if not game_over:
-            # TODO: Implementare dialog conferma in futuro
-            # Per ora avvia direttamente
-            pass
+            # Game is running - check if callback is available (v1.4.3)
+            if self.on_new_game_request is not None:
+                # Delegate to callback (will show confirmation dialog)
+                self.on_new_game_request()
+                return  # Don't start game here, callback will handle it
+            # else: No callback, fall through to start directly (backward compatible)
         
+        # Start new game immediately (no game running OR no callback)
         self.engine.new_game()
         # Message vocalized by engine.new_game()
     

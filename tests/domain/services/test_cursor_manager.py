@@ -150,15 +150,80 @@ def test_move_end(cursor):
 
 def test_jump_to_pile(cursor):
     """Test jumping to specific pile."""
-    msg = cursor.jump_to_pile(5)
+    msg, should_auto_select = cursor.jump_to_pile(5)
     assert cursor.pile_idx == 5
     assert len(msg) > 0
+    assert should_auto_select is False  # First tap should not auto-select
 
 
 def test_jump_to_invalid_pile(cursor):
     """Test jumping to invalid pile index."""
-    msg = cursor.jump_to_pile(99)
+    msg, should_auto_select = cursor.jump_to_pile(99)
     assert "non valido" in msg.lower()
+    assert should_auto_select is False
+
+
+def test_double_tap_auto_selection(cursor):
+    """Test double-tap auto-selection on tableau pile."""
+    # First tap: should move to pile 3
+    msg1, should_auto_select1 = cursor.jump_to_pile(3)
+    assert cursor.pile_idx == 3
+    assert should_auto_select1 is False
+    assert "premi ancora" in msg1.lower() or len(msg1) > 0
+    
+    # Second tap on same pile: should trigger auto-selection if pile not empty
+    pile = cursor.get_current_pile()
+    msg2, should_auto_select2 = cursor.jump_to_pile(3)
+    
+    if not pile.is_empty():
+        assert should_auto_select2 is True
+        assert msg2 == ""  # Empty message, selection handled by GameEngine
+    else:
+        assert should_auto_select2 is False
+        assert "vuota" in msg2.lower()
+
+
+def test_double_tap_stock_waste_no_auto_select(cursor):
+    """Test double-tap on stock/waste does NOT trigger auto-selection."""
+    # Test waste pile (index 11)
+    msg1, should_auto_select1 = cursor.jump_to_pile(11)
+    assert cursor.pile_idx == 11
+    assert should_auto_select1 is False
+    
+    # Second tap on waste: should NOT auto-select
+    msg2, should_auto_select2 = cursor.jump_to_pile(11)
+    assert should_auto_select2 is False
+    assert "cursore già" in msg2.lower() or len(msg2) > 0
+    
+    # Test stock pile (index 12)
+    msg1, should_auto_select1 = cursor.jump_to_pile(12)
+    assert cursor.pile_idx == 12
+    assert should_auto_select1 is False
+    
+    # Second tap on stock: should NOT auto-select
+    msg2, should_auto_select2 = cursor.jump_to_pile(12)
+    assert should_auto_select2 is False
+
+
+def test_double_tap_resets_on_different_pile(cursor):
+    """Test that double-tap tracking resets when moving to different pile."""
+    # First tap on pile 2
+    msg1, _ = cursor.jump_to_pile(2)
+    assert cursor.pile_idx == 2
+    assert cursor.last_quick_pile == 2
+    
+    # Tap on different pile (pile 4)
+    msg2, should_auto_select = cursor.jump_to_pile(4)
+    assert cursor.pile_idx == 4
+    assert cursor.last_quick_pile == 4
+    assert should_auto_select is False  # Should be first tap for pile 4
+    
+    # Tap on pile 4 again (this should be second tap)
+    pile = cursor.get_current_pile()
+    msg3, should_auto_select3 = cursor.jump_to_pile(4)
+    
+    if not pile.is_empty():
+        assert should_auto_select3 is True
 
 
 def test_get_position_info(cursor):

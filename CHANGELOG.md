@@ -98,6 +98,67 @@ if stock.is_empty() and not waste.is_empty():
 - ✅ Feedback TTS chiaro e separato
 - ✅ Zero breaking changes
 
+### ✨ Nuove Funzionalità: UX Improvements
+
+**Feature #1: Double-Tap Auto-Selection**
+- **Descrizione**: Seconda pressione consecutiva dello stesso numero di pila seleziona automaticamente l'ultima carta
+- **Scope**: 
+  - ✅ Pile base (1-7): Double-tap attivo
+  - ✅ Pile seme (SHIFT+1-4): Double-tap attivo  
+  - ❌ Scarti/Mazzo (SHIFT+S/M): Double-tap disabilitato (comportamento originale mantenuto)
+- **Comportamento**:
+  - Prima pressione: Sposta cursore su pila + annuncia "Premi ancora [numero] per selezionare"
+  - Seconda pressione: Seleziona automaticamente ultima carta della pila
+  - Se selezione precedente attiva: Annulla automaticamente + seleziona nuova carta
+- **Files modificati**: 
+  - `src/domain/services/cursor_manager.py`: Return type cambiato da `str` a `Tuple[str, bool]` per segnalare auto-selection
+  - `src/application/game_engine.py`: Gestione flag auto-selection con annullamento selezione precedente
+- **Benefici UX**:
+  - ⚡ Selezione più rapida per utenti con screen reader
+  - 🎯 Riduce numero pressioni tasti necessarie
+  - ♿ Migliora accessibilità e velocità interazione
+
+**Feature #2: Numeric Menu Shortcuts**
+- **Descrizione**: Tasti numerici 1-5 per accesso diretto alle voci di menu
+- **Menu Principale**:
+  - Tasto `1`: Avvia "Gioca al solitario classico"
+  - Menu routing gestito in `test.py` (già corretto, nessuna modifica necessaria)
+- **Menu Solitario In-Game** (sottomenu aperto da menu principale):
+  - Tasto `1`: Nuova partita
+  - Tasto `2`: Opzioni
+  - Tasto `3`: Chiudi partita
+- **Gestione Conflitti**: Context-aware routing in `test.py`
+  - Menu aperto (`is_menu_open = True`): Tasti 1-5 eseguono azioni menu via `VirtualMenu`
+  - Menu chiuso (gameplay mode): Tasti 1-7 spostano cursore su pile base (comportamento originale)
+- **Files modificati**:
+  - `src/infrastructure/ui/menu.py`: Aggiunti metodi `press_1()` - `press_5()` e mappature tastiera in `key_handlers` dict
+  - `test.py`: Nessuna modifica (routing già corretto con `is_menu_open` flag)
+- **Benefici UX**:
+  - ⚡ Navigazione menu più veloce
+  - 🎯 Riduce necessità di navigare con frecce
+  - ♿ Accesso diretto alle funzioni comuni
+
+**Feature #3: New Game Confirmation Dialog** ⭐ NUOVO
+- **Descrizione**: Dialog di conferma quando si avvia nuova partita con una già in corso
+- **Problema Risolto**: Prevenire perdita accidentale progresso partita quando si preme "N" o si seleziona "Nuova partita" dal menu
+- **Comportamento**:
+  - Nessuna partita attiva: Nuova partita inizia immediatamente (backward compatible)
+  - Partita attiva: Appare dialog "Una partita è già in corso. Vuoi abbandonarla e avviarne una nuova?"
+  - Opzioni: Sì (abbandona + nuova) / No (annulla e continua)
+  - Shortcuts: S per Sì, N per No, ESC per annullare
+  - Funziona sia dal menu che con tasto "N" durante gameplay
+- **Files modificati**:
+  - `test.py`: Aggiunti `new_game_dialog`, `show_new_game_dialog()`, `_confirm_new_game()`, `_cancel_new_game()`, `_start_new_game()`
+  - Modificato `handle_game_submenu_selection()` per check `is_game_running()`
+  - Aggiunto handling in `handle_events()` per dialog priority
+  - Aggiunto parametro `on_new_game_request` callback a GamePlayController
+  - `src/application/gameplay_controller.py`: Aggiunto parametro `on_new_game_request` in `__init__()`
+  - Modificato `_new_game()` per chiamare callback quando partita attiva
+- **Benefici UX**:
+  - 🛡️ Sicurezza: Previene perdita accidentale progresso (menu + tasto N)
+  - 🎯 Consistenza: Usa pattern dialog v1.4.2
+  - ♿ Accessibilità: Dialog completo con TTS e shortcuts
+
 ### 🔧 Modifiche Tecniche
 
 - **Totale commit**: 21 commits atomici di bugfix (17 precedenti + 2 per Bug #4 + 2 per Bug #5)
