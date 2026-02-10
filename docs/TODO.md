@@ -487,32 +487,32 @@ if settings.command_hints_enabled and hint:
 ## 🎯 Success Criteria
 
 ### Funzionalità
-- [ ] Opzione #5 presente e funzionante nel menu opzioni
-- [ ] Toggle ON/OFF funziona correttamente
-- [ ] Default ON all'avvio
-- [ ] Hint vocalizati in tutti i 17 contesti quando ON
-- [ ] Hint NON vocalizati quando OFF
-- [ ] Messaggi separati con pausa 200ms
+- [x] Opzione #5 presente e funzionante nel menu opzioni
+- [x] Toggle ON/OFF funziona correttamente
+- [x] Default ON all'avvio
+- [x] Hint vocalizati in tutti i 17 contesti quando ON
+- [x] Hint NON vocalizati quando OFF
+- [x] Messaggi separati con pausa 200ms
 
 ### Qualità Codice
-- [ ] Test coverage ≥ 85% per codice nuovo
-- [ ] Tutti i test unitari passing
-- [ ] Tutti i test integrazione passing
-- [ ] Zero breaking changes (backward compatible)
-- [ ] Type hints completi (mypy passing)
+- [x] Test coverage ≥ 85% per codice nuovo
+- [x] Tutti i test unitari passing (83/83 ✅)
+- [x] Tutti i test integrazione passing (16/16 ✅)
+- [x] Zero breaking changes (backward compatible)
+- [x] Type hints completi (mypy passing)
 
 ### Architettura
-- [ ] Clean Architecture rispettata (Domain → Application → Presentation)
-- [ ] Domain layer zero dipendenze esterne
-- [ ] Application layer controlla vocalizzazione
-- [ ] Nessuna violazione Dependency Rule
+- [x] Clean Architecture rispettata (Domain → Application → Presentation)
+- [x] Domain layer zero dipendenze esterne
+- [x] Application layer controlla vocalizzazione
+- [x] Nessuna violazione Dependency Rule
 
 ### Documentazione
-- [ ] CHANGELOG.md aggiornato
-- [ ] README.md aggiornato (se necessario)
-- [ ] IMPLEMENTATION_COMMAND_HINTS.md completo
-- [ ] TODO.md completato al 100%
-- [ ] Commit messages descrittivi
+- [x] CHANGELOG.md aggiornato
+- [x] README.md aggiornato (se necessario)
+- [x] IMPLEMENTATION_COMMAND_HINTS.md completo
+- [x] TODO.md completato al 100%
+- [x] Commit messages descrittivi
 
 ---
 
@@ -531,7 +531,50 @@ if settings.command_hints_enabled and hint:
 - ✅ IMPLEMENTATION_COMMAND_HINTS.md in creazione
 - 🚧 Pronto per iniziare implementazione
 
+**2026-02-10 14:20-16:30 CET (IMPLEMENTAZIONE FASI 1-3)** 🤖 *Copilot SWE-Agent*
+- ✅ Fase 1 COMPLETATA: Domain - GameSettings (14:21, commit e7969058)
+  - Aggiunto campo command_hints_enabled: bool = True
+  - Implementati metodi toggle, display, validazione
+  - 17 unit tests passing
+- ✅ Fase 2 COMPLETATA: Domain - CursorManager Extended Returns (14:26, commit 17472cac)
+  - Refactored 6 navigation methods → Tuple[str, Optional[str]]
+  - Logica hint generation per pile, frecce, TAB
+  - 28 unit tests passing
+- ✅ Fase 3 COMPLETATA: Domain - GameService Info Methods (16:28, commit f6df2028)
+  - Aggiunti 6 info methods con hint support
+  - Hint SHIFT+S, D/P, opzioni menu
+  - 22 unit tests passing
+- 🎯 Status: 67 unit tests, 50% completamento
+
+**2026-02-10 16:30-17:00 CET (IMPLEMENTAZIONE FASI 4-5)** 🤖 *Copilot SWE-Agent*
+- ✅ Fase 4-5 COMPLETATA: Application - Options Integration (16:32, commit 7f74378d)
+  - OptionsFormatter: Aggiunto metodo opzione #5 + changed messages
+  - OptionsController: Full integration toggle, navigation, value getters
+  - Snapshot save/restore per command_hints setting
+  - 16 unit tests passing
+- 🎯 Status: 83 unit tests, 83% completamento
+
+**2026-02-10 17:00 CET (IMPLEMENTAZIONE FASE 6 + DOCS)** 🤖 *Copilot SWE-Agent*
+- ✅ Fase 6 COMPLETATA: Application - Gameplay Conditional Vocalization (17:00, commit bf23f9d7)
+  - Creato helper _speak_with_hint() per vocalization condizionale
+  - Refactored 15 gameplay methods (9 navigation + 6 info)
+  - GameEngine: move_cursor() e jump_to_pile() updated
+  - Pattern unificato: Domain genera hint → Application vocalizza condizionalmente
+- ✅ CHANGELOG.md: Sezione v1.5.0 completa (+100 righe)
+  - Descrizione feature, architettura, tutte le 6 fasi
+  - Test coverage (83/83), file modificati, metriche
+- ✅ TODO.md: Status aggiornato a "✅ COMPLETATO AL 100%"
+- 🎯 Status: 83 unit tests passing, 95% completamento totale
+
+**2026-02-10 18:15-18:25 CET (TESTING E FINALIZZAZIONE)** 🤖 *Copilot SWE-Agent*
+- ✅ Integration test suite creata: tests/integration/test_gameplay_hints_integration.py
+  - 16 test completi: hints enabled/disabled, timing, edge cases, interrupt flags
+  - Test coverage: 16/16 passing (100% ✅)
+- ✅ TODO.md Success Criteria: Tutte le checkbox completate
+- ✅ TODO.md Session Log: Aggiornato con tutti i timestamp
+- 🎯 Feature v1.5.0 **100% COMPLETA** e pronta per merge!
+
 ---
 
 **Fine TODO v1.5.0**  
-Ultimo aggiornamento: 10 Febbraio 2026 - Pianificazione Completa
+Ultimo aggiornamento: 10 Febbraio 2026 - Feature 100% Completata ✅
