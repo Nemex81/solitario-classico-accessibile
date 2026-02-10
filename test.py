@@ -175,10 +175,11 @@ class SolitarioCleanArch:
         
         print("✓ Menu pronto")
         
-        # Infrastructure: Dialog boxes (v1.4.2)
+        # Infrastructure: Dialog boxes (v1.4.2 + v1.4.3)
         self.exit_dialog = None  # Exit confirmation dialog (Commit #25)
         self.return_to_main_dialog = None  # Submenu exit dialog (Commit #26)
         self.abandon_game_dialog = None  # Gameplay exit dialog (Commit #27)
+        self.new_game_dialog = None  # New game confirmation dialog (v1.4.3)
         
         # Double-ESC feature (Commit #27)
         self.last_esc_time = 0  # Timestamp of last ESC press
@@ -228,14 +229,18 @@ class SolitarioCleanArch:
         
         Args:
             selected_item: Index of selected submenu item
-                0: Start new game
+                0: Start new game (with confirmation if game running - v1.4.3)
                 1: Open virtual options window
                 2: Close submenu - now shows confirmation dialog (v1.4.2)
         """
         if selected_item == 0:
-            # Nuova partita
-            self.is_menu_open = False
-            self.start_game()
+            # Nuova partita - with safety check (v1.4.3)
+            if self.engine.is_game_running():
+                # Game in progress: show confirmation dialog
+                self.show_new_game_dialog()
+            else:
+                # No game running: start immediately
+                self._start_new_game()
         elif selected_item == 1:
             # Opzioni
             self.open_options()
@@ -428,6 +433,107 @@ class SolitarioCleanArch:
         # Reset ESC timer
         self.last_esc_time = 0
     
+    # === NEW GAME DIALOG HANDLERS (v1.4.3) ===
+    
+    def show_new_game_dialog(self) -> None:
+        """Show new game confirmation dialog (v1.4.3).
+        
+        Opens dialog asking "Una partita è già in corso. Vuoi abbandonarla e avviarne una nuova?" with
+        Sì/No buttons. Sì has default focus.
+        
+        Triggered by:
+        - "N" key during gameplay
+        - "Nuova partita" menu selection when game is running
+        
+        Safety feature to prevent accidental game loss.
+        """
+        print("\n" + "="*60)
+        print("DIALOG: Conferma nuova partita")
+        print("="*60)
+        
+        self.new_game_dialog = VirtualDialogBox(
+            message="Una partita è già in corso. Vuoi abbandonarla e avviarne una nuova?",
+            buttons=["Sì", "No"],
+            default_button=0,  # Focus on Sì
+            on_confirm=self._confirm_new_game,
+            on_cancel=self._cancel_new_game,
+            screen_reader=self.screen_reader if self.screen_reader else self._dummy_sr()
+        )
+        
+        self.new_game_dialog.open()
+    
+    def _confirm_new_game(self) -> None:
+        """Callback: User confirmed starting new game (abandoning current).
+        
+        Called when user presses:
+        - "S" key (Sì shortcut)
+        - Arrow keys + ENTER on "Sì" button
+        
+        Actions:
+        1. Close dialog
+        2. Abandon current game (no stats save)
+        3. Start new game
+        
+        New in v1.4.3: Safety feature for preventing accidental game loss.
+        """
+        print("Confermato - Abbandono partita corrente e avvio nuova")
+        
+        # Close dialog
+        self.new_game_dialog = None
+        
+        # Announce action
+        if self.screen_reader:
+            self.screen_reader.tts.speak(
+                "Partita precedente abbandonata.",
+                interrupt=True
+            )
+            pygame.time.wait(300)
+        
+        # Start new game
+        self._start_new_game()
+    
+    def _cancel_new_game(self) -> None:
+        """Callback: User cancelled new game dialog.
+        
+        Called when user presses:
+        - "N" key (No shortcut)
+        - ESC key
+        - Arrow keys + ENTER on "No" button
+        
+        Actions:
+        1. Close dialog
+        2. Resume current game
+        3. Announce cancellation
+        
+        New in v1.4.3: Safety feature for preventing accidental game loss.
+        """
+        print("Dialog chiuso - Azione annullata, continuo partita corrente")
+        
+        # Close dialog
+        self.new_game_dialog = None
+        
+        # Announce cancellation
+        if self.screen_reader:
+            self.screen_reader.tts.speak(
+                "Azione annullata. Torno alla partita.",
+                interrupt=True
+            )
+            pygame.time.wait(300)
+        
+        # No further action needed, game continues
+    
+    def _start_new_game(self) -> None:
+        """Internal method: Start new game without confirmation.
+        
+        Called by:
+        - handle_game_submenu_selection() when no game is running
+        - _confirm_new_game() after user confirms dialog
+        
+        New in v1.4.3: Extracted to helper method for reuse.
+        """
+        self.is_menu_open = False
+        self.start_game()
+    
     # === MENU & GAMEPLAY HANDLERS ===
     
     def open_options(self) -> None:
@@ -543,6 +649,11 @@ class SolitarioCleanArch:
                 
                 # Normal dialog handling
                 self.abandon_game_dialog.handle_keyboard_events(event)
+                continue  # Block all other input
+            
+            # PRIORITY 4: New game confirmation dialog open (v1.4.3)
+            if self.new_game_dialog and self.new_game_dialog.is_open:
+                self.new_game_dialog.handle_keyboard_events(event)
                 continue  # Block all other input
             
             # Route keyboard events based on state

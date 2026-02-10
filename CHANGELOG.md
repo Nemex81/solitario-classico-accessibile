@@ -138,6 +138,23 @@ if stock.is_empty() and not waste.is_empty():
   - 🎯 Riduce necessità di navigare con frecce
   - ♿ Accesso diretto alle funzioni comuni
 
+**Feature #3: New Game Confirmation Dialog** ⭐ NUOVO
+- **Descrizione**: Dialog di conferma quando si avvia nuova partita con una già in corso
+- **Problema Risolto**: Prevenire perdita accidentale progresso partita quando si preme "N" o si seleziona "Nuova partita" dal menu
+- **Comportamento**:
+  - Nessuna partita attiva: Nuova partita inizia immediatamente (backward compatible)
+  - Partita attiva: Appare dialog "Una partita è già in corso. Vuoi abbandonarla e avviarne una nuova?"
+  - Opzioni: Sì (abbandona + nuova) / No (annulla e continua)
+  - Shortcuts: S per Sì, N per No, ESC per annullare
+- **Files modificati**:
+  - `test.py`: Aggiunti `new_game_dialog`, `show_new_game_dialog()`, `_confirm_new_game()`, `_cancel_new_game()`, `_start_new_game()`
+  - Modificato `handle_game_submenu_selection()` per check `is_game_running()`
+  - Aggiunto handling in `handle_events()` per dialog priority
+- **Benefici UX**:
+  - 🛡️ Sicurezza: Previene perdita accidentale progresso
+  - 🎯 Consistenza: Usa pattern dialog v1.4.2
+  - ♿ Accessibilità: Dialog completo con TTS e shortcuts
+
 ### 🔧 Modifiche Tecniche
 
 - **Totale commit**: 21 commits atomici di bugfix (17 precedenti + 2 per Bug #4 + 2 per Bug #5)
