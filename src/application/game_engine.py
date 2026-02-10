@@ -723,6 +723,13 @@ class GameEngine:
         waste = self.table.pile_scarti
         
         if stock.is_empty() and not waste.is_empty():
+            # ✅ BUG #5 FIX: Announce problem first to provide context
+            if self.screen_reader:
+                self.screen_reader.tts.speak(
+                    "Mazzo riserve vuoto.",
+                    interrupt=True
+                )
+            
             # Auto-recycle waste using configured mode from settings
             recycle_success, recycle_msg = self.service.recycle_waste(
                 shuffle=self.shuffle_on_recycle
@@ -745,7 +752,7 @@ class GameEngine:
             if self.screen_reader:
                 # Remove auto-draw part from message (we handle it below)
                 recycle_only = recycle_announcement.split("Pescata automatica")[0].strip()
-                self.screen_reader.tts.speak(recycle_only, interrupt=True)
+                self.screen_reader.tts.speak(recycle_only, interrupt=False)
         
         # Now draw cards (original logic)
         success, generic_msg, cards = self.service.draw_cards(count)

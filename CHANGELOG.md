@@ -9,7 +9,7 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 ### 🐛 Bug Fix Critici
 
-Questa release contiene 5 bugfix critici che migliorano significativamente la stabilità dell'applicazione.
+Questa release contiene 6 bugfix critici che migliorano significativamente la stabilità dell'applicazione.
 
 **Bug #1: Deck Type Non Applicato da Settings** (3 commits)
 - **Problema**: Il tipo mazzo (French vs Neapolitan) selezionato nelle opzioni non veniva applicato
@@ -62,6 +62,16 @@ Questa release contiene 5 bugfix critici che migliorano significativamente la st
   - `test_multiple_recycles`: Stress test ricicli multipli
 - **Commits**: `732d441`, `b4056a6` (PR #45 - Fix by GitHub Copilot)
 
+**Bug #5: Sequenza Annunci TTS Confusa Durante Auto-Recycle** (PR #47)
+- **Problema**: Durante l'auto-recycle (Bug #4), la sequenza TTS annunciava l'azione ("Rimescolo...") senza prima spiegare il contesto (mazzo vuoto), confondendo l'utente
+- **Soluzione**: Implementato pattern narrativo a 3 step: PROBLEMA → SOLUZIONE → RISULTATO
+  - Step 1: "Mazzo riserve vuoto." (interrupt=True) - Spiega il problema
+  - Step 2: "Rimescolo gli scarti nel mazzo riserve!" (interrupt=False) - Descrive la soluzione automatica
+  - Step 3: "Hai pescato: [carte]" (interrupt=False) - Annuncia il risultato
+- **Files modificati**: `game_engine.py` (+8 righe, -1 riga), `test_game_engine.py` (+29 righe, -2 righe)
+- **Test coverage**: Aggiornati 2 test esistenti con verifica sequenza completa e interrupt flags corretti
+- **Commits**: PR #47 - Fix by GitHub Copilot
+
 ### 🎯 Dettagli Tecnici Bug #4
 
 **Flusso Implementato**:
@@ -90,8 +100,8 @@ if stock.is_empty() and not waste.is_empty():
 
 ### 🔧 Modifiche Tecniche
 
-- **Totale commit**: 19 commits atomici di bugfix (17 precedenti + 2 per Bug #4)
-- **Testing**: Tutti i fix testabili manualmente + suite automatica per Bug #4
+- **Totale commit**: 21 commits atomici di bugfix (17 precedenti + 2 per Bug #4 + 2 per Bug #5)
+- **Testing**: Tutti i fix testabili manualmente + suite automatica per Bug #4 e Bug #5
 - **Backward compatibility**: 100% preservata
 - **Regressioni**: Nessuna (Bug #3.1 era regressione da Bug #3, ora risolta)
 
@@ -104,6 +114,7 @@ if stock.is_empty() and not waste.is_empty():
 | #3 | 🔴 Critica | ✅ FIXED | Tutte le impostazioni applicate correttamente |
 | #3.1 | 🔴 Critica | ✅ FIXED | Nessun crash al cambio mazzo |
 | #4 | 🔴 Alta | ✅ FIXED | Riciclo e pesca automatici in un'unica azione |
+| #5 | 🟡 Media | ✅ FIXED | Sequenza TTS chiara: problema → soluzione → risultato |
 
 ### ✅ Testing Eseguito
 
@@ -118,6 +129,14 @@ if stock.is_empty() and not waste.is_empty():
 - ✅ Entrambe pile vuote - errore corretto (Bug #4)
 - ✅ Ricicli multipli nella stessa partita (Bug #4)
 - ✅ Suite automatica: 6 test + 29 test esistenti PASS (Bug #4)
+
+**Bug #5** (Testing Automatizzato):
+- ✅ Sequenza TTS 3-step verificata con shuffle=True
+- ✅ Sequenza TTS 3-step verificata con shuffle=False
+- ✅ Interrupt flags corretti per ogni step (True → False → False)
+- ✅ Messaggio "Mazzo riserve vuoto." annunciato PRIMA del recycle
+- ✅ Flusso narrativo logico: problema → azione → risultato
+- ✅ Test coverage: 2 test esistenti aggiornati con verifiche complete
 
 ---
 
