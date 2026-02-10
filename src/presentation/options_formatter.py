@@ -81,12 +81,12 @@ class OptionsFormatter:
         msg = f"{position} di 5: {name}, {value}."
         
         if include_hint:
-            # Special hint for Timer (has extra keys)
+            # Special hint for Timer (has extra keys) - v1.5.1 updated
             if index == 2:  # Timer option
                 if "Disattivato" in value:
-                    msg += " Premi T per attivare."
+                    msg += " Premi T o INVIO per attivare a 5 minuti, o + e - per regolare."
                 else:
-                    msg += " Premi T per disattivare o + e - per regolare."
+                    msg += " Premi INVIO per incrementare, T per disattivare, o + e - per regolare."
             # Standard hint for all other options
             else:
                 msg += " Premi INVIO per modificare."

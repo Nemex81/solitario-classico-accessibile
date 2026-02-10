@@ -338,22 +338,31 @@ class OptionsWindowController:
         return msg
     
     def _cycle_timer_preset(self) -> str:
-        """Cycle timer through presets (OFF -> 10 -> 20 -> 30 -> OFF).
+        """Cycle timer with +5min increments and wrap-around (v1.5.1).
         
-        INVIO on Timer option cycles through common presets.
+        Behavior:
+        - OFF (0) → 5 min
+        - 5-55 min → +5 min
+        - 60 min → 5 min (wrap-around)
+        
+        For decrementing, use - key.
+        For ON/OFF toggle, use T key.
         For fine control, use +/- keys.
+        
+        Returns:
+            TTS confirmation message
         """
         current = self.settings.max_time_game
         
-        # Preset cycle: OFF -> 10 -> 20 -> 30 -> OFF
         if current <= 0:
-            new_value = 600  # 10 minutes
-        elif current == 600:
-            new_value = 1200  # 20 minutes
-        elif current == 1200:
-            new_value = 1800  # 30 minutes
+            # Timer OFF → Enable at 5 minutes
+            new_value = 300  # 5 minutes in seconds
+        elif current >= 3600:
+            # At maximum (60 min) → Wrap to 5 minutes
+            new_value = 300
         else:
-            new_value = -1  # OFF
+            # Active timer → Increment +5 minutes
+            new_value = current + 300
         
         self.settings.max_time_game = new_value
         display = self.settings.get_timer_display()
