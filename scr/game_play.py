@@ -37,6 +37,7 @@ class GamePlay(DialogBox):
 		self.mazzo = FrenchDeck() # inizializzazione mazzo di gioco
 		self.tavolo = TavoloSolitario(self.mazzo) # inizializzazione tavolo di gioco
 		self.engine = EngineSolitario(self.tavolo) # inizializzazione motore di gioco per il solitario classico
+		self.is_solitaire_menu_open = False # NEW: Track solitaire menu state (opened with ESC during game)
 		self.build_commands_list() # creazione lista dei comandi utente
 		self.engine.crea_gioco() # avvio una nuova partita
 
@@ -45,6 +46,25 @@ class GamePlay(DialogBox):
 	def vocalizza(self, string):
 		self.screen_reader.vocalizza(string)
 		pygame.time.wait(500)
+
+	def open_solitaire_menu(self):
+		"""Open in-game solitaire pause menu.
+		
+		Announces available options with numeric shortcuts.
+		Menu stays open until user selects an option or presses ESC again.
+		"""
+		self.is_solitaire_menu_open = True
+		menu_text = """MENU SOLITARIO:
+1. Nuova partita
+2. Opzioni
+3. Chiudi partita
+Premi ESC per tornare al gioco."""
+		self.vocalizza(menu_text)
+
+	def close_solitaire_menu(self):
+		"""Close in-game solitaire pause menu and return to game."""
+		self.is_solitaire_menu_open = False
+		self.vocalizza("Menu chiuso, torno al gioco.")
 
 	def quit_app(self):
 		self.vocalizza("chiusura in corso.  ")
@@ -141,19 +161,58 @@ class GamePlay(DialogBox):
 			self.vocalizza(string)
 
 	def press_1(self):
-		string = self.engine.move_cursor_to_pile_with_select(0)
-		if string:
-			self.vocalizza(string)
+		"""Handle key '1': Menu shortcut OR pile base 1 (context-aware).
+		
+		Context Menu (menu open): Execute "1. Nuova partita"
+		Context Game (menu closed): Jump to pile base 1
+		"""
+		if self.is_solitaire_menu_open:
+			# MENU CONTEXT: "1. Nuova partita"
+			self.n_press()
+			self.close_solitaire_menu()
+		else:
+			# GAME CONTEXT: Pile base 1 (existing behavior)
+			string = self.engine.move_cursor_to_pile_with_select(0)
+			if string:
+				self.vocalizza(string)
 
 	def press_2(self):
-		string = self.engine.move_cursor_to_pile_with_select(1)
-		if string:
-			self.vocalizza(string)
+		"""Handle key '2': Menu shortcut OR pile base 2 (context-aware).
+		
+		Context Menu: Execute "2. Opzioni"
+		Context Game: Jump to pile base 2
+		"""
+		if self.is_solitaire_menu_open:
+			# MENU CONTEXT: "2. Opzioni"
+			self.o_press()
+			self.close_solitaire_menu()
+		else:
+			# GAME CONTEXT: Pile base 2
+			string = self.engine.move_cursor_to_pile_with_select(1)
+			if string:
+				self.vocalizza(string)
 
 	def press_3(self):
-		string = self.engine.move_cursor_to_pile_with_select(2)
-		if string:
-			self.vocalizza(string)
+		"""Handle key '3': Menu shortcut OR pile base 3 (context-aware).
+		
+		Context Menu: Execute "3. Chiudi partita"
+		Context Game: Jump to pile base 3
+		"""
+		if self.is_solitaire_menu_open:
+			# MENU CONTEXT: "3. Chiudi partita"
+			self.create_yes_or_no_box(
+				"Sei sicuro di voler abbandonare la partita?", 
+				"Abbandonare la partita?"
+			)
+			if self.answare:
+				string = self.engine.chiudi_partita()
+				self.vocalizza(string)
+			self.close_solitaire_menu()
+		else:
+			# GAME CONTEXT: Pile base 3
+			string = self.engine.move_cursor_to_pile_with_select(2)
+			if string:
+				self.vocalizza(string)
 
 	def press_4(self):
 		string = self.engine.move_cursor_to_pile_with_select(3)
@@ -292,14 +351,21 @@ DEBUG:
 		self.create_alert_box(help_text, "Aiuto Comandi")
 
 	def esc_press(self):
+		"""Handle ESC key: open/close menu or quit game.
+		
+		Behavior:
+		- If game running + menu closed: Open solitaire menu
+		- If game running + menu open: Close menu (return to game)
+		- If no game running: Quit application
+		"""
 		if self.engine.is_game_running:
-			self.create_yes_or_no_box("Sei sicuro di voler abbandonare la partita?", "Abbandonare la partita??")
-			result = self.answare
-			if result:
-				string = self.engine.chiudi_partita()
-				self.vocalizza(string)
-
+			# Toggle solitaire menu
+			if not self.is_solitaire_menu_open:
+				self.open_solitaire_menu()
+			else:
+				self.close_solitaire_menu()
 		else:
+			# No game running: quit app
 			self.quit_app()
 
 	# NUOVI HANDLER: Pile Semi (SHIFT+1-4)

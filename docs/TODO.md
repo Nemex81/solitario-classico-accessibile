@@ -102,22 +102,22 @@
 
 ### Step 3.1: Modifica PyMenu (`scr/pygame_menu.py`)
 
-- [ ] **Aprire file**: `scr/pygame_menu.py`
-- [ ] **Metodo `build_commands_list()`** (riga ~35):
-  - [ ] Aggiungere mappatura: `pygame.K_1: self.press_1`
-  - [ ] Aggiungere mappatura: `pygame.K_2: self.press_2`
-  - [ ] Aggiungere mappatura: `pygame.K_3: self.press_3`
-  - [ ] Aggiungere mappatura: `pygame.K_4: self.press_4`
-  - [ ] Aggiungere mappatura: `pygame.K_5: self.press_5`
-- [ ] **Nuovi metodi** (dopo `execute()`, riga ~70):
-  - [ ] Implementare `press_1()`: if len >= 1, selected_item = 0, execute()
-  - [ ] Implementare `press_2()`: if len >= 2, selected_item = 1, execute()
-  - [ ] Implementare `press_3()`: if len >= 3, selected_item = 2, execute()
-  - [ ] Implementare `press_4()`: if len >= 4, selected_item = 3, execute()
-  - [ ] Implementare `press_5()`: if len >= 5, selected_item = 4, execute()
-- [ ] **[OPZIONALE] Metodo `draw_menu()`** (riga ~80):
-  - [ ] Aggiungere prefisso numerico: `f"{i + 1}. {item}"` (escluso ultimo)
-  - [ ] Testare visualizzazione prefissi
+- [x] **Aprire file**: `scr/pygame_menu.py`
+- [x] **Metodo `build_commands_list()`** (riga ~37):
+  - [x] Aggiungere mappatura: `pygame.K_1: self.press_1`
+  - [x] Aggiungere mappatura: `pygame.K_2: self.press_2`
+  - [x] Aggiungere mappatura: `pygame.K_3: self.press_3`
+  - [x] Aggiungere mappatura: `pygame.K_4: self.press_4`
+  - [x] Aggiungere mappatura: `pygame.K_5: self.press_5`
+- [x] **Nuovi metodi** (dopo `execute()`, riga ~70):
+  - [x] Implementare `press_1()`: if len >= 1, selected_item = 0, execute()
+  - [x] Implementare `press_2()`: if len >= 2, selected_item = 1, execute()
+  - [x] Implementare `press_3()`: if len >= 3, selected_item = 2, execute()
+  - [x] Implementare `press_4()`: if len >= 4, selected_item = 3, execute()
+  - [x] Implementare `press_5()`: if len >= 5, selected_item = 4, execute()
+- [x] **[OPZIONALE] Metodo `draw_menu()`** (riga ~80):
+  - [x] Aggiungere prefisso numerico: `f"{i + 1}. {item}"` (escluso ultimo)
+  - [x] Testare visualizzazione prefissi
 
 #### Test Checklist Step 3.1
 - [ ] T8: Menu mostra "1. Gioca al solitario classico"
@@ -128,29 +128,29 @@
 
 ### Step 3.2: Modifica GamePlay (`scr/game_play.py`)
 
-- [ ] **Aprire file**: `scr/game_play.py`
-- [ ] **Metodo `__init__()`** (riga ~35):
-  - [ ] Aggiungere flag: `self.is_solitaire_menu_open = False`
-- [ ] **Nuovi metodi** (dopo `vocalizza()`, riga ~50):
-  - [ ] Implementare `open_solitaire_menu()`:
-    - [ ] Set flag: `self.is_solitaire_menu_open = True`
-    - [ ] Vocalizzare: "MENU SOLITARIO: 1. Nuova partita, 2. Opzioni, 3. Chiudi partita"
-  - [ ] Implementare `close_solitaire_menu()`:
-    - [ ] Set flag: `self.is_solitaire_menu_open = False`
-    - [ ] Vocalizzare: "Menu chiuso, torno al gioco."
-- [ ] **Modifica `esc_press()`** (riga ~340):
-  - [ ] If `is_game_running` AND NOT `is_solitaire_menu_open`: chiama `open_solitaire_menu()`
-  - [ ] If `is_game_running` AND `is_solitaire_menu_open`: chiama `close_solitaire_menu()`
-  - [ ] Else (no game): chiama `quit_app()` (invariato)
-- [ ] **Modifica `press_1()`** (riga ~150):
-  - [ ] If `is_solitaire_menu_open`: chiama `n_press()` + `close_solitaire_menu()`
-  - [ ] Else: esegue `move_cursor_to_pile_with_select(0)` (invariato)
-- [ ] **Modifica `press_2()`** (riga ~155):
-  - [ ] If `is_solitaire_menu_open`: chiama `o_press()` + `close_solitaire_menu()`
-  - [ ] Else: esegue `move_cursor_to_pile_with_select(1)` (invariato)
-- [ ] **Modifica `press_3()`** (riga ~160):
-  - [ ] If `is_solitaire_menu_open`: conferma + `chiudi_partita()` + `close_solitaire_menu()`
-  - [ ] Else: esegue `move_cursor_to_pile_with_select(2)` (invariato)
+- [x] **Aprire file**: `scr/game_play.py`
+- [x] **Metodo `__init__()`** (riga ~32):
+  - [x] Aggiungere flag: `self.is_solitaire_menu_open = False`
+- [x] **Nuovi metodi** (dopo `vocalizza()`, riga ~45):
+  - [x] Implementare `open_solitaire_menu()`:
+    - [x] Set flag: `self.is_solitaire_menu_open = True`
+    - [x] Vocalizzare: "MENU SOLITARIO: 1. Nuova partita, 2. Opzioni, 3. Chiudi partita"
+  - [x] Implementare `close_solitaire_menu()`:
+    - [x] Set flag: `self.is_solitaire_menu_open = False`
+    - [x] Vocalizzare: "Menu chiuso, torno al gioco."
+- [x] **Modifica `esc_press()`** (riga ~294):
+  - [x] If `is_game_running` AND NOT `is_solitaire_menu_open`: chiama `open_solitaire_menu()`
+  - [x] If `is_game_running` AND `is_solitaire_menu_open`: chiama `close_solitaire_menu()`
+  - [x] Else (no game): chiama `quit_app()` (invariato)
+- [x] **Modifica `press_1()`** (riga ~143):
+  - [x] If `is_solitaire_menu_open`: chiama `n_press()` + `close_solitaire_menu()`
+  - [x] Else: esegue `move_cursor_to_pile_with_select(0)` (invariato)
+- [x] **Modifica `press_2()`** (riga ~148):
+  - [x] If `is_solitaire_menu_open`: chiama `o_press()` + `close_solitaire_menu()`
+  - [x] Else: esegue `move_cursor_to_pile_with_select(1)` (invariato)
+- [x] **Modifica `press_3()`** (riga ~153):
+  - [x] If `is_solitaire_menu_open`: conferma + `chiudi_partita()` + `close_solitaire_menu()`
+  - [x] Else: esegue `move_cursor_to_pile_with_select(2)` (invariato)
 
 #### Test Checklist Step 3.2
 - [ ] T11: ESC durante partita → Apre menu solitario
