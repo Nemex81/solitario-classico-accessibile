@@ -77,32 +77,32 @@ if settings.command_hints_enabled and hint:
 ### Checklist Implementazione
 
 #### 1.1 Aggiungere Campo Settings
-- [ ] Aprire `src/domain/services/game_settings.py`
-- [ ] Trovare `@dataclass class GameSettings`
-- [ ] Aggiungere campo: `command_hints_enabled: bool = True`
-- [ ] Posizione: Dopo `shuffle_on_recycle` (riga ~40)
-- [ ] Documentare: "Enable/disable command hints during gameplay (v1.5.0)"
+- [x] Aprire `src/domain/services/game_settings.py`
+- [x] Trovare `@dataclass class GameSettings`
+- [x] Aggiungere campo: `command_hints_enabled: bool = True`
+- [x] Posizione: Dopo `shuffle_on_recycle` (riga ~40)
+- [x] Documentare: "Enable/disable command hints during gameplay (v1.5.0)"
 
 #### 1.2 Implementare Toggle Method
-- [ ] Creare metodo `toggle_command_hints(self) -> Tuple[bool, str]`
-- [ ] Implementare check `is_game_running()` → blocco modifica durante partita
-- [ ] Toggle: `self.command_hints_enabled = not self.command_hints_enabled`
-- [ ] Return success + messaggio TTS:
+- [x] Creare metodo `toggle_command_hints(self) -> Tuple[bool, str]`
+- [x] Implementare check `is_game_running()` → blocco modifica durante partita
+- [x] Toggle: `self.command_hints_enabled = not self.command_hints_enabled`
+- [x] Return success + messaggio TTS:
   - Success: "Suggerimenti comandi attivi." / "Suggerimenti comandi disattivati."
   - Blocked: "Non puoi modificare questa opzione durante una partita!"
 
 #### 1.3 Implementare Display Method
-- [ ] Creare metodo `get_command_hints_display(self) -> str`
-- [ ] Return "Attivi" se enabled, "Disattivati" se disabled
-- [ ] Usato da OptionsFormatter per visualizzazione opzione
+- [x] Creare metodo `get_command_hints_display(self) -> str`
+- [x] Return "Attivi" se enabled, "Disattivati" se disabled
+- [x] Usato da OptionsFormatter per visualizzazione opzione
 
 #### 1.4 Testing
-- [ ] Creare file `tests/unit/src/test_game_settings_hints.py`
-- [ ] Test `test_default_hints_enabled()` → verifica default True
-- [ ] Test `test_toggle_hints_on_off()` → verifica toggle bidirezionale
-- [ ] Test `test_display_values()` → verifica "Attivi"/"Disattivati"
-- [ ] Test `test_toggle_blocked_during_game()` → verifica blocco durante partita
-- [ ] Test `test_reset_on_new_game()` → verifica reset settings (se applicabile)
+- [x] Creare file `tests/unit/domain/services/test_game_settings_hints.py`
+- [x] Test `test_default_hints_enabled()` → verifica default True
+- [x] Test `test_toggle_hints_on_off()` → verifica toggle bidirezionale
+- [x] Test `test_display_values()` → verifica "Attivi"/"Disattivati"
+- [x] Test `test_toggle_blocked_during_game()` → verifica blocco durante partita
+- [x] Test `test_reset_on_new_game()` → verifica reset settings (se applicabile)
 
 **Checkpoint Fase 1**: ✅ Settings infrastructure completa, test passing
 
