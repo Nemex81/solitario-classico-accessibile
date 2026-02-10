@@ -140,7 +140,8 @@ class SolitarioCleanArch:
         self.gameplay_controller = GamePlayController(
             engine=self.engine,
             screen_reader=self.screen_reader if self.screen_reader else self._dummy_sr(),
-            settings=self.settings  # NEW PARAMETER (v1.4.2.1)
+            settings=self.settings,  # NEW PARAMETER (v1.4.2.1)
+            on_new_game_request=self.show_new_game_dialog  # NEW PARAMETER (v1.4.3)
         )
         print("✓ Controller pronto")
         

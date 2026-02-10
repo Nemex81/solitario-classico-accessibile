@@ -146,12 +146,16 @@ if stock.is_empty() and not waste.is_empty():
   - Partita attiva: Appare dialog "Una partita è già in corso. Vuoi abbandonarla e avviarne una nuova?"
   - Opzioni: Sì (abbandona + nuova) / No (annulla e continua)
   - Shortcuts: S per Sì, N per No, ESC per annullare
+  - Funziona sia dal menu che con tasto "N" durante gameplay
 - **Files modificati**:
   - `test.py`: Aggiunti `new_game_dialog`, `show_new_game_dialog()`, `_confirm_new_game()`, `_cancel_new_game()`, `_start_new_game()`
   - Modificato `handle_game_submenu_selection()` per check `is_game_running()`
   - Aggiunto handling in `handle_events()` per dialog priority
+  - Aggiunto parametro `on_new_game_request` callback a GamePlayController
+  - `src/application/gameplay_controller.py`: Aggiunto parametro `on_new_game_request` in `__init__()`
+  - Modificato `_new_game()` per chiamare callback quando partita attiva
 - **Benefici UX**:
-  - 🛡️ Sicurezza: Previene perdita accidentale progresso
+  - 🛡️ Sicurezza: Previene perdita accidentale progresso (menu + tasto N)
   - 🎯 Consistenza: Usa pattern dialog v1.4.2
   - ♿ Accessibilità: Dialog completo con TTS e shortcuts
 

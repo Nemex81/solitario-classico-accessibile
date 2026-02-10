@@ -116,16 +116,30 @@
 - ❌ **MANCANTE**: Dialog NON triggato da comando "N" tastiera durante gameplay
 - 🔍 **ROOT CAUSE**: `gameplay_controller._new_game()` ha TODO ma non chiama dialog
 - ✅ **SOLUZIONE**: Aggiungere callback `on_new_game_request` a gameplay_controller
-- ✅ Aggiornato TODO.md con Step 4.0 e 4.0b (modifiche gameplay_controller + test.py)
-- ✅ Aggiornato documentazione completa con sezione gameplay_controller
-- 🔄 **PROSSIMO**: Implementare Step 4.0 e 4.0b per completare Feature #3
+
+**2026-02-10 (Implementazione Copilot - Sessione 4 - Correzione Feature #3)**
+- ✅ Step 4.0: Modificato `src/application/gameplay_controller.py`
+  - ✅ Aggiunto parametro `on_new_game_request` in `__init__()`
+  - ✅ Salvato callback come `self.on_new_game_request`
+  - ✅ Modificato `_new_game()` per chiamare callback quando partita attiva
+  - ✅ Backward compatible: se callback None, avvia direttamente
+- ✅ Step 4.0b: Modificato `test.py`
+  - ✅ Aggiunto parametro `on_new_game_request=self.show_new_game_dialog` in GamePlayController init
+  - ✅ Collegamento callback completato
+- ✅ Aggiornato `CHANGELOG.md` con files modificati completi
+- ✅ Aggiornato `docs/TODO.md` con stato completamento
+- 🎉 **FEATURE #3 ORA COMPLETA**: Dialog funziona sia da menu che da tasto N durante gameplay
 
 ---
 
-**Stato Attuale**: Feature #3 implementata al 50% - menu OK, keyboard command mancante
-**Action Required**: Implementare Step 4.0 (gameplay_controller callback) + Step 4.0b (test.py collegamento)
+**Implementazione v1.4.3 COMPLETA AL 100%!**  
+**Tutte e tre le feature implementate e funzionanti**
+
+- ✅ Feature #1: Double-Tap Auto-Selection
+- ✅ Feature #2: Numeric Menu Shortcuts  
+- ✅ Feature #3: New Game Confirmation Dialog (completo: menu + keyboard command)
 
 ---
 
 **Fine TODO**  
-Ultimo aggiornamento: 10 Febbraio 2026, 12:25 CET - Feature #3 correzione in corso
+Ultimo aggiornamento: 10 Febbraio 2026 - v1.4.3 Implementazione 100% Completa
