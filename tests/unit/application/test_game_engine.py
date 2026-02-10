@@ -561,3 +561,239 @@ class TestHelperMethods:
         assert engine._get_pile(-1) is None
         assert engine._get_pile(13) is None
         assert engine._get_pile(100) is None
+
+
+class TestAutoRecycleWaste:
+    """Test Bug #4 fix: Auto-recycle waste when stock is exhausted."""
+    
+    def test_auto_recycle_with_shuffle(self):
+        """Test auto-recycle when stock empty, waste has cards, shuffle=True."""
+        # Arrange
+        deck = FrenchDeck()
+        deck.crea()
+        table = GameTable(deck)
+        rules = SolitaireRules(deck)
+        service = Mock(spec=GameService)
+        screen_reader = Mock(spec=ScreenReader)
+        screen_reader.tts = Mock()
+        cursor = Mock()
+        selection = Mock()
+        engine = GameEngine(table, service, rules, cursor, selection, screen_reader)
+        engine.shuffle_on_recycle = True
+        
+        # Setup: stock empty, waste has cards
+        stock = Mock(spec=Pile)
+        waste = Mock(spec=Pile)
+        stock.is_empty.return_value = True
+        waste.is_empty.return_value = False
+        table.pile_mazzo = stock
+        table.pile_scarti = waste
+        
+        # Mock recycle_waste to succeed
+        service.recycle_waste.return_value = (True, "Tallone riciclato (15 carte)")
+        
+        # Mock draw_cards to return cards after recycle
+        mock_cards = [Mock(spec=Card)]
+        mock_cards[0].get_display_name.return_value = "7 di Cuori"
+        service.draw_cards.return_value = (True, "Pescate 1 carte", mock_cards)
+        
+        # Act
+        success, message = engine.draw_from_stock()
+        
+        # Assert
+        assert success is True
+        service.recycle_waste.assert_called_once_with(shuffle=True)
+        service.draw_cards.assert_called_once_with(1)
+        assert "Hai pescato" in message
+        # Verify TTS was called for both recycle and draw
+        assert screen_reader.tts.speak.call_count == 2
+    
+    def test_auto_recycle_without_shuffle(self):
+        """Test auto-recycle when stock empty, waste has cards, shuffle=False."""
+        # Arrange
+        deck = FrenchDeck()
+        deck.crea()
+        table = GameTable(deck)
+        rules = SolitaireRules(deck)
+        service = Mock(spec=GameService)
+        screen_reader = Mock(spec=ScreenReader)
+        screen_reader.tts = Mock()
+        cursor = Mock()
+        selection = Mock()
+        engine = GameEngine(table, service, rules, cursor, selection, screen_reader)
+        engine.shuffle_on_recycle = False
+        
+        # Setup: stock empty, waste has cards
+        stock = Mock(spec=Pile)
+        waste = Mock(spec=Pile)
+        stock.is_empty.return_value = True
+        waste.is_empty.return_value = False
+        table.pile_mazzo = stock
+        table.pile_scarti = waste
+        
+        # Mock recycle_waste to succeed
+        service.recycle_waste.return_value = (True, "Tallone riciclato (10 carte)")
+        
+        # Mock draw_cards to return cards after recycle
+        mock_cards = [Mock(spec=Card)]
+        mock_cards[0].get_display_name.return_value = "Regina di Quadri"
+        service.draw_cards.return_value = (True, "Pescate 1 carte", mock_cards)
+        
+        # Act
+        success, message = engine.draw_from_stock()
+        
+        # Assert
+        assert success is True
+        service.recycle_waste.assert_called_once_with(shuffle=False)
+        service.draw_cards.assert_called_once_with(1)
+        assert "Hai pescato" in message
+    
+    def test_both_piles_empty(self):
+        """Test when both stock and waste are empty (no recycle)."""
+        # Arrange
+        deck = FrenchDeck()
+        deck.crea()
+        table = GameTable(deck)
+        rules = SolitaireRules(deck)
+        service = Mock(spec=GameService)
+        screen_reader = Mock(spec=ScreenReader)
+        screen_reader.tts = Mock()
+        cursor = Mock()
+        selection = Mock()
+        engine = GameEngine(table, service, rules, cursor, selection, screen_reader)
+        
+        # Setup: both stock and waste empty
+        stock = Mock(spec=Pile)
+        waste = Mock(spec=Pile)
+        stock.is_empty.return_value = True
+        waste.is_empty.return_value = True
+        table.pile_mazzo = stock
+        table.pile_scarti = waste
+        
+        # Mock draw_cards to fail (both empty)
+        service.draw_cards.return_value = (False, "Tallone e scarti vuoti - impossibile pescare", [])
+        
+        # Act
+        success, message = engine.draw_from_stock()
+        
+        # Assert
+        assert success is False
+        assert "vuoti" in message.lower()
+        service.recycle_waste.assert_not_called()
+        service.draw_cards.assert_called_once_with(1)
+    
+    def test_stock_has_cards_no_recycle(self):
+        """Test normal draw when stock has cards (no recycle needed)."""
+        # Arrange
+        deck = FrenchDeck()
+        deck.crea()
+        table = GameTable(deck)
+        rules = SolitaireRules(deck)
+        service = Mock(spec=GameService)
+        screen_reader = Mock(spec=ScreenReader)
+        screen_reader.tts = Mock()
+        cursor = Mock()
+        selection = Mock()
+        engine = GameEngine(table, service, rules, cursor, selection, screen_reader)
+        
+        # Setup: stock has cards
+        stock = Mock(spec=Pile)
+        waste = Mock(spec=Pile)
+        stock.is_empty.return_value = False
+        waste.is_empty.return_value = False
+        table.pile_mazzo = stock
+        table.pile_scarti = waste
+        
+        # Mock draw_cards to succeed normally
+        mock_cards = [Mock(spec=Card)]
+        mock_cards[0].get_display_name.return_value = "Asso di Fiori"
+        service.draw_cards.return_value = (True, "Pescate 1 carte", mock_cards)
+        
+        # Act
+        success, message = engine.draw_from_stock()
+        
+        # Assert
+        assert success is True
+        service.recycle_waste.assert_not_called()
+        service.draw_cards.assert_called_once_with(1)
+        assert "Hai pescato" in message
+    
+    def test_recycle_fails(self):
+        """Test when recycle_waste fails (edge case)."""
+        # Arrange
+        deck = FrenchDeck()
+        deck.crea()
+        table = GameTable(deck)
+        rules = SolitaireRules(deck)
+        service = Mock(spec=GameService)
+        screen_reader = Mock(spec=ScreenReader)
+        screen_reader.tts = Mock()
+        cursor = Mock()
+        selection = Mock()
+        engine = GameEngine(table, service, rules, cursor, selection, screen_reader)
+        
+        # Setup: stock empty, waste has cards
+        stock = Mock(spec=Pile)
+        waste = Mock(spec=Pile)
+        stock.is_empty.return_value = True
+        waste.is_empty.return_value = False
+        table.pile_mazzo = stock
+        table.pile_scarti = waste
+        
+        # Mock recycle_waste to fail
+        service.recycle_waste.return_value = (False, "Impossibile riciclare tallone")
+        
+        # Act
+        success, message = engine.draw_from_stock()
+        
+        # Assert
+        assert success is False
+        assert "Impossibile riciclare" in message
+        service.recycle_waste.assert_called_once_with(shuffle=False)
+        service.draw_cards.assert_not_called()
+    
+    def test_multiple_recycles(self):
+        """Test multiple recycles in sequence."""
+        # Arrange
+        deck = FrenchDeck()
+        deck.crea()
+        table = GameTable(deck)
+        rules = SolitaireRules(deck)
+        service = Mock(spec=GameService)
+        screen_reader = Mock(spec=ScreenReader)
+        screen_reader.tts = Mock()
+        cursor = Mock()
+        selection = Mock()
+        engine = GameEngine(table, service, rules, cursor, selection, screen_reader)
+        engine.shuffle_on_recycle = True
+        
+        # Setup: stock empty, waste has cards
+        stock = Mock(spec=Pile)
+        waste = Mock(spec=Pile)
+        table.pile_mazzo = stock
+        table.pile_scarti = waste
+        
+        # First recycle
+        stock.is_empty.return_value = True
+        waste.is_empty.return_value = False
+        service.recycle_waste.return_value = (True, "Tallone riciclato")
+        mock_cards1 = [Mock(spec=Card)]
+        mock_cards1[0].get_display_name.return_value = "7 di Cuori"
+        service.draw_cards.return_value = (True, "Pescate 1 carte", mock_cards1)
+        
+        success1, msg1 = engine.draw_from_stock()
+        
+        # Second recycle
+        stock.is_empty.return_value = True
+        waste.is_empty.return_value = False
+        mock_cards2 = [Mock(spec=Card)]
+        mock_cards2[0].get_display_name.return_value = "Regina di Quadri"
+        service.draw_cards.return_value = (True, "Pescate 1 carte", mock_cards2)
+        
+        success2, msg2 = engine.draw_from_stock()
+        
+        # Assert
+        assert success1 is True
+        assert success2 is True
+        assert service.recycle_waste.call_count == 2
+        assert service.draw_cards.call_count == 2

@@ -9,7 +9,7 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 ### 🐛 Bug Fix Critici
 
-Questa release contiene 4 bugfix critici che migliorano significativamente la stabilità dell'applicazione.
+Questa release contiene 5 bugfix critici che migliorano significativamente la stabilità dell'applicazione.
 
 **Bug #1: Deck Type Non Applicato da Settings** (3 commits)
 - **Problema**: Il tipo mazzo (French vs Neapolitan) selezionato nelle opzioni non veniva applicato
@@ -42,10 +42,56 @@ Questa release contiene 4 bugfix critici che migliorano significativamente la st
 - **Files modificati**: `game_engine.py`
 - **Commit**: `7a58afc`
 
+**Bug #4: Auto-Recycle Mazzo Vuoto** ⭐ COPILOT FIX (PR #45)
+- **Problema**: Quando il mazzo riserve era vuoto ma gli scarti avevano carte, l'utente doveva premere il comando pesca DUE volte:
+  - Prima pressione: riciclo scarti → mazzo
+  - Seconda pressione: pesca dal mazzo
+  - UX frustrante e non intuitiva
+- **Soluzione**: Implementato sistema automatico di riciclo + pesca in un'unica operazione
+  - Check intelligente: mazzo vuoto MA scarti pieni → auto-recycle
+  - Usa modalità configurata: `shuffle_on_recycle` da settings (shuffle vs inverse)
+  - Pesca automatica dopo riciclo (usa `draw_count` da difficulty)
+  - Annunci TTS separati per chiarezza: "Rimescolo..." poi "Hai pescato..."
+- **Files modificati**: `game_engine.py` (+40 righe), `game_service.py` (+7 righe)
+- **Test aggiunti**: `test_game_engine.py` (+236 righe) con 6 test completi:
+  - `test_auto_recycle_with_shuffle`: Verifica modalità shuffle
+  - `test_auto_recycle_without_shuffle`: Verifica modalità inverse
+  - `test_both_piles_empty`: Errore quando entrambe vuote
+  - `test_stock_has_cards_no_recycle`: Pesca normale senza recycle
+  - `test_recycle_fails`: Edge case fallimento riciclo
+  - `test_multiple_recycles`: Stress test ricicli multipli
+- **Commits**: `732d441`, `b4056a6` (PR #45 - Fix by GitHub Copilot)
+
+### 🎯 Dettagli Tecnici Bug #4
+
+**Flusso Implementato**:
+```python
+# In draw_from_stock():
+if stock.is_empty() and not waste.is_empty():
+    # 1. Auto-recycle con modalità da settings
+    recycle_success = service.recycle_waste(shuffle=self.shuffle_on_recycle)
+    
+    # 2. Annuncio TTS riciclo (interrupt=True)
+    announce_reshuffle(shuffle_mode)
+    
+    # 3. Pesca automatica (usa draw_count da settings)
+    success, msg, cards = service.draw_cards(count)
+    
+    # 4. Annuncio TTS carte pescate (interrupt=False)
+    announce_drawn_cards(cards)
+```
+
+**Benefici UX**:
+- ✅ Elimina azione doppia (recycle + draw separati)
+- ✅ Flusso naturale e intuitivo
+- ✅ Settings-aware (rispetta shuffle_on_recycle e draw_count)
+- ✅ Feedback TTS chiaro e separato
+- ✅ Zero breaking changes
+
 ### 🔧 Modifiche Tecniche
 
-- **Totale commit**: 17 commits atomici di bugfix
-- **Testing**: Tutti i fix testabili manualmente
+- **Totale commit**: 19 commits atomici di bugfix (17 precedenti + 2 per Bug #4)
+- **Testing**: Tutti i fix testabili manualmente + suite automatica per Bug #4
 - **Backward compatibility**: 100% preservata
 - **Regressioni**: Nessuna (Bug #3.1 era regressione da Bug #3, ora risolta)
 
@@ -57,6 +103,7 @@ Questa release contiene 4 bugfix critici che migliorano significativamente la st
 | #2 | 🔴 Alta | ✅ FIXED | Assi validati correttamente sui semi |
 | #3 | 🔴 Critica | ✅ FIXED | Tutte le impostazioni applicate correttamente |
 | #3.1 | 🔴 Critica | ✅ FIXED | Nessun crash al cambio mazzo |
+| #4 | 🔴 Alta | ✅ FIXED | Riciclo e pesca automatici in un'unica azione |
 
 ### ✅ Testing Eseguito
 
@@ -66,6 +113,11 @@ Questa release contiene 4 bugfix critici che migliorano significativamente la st
 - ✅ Switch multipli (stress test)
 - ✅ Validazione assi su semi corretti
 - ✅ Applicazione settings in nuova partita
+- ✅ Auto-recycle con shuffle abilitato (Bug #4)
+- ✅ Auto-recycle senza shuffle (Bug #4)
+- ✅ Entrambe pile vuote - errore corretto (Bug #4)
+- ✅ Ricicli multipli nella stessa partita (Bug #4)
+- ✅ Suite automatica: 6 test + 29 test esistenti PASS (Bug #4)
 
 ---
 

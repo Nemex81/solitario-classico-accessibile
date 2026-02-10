@@ -684,9 +684,11 @@ class GameEngine:
         return success, message
     
     def draw_from_stock(self, count: Optional[int] = None) -> Tuple[bool, str]:
-        """Draw cards from stock to waste with detailed voice feedback.
+        """Draw cards from stock to waste with auto-recycle support.
         
         Phase 6/7: Now uses self.draw_count from settings when count is None.
+        
+        Bug #4 FIX: Auto-recycles waste when stock is empty but waste has cards.
         
         Uses GameFormatter.format_drawn_cards() for complete card announcement.
         
@@ -706,21 +708,57 @@ class GameEngine:
             >>> success, msg = engine.draw_from_stock(count=3)
             >>> print(msg)
             "Hai pescato: 7 di Cuori, Regina di Quadri, Asso di Fiori."
+            
+            >>> # Mazzo vuoto, scarti con 15 carte, shuffle_discards = True
+            >>> success, msg = engine.draw_from_stock()
+            >>> print(msg)
+            "Rimescolo gli scarti nel mazzo riserve! Hai pescato: 7 di Cuori."
         """
         # ✅ Phase 6: Use settings if count not specified
         if count is None:
             count = self.draw_count
         
+        # ✅ BUG #4 FIX: Check if stock empty but waste has cards
+        stock = self.table.pile_mazzo
+        waste = self.table.pile_scarti
+        
+        if stock.is_empty() and not waste.is_empty():
+            # Auto-recycle waste using configured mode from settings
+            recycle_success, recycle_msg = self.service.recycle_waste(
+                shuffle=self.shuffle_on_recycle
+            )
+            
+            if not recycle_success:
+                # Recycle failed (should never happen if waste not empty)
+                if self.screen_reader:
+                    self.screen_reader.tts.speak(recycle_msg, interrupt=True)
+                return False, recycle_msg
+            
+            # Format recycle announcement
+            shuffle_mode = "shuffle" if self.shuffle_on_recycle else "reverse"
+            recycle_announcement = GameFormatter.format_reshuffle_message(
+                shuffle_mode=shuffle_mode,
+                auto_drawn_cards=None  # Will announce cards separately below
+            )
+            
+            # Announce recycle (but don't return yet - continue to draw)
+            if self.screen_reader:
+                # Remove auto-draw part from message (we handle it below)
+                recycle_only = recycle_announcement.split("Pescata automatica")[0].strip()
+                self.screen_reader.tts.speak(recycle_only, interrupt=True)
+        
+        # Now draw cards (original logic)
         success, generic_msg, cards = self.service.draw_cards(count)
         
         # Use detailed formatter
         if success and cards:
             message = GameFormatter.format_drawn_cards(cards)
         else:
+            # Both stock AND waste empty
             message = generic_msg
         
         if self.screen_reader:
-            self.screen_reader.tts.speak(message, interrupt=True)
+            self.screen_reader.tts.speak(message, interrupt=False)
         
         return success, message
     

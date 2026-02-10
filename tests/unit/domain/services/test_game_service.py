@@ -665,7 +665,7 @@ class TestEdgeCases:
         success, msg, drawn = service.draw_cards(3)
         
         assert success is False
-        assert "vuoto" in msg.lower()
+        assert "vuot" in msg.lower()  # Matches both "vuoto" and "vuoti"
         assert len(drawn) == 0
     
     def test_recycle_with_non_empty_stock(self):
