@@ -184,22 +184,21 @@ class OptionsWindowController:
         if self.settings.game_state.is_running:
             return OptionsFormatter.format_blocked_during_game()
         
-        # Block future option (index 4)
-        if self.cursor_position == 4:
-            return OptionsFormatter.format_future_option_blocked()
-        
         # Route to appropriate handler
         handlers = [
             self._modify_deck_type,      # 0: Tipo Mazzo
             self._modify_difficulty,     # 1: Difficoltà
             self._cycle_timer_preset,    # 2: Timer (INVIO = cycle presets)
             self._modify_shuffle_mode,   # 3: Riciclo Scarti
+            self._modify_command_hints,  # 4: Suggerimenti Comandi (v1.5.0)
         ]
         
         msg = handlers[self.cursor_position]()
         
         # Mark as dirty on successful modification
-        if "impostato" in msg or "impostata" in msg or "disattivato" in msg or "attivato" in msg:
+        msg_lower = msg.lower()
+        if ("impostato" in msg_lower or "impostata" in msg_lower or 
+            "disattivat" in msg_lower or "attivat" in msg_lower):
             self.state = "OPEN_DIRTY"
         
         return msg
@@ -281,7 +280,8 @@ class OptionsWindowController:
             "Tipo mazzo": self.settings.get_deck_type_display(),
             "Difficoltà": self.settings.get_difficulty_display(),
             "Timer": self.settings.get_timer_display(),
-            "Modalità riciclo scarti": self.settings.get_shuffle_mode_display()
+            "Modalità riciclo scarti": self.settings.get_shuffle_mode_display(),
+            "Suggerimenti comandi": self.settings.get_command_hints_display()
         }
         
         return OptionsFormatter.format_all_settings(settings_dict)
@@ -315,7 +315,7 @@ class OptionsWindowController:
             self.settings.get_difficulty_display,
             self.settings.get_timer_display,
             self.settings.get_shuffle_mode_display,
-            lambda: "Non implementata"
+            self.settings.get_command_hints_display  # v1.5.0
         ]
         
         value = value_getters[self.cursor_position]()
@@ -365,6 +365,11 @@ class OptionsWindowController:
         success, msg = self.settings.toggle_shuffle_mode()
         return msg
     
+    def _modify_command_hints(self) -> str:
+        """Toggle command hints (Attivi <-> Disattivati) (v1.5.0)."""
+        success, msg = self.settings.toggle_command_hints()
+        return msg
+    
     # ========================================
     # STATE MANAGEMENT
     # ========================================
@@ -375,7 +380,8 @@ class OptionsWindowController:
             "deck_type": self.settings.deck_type,
             "difficulty": self.settings.difficulty_level,
             "timer": self.settings.max_time_game,
-            "shuffle": self.settings.shuffle_discards
+            "shuffle": self.settings.shuffle_discards,
+            "command_hints": self.settings.command_hints_enabled  # v1.5.0
         }
     
     def _restore_snapshot(self) -> None:
@@ -384,6 +390,7 @@ class OptionsWindowController:
         self.settings.difficulty_level = self.original_settings["difficulty"]
         self.settings.max_time_game = self.original_settings["timer"]
         self.settings.shuffle_discards = self.original_settings["shuffle"]
+        self.settings.command_hints_enabled = self.original_settings["command_hints"]  # v1.5.0
     
     def _reset_state(self) -> None:
         """Reset controller state (close window)."""

@@ -4,7 +4,7 @@
 
 Implementare la feature **"Suggerimenti Comandi"** come Opzione #5 nelle impostazioni di gioco. Questa funzionalità aggiunge hint vocali contestuali durante il gameplay per aiutare gli utenti (specialmente non vedenti) a comprendere meglio i comandi disponibili in ogni contesto.
 
-**Status**: 🚧 **IN CORSO - Fase 3/6 Completata** (10 Febbraio 2026)
+**Status**: 🚧 **IN CORSO - Fasi 3-5 Complete** (10 Febbraio 2026)
 
 ---
 
