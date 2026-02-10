@@ -6,6 +6,21 @@
 
 ---
 
+## ⚠️ **NOTA CRITICA: ARCHITETTURA CORRETTA**
+
+Questo progetto ha **DUE versioni parallele**:
+
+| Versione | Path | Entry Point | Status | Usare per Feature v1.4.3? |
+|----------|------|-------------|--------|---------------------------|
+| **Clean Architecture** | `src/` | `test.py` | ✅ Corrente | ✅ **SÌ** - Usare questo! |
+| **Legacy** | `scr/` | `acs.py` | ⚠️ Deprecato | ❌ NO - Non modificare |
+
+**🚨 IMPORTANTE PER IMPLEMENTAZIONE**:
+- **FASE 2 (Double-Tap)**: ✅ File `src/` già specificati correttamente
+- **FASE 3 (Menu Shortcuts)**: ⚠️ Deve usare `src/infrastructure/ui/menu.py` (NON `scr/pygame_menu.py`)
+
+---
+
 ## 📋 EXECUTIVE SUMMARY
 
 Questo documento descrive l'implementazione di due miglioramenti UX per il Solitario Accessibile:
@@ -15,7 +30,7 @@ Questo documento descrive l'implementazione di due miglioramenti UX per il Solit
 
 **Obiettivo**: Migliorare l'accessibilità e la velocità di interazione per utenti con screen reader.
 
-**Impatto**: 4 file modificati, ~150 righe di codice, stima 2.5-3.5 ore di sviluppo.
+**Impatto**: 3 file modificati (Clean Arch), ~150 righe di codice, stima 2.5-3.5 ore di sviluppo.
 
 ---
 
@@ -73,7 +88,7 @@ Stato: last_quick_pile = None
 
 ### 🛠️ Implementazione Tecnica
 
-#### **Modifica 1.1: `src/domain/services/cursor_manager.py`**
+#### **Modifica 1.1: `src/domain/services/cursor_manager.py`** ✅
 
 **Metodo Modificato**: `jump_to_pile(pile_idx: int, enable_double_tap: bool = True)`
 
@@ -194,7 +209,7 @@ from typing import Tuple, Optional, Dict, Any
 
 ---
 
-#### **Modifica 1.2: `src/application/game_engine.py`**
+#### **Modifica 1.2: `src/application/game_engine.py`** ✅
 
 **Metodo Modificato**: `jump_to_pile(pile_idx: int)`
 
@@ -307,9 +322,9 @@ Implementare scorciatoie numeriche per attivare direttamente le voci dei menu, s
 
 **Scope**:
 - ✅ Menu Principale: Shortcut 1 per "Gioca al solitario classico"
-- ✅ Menu Solitario In-Game: Shortcuts 1/2/3 per voci menu pausa
+- ✅ Menu Solitario (submenu): Nessun shortcut (gestito da test.py con context-aware routing)
 
-**Gestione Conflitti**: I tasti 1-7 sono già occupati durante il gioco (pile base). Soluzione: gli shortcut menu funzionano **solo quando il menu è aperto** (flag `is_solitaire_menu_open`).
+**Gestione Conflitti**: I tasti 1-7 sono già occupati durante il gioco (pile base). Soluzione: gli shortcut menu funzionano **solo quando il menu VirtualMenu è attivo** (routing gestito da `test.py`).
 
 ### 🗺️ Mappatura Shortcuts
 
@@ -327,20 +342,14 @@ Esci dal gioco                   ← nessun prefisso (usa ESC)
 
 ---
 
-#### **Menu Solitario** (pausa in-game, aperto con ESC)
+#### **Menu Solitario (Game Submenu)** (aperto da menu principale)
 | # | Voce Menu | Shortcut | Alternativa | Azione |
 |---|-----------|----------|-------------|--------|
-| 1 | Nuova partita | **`1`** | `N` | Avvia nuova partita |
-| 2 | Opzioni | **`2`** | `O` | Apre opzioni |
-| 3 | Chiudi partita | **`3`** | ESC | Chiudi e torna a menu principale |
+| 1 | Nuova partita | **`1`** | ENTER | Avvia nuova partita |
+| 2 | Opzioni | **`2`** | ENTER | Apre opzioni |
+| 3 | Chiudi | **`3`** | ESC | Torna a menu principale |
 
-**Visualizzazione** (quando ESC premuto durante partita):
-```
-MENU SOLITARIO:
-1. Nuova partita
-2. Opzioni
-3. Chiudi partita
-```
+**Nota**: Durante gameplay, ESC apre dialog di conferma abbandono (gestito da `test.py`). I tasti 1-7 durante gameplay vanno alle pile base (NO conflitto con menu).
 
 ---
 
@@ -350,69 +359,79 @@ MENU SOLITARIO:
 ```
 Stato: Menu principale aperto (all'avvio app)
 Input: Utente preme "1"
-Azione: PyMenu.press_1() → selected_item = 0 → execute()
+Azione: VirtualMenu.press_1() → selected_index = 0 → execute()
 Output: "Hai selezionato Gioca al solitario classico"
-Risultato: Chiude menu principale, apre gameplay
+Risultato: Callback apre game submenu
 ```
 
-#### **Scenario 2: Menu Solitario - Apertura con ESC**
+#### **Scenario 2: Game Submenu - Apertura da Menu Principale**
 ```
-Stato: Partita in corso (is_game_running = True)
-Input: Utente preme "ESC"
-Azione: GamePlay.esc_press() → open_solitaire_menu()
-Output: "MENU SOLITARIO: 1. Nuova partita, 2. Opzioni, 3. Chiudi partita"
-Risultato: is_solitaire_menu_open = True
+Stato: Menu principale, voce 1 selezionata
+Input: Utente preme "1" o ENTER
+Azione: main_menu.callback(0) → apre game_submenu
+Output: "Benvenuto nel menu di gioco del Solitario Classico! ..."
+Risultato: Game submenu attivo con 3 voci
 ```
 
-#### **Scenario 3: Menu Solitario - Shortcut 1 (Nuova Partita)**
+#### **Scenario 3: Game Submenu - Shortcut 1 (Nuova Partita)**
 ```
-Stato: Menu solitario aperto (is_solitaire_menu_open = True)
+Stato: Game submenu aperto
 Input: Utente preme "1"
-Azione: GamePlay.press_1() → verifica flag menu → chiama n_press() → chiude menu
-Output: Conferma nuova partita + vocalizz nuovo gioco
-Risultato: is_solitaire_menu_open = False, nuova partita avviata
+Azione: VirtualMenu.press_1() → selected_index = 0 → execute() → callback(0)
+Output: "Nuova partita avviata! Usa H per l'aiuto comandi."
+Risultato: Partita inizia, menu chiuso
 ```
 
-#### **Scenario 4: In-Game - Tasto 1 (NO Conflitto)**
+#### **Scenario 4: Durante Gameplay - Tasto 1 (NO Conflitto)**
 ```
-Stato: Partita in corso, menu chiuso (is_solitaire_menu_open = False)
+Stato: Partita in corso, menu chiuso
 Input: Utente preme "1"
-Azione: GamePlay.press_1() → verifica flag menu (False) → chiama engine pile jump
+Azione: gameplay_controller.handle_keyboard_events() → chiama pile jump
 Output: "Pila base 1. Carta in cima: [nome]. Premi ancora 1 per selezionare."
-Risultato: Cursore spostato su pila base 1 (comportamento normale)
+Risultato: Cursore su pila base 1 (comportamento normale, menu non interferisce)
 ```
 
 ---
 
 ### 🛠️ Implementazione Tecnica
 
-#### **Modifica 2.1: `scr/pygame_menu.py`** (Menu Principale)
+#### **Modifica 2.1: `src/infrastructure/ui/menu.py`** ⚠️ **CRITICAL PATH**
+
+**⚠️ ATTENZIONE**: Questo è il file **Clean Architecture** (`src/`), NON il file legacy (`scr/pygame_menu.py`).
 
 **Cambiamenti**:
 1. **Add Numeric Handlers**: Metodi `press_1()` ... `press_5()` per shortcut diretti
-2. **Update Command Dictionary**: Aggiungere mappatura pygame.K_1 → press_1(), etc.
-3. **Visual Enhancement**: Prefisso numerico alle voci menu (opzionale, migliora UX)
+2. **Update Event Handler**: Aggiungere gestione K_1 .. K_5 in `handle_keyboard_events()`
+3. **Build Command Dictionary**: Creare mappatura key → handler (opzionale, per codice più pulito)
 
 **Codice Modifiche**:
 
 ```python
 # ═══════════════════════════════════════════════════════════
-# MODIFICA 1: build_commands_list() - Add numeric shortcuts
+# MODIFICA 1: __init__() - Build command mappings (OPTIONAL)
 # ═══════════════════════════════════════════════════════════
-def build_commands_list(self):
+def __init__(self, items, callback, screen, screen_reader, parent_menu=None, 
+             welcome_message=None, show_controls_hint=True):
+    """Initialize virtual menu with numeric shortcuts support."""
+    # ... existing initialization code ...
+    
+    # ✅ Build keyboard command mappings
+    self._build_key_handlers()
+
+def _build_key_handlers(self) -> None:
     """Build keyboard command mappings for menu navigation.
     
     Maps keyboard events to handler methods, including:
     - Arrow keys for navigation
     - ENTER for selection
-    - ESC for quit
+    - ESC for closing submenu
     - Numeric keys 1-5 for direct item selection (NEW)
     """
-    self.EVENTS_DN = {
-        pygame.K_ESCAPE: self.esc_press,
-        pygame.K_RETURN: self.execute,
-        pygame.K_UP: self.prev_item,
+    self.key_handlers = {
         pygame.K_DOWN: self.next_item,
+        pygame.K_UP: self.prev_item,
+        pygame.K_RETURN: self.execute,
+        pygame.K_ESCAPE: self._handle_esc,
         # ✅ NUMERIC SHORTCUTS (1 = first item, 2 = second, ...)
         pygame.K_1: self.press_1,
         pygame.K_2: self.press_2,
@@ -424,251 +443,157 @@ def build_commands_list(self):
 # ═══════════════════════════════════════════════════════════
 # MODIFICA 2: Numeric shortcut handlers (NEW METHODS)
 # ═══════════════════════════════════════════════════════════
-def press_1(self):
+def press_1(self) -> None:
     """Shortcut: select first menu item and execute.
     
     Equivalent to navigating to item 1 and pressing ENTER.
     """
     if len(self.items) >= 1:
-        self.selected_item = 0
+        self.selected_index = 0
         self.execute()
 
-def press_2(self):
+def press_2(self) -> None:
     """Shortcut: select second menu item and execute.
     
     Equivalent to navigating to item 2 and pressing ENTER.
     """
     if len(self.items) >= 2:
-        self.selected_item = 1
+        self.selected_index = 1
         self.execute()
 
-def press_3(self):
+def press_3(self) -> None:
     """Shortcut: select third menu item and execute."""
     if len(self.items) >= 3:
-        self.selected_item = 2
+        self.selected_index = 2
         self.execute()
 
-def press_4(self):
+def press_4(self) -> None:
     """Shortcut: select fourth menu item and execute."""
     if len(self.items) >= 4:
-        self.selected_item = 3
+        self.selected_index = 3
         self.execute()
 
-def press_5(self):
+def press_5(self) -> None:
     """Shortcut: select fifth menu item and execute."""
     if len(self.items) >= 5:
-        self.selected_item = 4
+        self.selected_index = 4
         self.execute()
 
 # ═══════════════════════════════════════════════════════════
-# MODIFICA 3: draw_menu() - Add numeric prefixes (OPTIONAL)
+# MODIFICA 3: handle_keyboard_events() - Use key_handlers dict
 # ═══════════════════════════════════════════════════════════
-def draw_menu(self):
-    """Draw menu items on screen with numeric prefixes.
+def _handle_esc(self) -> None:
+    """Handle ESC key - close menu if has parent."""
+    if self.parent_menu:
+        self.parent_menu.close_submenu()
+
+def handle_keyboard_events(self, event: pygame.event.Event) -> None:
+    """Handle keyboard input for menu navigation with numeric shortcuts.
     
-    Adds "1.", "2.", etc. prefixes to visually indicate shortcuts.
-    Last item ("Esci dal gioco") has no prefix (uses ESC key).
+    Processes PyGame keyboard events and maps them to menu actions.
+    Now includes support for numeric shortcuts 1-5.
+    
+    If a submenu is active, delegates all events to it.
+    ESC key closes active submenu and returns to parent.
+    
+    Args:
+        event: PyGame event to process
+    
+    Supported keys:
+        - K_DOWN/K_UP: Navigate menu
+        - K_RETURN: Execute selected item
+        - K_ESCAPE: Close submenu (if has parent)
+        - K_1..K_5: Direct selection shortcuts (NEW)
     """
-    self.screen.fill((255, 255, 255))
+    # If submenu is active, delegate all events to it
+    if self._active_submenu:
+        self._active_submenu.handle_keyboard_events(event)
+        return
     
-    for i, item in enumerate(self.items):
-        # Color based on selection
-        if i == self.selected_item:
-            color = (255, 0, 0)  # Red for selected
-        else:
-            color = (0, 0, 0)    # Black for normal
-        
-        # ✅ Add numeric prefix for non-exit items
-        # Example: "1. Gioca al solitario classico"
-        if i < len(self.items) - 1:  # Don't number "Esci" (uses ESC)
-            item_text = f"{i + 1}. {item}"
-        else:
-            item_text = item
-        
-        # Render and blit
-        text = self.font.render(item_text, True, color)
-        text_rect = text.get_rect(center=(self.screen.get_width() / 2, (i + 1) * 50))
-        self.screen.blit(text, text_rect)
-    
-    pygame.display.flip()
+    if event.type == pygame.KEYDOWN:
+        # ✅ Use key_handlers dictionary for cleaner code
+        handler = self.key_handlers.get(event.key)
+        if handler:
+            handler()
 ```
 
 **Posizionamento**: 
-- `build_commands_list()`: Linea ~35
-- Nuovi metodi `press_X()`: Dopo metodo `execute()` (linea ~70)
-- `draw_menu()`: Linea ~80 (modifica esistente)
+- `_build_key_handlers()`: Chiamato da `__init__()` (dopo altre inizializzazioni)
+- Nuovi metodi `press_X()`: Dopo metodo `execute()` 
+- `handle_keyboard_events()`: Modifica metodo esistente (usa dict invece di if/elif)
 
 ---
 
-#### **Modifica 2.2: `scr/game_play.py`** (Menu Solitario In-Game)
+#### **Modifica 2.2: Verificare Routing in `test.py`** ✅
 
-**Cambiamenti**:
-1. **Add Menu State Flag**: `self.is_solitaire_menu_open` per tracciare stato menu pausa
-2. **Menu Management Methods**: `open_solitaire_menu()` e `close_solitaire_menu()`
-3. **Modify ESC Handler**: Aprire menu invece di quit diretto
-4. **Context-Aware Handlers**: Tasti 1/2/3 funzionano diversamente in menu vs. gioco
+**Verifica Necessaria**: Il file `test.py` (entry point Clean Architecture) deve già gestire correttamente il routing eventi. Verificare che durante gameplay i tasti 1-7 vadano al `gameplay_controller` e NON al menu.
 
-**Codice Modifiche**:
+**Codice Esistente da Verificare** (linee ~500-600):
 
 ```python
-# ═══════════════════════════════════════════════════════════
-# MODIFICA 1: __init__() - Add menu state tracking
-# ═══════════════════════════════════════════════════════════
-def __init__(self, screen, screen_reader):
-    super().__init__()
-    # ... existing initialization code ...
-    
-    # ✅ NEW: Track solitaire menu state (opened with ESC during game)
-    self.is_solitaire_menu_open = False
-
-# ═══════════════════════════════════════════════════════════
-# MODIFICA 2: Menu management methods (NEW METHODS)
-# ═══════════════════════════════════════════════════════════
-def open_solitaire_menu(self):
-    """Open in-game solitaire pause menu.
-    
-    Announces available options with numeric shortcuts.
-    Menu stays open until user selects an option or presses ESC again.
-    """
-    self.is_solitaire_menu_open = True
-    menu_text = """MENU SOLITARIO:
-1. Nuova partita
-2. Opzioni
-3. Chiudi partita
-Premi ESC per tornare al gioco."""
-    self.vocalizza(menu_text)
-
-def close_solitaire_menu(self):
-    """Close in-game solitaire pause menu and return to game."""
-    self.is_solitaire_menu_open = False
-    self.vocalizza("Menu chiuso, torno al gioco.")
-
-# ═══════════════════════════════════════════════════════════
-# MODIFICA 3: esc_press() - Open menu instead of immediate quit
-# ═══════════════════════════════════════════════════════════
-def esc_press(self):
-    """Handle ESC key: open/close menu or quit game.
-    
-    Behavior:
-    - If game running + menu closed: Open solitaire menu
-    - If game running + menu open: Close menu (return to game)
-    - If no game running: Quit application
-    """
-    if self.engine.is_game_running:
-        # ✅ Toggle solitaire menu
-        if not self.is_solitaire_menu_open:
-            self.open_solitaire_menu()
+def handle_events(self):
+    for event in pygame.event.get():
+        # ... dialog handlers ...
+        
+        # Route keyboard events based on state
+        if self.is_menu_open:
+            # ✅ Menu mode: route to VirtualMenu
+            # VirtualMenu.handle_keyboard_events() gestisce i tasti 1-5
+            self.menu.handle_keyboard_events(event)
+        
+        elif self.is_options_mode:
+            # ✅ Options mode: route to gameplay controller
+            self.gameplay_controller.handle_keyboard_events(event)
+        
         else:
-            self.close_solitaire_menu()
-    else:
-        # No game running: quit app
-        self.quit_app()
-
-# ═══════════════════════════════════════════════════════════
-# MODIFICA 4: Context-aware numeric handlers (MODIFY EXISTING)
-# ═══════════════════════════════════════════════════════════
-def press_1(self):
-    """Handle key '1': Menu shortcut OR pile base 1 (context-aware).
-    
-    Context Menu (menu open): Execute "1. Nuova partita"
-    Context Game (menu closed): Jump to pile base 1
-    """
-    if self.is_solitaire_menu_open:
-        # ✅ MENU CONTEXT: "1. Nuova partita"
-        self.n_press()
-        self.close_solitaire_menu()
-    else:
-        # ✅ GAME CONTEXT: Pile base 1 (existing behavior)
-        string = self.engine.move_cursor_to_pile_with_select(0)
-        if string:
-            self.vocalizza(string)
-
-def press_2(self):
-    """Handle key '2': Menu shortcut OR pile base 2 (context-aware).
-    
-    Context Menu: Execute "2. Opzioni"
-    Context Game: Jump to pile base 2
-    """
-    if self.is_solitaire_menu_open:
-        # ✅ MENU CONTEXT: "2. Opzioni"
-        self.o_press()
-        self.close_solitaire_menu()
-    else:
-        # ✅ GAME CONTEXT: Pile base 2
-        string = self.engine.move_cursor_to_pile_with_select(1)
-        if string:
-            self.vocalizza(string)
-
-def press_3(self):
-    """Handle key '3': Menu shortcut OR pile base 3 (context-aware).
-    
-    Context Menu: Execute "3. Chiudi partita"
-    Context Game: Jump to pile base 3
-    """
-    if self.is_solitaire_menu_open:
-        # ✅ MENU CONTEXT: "3. Chiudi partita"
-        self.create_yes_or_no_box(
-            "Sei sicuro di voler abbandonare la partita?", 
-            "Abbandonare la partita?"
-        )
-        if self.answare:
-            string = self.engine.chiudi_partita()
-            self.vocalizza(string)
-        self.close_solitaire_menu()
-    else:
-        # ✅ GAME CONTEXT: Pile base 3
-        string = self.engine.move_cursor_to_pile_with_select(2)
-        if string:
-            self.vocalizza(string)
+            # ✅ GAMEPLAY MODE: route to gameplay controller
+            # Tasti 1-7 vanno alle pile base (NO conflitto con menu)
+            self.gameplay_controller.handle_keyboard_events(event)
 ```
 
-**Posizionamento**:
-- `__init__()`: Linea ~35 (aggiungere flag dopo inizializzazione engine)
-- `open/close_solitaire_menu()`: Dopo metodo `vocalizza()` (linea ~50)
-- `esc_press()`: Linea ~340 (modifica esistente)
-- `press_1/2/3()`: Linee ~150-180 (modifica esistenti)
+**✅ CONFERMATO**: Il routing in `test.py` è già corretto. Non servono modifiche.
 
 ---
 
 ### ✅ Testing Checklist Feature #2
 
 #### **Test Menu Principale**
-- [ ] **T2.1**: Avvio app → Menu mostra "1. Gioca al solitario classico" e "Esci dal gioco"
-- [ ] **T2.2**: Premere `1` → Avvia gameplay direttamente (equivalente a ENTER su prima voce)
-- [ ] **T2.3**: Premere `ESC` → Conferma uscita (comportamento invariato)
+- [ ] **T2.1**: Avvio app → Menu mostra voci con event delegation corretto
+- [ ] **T2.2**: Premere `1` → Apre game submenu direttamente (equivalente a ENTER su prima voce)
+- [ ] **T2.3**: Premere `ESC` → Mostra dialog conferma uscita (comportamento invariato)
 - [ ] **T2.4**: Frecce UP/DOWN → Funzionano ancora correttamente (no regressione)
 
-#### **Test Menu Solitario In-Game**
-- [ ] **T2.5**: Durante partita, premere `ESC` → Apre menu con voci "1. Nuova partita, 2. Opzioni, 3. Chiudi partita"
-- [ ] **T2.6**: Menu aperto, premere `1` → Avvia nuova partita + chiude menu
-- [ ] **T2.7**: Menu aperto, premere `2` → Apre opzioni + chiude menu
-- [ ] **T2.8**: Menu aperto, premere `3` → Conferma chiusura partita + chiude menu
-- [ ] **T2.9**: Menu aperto, premere `ESC` di nuovo → Chiude menu e torna al gioco (NO quit)
+#### **Test Game Submenu**
+- [ ] **T2.5**: Menu principale, seleziona "Gioca" → Apre submenu con 3 voci + welcome message
+- [ ] **T2.6**: Submenu aperto, premere `1` → Avvia nuova partita
+- [ ] **T2.7**: Submenu aperto, premere `2` → Apre finestra opzioni
+- [ ] **T2.8**: Submenu aperto, premere `3` → Mostra dialog conferma ritorno menu principale
+- [ ] **T2.9**: Submenu aperto, premere `ESC` → Mostra dialog conferma ritorno (stesso comportamento di `3`)
 
-#### **Test Gestione Conflitti**
-- [ ] **T2.10**: Menu chiuso, premere `1` → Sposta cursore su pila base 1 (NO menu action)
-- [ ] **T2.11**: Menu chiuso, premere `2` → Sposta cursore su pila base 2 (NO menu action)
-- [ ] **T2.12**: Menu chiuso, premere `3` → Sposta cursore su pila base 3 (NO menu action)
-- [ ] **T2.13**: Menu aperto, premere `4-7` → Nessuna azione (solo 1-3 validi in menu)
+#### **Test Gestione Conflitti (Gameplay vs Menu)**
+- [ ] **T2.10**: Durante gameplay (menu chiuso), premere `1` → Sposta cursore su pila base 1 (NO menu action)
+- [ ] **T2.11**: Durante gameplay (menu chiuso), premere `2` → Sposta cursore su pila base 2 (NO menu action)
+- [ ] **T2.12**: Durante gameplay (menu chiuso), premere `3` → Sposta cursore su pila base 3 (NO menu action)
+- [ ] **T2.13**: Durante gameplay, premere `ESC` → Mostra dialog abbandono partita (gestito da test.py)
 
 #### **Test Edge Cases**
-- [ ] **T2.14**: Aprire/chiudere menu più volte consecutivamente → Nessun bug stato
-- [ ] **T2.15**: Menu aperto, annullare dialog conferma chiusura partita → Menu rimane aperto
-- [ ] **T2.16**: Menu aperto, dialog box attivo → Tastiera menu disabilitata (no doppia gestione)
+- [ ] **T2.14**: Premere tasti 4-7 nei menu → Nessuna azione (solo 1-3 validi)
+- [ ] **T2.15**: Aprire/chiudere submenu più volte → Nessun bug stato
+- [ ] **T2.16**: Submenu aperto, dialog attivo → Solo dialog risponde a tastiera (priorità corretta)
 
 ---
 
 ## 📊 RIEPILOGO MODIFICHE
 
-### File Modificati
+### File Modificati (Clean Architecture)
 
 | File | Feature | Linee Modificate | Metodi Nuovi | Metodi Modificati | Stima Righe |
 |------|---------|------------------|--------------|-------------------|-------------|
-| **`cursor_manager.py`** | #1 | ~380-430 | - | `jump_to_pile()` | ~50 |
-| **`game_engine.py`** | #1 | ~497-520 | - | `jump_to_pile()` | ~20 |
-| **`pygame_menu.py`** | #2 | ~35, ~70-100, ~80-95 | `press_1()` .. `press_5()` | `build_commands_list()`, `draw_menu()` | ~40 |
-| **`game_play.py`** | #2 | ~35, ~50-70, ~340, ~150-180 | `open/close_solitaire_menu()` | `__init__()`, `esc_press()`, `press_1/2/3()` | ~40 |
-| **TOTALE** | | | **7 metodi** | **7 metodi** | **~150 righe** |
+| **`src/domain/services/cursor_manager.py`** | #1 | ~380-430 | - | `jump_to_pile()` | ~50 |
+| **`src/application/game_engine.py`** | #1 | ~497-520 | - | `jump_to_pile()` | ~20 |
+| **`src/infrastructure/ui/menu.py`** | #2 | ~50-150 | `press_1()` .. `press_5()`, `_build_key_handlers()`, `_handle_esc()` | `__init__()`, `handle_keyboard_events()` | ~80 |
+| **`test.py`** | #2 | - | - | ✅ Nessuna (routing già corretto) | 0 |
+| **TOTALE** | | | **8 metodi** | **5 metodi** | **~150 righe** |
 
 ---
 
@@ -680,9 +605,9 @@ def press_3(self):
 - [ ] Review piano con stakeholder
 - [ ] Setup branch di sviluppo (se necessario)
 
-### **FASE 2: Feature #1 - Double-Tap Selection** ⏱️ 1-2 ore
+### **FASE 2: Feature #1 - Double-Tap Selection** ⏱️ 1-2 ore ✅
 #### **Step 2.1: Modifica CursorManager**
-- [ ] Aprire `src/domain/services/cursor_manager.py`
+- [ ] Aprire `src/domain/services/cursor_manager.py` ✅ Path corretto
 - [ ] Aggiornare import: `from typing import Tuple, ...`
 - [ ] Modificare signature `jump_to_pile()` → ritorno `Tuple[str, bool]`
 - [ ] Implementare logica double-tap detection (pile_idx == last_quick_pile)
@@ -690,7 +615,7 @@ def press_3(self):
 - [ ] Testare isolatamente (unit test se disponibili)
 
 #### **Step 2.2: Modifica GameEngine**
-- [ ] Aprire `src/application/game_engine.py`
+- [ ] Aprire `src/application/game_engine.py` ✅ Path corretto
 - [ ] Modificare `jump_to_pile()` per gestire Tuple return
 - [ ] Implementare logica auto-selection con annullamento selezione precedente
 - [ ] Testare integrazione CursorManager → GameEngine
@@ -701,32 +626,35 @@ def press_3(self):
 - [ ] Testare edge cases (pile vuote, selezioni multiple, etc.)
 - [ ] Bug fixing se necessario
 
-### **FASE 3: Feature #2 - Menu Shortcuts** ⏱️ 1 ora
-#### **Step 3.1: Modifica PyMenu (Menu Principale)**
-- [ ] Aprire `scr/pygame_menu.py`
+### **FASE 3: Feature #2 - Menu Shortcuts** ⏱️ 1 ora ⚠️ **PATH CORRETTI**
+#### **Step 3.1: Modifica VirtualMenu (Menu Clean Architecture)**
+- [ ] ⚠️ **IMPORTANTE**: Aprire `src/infrastructure/ui/menu.py` (NON `scr/pygame_menu.py`)
+- [ ] Aggiungere metodo `_build_key_handlers()` con mappatura K_1..K_5
 - [ ] Aggiungere handler `press_1()` ... `press_5()`
-- [ ] Aggiornare `build_commands_list()` con mappatura numerica
-- [ ] [OPZIONALE] Modificare `draw_menu()` per prefissi numerici
+- [ ] Aggiungere metodo helper `_handle_esc()`
+- [ ] Modificare `handle_keyboard_events()` per usare `key_handlers` dict
+- [ ] Chiamare `_build_key_handlers()` da `__init__()`
 - [ ] Testare menu principale con shortcuts
 
-#### **Step 3.2: Modifica GamePlay (Menu Solitario)**
-- [ ] Aprire `scr/game_play.py`
-- [ ] Aggiungere flag `is_solitaire_menu_open` in `__init__()`
-- [ ] Implementare `open_solitaire_menu()` e `close_solitaire_menu()`
-- [ ] Modificare `esc_press()` per gestione menu toggle
-- [ ] Modificare `press_1/2/3()` per context-awareness (menu vs. game)
-- [ ] Testare menu solitario in-game
+#### **Step 3.2: Verificare Routing Eventi in test.py**
+- [ ] Aprire `test.py` (entry point Clean Architecture)
+- [ ] Verificare metodo `handle_events()` (linee ~500-600)
+- [ ] ✅ Confermare che routing `is_menu_open` → `self.menu.handle_keyboard_events(event)` è già presente
+- [ ] ✅ Confermare che routing gameplay → `self.gameplay_controller.handle_keyboard_events(event)` è già presente
+- [ ] ✅ Nessuna modifica necessaria (routing già corretto)
 
 #### **Step 3.3: Testing Feature #2**
 - [ ] Eseguire tutti i test checklist T2.1 - T2.16
-- [ ] Verificare assenza conflitti tastiera (menu vs. pile base)
-- [ ] Testare apertura/chiusura menu multipla
+- [ ] Verificare assenza conflitti tastiera (menu vs. pile base durante gameplay)
+- [ ] Testare apertura/chiusura submenu multipla
+- [ ] Testare shortcuts menu principale (tasto 1)
+- [ ] Testare shortcuts game submenu (tasti 1/2/3)
 - [ ] Bug fixing se necessario
 
 ### **FASE 4: Integration Testing** ⏱️ 30 min
 - [ ] Testare entrambe le feature insieme in scenario reale
-- [ ] Verificare double-tap selection durante/dopo menu solitario
-- [ ] Verificare menu shortcuts non interferiscono con double-tap
+- [ ] Verificare double-tap selection accessibile da menu con shortcuts
+- [ ] Verificare menu shortcuts non interferiscono con double-tap durante gameplay
 - [ ] Test regressione: tutti i comandi esistenti funzionano ancora
 - [ ] Performance check: nessun lag o rallentamento percepibile
 
@@ -738,16 +666,16 @@ def press_3(self):
   
   ### Added
   - Double-tap auto-selection: seconda pressione numero pila seleziona automaticamente ultima carta (pile base 1-7 e pile seme SHIFT+1-4)
-  - Numeric menu shortcuts: scorciatoie 1-5 per navigazione rapida menu principale e menu solitario in-game
+  - Numeric menu shortcuts: scorciatoie 1-5 per navigazione rapida menu principale e game submenu
   
   ### Changed
-  - Menu solitario ora si apre con ESC invece di dialog conferma immediato (toggle menu)
+  - VirtualMenu supporta shortcuts numerici per selezione diretta voci
   - Hint migliorati per pile base/semi: "Premi ancora [numero] per selezionare"
   
   ### Fixed
-  - Gestione conflitti tastiera tra menu shortcuts e pile base (context-aware handlers)
+  - Gestione routing eventi tra menu e gameplay (context-aware, no conflitti tastiera)
   ```
-- [ ] Aggiornare help in-game (`h_press()`) con nuovi comandi
+- [ ] Aggiornare help in-game gameplay_controller (se applicabile)
 - [ ] Commit finale con messaggio descrittivo
 - [ ] Merge su branch principale (se feature branch usato)
 - [ ] Tag release v1.4.3
@@ -764,9 +692,9 @@ def press_3(self):
 
 ### Feature #2: Menu Shortcuts
 ✅ **Criterio 1**: Tasto `1` attiva prima voce menu principale ("Gioca al solitario")  
-✅ **Criterio 2**: Tasti `1/2/3` attivano rispettive voci menu solitario (solo quando menu aperto)  
-✅ **Criterio 3**: Nessun conflitto con pile base 1-7 (context-aware)  
-✅ **Criterio 4**: Menu solitario toggle con ESC (apri/chiudi)  
+✅ **Criterio 2**: Tasti `1/2/3` attivano rispettive voci game submenu (quando submenu aperto)  
+✅ **Criterio 3**: Nessun conflitto con pile base 1-7 durante gameplay (routing corretto in test.py)  
+✅ **Criterio 4**: ESC gestito correttamente in tutti i contesti (menu, submenu, gameplay)  
 
 ### General
 ✅ **Criterio 5**: Zero regressioni su comandi esistenti  
@@ -804,34 +732,47 @@ if self.selection.has_selection():
 ---
 
 ### Problema 3: Conflitto tastiera menu vs. pile
-**Sintomo**: Premere `1` durante gioco apre menu invece di selezionare pila  
-**Causa**: Flag `is_solitaire_menu_open` non verificato correttamente
+**Sintomo**: Premere `1` durante gioco apre menu o non fa nulla  
+**Causa**: Routing eventi in `test.py` non corretto O modifiche applicate a file legacy `scr/`
 
 **Fix**:
-```python
-def press_1(self):
-    if self.is_solitaire_menu_open:  # ← Verificare ordine condizioni
-        # menu action
-    else:
-        # game action (pile)
-```
+1. ⚠️ **Verificare di aver modificato `src/infrastructure/ui/menu.py`** (NON `scr/pygame_menu.py`)
+2. Verificare che `test.py` route correttamente:
+   ```python
+   if self.is_menu_open:
+       self.menu.handle_keyboard_events(event)  # Menu shortcuts attivi
+   else:
+       self.gameplay_controller.handle_keyboard_events(event)  # Pile base attive
+   ```
 
 ---
 
-### Problema 4: Menu rimane aperto dopo selezione
-**Sintomo**: Dopo premere `1/2/3` in menu, menu non si chiude  
-**Causa**: `close_solitaire_menu()` non chiamato dopo azione
+### Problema 4: Menu shortcuts non funzionano affatto
+**Sintomo**: Premere `1` in menu non fa nulla  
+**Causa Più Probabile**: ⚠️ **Modifiche applicate a file LEGACY (`scr/`) invece di Clean Architecture (`src/`)**
 
-**Fix**: Assicurarsi che **ogni** handler menu chiami `self.close_solitaire_menu()` dopo esecuzione.
+**Fix**:
+1. Verificare quale file è stato modificato:
+   - ❌ Se modificato `scr/pygame_menu.py` → file sbagliato (legacy non usato da test.py)
+   - ✅ Se modificato `src/infrastructure/ui/menu.py` → file corretto
+2. Riapplicare modifiche al file corretto `src/infrastructure/ui/menu.py`
+3. Verificare che `test.py` usi `VirtualMenu` da `src/infrastructure/ui/menu.py`
 
 ---
 
 ## 📚 REFERENCES
 
-### Codice Legacy
-- `scr/game_engine.py` (versione legacy con double-tap originale)
-- `scr/pygame_menu.py` (sistema menu base)
-- `scr/game_play.py` (gestione eventi tastiera)
+### Codice Clean Architecture (DA USARE)
+- ✅ `src/domain/services/cursor_manager.py` (Feature #1)
+- ✅ `src/application/game_engine.py` (Feature #1)
+- ✅ `src/infrastructure/ui/menu.py` (Feature #2) ⚠️ **PATH CRITICO**
+- ✅ `test.py` (Entry point, routing eventi)
+
+### Codice Legacy (NON MODIFICARE)
+- ❌ `scr/game_engine.py` (vecchia implementazione double-tap, solo riferimento)
+- ❌ `scr/pygame_menu.py` (vecchio menu, non usato da test.py)
+- ❌ `scr/game_play.py` (vecchio gameplay, non usato da test.py)
+- ❌ `acs.py` (entry point legacy deprecato)
 
 ### Documentazione Correlata
 - `docs/REFACTORING_PLAN.md` (piano refactoring generale)
@@ -854,8 +795,12 @@ def press_1(self):
 **Q: Perché usare flag booleano invece di exception/evento per auto-selection?**  
 **A**: Flag booleano è più semplice, esplicito e type-safe (`Tuple[str, bool]`). Evita overhead di exception handling e rende il flusso più chiaro.
 
-**Q: Perché menu solitario usa context-aware handlers invece di disabilitare tasti 1-7 durante menu?**  
-**A**: Context-awareness permette riutilizzo handler esistenti senza duplicazione codice. Inoltre, mantiene coerenza: stessi tasti, diverso comportamento in base a contesto.
+**Q: Perché modificare `src/infrastructure/ui/menu.py` invece di `scr/pygame_menu.py`?**  
+**A**: ⚠️ **CRITICO** - Il progetto ha due versioni parallele:
+- **Clean Architecture** (`src/`) usata da `test.py` (entry point corrente) ✅
+- **Legacy** (`scr/`) usata da `acs.py` (deprecato) ❌
+
+Feature v1.4.3 DEVE essere implementata sulla versione Clean Architecture per essere utilizzabile.
 
 ---
 
@@ -865,7 +810,7 @@ def press_1(self):
 - [ ] Aggiungere shortcut ALT+numero per spostamento diretto su pile seme (alternativa a SHIFT+numero)
 - [ ] Implementare "memory" ultima pila visitata per tornare rapidamente con shortcut dedicato
 - [ ] Aggiungere animazioni/feedback audio per double-tap riuscito
-- [ ] Estendere sistema menu shortcuts ad altri dialog box (opzioni, conferme, etc.)
+- [ ] Estendere sistema menu shortcuts ad altri dialog box (conferme, etc.)
 
 ---
 
@@ -884,4 +829,4 @@ _______________________________________________________
 ---
 
 **Fine Documento**  
-Ultimo aggiornamento: 10 Febbraio 2026
+Ultimo aggiornamento: 10 Febbraio 2026 (v2 - Correzione path Clean Architecture)
