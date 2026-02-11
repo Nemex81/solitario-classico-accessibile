@@ -489,17 +489,21 @@ class GameService:
         return (message, hint)
     
     def get_game_report(self) -> Tuple[str, Optional[str]]:
-        """Get complete game report (no hint - report is complete).
+        """Get complete game report with optional scoring info (v1.5.2).
         
         Returns:
             Tuple[str, Optional[str]]: (message, None)
-            - message: Complete game statistics
+            - message: Complete game statistics including provisional score if enabled
             - hint: None (report is self-contained)
         
         Examples:
+            >>> # With scoring enabled
             >>> message, hint = service.get_game_report()
-            >>> # message: "Report partita. Mosse: 42. Tempo: 5:30. ..."
-            >>> # hint: None
+            >>> # "Report partita.\nMosse: 42.\nTempo trascorso: 5:30.\nPunteggio provvisorio: 350 punti..."
+            
+            >>> # With scoring disabled
+            >>> message, hint = service.get_game_report()
+            >>> # "Report partita.\nMosse: 42.\nTempo trascorso: 5:30.\nSistema punti disattivato.\n..."
         """
         stats = self.get_statistics()
         elapsed = int(stats['elapsed_time'])
@@ -510,6 +514,17 @@ class GameService:
         report = "Report partita.\n"
         report += f"Mosse: {stats['move_count']}.\n"
         report += f"Tempo trascorso: {time_str}.\n"
+        
+        # v1.5.2: Add provisional score info if scoring enabled
+        if self.scoring:
+            provisional = self.scoring.calculate_provisional_score()
+            report += f"Punteggio provvisorio: {provisional.total_score} punti "
+            report += f"(Base: {provisional.base_score} | "
+            report += f"Moltiplicatore {provisional.difficulty_multiplier}x | "
+            report += f"Bonus mazzo: {provisional.deck_bonus}).\n"
+        else:
+            report += "Sistema punti disattivato.\n"
+        
         report += f"Carte nelle pile semi: {stats['total_foundation_cards']}.\n"
         
         return (report, None)
