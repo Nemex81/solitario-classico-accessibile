@@ -137,7 +137,7 @@ class OptionsWindowController:
         Returns:
             TTS message with option name, value, and hint
         """
-        self.cursor_position = (self.cursor_position - 1) % 7
+        self.cursor_position = (self.cursor_position - 1) % 8
         return self._format_current_option(include_hint=True)
     
     def navigate_down(self) -> str:
@@ -146,23 +146,23 @@ class OptionsWindowController:
         Returns:
             TTS message with option name, value, and hint
         """
-        self.cursor_position = (self.cursor_position + 1) % 7
+        self.cursor_position = (self.cursor_position + 1) % 8
         return self._format_current_option(include_hint=True)
     
     def jump_to_option(self, index: int) -> str:
-        """Jump directly to option by number (1-7).
+        """Jump directly to option by number (1-8).
         
         Args:
-            index: Option index (0-6)
+            index: Option index (0-7)
         
         Returns:
             TTS message (concise, no hint)
         
         Example:
             >>> controller.jump_to_option(2)
-            "3 di 7: Carte Pescate, 1 Carta."
+            "3 di 8: Carte Pescate, 1 Carta."
         """
-        if 0 <= index <= 6:
+        if 0 <= index <= 7:
             self.cursor_position = index
             return self._format_current_option(include_hint=False)
         else:
@@ -193,6 +193,7 @@ class OptionsWindowController:
             self._modify_shuffle_mode,   # 4: Riciclo Scarti
             self._modify_command_hints,  # 5: Suggerimenti Comandi (v1.5.0)
             self._modify_scoring,        # 6: Sistema Punti (NEW)
+            self._modify_timer_strict_mode,  # 7: Modalità Timer (v1.5.2.2)
         ]
         
         msg = handlers[self.cursor_position]()
@@ -285,7 +286,8 @@ class OptionsWindowController:
             "Timer": self.settings.get_timer_display(),
             "Modalità riciclo scarti": self.settings.get_shuffle_mode_display(),
             "Suggerimenti comandi": self.settings.get_command_hints_display(),
-            "Sistema Punti": self.settings.get_scoring_display()
+            "Sistema Punti": self.settings.get_scoring_display(),
+            "Modalità Timer": self.settings.get_timer_strict_mode_display()
         }
         
         return OptionsFormatter.format_all_settings(settings_dict)
@@ -321,7 +323,8 @@ class OptionsWindowController:
             self.settings.get_timer_display,
             self.settings.get_shuffle_mode_display,
             self.settings.get_command_hints_display,    # v1.5.0
-            self.settings.get_scoring_display           # NEW
+            self.settings.get_scoring_display,          # NEW
+            self.settings.get_timer_strict_mode_display # v1.5.2.2
         ]
         
         value = value_getters[self.cursor_position]()
@@ -395,6 +398,11 @@ class OptionsWindowController:
         success, msg = self.settings.toggle_scoring()
         return msg
     
+    def _modify_timer_strict_mode(self) -> str:
+        """Toggle timer strict mode (STRICT <-> PERMISSIVE) (v1.5.2.2)."""
+        success, msg = self.settings.toggle_timer_strict_mode()
+        return msg
+    
     # ========================================
     # STATE MANAGEMENT
     # ========================================
@@ -406,7 +414,8 @@ class OptionsWindowController:
             "difficulty": self.settings.difficulty_level,
             "timer": self.settings.max_time_game,
             "shuffle": self.settings.shuffle_discards,
-            "command_hints": self.settings.command_hints_enabled  # v1.5.0
+            "command_hints": self.settings.command_hints_enabled,  # v1.5.0
+            "timer_strict_mode": self.settings.timer_strict_mode  # v1.5.2.2
         }
     
     def _restore_snapshot(self) -> None:
@@ -416,6 +425,7 @@ class OptionsWindowController:
         self.settings.max_time_game = self.original_settings["timer"]
         self.settings.shuffle_discards = self.original_settings["shuffle"]
         self.settings.command_hints_enabled = self.original_settings["command_hints"]  # v1.5.0
+        self.settings.timer_strict_mode = self.original_settings["timer_strict_mode"]  # v1.5.2.2
     
     def _reset_state(self) -> None:
         """Reset controller state (close window)."""
