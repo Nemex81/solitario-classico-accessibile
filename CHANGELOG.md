@@ -7,6 +7,86 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 Perfetto! Ecco il testo completo per la nuova sezione **v1.5.2.1** da aggiungere al CHANGELOG sopra la sezione v1.5.2:
 
+---
+
+## [1.5.2.2] - 2026-02-11
+
+### ✨ Nuova Funzionalità: Modalità Timer Configurabile
+
+**🎯 FEATURE COMPLETA**: Sistema timer con comportamento configurabile STRICT/PERMISSIVE per gestione scadenza tempo
+
+#### 🎮 Nuova Opzione #8: Modalità Timer
+
+**Accesso**: Menu Opzioni (tasto O) → Opzione #8 "Modalità Timer"
+
+**Due modalità disponibili**:
+
+| Modalità | Comportamento | Penalità | Uso Consigliato |
+|----------|---------------|----------|------------------|
+| **STRICT** (default) | Game termina automaticamente allo scadere del timer | Nessuna (partita finisce) | Gameplay competitivo, challenge |
+| **PERMISSIVE** | Game continua oltre il limite di tempo | **-100 punti/minuto** di overtime | Apprendimento, casual play |
+
+**Toggle**: Premi INVIO sull'Opzione #8 per alternare tra STRICT ↔ PERMISSIVE
+
+#### 📊 Comportamento Dettagliato
+
+**Modalità STRICT** (comportamento legacy):
+- Timer scade → partita termina immediatamente
+- Report completo con statistiche finali via TTS
+- Ritorna automaticamente al game submenu
+- Stesso comportamento delle versioni precedenti (backward compatible)
+
+**Modalità PERMISSIVE** (nuova feature):
+- Timer scade → annuncio TTS: "Tempo scaduto! Da ora in poi ogni minuto extra costa 100 punti."
+- Annuncio vocale una sola volta (non ripetuto)
+- Partita continua normalmente, tutte le mosse disponibili
+- Penalità scoring: **-100 punti per ogni minuto** di overtime
+- Esempi calcolo:
+  - Limite 10 min, finito in 12 min → **-200 punti** (2 min × 100)
+  - Limite 15 min, finito in 20 min → **-500 punti** (5 min × 100)
+  - Limite 20 min, finito in 18 min → **0 penalità** (dentro limite)
+
+#### 🏗️ Architettura Clean (4 Commit Atomici)
+
+**Commit #1: Domain Layer - GameSettings** ([`6c0c08d`](https://github.com/Nemex81/solitario-classico-accessibile/commit/6c0c08ddf8096f55d998edee29a268d11004413f))
+- File: `src/domain/services/game_settings.py` (+66 linee)
+- Aggiunto campo `timer_strict_mode: bool = True` (default STRICT)
+- Metodo `toggle_timer_strict_mode()` con feedback TTS
+- Metodo `get_timer_strict_mode_display()` per UI display
+- Default True per backward compatibility totale
+
+**Commit #2: Application Layer - OptionsController** ([`c143260`](https://github.com/Nemex81/solitario-classico-accessibile/commit/c1432608d7c0b344a35145e45b3637fa4a19337a))
+- File: `src/application/options_controller.py` (+19/-9 linee)
+- File: `src/presentation/options_formatter.py` (+10/-9 linee)
+- Estesa finestra opzioni da 7 a **8 voci**
+- Navigazione aggiornata: wrap a 8, jump 1-8, range 0-7
+- Handler `_modify_timer_strict_mode()` per toggle
+- Snapshot save/restore include nuovo campo
+- Messaggi "N di 8" invece di "N di 7"
+
+**Commit #3: Infrastructure Layer - Periodic Timer Check** ([`4975869`](https://github.com/Nemex81/solitario-classico-accessibile/commit/4975869c35977c7266b01970a0c3c70d1cef5465))
+- File: `test.py` (+184 linee)
+- Evento `TIME_CHECK_EVENT = pygame.USEREVENT+1` (trigger ogni 1000ms)
+- Metodo `_check_timer_expiration()` con logica mode-aware:
+  - STRICT: chiama `_handle_game_over_by_timeout()` → termina partita
+  - PERMISSIVE: annuncia timeout + penalità (una volta sola)
+- Metodo `_handle_game_over_by_timeout()` per terminazione STRICT
+- Flag `_timeout_announced` per evitare annunci ripetuti
+- Reset flag in `start_game()`
+- Priority 0 in `handle_events()` (controllo timer prima di input utente)
+
+**Commit #4: Domain Layer - Scoring Integration** ([`58da981`](https://github.com/Nemex81/solitario-classico-accessibile/commit/58da9816f0f05e46493c73b140e308a81ebc89b1))
+- File: `src/domain/services/scoring_service.py` (+34/-16 linee)
+- File: `src/application/game_engine.py` (+2/-1 linee)
+- Parametro `timer_strict_mode` aggiunto a `calculate_final_score()`
+- Logica overtime malus in `_calculate_time_bonus()`:
+  ```python
+  if not timer_strict_mode and elapsed_seconds > max_time_game:
+      overtime_seconds = elapsed_seconds - max_time_game
+      overtime_minutes = math.ceil(overtime_seconds / 60.0)
+      overtime_malus = -100 * overtime_minutes
+      time_bonus += overtime_malus  # Can go negative
+
 ***
 
 ## [1.5.2.1] - 2026-02-11
