@@ -137,13 +137,14 @@ class SolitarioCleanArch:
         else:
             print("⚠ wxPython non disponibile, uso fallback TTS")
         
-        # Application: Game engine setup (now with settings!)
+        # Application: Game engine setup (now with settings AND dialogs!)
         print("Inizializzazione motore di gioco...")
         self.engine = GameEngine.create(
             audio_enabled=(self.screen_reader is not None),
             tts_engine="auto",
             verbose=1,
-            settings=self.settings  # NEW PARAMETER (v1.4.2.1)
+            settings=self.settings,  # v1.4.2.1
+            use_native_dialogs=True  # v1.6.2 - ENABLE WX DIALOGS
         )
         print("✓ Game engine pronto")
         

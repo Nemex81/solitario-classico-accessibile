@@ -27,8 +27,8 @@
 ## Implementation Checklist ✅
 
 ### Phase 1: Enable Dialog Provider (5 min)
-- [ ] **Task 1.1**: Modify `test.py` line ~111 → Add `use_native_dialogs=True` parameter
-- [ ] **Verify**: Console log shows "✓ Dialog nativi wxPython attivi"
+- [x] **Task 1.1**: Modify `test.py` line ~111 → Add `use_native_dialogs=True` parameter
+- [x] **Verify**: Console log shows "✓ Dialog nativi wxPython attivi"
 
 ### Phase 2: Add Callback Support in GameEngine (15 min)
 - [ ] **Task 2.1**: Modify `game_engine.py` `__init__()` line ~85 → Add `on_game_ended` parameter
