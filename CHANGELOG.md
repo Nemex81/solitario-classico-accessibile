@@ -20,8 +20,17 @@ Perfetto! Ecco il testo completo per la nuova sezione **v1.5.2.1** da aggiungere
   - **Level 4 (Expert)**: Timer mandatory, range 5-30 minutes (was optional, 30-60 min)
   - **Level 5 (Master)**: Timer mandatory, range 5-15 minutes (was optional, 15-30 min)
   - If timer is OFF when cycling to these levels, it's automatically enabled with default values
+- **Auto-preset draw count for levels 1-3**: When cycling difficulty, draw count is automatically preset:
+  - **Level 1**: 1 card (preset, modifiable by user)
+  - **Level 2**: 2 cards (preset, modifiable by user)
+  - **Level 3**: 3 cards (preset, modifiable by user)
+  - User can still manually change via Option #3 "Carte Pescate" after cycling
+- **Scoring mandatory from level 3**: Scoring system now required starting at Level 3 (was Level 4)
+  - Ensures competitive tracking from intermediate difficulty onwards
 - `src/domain/models/scoring.py`: Modified `deck_type_bonuses` values
-- `src/domain/services/game_settings.py`: Modified `cycle_difficulty()` to enforce mandatory timer with tighter ranges
+- `src/domain/services/game_settings.py`: 
+  - Modified `cycle_difficulty()` to add auto-presets for levels 1-3 and enforce scoring from level 3
+  - Modified `_validate_draw_count_for_level()` to remove validation for levels 1-3 (user freedom)
 - `tests/unit/domain/test_scoring_models.py`: Updated test expectations for new bonus values
 
 ---
