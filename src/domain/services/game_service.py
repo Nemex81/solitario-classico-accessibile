@@ -12,6 +12,8 @@ from src.domain.models.table import GameTable
 from src.domain.models.card import Card
 from src.domain.models.pile import Pile
 from src.domain.rules.solitaire_rules import SolitaireRules
+from src.domain.services.scoring_service import ScoringService
+from src.domain.models.scoring import ScoreEventType
 
 
 class GameService:
@@ -30,14 +32,21 @@ class GameService:
         move_count: Number of moves made
         start_time: Game start timestamp (None if not started)
         draw_count: Number of times drawn from stock
+        scoring: Optional scoring service for tracking points
     """
     
-    def __init__(self, table: GameTable, rules: SolitaireRules):
+    def __init__(
+        self, 
+        table: GameTable, 
+        rules: SolitaireRules,
+        scoring: Optional[ScoringService] = None
+    ):
         """Initialize game service.
         
         Args:
             table: GameTable instance with initialized piles
             rules: SolitaireRules for move validation
+            scoring: Optional scoring service for tracking points
         """
         self.table = table
         self.rules = rules
@@ -45,6 +54,7 @@ class GameService:
         self.move_count = 0
         self.start_time: Optional[float] = None
         self.draw_count = 0
+        self.scoring = scoring
     
     # ========================================
     # GAME LIFECYCLE
@@ -62,6 +72,8 @@ class GameService:
         self.move_count = 0
         self.start_time = None
         self.draw_count = 0
+        if self.scoring:
+            self.scoring.reset()
     
     def get_elapsed_time(self) -> float:
         """Get elapsed game time in seconds.
@@ -118,9 +130,29 @@ class GameService:
                 if not self.rules.can_place_on_tableau(card, target_pile):
                     return False, "Mossa non valida per tableau"
             
+            # Check if source pile will reveal a card after move
+            will_reveal_card = (
+                source_pile.get_card_count() > 1 and
+                len([c for c in source_pile.get_all_cards()[:-1] if not c.get_covered]) == 0
+            )
+            
             # Execute move
             source_pile.remove_last_card()
             target_pile.aggiungi_carta(card)
+            
+            # Record scoring events
+            if self.scoring and is_foundation_target:
+                # Check if source is waste or tableau
+                if source_pile == self.table.pile_scarti:
+                    self.scoring.record_event(
+                        ScoreEventType.WASTE_TO_FOUNDATION,
+                        f"{card}"
+                    )
+                elif source_pile in self.table.pile_base:
+                    self.scoring.record_event(
+                        ScoreEventType.TABLEAU_TO_FOUNDATION,
+                        f"{card}"
+                    )
             
         else:
             # Moving sequence (only for tableau)
@@ -132,6 +164,12 @@ class GameService:
             if not self.rules.can_move_sequence(cards, target_pile):
                 return False, "Sequenza non può essere spostata"
             
+            # Check if source pile will reveal a card after move
+            will_reveal_card = (
+                source_pile.get_card_count() > card_count and
+                len([c for c in source_pile.get_all_cards()[:-card_count] if not c.get_covered]) == 0
+            )
+            
             # Execute sequence move
             for _ in range(card_count):
                 source_pile.remove_last_card()
@@ -140,7 +178,21 @@ class GameService:
         
         # Update game state
         self.move_count += 1
-        self._uncover_top_card(source_pile)
+        
+        # Check if a card was revealed
+        card_was_revealed = False
+        if not source_pile.is_empty():
+            top = source_pile.get_top_card()
+            if top and top.get_covered:
+                top.set_uncover()
+                card_was_revealed = True
+        
+        # Record card revealed event
+        if self.scoring and card_was_revealed:
+            self.scoring.record_event(
+                ScoreEventType.CARD_REVEALED,
+                f"{source_pile.get_top_card()}"
+            )
         
         return True, f"Mossa eseguita (#{self.move_count})"
     
@@ -269,6 +321,10 @@ class GameService:
         # Move to stock
         for card in cards:
             stock.aggiungi_carta(card)
+        
+        # Record scoring event
+        if self.scoring:
+            self.scoring.record_event(ScoreEventType.RECYCLE_WASTE)
         
         return True, f"Tallone riciclato ({len(cards)} carte)"
     
