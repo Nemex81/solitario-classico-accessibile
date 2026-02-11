@@ -9,6 +9,25 @@ Perfetto! Ecco il testo completo per la nuova sezione **v1.5.2.1** da aggiungere
 
 ---
 
+## [1.5.2.4] - 2026-02-11
+
+### Fixed
+- **Draw count bug**: Fixed bug where `_apply_game_settings()` in `game_engine.py` was overriding `engine.draw_count` based on `difficulty_level`, ignoring user's explicit choice in Option #3 "Carte Pescate". Now uses `settings.draw_count` directly.
+
+### Changed
+- **Extended constraints for difficulty levels 4-5**: Added automatic enforcement of competitive mode requirements when cycling to Expert (4) or Master (5) difficulty:
+  - **Level 4 (Expert)**: 
+    - Command hints automatically disabled
+    - Scoring system automatically enabled (mandatory)
+  - **Level 5 (Master)**:
+    - Command hints automatically disabled
+    - Scoring system automatically enabled (mandatory)
+    - Timer strict mode automatically enabled (mandatory)
+- `src/application/game_engine.py`: Modified `_apply_game_settings()` to use `self.draw_count = self.settings.draw_count`
+- `src/domain/services/game_settings.py`: Modified `cycle_difficulty()` to add new constraints for levels 4-5
+
+---
+
 ## [1.5.2.3] - 2026-02-11
 
 ### Fixed

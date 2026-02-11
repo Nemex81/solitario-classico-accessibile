@@ -172,6 +172,15 @@ class GameSettings:
             if self.shuffle_discards:
                 self.shuffle_discards = False
                 adjustments.append("Riciclo impostato su Inversione")
+            
+            # NEW CONSTRAINTS v1.5.2.4
+            if self.command_hints_enabled:
+                self.command_hints_enabled = False
+                adjustments.append("Suggerimenti comandi disattivati")
+            
+            if not self.scoring_enabled:
+                self.scoring_enabled = True
+                adjustments.append("Sistema punti attivato (obbligatorio)")
         
         elif self.difficulty_level == 5:
             # Level 5: Timer 15-30min, draw=3, shuffle locked
@@ -190,6 +199,19 @@ class GameSettings:
             if self.shuffle_discards:
                 self.shuffle_discards = False
                 adjustments.append("Riciclo impostato su Inversione")
+            
+            # NEW CONSTRAINTS v1.5.2.4
+            if self.command_hints_enabled:
+                self.command_hints_enabled = False
+                adjustments.append("Suggerimenti comandi disattivati")
+            
+            if not self.scoring_enabled:
+                self.scoring_enabled = True
+                adjustments.append("Sistema punti attivato (obbligatorio)")
+            
+            if not self.timer_strict_mode:
+                self.timer_strict_mode = True
+                adjustments.append("Modalità timer STRICT attivata (obbligatoria)")
         
         # Build final message
         if adjustments:
