@@ -166,6 +166,21 @@ class GameEngine:
         # Create scoring service if enabled (v2.0.0)
         scoring = None
         if settings and settings.scoring_enabled:
+            # 🆕 VALIDATE TIMER CONSTRAINTS FOR LEVELS 4-5
+            if settings.difficulty_level >= 4:
+                if settings.max_time_game <= 0:
+                    # Force timer for levels 4-5
+                    if settings.difficulty_level == 4:
+                        settings.max_time_game = 1800  # 30 min default
+                    else:  # Level 5
+                        settings.max_time_game = 900   # 15 min default
+                elif settings.difficulty_level == 5:
+                    # Enforce 5-20 minute range for level 5
+                    settings.max_time_game = max(300, min(1200, settings.max_time_game))
+                elif settings.difficulty_level == 4:
+                    # Enforce 5-60 minute range for level 4
+                    settings.max_time_game = max(300, min(3600, settings.max_time_game))
+            
             scoring_config = ScoringConfig()
             scoring = ScoringService(
                 config=scoring_config,
@@ -1092,15 +1107,72 @@ class GameEngine:
         #   Level 1 = 1 card
         #   Level 2 = 2 cards (NOT 3!)
         #   Level 3 = 3 cards (NOT 5!)
+        #   Level 4 = 3 cards (Expert)
+        #   Level 5 = 3 cards (Master)
         if self.settings.difficulty_level == 1:
             self.draw_count = 1
         elif self.settings.difficulty_level == 2:
             self.draw_count = 2  # ✅ CORRECT
         elif self.settings.difficulty_level == 3:
             self.draw_count = 3  # ✅ CORRECT
+        elif self.settings.difficulty_level == 4:
+            self.draw_count = 3  # ✅ Level 4: 3 cards (Expert)
+        elif self.settings.difficulty_level == 5:
+            self.draw_count = 3  # ✅ Level 5: 3 cards (Master)
         else:
             # Fallback for invalid values
             self.draw_count = 1
+        
+        # 1.5️⃣ VALIDATE TIMER CONSTRAINTS FOR LEVELS 4-5
+        if self.settings.difficulty_level >= 4:
+            if self.settings.max_time_game <= 0:
+                # Timer not enabled → force default
+                if self.settings.difficulty_level == 4:
+                    self.settings.max_time_game = 1800  # 30 minutes (middle of 5-60 range)
+                else:  # Level 5
+                    self.settings.max_time_game = 900   # 15 minutes (middle of 5-20 range)
+                
+                if self.screen_reader:
+                    minutes = self.settings.max_time_game // 60
+                    self.screen_reader.tts.speak(
+                        f"Livello {self.settings.difficulty_level} richiede timer obbligatorio. "
+                        f"Impostato automaticamente a {minutes} minuti.",
+                        interrupt=False
+                    )
+            else:
+                # Timer enabled → validate range
+                if self.settings.difficulty_level == 4:
+                    # Level 4: 5-60 minutes (300-3600 seconds)
+                    if self.settings.max_time_game < 300:
+                        self.settings.max_time_game = 300
+                        if self.screen_reader:
+                            self.screen_reader.tts.speak(
+                                "Livello Esperto: limite minimo 5 minuti. Timer aumentato.",
+                                interrupt=False
+                            )
+                    elif self.settings.max_time_game > 3600:
+                        self.settings.max_time_game = 3600
+                        if self.screen_reader:
+                            self.screen_reader.tts.speak(
+                                "Livello Esperto: limite massimo 60 minuti. Timer ridotto.",
+                                interrupt=False
+                            )
+                else:  # Level 5
+                    # Level 5: 5-20 minutes (300-1200 seconds)
+                    if self.settings.max_time_game < 300:
+                        self.settings.max_time_game = 300
+                        if self.screen_reader:
+                            self.screen_reader.tts.speak(
+                                "Livello Maestro: limite minimo 5 minuti. Timer aumentato.",
+                                interrupt=False
+                            )
+                    elif self.settings.max_time_game > 1200:
+                        self.settings.max_time_game = 1200
+                        if self.screen_reader:
+                            self.screen_reader.tts.speak(
+                                "Livello Maestro: limite massimo 20 minuti. Timer ridotto.",
+                                interrupt=False
+                            )
         
         # 2️⃣ Shuffle mode
         # CRITICAL: Correct attribute is shuffle_discards (not waste_shuffle!)
