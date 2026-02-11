@@ -37,9 +37,9 @@
 - [x] **Verify**: No circular dependencies, callback stored correctly
 
 ### Phase 3: Implement Callback in test.py (25 min)
-- [ ] **Task 3.1**: Add new method `handle_game_ended(wants_rematch)` in test.py line ~665
-- [ ] **Task 3.2**: Inject callback in `test.py` `__init__()` line ~117 → `self.engine.on_game_ended = self.handle_game_ended`
-- [ ] **Verify**: Callback wired correctly, no runtime errors
+- [x] **Task 3.1**: Add new method `handle_game_ended(wants_rematch)` in test.py line ~665
+- [x] **Task 3.2**: Inject callback in `test.py` `__init__()` line ~117 → `self.engine.on_game_ended = self.handle_game_ended`
+- [x] **Verify**: Callback wired correctly, no runtime errors
 
 ### Phase 4: Testing & Validation (15-30 min)
 - [ ] **Test 4.1**: Start game → Press CTRL+ALT+W → wxDialog appears with statistics

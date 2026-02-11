@@ -146,6 +146,11 @@ class SolitarioCleanArch:
             settings=self.settings,  # v1.4.2.1
             use_native_dialogs=True  # v1.6.2 - ENABLE WX DIALOGS
         )
+        
+        # 🆕 v1.6.2: Inject end game callback for UI state management
+        # This allows engine to delegate UI logic back to test.py after game ends
+        self.engine.on_game_ended = self.handle_game_ended
+        
         print("✓ Game engine pronto")
         
         # Application: Gameplay controller (now with settings!)
@@ -678,6 +683,98 @@ class SolitarioCleanArch:
         if self.screen_reader:
             pygame.time.wait(500)  # Small pause before menu
             self.game_submenu.announce_welcome()
+    
+    def handle_game_ended(self, wants_rematch: bool) -> None:
+        """Handle game end callback from GameEngine.end_game().
+        
+        This is the CENTRAL handler for ALL game end scenarios:
+        - Victory detected (all 4 suits complete)
+        - CTRL+ALT+W debug command used
+        - Timer expired in STRICT mode (via _handle_game_over_by_timeout)
+        
+        Responsibilities:
+        - Reset timer flags for next game
+        - Handle rematch: Start new game OR return to game submenu
+        - Manage UI state: Set is_menu_open flag correctly
+        - Announce actions via TTS
+        
+        Args:
+            wants_rematch: True if user chose "Sì" in rematch dialog
+        
+        Flow:
+            wants_rematch=True:
+                1. Call start_game() → stays in gameplay mode
+                2. TTS announces "Nuova partita avviata!"
+            
+            wants_rematch=False:
+                1. Set is_menu_open = True
+                2. TTS announces "Ritorno al menu di gioco."
+                3. Call game_submenu.announce_welcome()
+        
+        Side Effects:
+            - Resets self._timer_expired_announced flag
+            - Changes self.is_menu_open state
+            - May trigger new game via start_game()
+        
+        Note:
+            This method is ONLY called from GameEngine.end_game() via callback.
+            It separates game logic (engine) from UI state management (test.py).
+            
+        Example:
+            >>> # From GameEngine.end_game():
+            >>> if self.on_game_ended:
+            ...     self.on_game_ended(wants_rematch=False)
+            >>> # Result: UI returns to game submenu
+        """
+        print("\n" + "="*60)
+        print(f"CALLBACK: Game ended - Rematch requested: {wants_rematch}")
+        print("="*60)
+        
+        # ═══════════════════════════════════════════════════════════
+        # STEP 1: Reset Timer Flags
+        # ═══════════════════════════════════════════════════════════
+        # Important for next game! Prevents "timeout" message on fresh game
+        self._timer_expired_announced = False
+        
+        # ═══════════════════════════════════════════════════════════
+        # STEP 2: Handle Rematch Decision
+        # ═══════════════════════════════════════════════════════════
+        
+        if wants_rematch:
+            # ─────────────────────────────────────────────────────────
+            # USER WANTS REMATCH: Stay in gameplay, start new game
+            # ─────────────────────────────────────────────────────────
+            print("→ User chose rematch - Starting new game")
+            
+            # start_game() will:
+            # - Call engine.reset_game() + engine.new_game()
+            # - Reset ESC timer
+            # - Announce "Nuova partita avviata!"
+            self.start_game()
+            
+        else:
+            # ─────────────────────────────────────────────────────────
+            # USER DECLINED REMATCH: Return to game submenu
+            # ─────────────────────────────────────────────────────────
+            print("→ User declined rematch - Returning to game submenu")
+            
+            # 🆕 CRITICAL: Enable menu state
+            # This allows menu navigation to work again
+            self.is_menu_open = True
+            
+            # Announce return to menu with TTS
+            if self.screen_reader:
+                self.screen_reader.tts.speak(
+                    "Ritorno al menu di gioco.",
+                    interrupt=True
+                )
+                pygame.time.wait(400)  # Pause for TTS readability
+                
+                # Re-announce game submenu with welcome message
+                # This helps user orient after game end
+                self.game_submenu.announce_welcome()
+        
+        print("="*60)
     
     def _start_new_game(self) -> None:
         """Internal method: Start new game without confirmation.
