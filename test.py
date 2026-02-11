@@ -157,6 +157,9 @@ class SolitarioCleanArch:
         )
         print("✓ Controller pronto")
         
+        # NEW v1.6.1: Pass dialog_manager to options_controller
+        self.gameplay_controller.options_controller.dialog_manager = self.dialog_manager
+        
         # Infrastructure: Virtual menu hierarchy
         print("Inizializzazione menu...")
         
