@@ -1085,14 +1085,14 @@ class GameEngine:
         - Suit statistics display
         
         Returns:
-            Confirmation message for TTS announcement
+            Empty string (end_game() handles all TTS announcements)
             
         Example:
             >>> msg = engine._debug_force_victory()
             >>> print(msg)
-            "Vittoria simulata attivata! Report finale in arrivo."
+            ""
             
-            # TTS announces victory report
+            # end_game() announces victory report via TTS
             # Dialog shows full statistics
             # Prompts for rematch
         """
@@ -1100,10 +1100,11 @@ class GameEngine:
             return "Nessuna partita in corso da simulare!"
         
         # Trigger complete victory flow
-        # Note: end_game() will handle timer stop via _snapshot_statistics()
+        # Note: end_game() handles all TTS announcements and dialogs
+        # Return empty string to avoid interrupting the report
         self.end_game(is_victory=True)
         
-        return "Vittoria simulata attivata! Report finale in arrivo."
+        return ""
     
     def get_pile_info(self, pile_idx: int) -> Optional[Dict[str, Any]]:
         """Get information about specific pile."""
