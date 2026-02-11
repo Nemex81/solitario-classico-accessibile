@@ -1044,17 +1044,23 @@ class GameEngine:
         )
         
         # ═══════════════════════════════════════════════════════════
-        # STEP 5: TTS Announcement (Always)
+        # STEP 5: TTS Announcement (Always, even if dialogs enabled)
         # ═══════════════════════════════════════════════════════════
         if self.screen_reader:
             self.screen_reader.tts.speak(report, interrupt=True)
         
         # ═══════════════════════════════════════════════════════════
-        # STEP 6: Native Dialog (Optional)
+        # STEP 6: Native Statistics Dialog (Structured, Accessible)
         # ═══════════════════════════════════════════════════════════
         if self.dialogs:
-            title = "Congratulazioni!" if is_victory else "Partita Terminata"
-            self.dialogs.show_alert(report, title)
+            # Use dedicated statistics dialog (v1.6.1+)
+            # Replaces generic show_alert() with structured wxDialog
+            self.dialogs.show_statistics_report(
+                stats=final_stats,
+                final_score=final_score,
+                is_victory=is_victory,
+                deck_type=deck_type
+            )
             
             # ═══════════════════════════════════════════════════════
             # STEP 7: Rematch Prompt
