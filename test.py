@@ -51,6 +51,7 @@ from pygame.locals import QUIT
 # Application layer
 from src.application.game_engine import GameEngine
 from src.application.gameplay_controller import GamePlayController
+from src.application.dialog_manager import SolitarioDialogManager  # NEW v1.6.1
 
 # Domain layer - Configuration
 from src.domain.services.game_settings import GameSettings  # NEW IMPORT (v1.4.2.1)
@@ -128,6 +129,14 @@ class SolitarioCleanArch:
         self.settings = GameSettings()
         print("✓ Impostazioni pronte")
         
+        # NEW v1.6.1: Dialog manager initialization
+        print("Inizializzazione dialog manager...")
+        self.dialog_manager = SolitarioDialogManager()
+        if self.dialog_manager.is_available:
+            print("✓ Dialog nativi wxPython attivi")
+        else:
+            print("⚠ wxPython non disponibile, uso fallback TTS")
+        
         # Application: Game engine setup (now with settings!)
         print("Inizializzazione motore di gioco...")
         self.engine = GameEngine.create(
@@ -178,12 +187,6 @@ class SolitarioCleanArch:
         )
         
         print("✓ Menu pronto")
-        
-        # Infrastructure: Dialog boxes (v1.4.2 + v1.4.3)
-        self.exit_dialog = None  # Exit confirmation dialog (Commit #25)
-        self.return_to_main_dialog = None  # Submenu exit dialog (Commit #26)
-        self.abandon_game_dialog = None  # Gameplay exit dialog (Commit #27)
-        self.new_game_dialog = None  # New game confirmation dialog (v1.4.3)
         
         # Double-ESC feature (Commit #27)
         self.last_esc_time = 0  # Timestamp of last ESC press
@@ -259,25 +262,20 @@ class SolitarioCleanArch:
     # === DIALOG HANDLERS (v1.4.2) ===
     
     def show_exit_dialog(self) -> None:
-        """Show exit confirmation dialog (Commit #25).
+        """Show exit confirmation dialog - NATIVE WX (v1.6.1).
         
-        Opens dialog asking "Vuoi uscire dall'applicazione?" with
-        OK/Annulla buttons. OK has default focus.
+        Opens native wxPython dialog asking "Vuoi uscire dall'applicazione?"
+        with Yes/No buttons.
         """
         print("\n" + "="*60)
-        print("DIALOG: Conferma uscita applicazione")
+        print("DIALOG: Conferma uscita applicazione (wxPython)")
         print("="*60)
         
-        self.exit_dialog = VirtualDialogBox(
-            message="Vuoi uscire dall'applicazione?",
-            buttons=["OK", "Annulla"],
-            default_button=0,  # Focus on OK
-            on_confirm=self.quit_app,
-            on_cancel=self.close_exit_dialog,
-            screen_reader=self.screen_reader if self.screen_reader else self._dummy_sr()
-        )
+        result = self.dialog_manager.show_exit_app_prompt()
         
-        self.exit_dialog.open()
+        if result:
+            self.quit_app()
+        # Else: stay in menu (no action needed)
     
     def close_exit_dialog(self) -> None:
         """Close exit dialog and return to main menu.
@@ -293,36 +291,30 @@ class SolitarioCleanArch:
             )
             pygame.time.wait(300)
         
-        self.exit_dialog = None
-        
         # Re-announce main menu
         if self.menu.active_submenu is None:
             self.menu._announce_menu_open()
     
     def show_return_to_main_dialog(self) -> None:
-        """Show return to main menu confirmation dialog (Commit #26).
+        """Show return to main menu confirmation - NATIVE WX (v1.6.1).
         
-        Opens dialog asking "Vuoi tornare al menu principale?" with
-        Sì/No buttons. Sì has default focus.
+        Opens native wxPython dialog asking "Vuoi tornare al menu principale?"
+        with Sì/No buttons.
         
         Triggered by:
         - ESC in game submenu
         - ENTER on "Chiudi" menu item
         """
         print("\n" + "="*60)
-        print("DIALOG: Conferma ritorno al menu principale")
+        print("DIALOG: Conferma ritorno menu principale (wxPython)")
         print("="*60)
         
-        self.return_to_main_dialog = VirtualDialogBox(
-            message="Vuoi tornare al menu principale?",
-            buttons=["Sì", "No"],
-            default_button=0,  # Focus on Sì
-            on_confirm=self.confirm_return_to_main,
-            on_cancel=self.close_return_dialog,
-            screen_reader=self.screen_reader if self.screen_reader else self._dummy_sr()
-        )
+        result = self.dialog_manager.show_return_to_main_prompt()
         
-        self.return_to_main_dialog.open()
+        if result:
+            self.confirm_return_to_main()
+        else:
+            self.close_return_dialog()
     
     def confirm_return_to_main(self) -> None:
         """Confirm return to main menu (Sì button).
@@ -331,9 +323,6 @@ class SolitarioCleanArch:
         Re-announces main menu after closing.
         """
         print("Confermato - Chiusura submenu e ritorno al menu principale")
-        
-        # Close dialog
-        self.return_to_main_dialog = None
         
         # Close game submenu
         self.menu.close_submenu()
@@ -363,16 +352,14 @@ class SolitarioCleanArch:
             )
             pygame.time.wait(300)
         
-        self.return_to_main_dialog = None
-        
         # Re-announce current submenu position
         self.game_submenu._announce_menu_open()
     
     def show_abandon_game_dialog(self) -> None:
-        """Show abandon game confirmation dialog (Commit #27).
+        """Show abandon game confirmation - NATIVE WX (v1.6.1).
         
-        Opens dialog asking "Vuoi abbandonare la partita e tornare al menu di gioco?" with
-        Sì/No buttons. Sì has default focus.
+        Opens native wxPython dialog asking "Vuoi abbandonare la partita e tornare al menu di gioco?"
+        with Sì/No buttons.
         
         Triggered by:
         - ESC during gameplay
@@ -380,19 +367,15 @@ class SolitarioCleanArch:
         Note: Returns to GAME SUBMENU, not main menu!
         """
         print("\n" + "="*60)
-        print("DIALOG: Conferma abbandono partita")
+        print("DIALOG: Conferma abbandono partita (wxPython)")
         print("="*60)
         
-        self.abandon_game_dialog = VirtualDialogBox(
-            message="Vuoi abbandonare la partita e tornare al menu di gioco?",
-            buttons=["Sì", "No"],
-            default_button=0,  # Focus on Sì
-            on_confirm=self.confirm_abandon_game,
-            on_cancel=self.close_abandon_dialog,
-            screen_reader=self.screen_reader if self.screen_reader else self._dummy_sr()
-        )
+        result = self.dialog_manager.show_abandon_game_prompt()
         
-        self.abandon_game_dialog.open()
+        if result:
+            self.confirm_abandon_game()
+        else:
+            self.close_abandon_dialog()
     
     def confirm_abandon_game(self) -> None:
         """Confirm abandon game (Sì button).
@@ -401,9 +384,6 @@ class SolitarioCleanArch:
         Re-announces game submenu after abandoning.
         """
         print("Confermato - Abbandono partita e ritorno al menu di gioco")
-        
-        # Close dialog
-        self.abandon_game_dialog = None
         
         # Reset ESC timer
         self.last_esc_time = 0
@@ -445,18 +425,16 @@ class SolitarioCleanArch:
             )
             pygame.time.wait(300)
         
-        self.abandon_game_dialog = None
-        
         # Reset ESC timer
         self.last_esc_time = 0
     
     # === NEW GAME DIALOG HANDLERS (v1.4.3) ===
     
     def show_new_game_dialog(self) -> None:
-        """Show new game confirmation dialog (v1.4.3).
+        """Show new game confirmation - NATIVE WX (v1.6.1).
         
-        Opens dialog asking "Una partita è già in corso. Vuoi abbandonarla e avviarne una nuova?" with
-        Sì/No buttons. Sì has default focus.
+        Opens native wxPython dialog asking "Una partita è già in corso. 
+        Vuoi abbandonarla e avviarne una nuova?" with Sì/No buttons.
         
         Triggered by:
         - "N" key during gameplay
@@ -465,19 +443,15 @@ class SolitarioCleanArch:
         Safety feature to prevent accidental game loss.
         """
         print("\n" + "="*60)
-        print("DIALOG: Conferma nuova partita")
+        print("DIALOG: Conferma nuova partita (wxPython)")
         print("="*60)
         
-        self.new_game_dialog = VirtualDialogBox(
-            message="Una partita è già in corso. Vuoi abbandonarla e avviarne una nuova?",
-            buttons=["Sì", "No"],
-            default_button=0,  # Focus on Sì
-            on_confirm=self._confirm_new_game,
-            on_cancel=self._cancel_new_game,
-            screen_reader=self.screen_reader if self.screen_reader else self._dummy_sr()
-        )
+        result = self.dialog_manager.show_new_game_prompt()
         
-        self.new_game_dialog.open()
+        if result:
+            self._confirm_new_game()
+        else:
+            self._cancel_new_game()
     
     def _confirm_new_game(self) -> None:
         """Callback: User confirmed starting new game (abandoning current).
@@ -494,9 +468,6 @@ class SolitarioCleanArch:
         New in v1.4.3: Safety feature for preventing accidental game loss.
         """
         print("Confermato - Abbandono partita corrente e avvio nuova")
-        
-        # Close dialog
-        self.new_game_dialog = None
         
         # Announce action
         if self.screen_reader:
@@ -525,9 +496,6 @@ class SolitarioCleanArch:
         New in v1.4.3: Safety feature for preventing accidental game loss.
         """
         print("Dialog chiuso - Azione annullata, continuo partita corrente")
-        
-        # Close dialog
-        self.new_game_dialog = None
         
         # Announce cancellation
         if self.screen_reader:
@@ -792,12 +760,12 @@ class SolitarioCleanArch:
         """Main event loop - process all pygame events.
         
         Routes events based on current application state:
-        - Exit dialog open: Route to exit dialog
-        - Return dialog open: Route to return dialog (Commit #26)
-        - Abandon dialog open: Route to abandon dialog (Commit #27)
         - Menu open: Route to menu navigation (with ESC interception)
         - Options mode: Route to options controller
         - Gameplay: Route to gameplay controller (with double-ESC detection)
+        
+        NOTE v1.6.1: wxDialogs are modal (blocking), no longer need 
+        priority routing in event loop. Dialog state management removed.
         """
         for event in pygame.event.get():
             # Window close event
@@ -810,45 +778,6 @@ class SolitarioCleanArch:
             if event.type == self.TIME_CHECK_EVENT:
                 self._check_timer_expiration()
                 continue  # Don't pass to other handlers
-            
-            # PRIORITY 1: Exit dialog open
-            if self.exit_dialog and self.exit_dialog.is_open:
-                self.exit_dialog.handle_keyboard_events(event)
-                continue  # Block all other input
-            
-            # PRIORITY 2: Return to main dialog open (Commit #26)
-            if self.return_to_main_dialog and self.return_to_main_dialog.is_open:
-                self.return_to_main_dialog.handle_keyboard_events(event)
-                continue  # Block all other input
-            
-            # PRIORITY 3: Abandon game dialog open (Commit #27)
-            if self.abandon_game_dialog and self.abandon_game_dialog.is_open:
-                # Check for double-ESC (instant confirm)
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                    current_time = time.time()
-                    if current_time - self.last_esc_time <= self.DOUBLE_ESC_THRESHOLD:
-                        # Double-ESC detected!
-                        print("\n[DOUBLE-ESC] Uscita rapida!")
-                        
-                        if self.screen_reader:
-                            self.screen_reader.tts.speak(
-                                "Uscita rapida!",
-                                interrupt=True
-                            )
-                            pygame.time.wait(300)
-                        
-                        # Auto-confirm abandon
-                        self.confirm_abandon_game()
-                        continue
-                
-                # Normal dialog handling
-                self.abandon_game_dialog.handle_keyboard_events(event)
-                continue  # Block all other input
-            
-            # PRIORITY 4: New game confirmation dialog open (v1.4.3)
-            if self.new_game_dialog and self.new_game_dialog.is_open:
-                self.new_game_dialog.handle_keyboard_events(event)
-                continue  # Block all other input
             
             # Route keyboard events based on state
             if self.is_menu_open:
@@ -884,8 +813,22 @@ class SolitarioCleanArch:
                     if not self.gameplay_controller.options_controller.is_open:
                         current_time = time.time()
                         
-                        # Check if this is first ESC or dialog was just closed
-                        if self.last_esc_time == 0 or current_time - self.last_esc_time > self.DOUBLE_ESC_THRESHOLD:
+                        # Check if this is double-ESC (< 2 sec threshold)
+                        if self.last_esc_time > 0 and current_time - self.last_esc_time <= self.DOUBLE_ESC_THRESHOLD:
+                            # Double-ESC detected - instant abandon!
+                            print("\n[DOUBLE-ESC] Uscita rapida!")
+                            
+                            if self.screen_reader:
+                                self.screen_reader.tts.speak(
+                                    "Uscita rapida!",
+                                    interrupt=True
+                                )
+                                pygame.time.wait(300)
+                            
+                            # Auto-confirm abandon (skip dialog)
+                            self.confirm_abandon_game()
+                            self.last_esc_time = 0  # Reset timer
+                        else:
                             # First ESC - show dialog
                             self.last_esc_time = current_time
                             self.show_abandon_game_dialog()
