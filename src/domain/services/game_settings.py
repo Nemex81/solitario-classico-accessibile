@@ -46,6 +46,9 @@ class GameSettings:
         shuffle_discards: True=random shuffle, False=invert order
         command_hints_enabled: (v1.5.0) Enable/disable contextual voice hints
         scoring_enabled: (v2.0.0) Enable/disable scoring system
+        timer_strict_mode: (v1.5.2.2) Timer expiration behavior
+            - True: STRICT mode (auto-stop at timeout, legacy behavior)
+            - False: PERMISSIVE mode (continue with -100pts/min malus)
         game_state: Reference to game state for validation
     
     Design:
@@ -74,6 +77,11 @@ class GameSettings:
         
         # Feature v2.0.0: Scoring system
         self.scoring_enabled = True  # Enable/disable scoring system
+        
+        # Feature v1.5.2.2: Timer strict mode
+        self.timer_strict_mode = True  # True = STRICT (auto-stop), False = PERMISSIVE (malus)
+        #   True  = STRICT: Partita interrotta alla scadenza (comportamento legacy)
+        #   False = PERMISSIVE: Continua con malus punti (-100/min oltre limite)
         
         # Game state reference for validation
         self.game_state = game_state or GameState()
@@ -521,3 +529,61 @@ class GameSettings:
         Used by OptionsFormatter for option #5 display.
         """
         return "Attivi" if self.command_hints_enabled else "Disattivati"
+    
+    # ========================================
+    # TIMER STRICT MODE (v1.5.2.2)
+    # ========================================
+    
+    def toggle_timer_strict_mode(self) -> Tuple[bool, str]:
+        """Toggle timer strict mode on/off.
+        
+        v1.5.2.2: Configure timer expiration behavior.
+        
+        STRICT mode (True):
+            - Game stops automatically when timer expires
+            - Shows final statistics and returns to menu
+            - No scoring penalty (game over by timeout)
+            - Legacy behavior from scr/ version
+        
+        PERMISSIVE mode (False):
+            - Game continues beyond time limit
+            - TTS announces timeout and malus
+            - Scoring penalty: -100 points per overtime minute
+            - Allows completing game after timeout
+        
+        Returns:
+            Tuple[bool, str]: (success, message)
+        
+        Note:
+            - Only affects behavior when timer is enabled
+            - Default is STRICT (backward compatible)
+            - PERMISSIVE mode designed for learning/casual play
+        
+        Examples:
+            >>> settings.timer_strict_mode = True
+            >>> settings.toggle_timer_strict_mode()
+            (True, "Modalità timer: PERMISSIVE (malus). Il gioco continua oltre il limite con penalità di 100 punti al minuto.")
+        """
+        if not self.validate_not_running():
+            return (False, "Non puoi modificare questa opzione durante una partita!")
+        
+        # Toggle
+        self.timer_strict_mode = not self.timer_strict_mode
+        
+        if self.timer_strict_mode:
+            return (True, "Modalità timer: STRICT (auto-stop). Il gioco si interrompe alla scadenza del timer.")
+        else:
+            return (True, "Modalità timer: PERMISSIVE (malus). Il gioco continua oltre il limite con penalità di 100 punti al minuto.")
+    
+    def get_timer_strict_mode_display(self) -> str:
+        """Get human-readable timer strict mode status.
+        
+        v1.5.2.2: Display current timer expiration behavior.
+        
+        Returns:
+            "STRICT (auto-stop)" if strict mode enabled,
+            "PERMISSIVE (malus)" if permissive mode enabled
+        
+        Used by OptionsFormatter for option #8 display.
+        """
+        return "STRICT (auto-stop)" if self.timer_strict_mode else "PERMISSIVE (malus)"
