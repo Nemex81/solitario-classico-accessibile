@@ -1069,6 +1069,44 @@ class GameEngine:
         # Note: If rematch chosen, new_game() already handled reset
         self.service.reset_game()
     
+    def _debug_force_victory(self) -> str:
+        """🔥 DEBUG ONLY: Simulate victory for testing end_game flow.
+        
+        Keyboard binding: CTRL+ALT+W
+        
+        ⚠️ WARNING: This is a debug feature for testing the victory flow!
+        
+        Simulates victory without actually completing the game.
+        Useful for testing:
+        - Final report formatting
+        - Dialog appearance and accessibility
+        - Score calculation accuracy
+        - Rematch flow behavior
+        - Suit statistics display
+        
+        Returns:
+            Confirmation message for TTS announcement
+            
+        Example:
+            >>> msg = engine._debug_force_victory()
+            >>> print(msg)
+            "Vittoria simulata attivata! Report finale in arrivo."
+            
+            # TTS announces victory report
+            # Dialog shows full statistics
+            # Prompts for rematch
+        """
+        if not self.is_game_running():
+            return "Nessuna partita in corso da simulare!"
+        
+        # Stop game timer (preserves elapsed_time)
+        self.service.is_game_running = False
+        
+        # Trigger complete victory flow
+        self.end_game(is_victory=True)
+        
+        return "Vittoria simulata attivata! Report finale in arrivo."
+    
     def get_pile_info(self, pile_idx: int) -> Optional[Dict[str, Any]]:
         """Get information about specific pile."""
         pile = self._get_pile(pile_idx)

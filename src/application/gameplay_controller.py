@@ -627,6 +627,16 @@ ESC: abbandona partita."""
             # === NORMAL GAMEPLAY ===
             mods = pygame.key.get_mods()
             
+            # ═══════════════════════════════════════════════════════
+            # 🔥 DEBUG: Force victory (CTRL+ALT+W) - v1.6.0
+            # ═══════════════════════════════════════════════════════
+            if (event.key == pygame.K_w and 
+                (mods & KMOD_CTRL) and 
+                (mods & pygame.KMOD_ALT)):
+                msg = self.engine._debug_force_victory()
+                self._vocalizza(msg)
+                return
+            
             # === SHIFT MODIFIERS (Priority over normal commands) ===
             if mods & KMOD_SHIFT:
                 # SHIFT+1-4: Pile semi (fondazioni)

@@ -1233,15 +1233,15 @@ engine.new_game()
 
 ### **Verification**:
 
-- [ ] `_debug_force_victory()` method added
-- [ ] CTRL+ALT+W binding added to main.py
-- [ ] Test Scenario 1 (with dialogs) passes all checks
-- [ ] Test Scenario 2 (without dialogs) passes all checks
-- [ ] Test Scenario 3 (suit stats) passes all checks
-- [ ] Test Scenario 4 (Neapolitan) passes all checks
-- [ ] Test Scenario 5 (NVDA) passes all checks
-- [ ] No errors in console during any test
-- [ ] Dialogs are keyboard-navigable
+- [x] `_debug_force_victory()` method added
+- [x] CTRL+ALT+W binding added to gameplay_controller.py
+- [x] Test Scenario 1 (with dialogs) passes all checks
+- [x] Test Scenario 2 (without dialogs) passes all checks
+- [x] Test Scenario 3 (suit stats) passes all checks
+- [x] Test Scenario 4 (Neapolitan) passes all checks
+- [x] Test Scenario 5 (NVDA) passes all checks
+- [x] No errors in console during any test
+- [x] Dialogs are keyboard-navigable
 
 ---
 
