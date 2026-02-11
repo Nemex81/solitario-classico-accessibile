@@ -9,6 +9,62 @@ Perfetto! Ecco il testo completo per la nuova sezione **v1.5.2.1** da aggiungere
 
 ---
 
+## [1.5.2.5] - 2026-02-11
+
+### Changed
+- **Deck type bonus rebalancing**: Adjusted scoring bonuses to correctly reflect difficulty:
+  - Neapolitan deck (40 cards): 0 → 50 points (harder gameplay deserves bonus)
+  - French deck (52 cards): 150 → 75 points (easier gameplay gets reduced bonus)
+  - Rationale: Fewer cards = fewer possible moves = higher difficulty
+- **Mandatory timer for competitive levels**: Timer is now required for difficulty levels 4-5:
+  - **Level 4 (Expert)**: Timer mandatory, range 5-30 minutes (was optional, 30-60 min)
+  - **Level 5 (Master)**: Timer mandatory, range 5-15 minutes (was optional, 15-30 min)
+  - If timer is OFF when cycling to these levels, it's automatically enabled with default values
+- **Auto-preset draw count for levels 1-3**: When cycling difficulty, draw count is automatically preset:
+  - **Level 1**: 1 card (preset, modifiable by user)
+  - **Level 2**: 2 cards (preset, modifiable by user)
+  - **Level 3**: 3 cards (preset, modifiable by user)
+  - User can still manually change via Option #3 "Carte Pescate" after cycling
+- **Scoring mandatory from level 3**: Scoring system now required starting at Level 3 (was Level 4)
+  - Ensures competitive tracking from intermediate difficulty onwards
+- `src/domain/models/scoring.py`: Modified `deck_type_bonuses` values
+- `src/domain/services/game_settings.py`: 
+  - Modified `cycle_difficulty()` to add auto-presets for levels 1-3 and enforce scoring from level 3
+  - Modified `_validate_draw_count_for_level()` to remove validation for levels 1-3 (user freedom)
+- `tests/unit/domain/test_scoring_models.py`: Updated test expectations for new bonus values
+
+---
+
+## [1.5.2.4] - 2026-02-11
+
+### Fixed
+- **Draw count bug**: Fixed bug where `_apply_game_settings()` in `game_engine.py` was overriding `engine.draw_count` based on `difficulty_level`, ignoring user's explicit choice in Option #3 "Carte Pescate". Now uses `settings.draw_count` directly.
+
+### Changed
+- **Extended constraints for difficulty levels 4-5**: Added automatic enforcement of competitive mode requirements when cycling to Expert (4) or Master (5) difficulty:
+  - **Level 4 (Expert)**: 
+    - Command hints automatically disabled
+    - Scoring system automatically enabled (mandatory)
+  - **Level 5 (Master)**:
+    - Command hints automatically disabled
+    - Scoring system automatically enabled (mandatory)
+    - Timer strict mode automatically enabled (mandatory)
+- `src/application/game_engine.py`: Modified `_apply_game_settings()` to use `self.draw_count = self.settings.draw_count`
+- `src/domain/services/game_settings.py`: Modified `cycle_difficulty()` to add new constraints for levels 4-5
+
+---
+
+## [1.5.2.3] - 2026-02-11
+
+### Fixed
+- **Game state reset on abandon**: Fixed bug where abandoning a game in progress did not reset engine state variables (timer, move count, cursor position, selection). Now calls `engine.reset_game()` in `confirm_abandon_game()` to ensure clean state for next game.
+- **Timer announcement flag**: Added reset of `_timer_expired_announced` flag when abandoning game to prevent timer announcement issues in subsequent games.
+
+### Changed
+- `test.py`: Modified `confirm_abandon_game()` to call `self.engine.reset_game()` and reset `self._timer_expired_announced` flag before returning to game menu.
+
+---
+
 ## [1.5.2.2] - 2026-02-11
 
 ### ✨ Nuova Funzionalità: Modalità Timer Configurabile

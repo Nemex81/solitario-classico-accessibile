@@ -156,14 +156,43 @@ class GameSettings:
         level_name = self.get_difficulty_display()
         base_message = f"Difficoltà impostata a: {level_name}."
         
-        # Apply constraints for levels 4-5
+        # Apply constraints for levels 1-5
         adjustments = []
         
+        # Auto-presets for levels 1-3 (v1.5.2.5 - modifiable by user via Option #3)
+        if self.difficulty_level == 1:
+            if self.draw_count != 1:
+                self.draw_count = 1
+                adjustments.append("Carte pescate: 1 (preset)")
+        
+        elif self.difficulty_level == 2:
+            if self.draw_count != 2:
+                self.draw_count = 2
+                adjustments.append("Carte pescate: 2 (preset)")
+        
+        elif self.difficulty_level == 3:
+            if self.draw_count != 3:
+                self.draw_count = 3
+                adjustments.append("Carte pescate: 3 (preset)")
+            
+            # NEW: Scoring mandatory from level 3+
+            if not self.scoring_enabled:
+                self.scoring_enabled = True
+                adjustments.append("Sistema punti attivato (obbligatorio)")
+        
+        # Level 4-5: Strict competitive constraints
         if self.difficulty_level == 4:
-            # Level 4: Timer ≥30min, draw ≥2, shuffle locked
-            if self.max_time_game > 0 and self.max_time_game < 1800:
-                self.max_time_game = 1800  # 30 minutes
-                adjustments.append("Timer aumentato a 30 minuti")
+            # Level 4: Timer 5-30min MANDATORY, draw ≥2, shuffle locked
+            # v1.5.2.5: Timer now mandatory for competitive level
+            if self.max_time_game <= 0:
+                self.max_time_game = 1800  # Force 30min default
+                adjustments.append("Timer attivato: 30 minuti (obbligatorio)")
+            elif self.max_time_game < 300:
+                self.max_time_game = 300  # Min 5min
+                adjustments.append("Timer: minimo 5 minuti")
+            elif self.max_time_game > 1800:
+                self.max_time_game = 1800  # Max 30min (reduced from 60min)
+                adjustments.append("Timer: massimo 30 minuti")
             
             if self.draw_count < 2:
                 self.draw_count = 2
@@ -172,16 +201,28 @@ class GameSettings:
             if self.shuffle_discards:
                 self.shuffle_discards = False
                 adjustments.append("Riciclo impostato su Inversione")
+            
+            # NEW CONSTRAINTS v1.5.2.4
+            if self.command_hints_enabled:
+                self.command_hints_enabled = False
+                adjustments.append("Suggerimenti comandi disattivati")
+            
+            if not self.scoring_enabled:
+                self.scoring_enabled = True
+                adjustments.append("Sistema punti attivato (obbligatorio)")
         
         elif self.difficulty_level == 5:
-            # Level 5: Timer 15-30min, draw=3, shuffle locked
-            if self.max_time_game > 0:
-                if self.max_time_game < 900:
-                    self.max_time_game = 900  # 15 minutes
-                    adjustments.append("Timer aumentato a 15 minuti")
-                elif self.max_time_game > 1800:
-                    self.max_time_game = 1800  # 30 minutes
-                    adjustments.append("Timer ridotto a 30 minuti")
+            # Level 5: Timer 5-15min MANDATORY, draw=3, shuffle locked
+            # v1.5.2.5: Timer now mandatory, max reduced from 30min to 15min
+            if self.max_time_game <= 0:
+                self.max_time_game = 900  # Force 15min default
+                adjustments.append("Timer attivato: 15 minuti (obbligatorio)")
+            elif self.max_time_game < 300:
+                self.max_time_game = 300  # Min 5min
+                adjustments.append("Timer: minimo 5 minuti")
+            elif self.max_time_game > 900:
+                self.max_time_game = 900  # Max 15min (reduced from 30min)
+                adjustments.append("Timer: massimo 15 minuti")
             
             if self.draw_count != 3:
                 self.draw_count = 3
@@ -190,6 +231,19 @@ class GameSettings:
             if self.shuffle_discards:
                 self.shuffle_discards = False
                 adjustments.append("Riciclo impostato su Inversione")
+            
+            # NEW CONSTRAINTS v1.5.2.4
+            if self.command_hints_enabled:
+                self.command_hints_enabled = False
+                adjustments.append("Suggerimenti comandi disattivati")
+            
+            if not self.scoring_enabled:
+                self.scoring_enabled = True
+                adjustments.append("Sistema punti attivato (obbligatorio)")
+            
+            if not self.timer_strict_mode:
+                self.timer_strict_mode = True
+                adjustments.append("Modalità timer STRICT attivata (obbligatoria)")
         
         # Build final message
         if adjustments:
@@ -235,17 +289,28 @@ class GameSettings:
         return (True, f"Carte pescate impostate a: {self.draw_count}.")
     
     def _validate_draw_count_for_level(self) -> str:
-        """Validate draw_count against current difficulty level.
+        """Validate draw_count compatibility with difficulty level.
+        
+        v1.5.2.5: Levels 1-3 have no validation (user can modify freely).
+        Levels 4-5 maintain strict validation for competitive play.
         
         Returns:
             Validation message if adjustments needed, empty string otherwise
         """
+        # Levels 1-3: No validation - user can change draw_count freely
+        if self.difficulty_level <= 3:
+            return ""
+        
+        # Level 4: Minimum 2 cards
         if self.difficulty_level == 4 and self.draw_count < 2:
             self.draw_count = 2
             return "Livello Esperto richiede almeno 2 carte."
+        
+        # Level 5: Exactly 3 cards (locked)
         elif self.difficulty_level == 5 and self.draw_count != 3:
             self.draw_count = 3
             return "Livello Maestro richiede esattamente 3 carte."
+        
         return ""
     
     # ========================================
