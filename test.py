@@ -92,6 +92,9 @@ class SolitarioCleanArch:
         is_running: Main loop control flag
     """
     
+    # 🆕 NEW v1.5.2.2: Custom pygame event for timer checks
+    TIME_CHECK_EVENT = pygame.USEREVENT + 1  # Fires every 1 second
+    
     def __init__(self):
         """Initialize application with all components."""
         # PyGame initialization
@@ -190,6 +193,10 @@ class SolitarioCleanArch:
         self.is_menu_open = True
         self.is_options_mode = False
         self.is_running = True
+        
+        # 🆕 NEW v1.5.2.2: Setup periodic timer check
+        pygame.time.set_timer(self.TIME_CHECK_EVENT, 1000)  # 1000ms = 1 second
+        self._timer_expired_announced = False  # Prevents repeated announcements
         
         print("="*60)
         print("✓ Applicazione avviata con successo!")
@@ -523,6 +530,174 @@ class SolitarioCleanArch:
         
         # No further action needed, game continues
     
+    def _check_timer_expiration(self) -> None:
+        """Check timer expiration every second (v1.5.2.2).
+        
+        Triggered by TIME_CHECK_EVENT (pygame.USEREVENT+1) every 1000ms.
+        
+        Behavior based on settings.timer_strict_mode:
+        
+        STRICT Mode (True):
+            - Game stops immediately when timer expires
+            - Saves final statistics (elapsed time, moves, etc)
+            - Shows complete game report via TTS
+            - Returns to game menu
+            - Legacy behavior from scr/game_engine.py
+        
+        PERMISSIVE Mode (False):
+            - Game continues beyond time limit
+            - Announces timeout + malus ONCE via TTS
+            - Scoring penalty applied: -100 points per overtime minute
+            - Allows player to complete game
+            - New feature for casual/learning mode
+        
+        Skip Conditions:
+            - Not in gameplay (menu or options open)
+            - Timer disabled (max_time_game <= 0)
+            - Game already over (victory or defeat)
+        
+        State Management:
+            - self._timer_expired_announced: Prevents repeated TTS in PERMISSIVE mode
+            - Reset to False when: timer OK, new game starts, return to menu
+        """
+        # Skip if not in gameplay mode
+        if self.is_menu_open or self.is_options_mode:
+            return
+        
+        # Skip if timer disabled or in stopwatch mode
+        if self.settings.max_time_game <= 0:
+            return
+        
+        # Skip if game already concluded
+        state = self.engine.get_game_state()
+        game_over = state.get('game_over', {}).get('is_over', False)
+        if game_over:
+            return
+        
+        # Get current elapsed time
+        elapsed = self.engine.service.get_elapsed_time()
+        max_time = self.settings.max_time_game
+        
+        # Timer still OK - reset announcement flag
+        if elapsed < max_time:
+            self._timer_expired_announced = False
+            return
+        
+        # ⏰ TIMER EXPIRED - Decide action based on mode
+        
+        if self.settings.timer_strict_mode:
+            # === STRICT MODE: Auto-stop game ===
+            self._handle_game_over_by_timeout()
+        
+        else:
+            # === PERMISSIVE MODE: Announce malus once, continue playing ===
+            if not self._timer_expired_announced:
+                overtime_seconds = int(elapsed - max_time)
+                overtime_minutes = max(1, overtime_seconds // 60)  # At least 1 min
+                
+                # Calculate penalty
+                penalty_points = 100 * overtime_minutes
+                
+                # Build announcement
+                max_minutes = max_time // 60
+                malus_msg = f"Attenzione! Tempo scaduto! "
+                malus_msg += f"Hai superato il limite di {max_minutes} minuti. "
+                malus_msg += f"Stai giocando in tempo extra. "
+                malus_msg += f"Penalità applicata: meno {penalty_points} punti. "
+                malus_msg += f"Tempo oltre il limite: {overtime_minutes} minuti."
+                
+                # Vocalize warning
+                if self.screen_reader:
+                    self.screen_reader.tts.speak(malus_msg, interrupt=True)
+                    pygame.time.wait(800)  # Longer pause for important warning
+                
+                # Console log
+                print(f"\n[TIMER PERMISSIVE] Overtime: +{overtime_minutes}min → Malus: -{penalty_points}pts")
+                
+                # Mark as announced (don't repeat)
+                self._timer_expired_announced = True
+    
+    def _handle_game_over_by_timeout(self) -> None:
+        """Handle game over by timeout in STRICT mode (v1.5.2.2).
+        
+        Called when timer expires and settings.timer_strict_mode = True.
+        
+        Actions:
+        1. Stop timer event checks (set announcement flag)
+        2. Retrieve final game statistics from engine
+        3. Build comprehensive defeat message with:
+           - Time limit exceeded message
+           - Elapsed time vs max time comparison
+           - Complete game report (moves, cards placed, etc)
+        4. Vocalize defeat message via TTS (2 second pause)
+        5. Return to game submenu (not main menu!)
+        6. Reset timer flags for next game
+        
+        User Flow After Timeout:
+            Game → [Timer expires] → This method → Game Submenu
+            User can then:
+            - Start new game (N key or menu option 1)
+            - Change options (O key or menu option 2)
+            - Return to main menu (ESC or menu option 3)
+        
+        Note:
+            This replicates legacy behavior from scr/game_engine.py:
+            - you_lost_by_time() method
+            - ceck_lost_by_time() detection
+            But with improved TTS feedback and Clean Architecture structure.
+        """
+        print("\n" + "="*60)
+        print("⏰ GAME OVER - TEMPO SCADUTO (STRICT MODE)")
+        print("="*60)
+        
+        # Stop timer announcements
+        self._timer_expired_announced = True
+        
+        # Get final statistics
+        elapsed = int(self.engine.service.get_elapsed_time())
+        max_time = self.settings.max_time_game
+        
+        # Calculate time values for display
+        minutes_elapsed = elapsed // 60
+        seconds_elapsed = elapsed % 60
+        max_minutes = max_time // 60
+        max_seconds = max_time % 60
+        
+        # Build defeat message header
+        defeat_msg = "⏰ TEMPO SCADUTO! PARTITA TERMINATA.\n\n"
+        defeat_msg += f"Limite impostato: {max_minutes} minuti"
+        if max_seconds > 0:
+            defeat_msg += f" e {max_seconds} secondi"
+        defeat_msg += ".\n"
+        
+        defeat_msg += f"Tempo trascorso: {minutes_elapsed} minuti"
+        if seconds_elapsed > 0:
+            defeat_msg += f" e {seconds_elapsed} secondi"
+        defeat_msg += ".\n\n"
+        
+        # Add complete game report
+        report, _ = self.engine.service.get_game_report()
+        defeat_msg += "--- STATISTICHE FINALI ---\n"
+        defeat_msg += report
+        
+        # Console output
+        print(defeat_msg)
+        print("="*60)
+        
+        # Vocalize with longer pause for readability
+        if self.screen_reader:
+            self.screen_reader.tts.speak(defeat_msg, interrupt=True)
+            pygame.time.wait(2000)  # 2 second pause for long message
+        
+        # Return to game submenu (not main menu!)
+        self.is_menu_open = True
+        self._timer_expired_announced = False  # Reset for next game
+        
+        # Re-announce game submenu
+        if self.screen_reader:
+            pygame.time.wait(500)  # Small pause before menu
+            self.game_submenu.announce_welcome()
+    
     def _start_new_game(self) -> None:
         """Internal method: Start new game without confirmation.
         
@@ -591,6 +766,9 @@ class SolitarioCleanArch:
         # Reset ESC timer
         self.last_esc_time = 0
         
+        # 🆕 Reset timer expiration flag (v1.5.2.2)
+        self._timer_expired_announced = False
+        
         if self.screen_reader:
             self.screen_reader.tts.speak(
                 "Nuova partita avviata! Usa H per l'aiuto comandi.",
@@ -617,6 +795,12 @@ class SolitarioCleanArch:
             if event.type == QUIT:
                 self.quit_app()
                 return
+            
+            # 🆕 PRIORITY 0: Timer check event (v1.5.2.2)
+            # Fires every 1 second during gameplay to check timeout
+            if event.type == self.TIME_CHECK_EVENT:
+                self._check_timer_expiration()
+                continue  # Don't pass to other handlers
             
             # PRIORITY 1: Exit dialog open
             if self.exit_dialog and self.exit_dialog.is_open:
