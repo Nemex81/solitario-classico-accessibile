@@ -137,7 +137,7 @@ class OptionsWindowController:
         Returns:
             TTS message with option name, value, and hint
         """
-        self.cursor_position = (self.cursor_position - 1) % 5
+        self.cursor_position = (self.cursor_position - 1) % 7
         return self._format_current_option(include_hint=True)
     
     def navigate_down(self) -> str:
@@ -146,23 +146,23 @@ class OptionsWindowController:
         Returns:
             TTS message with option name, value, and hint
         """
-        self.cursor_position = (self.cursor_position + 1) % 5
+        self.cursor_position = (self.cursor_position + 1) % 7
         return self._format_current_option(include_hint=True)
     
     def jump_to_option(self, index: int) -> str:
-        """Jump directly to option by number (1-5).
+        """Jump directly to option by number (1-7).
         
         Args:
-            index: Option index (0-4)
+            index: Option index (0-6)
         
         Returns:
             TTS message (concise, no hint)
         
         Example:
             >>> controller.jump_to_option(2)
-            "3 di 5: Timer, Disattivato."
+            "3 di 7: Carte Pescate, 1 Carta."
         """
-        if 0 <= index <= 4:
+        if 0 <= index <= 6:
             self.cursor_position = index
             return self._format_current_option(include_hint=False)
         else:
@@ -188,9 +188,11 @@ class OptionsWindowController:
         handlers = [
             self._modify_deck_type,      # 0: Tipo Mazzo
             self._modify_difficulty,     # 1: Difficoltà
-            self._cycle_timer_preset,    # 2: Timer (INVIO = cycle presets)
-            self._modify_shuffle_mode,   # 3: Riciclo Scarti
-            self._modify_command_hints,  # 4: Suggerimenti Comandi (v1.5.0)
+            self._modify_draw_count,     # 2: Carte Pescate (NEW)
+            self._cycle_timer_preset,    # 3: Timer (INVIO = cycle presets)
+            self._modify_shuffle_mode,   # 4: Riciclo Scarti
+            self._modify_command_hints,  # 5: Suggerimenti Comandi (v1.5.0)
+            self._modify_scoring,        # 6: Sistema Punti (NEW)
         ]
         
         msg = handlers[self.cursor_position]()
@@ -209,9 +211,9 @@ class OptionsWindowController:
         Returns:
             TTS message or error
         
-        Only works if cursor_position == 2 (Timer selected)
+        Only works if cursor_position == 3 (Timer selected)
         """
-        if self.cursor_position != 2:
+        if self.cursor_position != 3:
             return OptionsFormatter.format_timer_error()
         
         if self.settings.game_state.is_running:
@@ -230,9 +232,9 @@ class OptionsWindowController:
         Returns:
             TTS message or error
         
-        Only works if cursor_position == 2 (Timer selected)
+        Only works if cursor_position == 3 (Timer selected)
         """
-        if self.cursor_position != 2:
+        if self.cursor_position != 3:
             return OptionsFormatter.format_timer_error()
         
         if self.settings.game_state.is_running:
@@ -251,9 +253,9 @@ class OptionsWindowController:
         Returns:
             TTS message or error
         
-        Only works if cursor_position == 2 (Timer selected)
+        Only works if cursor_position == 3 (Timer selected)
         """
-        if self.cursor_position != 2:
+        if self.cursor_position != 3:
             return OptionsFormatter.format_timer_error()
         
         if self.settings.game_state.is_running:
@@ -279,9 +281,11 @@ class OptionsWindowController:
         settings_dict = {
             "Tipo mazzo": self.settings.get_deck_type_display(),
             "Difficoltà": self.settings.get_difficulty_display(),
+            "Carte Pescate": self.settings.get_draw_count_display(),
             "Timer": self.settings.get_timer_display(),
             "Modalità riciclo scarti": self.settings.get_shuffle_mode_display(),
-            "Suggerimenti comandi": self.settings.get_command_hints_display()
+            "Suggerimenti comandi": self.settings.get_command_hints_display(),
+            "Sistema Punti": self.settings.get_scoring_display()
         }
         
         return OptionsFormatter.format_all_settings(settings_dict)
@@ -313,9 +317,11 @@ class OptionsWindowController:
         value_getters = [
             self.settings.get_deck_type_display,
             self.settings.get_difficulty_display,
+            self.settings.get_draw_count_display,       # NEW
             self.settings.get_timer_display,
             self.settings.get_shuffle_mode_display,
-            self.settings.get_command_hints_display  # v1.5.0
+            self.settings.get_command_hints_display,    # v1.5.0
+            self.settings.get_scoring_display           # NEW
         ]
         
         value = value_getters[self.cursor_position]()
@@ -377,6 +383,16 @@ class OptionsWindowController:
     def _modify_command_hints(self) -> str:
         """Toggle command hints (Attivi <-> Disattivati) (v1.5.0)."""
         success, msg = self.settings.toggle_command_hints()
+        return msg
+    
+    def _modify_draw_count(self) -> str:
+        """Cycle draw count (1 -> 2 -> 3 -> 1)."""
+        success, msg = self.settings.cycle_draw_count()
+        return msg
+    
+    def _modify_scoring(self) -> str:
+        """Toggle scoring system (Attivo <-> Disattivato)."""
+        success, msg = self.settings.toggle_scoring()
         return msg
     
     # ========================================
