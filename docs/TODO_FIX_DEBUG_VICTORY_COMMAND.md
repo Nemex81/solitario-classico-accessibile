@@ -31,10 +31,10 @@
 - [x] **Verify**: Console log shows "✓ Dialog nativi wxPython attivi"
 
 ### Phase 2: Add Callback Support in GameEngine (15 min)
-- [ ] **Task 2.1**: Modify `game_engine.py` `__init__()` line ~85 → Add `on_game_ended` parameter
-- [ ] **Task 2.2**: Modify `game_engine.py` `end_game()` lines 1070-1111 → Call callback instead of direct reset
-- [ ] **Task 2.3**: Update `game_engine.py` `create()` docstring → Document callback injection pattern
-- [ ] **Verify**: No circular dependencies, callback stored correctly
+- [x] **Task 2.1**: Modify `game_engine.py` `__init__()` line ~85 → Add `on_game_ended` parameter
+- [x] **Task 2.2**: Modify `game_engine.py` `end_game()` lines 1070-1111 → Call callback instead of direct reset
+- [x] **Task 2.3**: Update `game_engine.py` `create()` docstring → Document callback injection pattern
+- [x] **Verify**: No circular dependencies, callback stored correctly
 
 ### Phase 3: Implement Callback in test.py (25 min)
 - [ ] **Task 3.1**: Add new method `handle_game_ended(wants_rematch)` in test.py line ~665

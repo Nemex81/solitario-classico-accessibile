@@ -21,7 +21,7 @@ New in v1.4.2.1 (Bug Fix #3 - Phase 1-7/7 COMPLETE! + Bug #3.1 FIX):
 - Bug #3.1 FIX: Prevent double distribution on deck change
 """
 
-from typing import Optional, Tuple, Dict, Any, List, TYPE_CHECKING
+from typing import Optional, Tuple, Dict, Any, List, TYPE_CHECKING, Callable
 
 from src.domain.models.table import GameTable
 from src.domain.models.deck import FrenchDeck, NeapolitanDeck
@@ -90,7 +90,8 @@ class GameEngine:
         screen_reader: Optional[ScreenReader] = None,
         settings: Optional[GameSettings] = None,  # NEW (Phase 1/7)
         score_storage: Optional[ScoreStorage] = None,  # NEW (Phase 8/8)
-        dialog_provider: Optional['DialogProvider'] = None  # ✨ NEW v1.6.0
+        dialog_provider: Optional['DialogProvider'] = None,  # ✨ NEW v1.6.0
+        on_game_ended: Optional[Callable[[bool], None]] = None  # 🆕 NEW v1.6.2
     ):
         """Initialize game engine.
         
@@ -104,6 +105,7 @@ class GameEngine:
             settings: Optional game settings for configuration (NEW v1.4.2.1)
             score_storage: Optional score storage for persistent statistics (NEW v2.0.0)
             dialog_provider: Optional dialog provider for native UI dialogs (NEW v1.6.0)
+            on_game_ended: Optional callback when game ends, receives wants_rematch bool (NEW v1.6.2)
         """
         self.table = table
         self.service = service
@@ -121,6 +123,9 @@ class GameEngine:
         
         # ✨ NEW v1.6.0: Dialog integration (opt-in)
         self.dialogs = dialog_provider
+        
+        # 🆕 NEW v1.6.2: End game callback (opt-in)
+        self.on_game_ended = on_game_ended
         
         # Configurable attributes with defaults (Phase 1/7)
         # These will be updated from settings in new_game()
@@ -989,7 +994,7 @@ class GameEngine:
         5. Announce via TTS (always)
         6. Show native dialog (if available)
         7. Prompt for rematch (if dialogs available)
-        8. Reset game state (if no rematch)
+        8. 🆕 Call on_game_ended callback to return control to test.py
         
         Args:
             is_victory: True if all 4 suits completed
@@ -997,13 +1002,19 @@ class GameEngine:
         Side effects:
             - Stops game timer
             - Saves score to JSON (if scoring enabled)
-            - May start new game (if user chooses rematch)
+            - May start new game (if user chooses rematch AND no callback)
+            
+        Note (v1.6.2):
+            If on_game_ended callback is set, this method NO LONGER handles
+            UI state management (is_menu_open, menu announcements). 
+            All UI logic delegated to test.py.handle_game_ended().
             
         Example:
             >>> engine.end_game(is_victory=True)
             # TTS announces: "Hai Vinto! ..."
             # Dialog shows full report
             # Prompts: "Vuoi giocare ancora?"
+            # Calls: self.on_game_ended(wants_rematch=False)
         """
         
         # ═══════════════════════════════════════════════════════════
@@ -1052,6 +1063,7 @@ class GameEngine:
         # ═══════════════════════════════════════════════════════════
         # STEP 6: Native Statistics Dialog (Structured, Accessible)
         # ═══════════════════════════════════════════════════════════
+        wants_rematch = False
         if self.dialogs:
             # Use dedicated statistics dialog (v1.6.1+)
             # Replaces generic show_alert() with structured wxDialog
@@ -1065,15 +1077,29 @@ class GameEngine:
             # ═══════════════════════════════════════════════════════
             # STEP 7: Rematch Prompt
             # ═══════════════════════════════════════════════════════
-            if self.dialogs.show_yes_no("Vuoi giocare ancora?", "Rivincita?"):
-                self.new_game()
-                return  # Exit early (new_game() already resets)
+            wants_rematch = self.dialogs.show_yes_no(
+                "Vuoi giocare ancora?", 
+                "Rivincita?"
+            )
         
         # ═══════════════════════════════════════════════════════════
-        # STEP 8: Reset Game State
+        # STEP 8: 🆕 Delegate to test.py via Callback (v1.6.2)
         # ═══════════════════════════════════════════════════════════
-        # Note: If rematch chosen, new_game() already handled reset
-        self.service.reset_game()
+        if self.on_game_ended:
+            # NEW BEHAVIOR (v1.6.2): Pass control back to test.py
+            # test.py will handle:
+            # - UI state management (is_menu_open)
+            # - Menu announcements
+            # - Rematch logic (call start_game if wanted)
+            self.on_game_ended(wants_rematch)
+        else:
+            # FALLBACK: Old behavior (no callback set)
+            # This path used for backward compatibility or unit tests
+            if wants_rematch:
+                self.new_game()
+                return  # Exit early (new_game() already resets)
+            else:
+                self.service.reset_game()
     
     def _debug_force_victory(self) -> str:
         """🔥 DEBUG ONLY: Simulate victory for testing end_game flow.
