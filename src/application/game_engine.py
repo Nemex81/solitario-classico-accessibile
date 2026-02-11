@@ -980,7 +980,8 @@ class GameEngine:
         final_score = self.service.scoring.calculate_final_score(
             elapsed_seconds=elapsed_time,
             move_count=move_count,
-            is_victory=is_victory
+            is_victory=is_victory,
+            timer_strict_mode=self.settings.timer_strict_mode if self.settings else True  # v1.5.2.2
         )
         
         # Save to storage

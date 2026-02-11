@@ -197,29 +197,32 @@ class ScoringService:
         self,
         elapsed_seconds: float,
         move_count: int,
-        is_victory: bool
+        is_victory: bool,
+        timer_strict_mode: bool = True  # 🆕 NEW PARAMETER v1.5.2.2
     ) -> FinalScore:
-        """Calculate final score at game end.
-        
-        Includes time bonus and victory bonus.
+        """Calculate final score at game end with overtime malus support.
         
         Args:
             elapsed_seconds: Time taken to complete game
             move_count: Total moves made
             is_victory: Whether game was won
+            timer_strict_mode: Timer expiration behavior (v1.5.2.2)
+                - True: STRICT mode (game stops at timeout, no overtime possible)
+                - False: PERMISSIVE mode (overtime allowed with penalty)
             
         Returns:
-            FinalScore with complete breakdown
+            FinalScore with complete breakdown including overtime malus
             
         Note:
             Time bonus calculation differs based on timer state:
             - Timer OFF: Progressive decay (10000/sqrt(seconds))
-            - Timer ON: Percentage-based (≥50%: +1000, ≥25%: +500, etc.)
+            - Timer ON within limit: Percentage-based (≥50%: +1000, ≥25%: +500, etc.)
+            - Timer ON in overtime (PERMISSIVE only): -100 points per minute
         """
         provisional = self.calculate_provisional_score()
         
-        # Calculate time bonus
-        time_bonus = self._calculate_time_bonus(elapsed_seconds)
+        # Calculate time bonus (handles overtime in PERMISSIVE mode)
+        time_bonus = self._calculate_time_bonus(elapsed_seconds, timer_strict_mode)
         
         # Victory bonus (only if won)
         victory_bonus = self.config.victory_bonus if is_victory else 0
@@ -248,8 +251,8 @@ class ScoringService:
             move_count=move_count
         )
     
-    def _calculate_time_bonus(self, elapsed_seconds: float) -> int:
-        """Calculate time bonus based on elapsed time.
+    def _calculate_time_bonus(self, elapsed_seconds: float, timer_strict_mode: bool = True) -> int:
+        """Calculate time bonus based on elapsed time with overtime malus support.
         
         Logic differs based on timer state:
         
@@ -257,18 +260,23 @@ class ScoringService:
             Progressive decay formula: min(2000, 10000/sqrt(elapsed_seconds))
             Faster completion = higher bonus
             
-        Timer ON:
+        Timer ON (within limit):
             Percentage-based:
             - ≥50% time remaining: +1000
             - ≥25% time remaining: +500
             - >0% time remaining: +200
-            - Timer expired (time up): -500
+            
+        Timer ON (overtime - PERMISSIVE mode only):
+            Malus penalty: -100 points per overtime minute
+            - Example: 10min limit, finished in 12min = -200pts
+            - Note: STRICT mode never reaches this (game stops at timeout)
         
         Args:
             elapsed_seconds: Time taken to complete game
+            timer_strict_mode: Whether timer stops game at expiration (v1.5.2.2)
             
         Returns:
-            Time bonus points (can be negative if timer expired)
+            Time bonus points (can be negative if overtime in PERMISSIVE mode)
         """
         if not self.timer_enabled or self.timer_limit_seconds <= 0:
             # Timer OFF: Progressive decay formula
@@ -279,13 +287,23 @@ class ScoringService:
             return min(2000, bonus)  # Cap at 2000
         
         else:
-            # Timer ON: Percentage-based
+            # Timer ON: Percentage-based or overtime malus
             time_remaining = self.timer_limit_seconds - elapsed_seconds
             
             if time_remaining < 0:
-                # Timer expired
-                return -500
+                # Timer expired - check mode
+                if timer_strict_mode:
+                    # STRICT mode: Game stops at timeout, this shouldn't happen
+                    # But return penalty just in case
+                    return -500
+                else:
+                    # 🆕 PERMISSIVE mode (v1.5.2.2): Calculate overtime malus
+                    overtime_seconds = abs(time_remaining)
+                    overtime_minutes = max(1, int(overtime_seconds // 60))  # At least 1 minute
+                    malus = -100 * overtime_minutes
+                    return malus
             
+            # Within time limit: percentage-based bonus
             time_used_percentage = elapsed_seconds / self.timer_limit_seconds
             time_remaining_percentage = 1.0 - time_used_percentage
             
