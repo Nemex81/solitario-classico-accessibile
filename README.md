@@ -14,6 +14,32 @@ Un gioco di carte Solitario (Klondike) in versione accessibile per non vedenti, 
 - **Undo/Redo**: Possibilità di annullare e ripetere le mosse
 - **Architettura modulare**: Design pulito con separazione dei livelli (Clean Architecture)
 
+### Victory Flow & Native Dialogs (v1.6.0)
+
+Il gioco ora supporta dialog box native accessibili e report finale completo.
+
+**Caratteristiche**:
+- ✨ **Dialog native wxPython**: Alert, Yes/No, Input prompt accessibili a screen reader
+- 📊 **Statistiche complete**: Tracciamento carte per seme, semi completati, percentuale completamento
+- 🎉 **Report finale dettagliato**: Timer, mosse, rimischiate, statistiche semi, punteggio
+- 🔄 **Prompt rivincita**: Dialog "Vuoi giocare ancora?" al termine partita
+- 🐞 **Debug command**: CTRL+ALT+W simula vittoria (solo per test)
+
+**Configurazione**:
+
+```python
+# Abilita dialog native (accessibili NVDA/JAWS)
+engine = GameEngine.create(use_native_dialogs=True)
+
+# Oppure usa solo TTS (default)
+engine = GameEngine.create(use_native_dialogs=False)
+```
+
+**Accessibilità**:
+- Tutti i dialog sono navigabili solo da tastiera
+- Compatibili con NVDA, JAWS (testato su Windows)
+- Report ottimizzato per screen reader (frasi brevi, punteggiatura chiara)
+
 ## 📦 Installazione
 
 ### Prerequisiti

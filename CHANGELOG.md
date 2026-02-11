@@ -5,6 +5,58 @@ Tutte le modifiche rilevanti a questo progetto saranno documentate in questo fil
 Il formato è basato su [Keep a Changelog](https://keepachangelog.com/it/1.0.0/),
 e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/).
 
+---
+
+## [v1.6.0] - 2026-02-11
+
+### Added
+- **Victory Flow System**: Complete end-game flow with statistics snapshot, score calculation, report generation, TTS announcement, native dialogs, and rematch prompt
+- **Native Dialogs**: DialogProvider abstract interface with WxDialogProvider implementation using wxPython for accessible modal dialogs
+  - `show_alert()`: Informational message with OK button
+  - `show_yes_no()`: Yes/No question dialog
+  - `show_input()`: Text input prompt
+- **Suit Statistics Tracking**: Live tracking of `carte_per_seme` (cards per suit) and `semi_completati` (completed suits) in GameService
+- **Final Report Formatter**: ReportFormatter.format_final_report() generates Italian TTS-optimized reports with:
+  - Victory/defeat announcement
+  - Time elapsed (minutes:seconds)
+  - Total moves and reshuffles
+  - Per-suit statistics with "completo!" markers
+  - Overall completion percentage
+  - Final score (if scoring enabled)
+- **Debug Victory Command**: `_debug_force_victory()` method accessible via CTRL+ALT+W for testing end-game flow
+
+### Changed
+- **GameEngine.end_game()**: Complete rewrite with 8-step flow (snapshot → score → report → TTS → dialog → rematch → reset)
+- **GameEngine.__init__()**: Added optional `dialog_provider` parameter
+- **GameEngine.create()**: Added `use_native_dialogs` parameter (default False for backward compatibility)
+- **GameService**: Added `carte_per_seme`, `semi_completati` live attributes and `final_*` snapshot attributes
+- **GameService.move_card()**: Now calls `_update_suit_statistics()` after foundation moves
+- **GameService.reset_game()**: Preserves `final_*` snapshot attributes for post-game consultation
+
+### Technical Details
+- `src/infrastructure/ui/dialog_provider.py`: Abstract interface (~80 LOC)
+- `src/infrastructure/ui/wx_dialog_provider.py`: wxPython implementation (~120 LOC)
+- `src/domain/services/game_service.py`: +80 LOC (suit stats tracking)
+- `src/presentation/formatters/report_formatter.py`: NEW file (~200 LOC)
+- `src/application/game_engine.py`: +150 LOC (dialog integration, end_game rewrite)
+- `src/application/gameplay_controller.py`: +10 LOC (CTRL+ALT+W binding)
+
+### Accessibility
+- All dialogs keyboard-navigable (Tab, Enter, ESC)
+- Screen reader compatible (NVDA, JAWS tested on Windows)
+- TTS-optimized report formatting (short sentences, clear punctuation)
+- Italian localization for all user-facing text
+
+### Backward Compatibility
+- ✅ Fully backward compatible (dialogs opt-in via `use_native_dialogs=True`)
+- ✅ TTS-only mode still works (default behavior unchanged)
+- ✅ Zero breaking changes to existing API
+
+### Dependencies
+- wxPython ≥ 4.1.0 (optional, graceful degradation if not installed)
+
+---
+
 Perfetto! Ecco il testo completo per la nuova sezione **v1.5.2.1** da aggiungere al CHANGELOG sopra la sezione v1.5.2:
 
 ---
