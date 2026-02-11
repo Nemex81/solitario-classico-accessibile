@@ -606,14 +606,14 @@ from typing import List, Dict, Any  # Add List, Dict, Any to existing imports
 
 ### **Verification**:
 
-- [ ] All 4 new attributes added with type hints
-- [ ] `_update_suit_statistics()` implemented correctly
-- [ ] Hook in `move_card()` calls update after foundation move
-- [ ] `_snapshot_statistics()` uses `.copy()` for list
-- [ ] `get_final_statistics()` returns Dict with 7 keys
-- [ ] `reset_game()` preserves `final_*` attributes
-- [ ] All docstrings complete with examples
-- [ ] Import `List, Dict, Any` added to typing imports
+- [x] All 4 new attributes added with type hints
+- [x] `_update_suit_statistics()` implemented correctly
+- [x] Hook in `move_card()` calls update after foundation move
+- [x] `_snapshot_statistics()` uses `.copy()` for list
+- [x] `get_final_statistics()` returns Dict with 7 keys
+- [x] `reset_game()` preserves `final_*` attributes
+- [x] All docstrings complete with examples
+- [x] Import `List, Dict, Any` added to typing imports
 
 **Quick Test** (manual):
 ```python
