@@ -805,13 +805,13 @@ class ReportFormatter:
 
 ### **Verification**:
 
-- [ ] File created at `src/presentation/formatters/report_formatter.py`
-- [ ] `ReportFormatter` class with 2 static methods
-- [ ] `format_final_report()` returns multi-line string
-- [ ] Italian suit names correct for both deck types
-- [ ] TTS-optimized output (short sentences, clear punctuation)
-- [ ] Type hints complete (`Optional['FinalScore']` for forward ref)
-- [ ] Docstrings with examples included
+- [x] File created at `src/presentation/formatters/report_formatter.py`
+- [x] `ReportFormatter` class with 2 static methods
+- [x] `format_final_report()` returns multi-line string
+- [x] Italian suit names correct for both deck types
+- [x] TTS-optimized output (short sentences, clear punctuation)
+- [x] Type hints complete (`Optional['FinalScore']` for forward ref)
+- [x] Docstrings with examples included
 
 **Quick Test** (manual):
 ```python
