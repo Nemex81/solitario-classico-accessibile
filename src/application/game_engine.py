@@ -1108,26 +1108,10 @@ class GameEngine:
         if not self.settings:
             return
         
-        # 1️⃣ Draw count from difficulty
-        # CRITICAL: Correct mapping!
-        #   Level 1 = 1 card
-        #   Level 2 = 2 cards (NOT 3!)
-        #   Level 3 = 3 cards (NOT 5!)
-        #   Level 4 = 3 cards (Expert)
-        #   Level 5 = 3 cards (Master)
-        if self.settings.difficulty_level == 1:
-            self.draw_count = 1
-        elif self.settings.difficulty_level == 2:
-            self.draw_count = 2  # ✅ CORRECT
-        elif self.settings.difficulty_level == 3:
-            self.draw_count = 3  # ✅ CORRECT
-        elif self.settings.difficulty_level == 4:
-            self.draw_count = 3  # ✅ Level 4: 3 cards (Expert)
-        elif self.settings.difficulty_level == 5:
-            self.draw_count = 3  # ✅ Level 5: 3 cards (Master)
-        else:
-            # Fallback for invalid values
-            self.draw_count = 1
+        # 1️⃣ Draw count from settings (v1.5.2.4 FIX)
+        # Use settings.draw_count directly - respects user's explicit choice in Option #3
+        # Level 4-5 constraints already enforced by GameSettings.cycle_draw_count()
+        self.draw_count = self.settings.draw_count
         
         # 1.5️⃣ VALIDATE TIMER CONSTRAINTS FOR LEVELS 4-5
         if self.settings.difficulty_level >= 4:
