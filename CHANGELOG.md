@@ -7,6 +7,69 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 ---
 
+## [v1.6.1] - 2026-02-11
+
+### Changed
+- **Application-wide wxDialogs Integration**: Replaced all `VirtualDialogBox` (TTS-only) instances with native wxPython dialogs throughout the application
+  - **ESC during gameplay** → Native "Abbandona partita?" dialog
+  - **N during gameplay** → Native "Nuova partita?" confirmation
+  - **ESC in game submenu** → Native "Torna al menu principale?" dialog
+  - **ESC in main menu** → Native "Chiusura applicazione?" dialog
+  - **Options close (modified)** → Native "Salvare modifiche?" dialog
+  - **Victory/Defeat** → Native dialogs (already in v1.6.0)
+- **SolitarioDialogManager**: New centralized dialog manager with 6 semantic methods
+  - `show_abandon_game_prompt()`
+  - `show_new_game_prompt()`
+  - `show_return_to_main_prompt()`
+  - `show_exit_app_prompt()`
+  - `show_options_save_prompt()`
+  - `show_alert(title, message)`
+- **Event Loop Simplification**: Removed ~50 LOC of dialog state management from `test.py` event loop
+  - Modal dialogs are blocking, no longer need priority routing
+  - Simplified callback methods (no dialog state tracking)
+- **OptionsWindowController Integration**: Added `dialog_manager` parameter and updated `close_window()` method
+  - Native dialog for save confirmation if wxPython available
+  - Falls back to TTS virtual prompt if unavailable
+
+### Added
+- `src/application/dialog_manager.py`: Centralized dialog management (~230 LOC)
+  - Italian-localized messages
+  - Graceful degradation if wxPython unavailable
+  - Complete type hints and docstrings
+
+### Removed
+- **Dialog state attributes**: Removed 4 VirtualDialogBox attributes from `test.py`
+  - `self.exit_dialog`
+  - `self.return_to_main_dialog`
+  - `self.abandon_game_dialog`
+  - `self.new_game_dialog`
+- **Dialog event routing**: Removed ~50 LOC of priority checks in `handle_events()`
+
+### Technical Details
+- `src/application/dialog_manager.py`: NEW file (~230 LOC)
+- `test.py`: -54 LOC net (removed 120, added 66)
+- `src/application/options_controller.py`: +43 LOC (dialog integration)
+- **Total**: ~220 LOC added, ~60 LOC removed (net +160 LOC)
+
+### UX Improvements
+- **Consistent native dialogs** across all 6 interactive contexts
+- **Better accessibility**: Native widgets work better with screen readers
+- **Cleaner codebase**: Modal dialogs eliminate complex state management
+- **Double-ESC preserved**: Quick game abandon still functional (<2 sec threshold)
+
+### Backward Compatibility
+- ✅ Fully backward compatible
+- ✅ Graceful degradation if wxPython unavailable (returns False/None)
+- ✅ TTS fallback mode for options save dialog
+- ✅ Zero breaking changes
+
+### Accessibility
+- All 6 dialogs keyboard-navigable (Tab, Enter, ESC)
+- NVDA/JAWS screen reader compatible
+- Italian localization throughout
+
+---
+
 ## [v1.6.0] - 2026-02-11
 
 ### Added
