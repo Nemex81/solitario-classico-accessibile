@@ -9,6 +9,23 @@ Perfetto! Ecco il testo completo per la nuova sezione **v1.5.2.1** da aggiungere
 
 ---
 
+## [1.5.2.5] - 2026-02-11
+
+### Changed
+- **Deck type bonus rebalancing**: Adjusted scoring bonuses to correctly reflect difficulty:
+  - Neapolitan deck (40 cards): 0 → 50 points (harder gameplay deserves bonus)
+  - French deck (52 cards): 150 → 75 points (easier gameplay gets reduced bonus)
+  - Rationale: Fewer cards = fewer possible moves = higher difficulty
+- **Mandatory timer for competitive levels**: Timer is now required for difficulty levels 4-5:
+  - **Level 4 (Expert)**: Timer mandatory, range 5-30 minutes (was optional, 30-60 min)
+  - **Level 5 (Master)**: Timer mandatory, range 5-15 minutes (was optional, 15-30 min)
+  - If timer is OFF when cycling to these levels, it's automatically enabled with default values
+- `src/domain/models/scoring.py`: Modified `deck_type_bonuses` values
+- `src/domain/services/game_settings.py`: Modified `cycle_difficulty()` to enforce mandatory timer with tighter ranges
+- `tests/unit/domain/test_scoring_models.py`: Updated test expectations for new bonus values
+
+---
+
 ## [1.5.2.4] - 2026-02-11
 
 ### Fixed

@@ -160,10 +160,17 @@ class GameSettings:
         adjustments = []
         
         if self.difficulty_level == 4:
-            # Level 4: Timer ≥30min, draw ≥2, shuffle locked
-            if self.max_time_game > 0 and self.max_time_game < 1800:
-                self.max_time_game = 1800  # 30 minutes
-                adjustments.append("Timer aumentato a 30 minuti")
+            # Level 4: Timer 5-30min MANDATORY, draw ≥2, shuffle locked
+            # v1.5.2.5: Timer now mandatory for competitive level
+            if self.max_time_game <= 0:
+                self.max_time_game = 1800  # Force 30min default
+                adjustments.append("Timer attivato: 30 minuti (obbligatorio)")
+            elif self.max_time_game < 300:
+                self.max_time_game = 300  # Min 5min
+                adjustments.append("Timer: minimo 5 minuti")
+            elif self.max_time_game > 1800:
+                self.max_time_game = 1800  # Max 30min (reduced from 60min)
+                adjustments.append("Timer: massimo 30 minuti")
             
             if self.draw_count < 2:
                 self.draw_count = 2
@@ -183,14 +190,17 @@ class GameSettings:
                 adjustments.append("Sistema punti attivato (obbligatorio)")
         
         elif self.difficulty_level == 5:
-            # Level 5: Timer 15-30min, draw=3, shuffle locked
-            if self.max_time_game > 0:
-                if self.max_time_game < 900:
-                    self.max_time_game = 900  # 15 minutes
-                    adjustments.append("Timer aumentato a 15 minuti")
-                elif self.max_time_game > 1800:
-                    self.max_time_game = 1800  # 30 minutes
-                    adjustments.append("Timer ridotto a 30 minuti")
+            # Level 5: Timer 5-15min MANDATORY, draw=3, shuffle locked
+            # v1.5.2.5: Timer now mandatory, max reduced from 30min to 15min
+            if self.max_time_game <= 0:
+                self.max_time_game = 900  # Force 15min default
+                adjustments.append("Timer attivato: 15 minuti (obbligatorio)")
+            elif self.max_time_game < 300:
+                self.max_time_game = 300  # Min 5min
+                adjustments.append("Timer: minimo 5 minuti")
+            elif self.max_time_game > 900:
+                self.max_time_game = 900  # Max 15min (reduced from 30min)
+                adjustments.append("Timer: massimo 15 minuti")
             
             if self.draw_count != 3:
                 self.draw_count = 3
