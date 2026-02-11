@@ -1099,10 +1099,8 @@ class GameEngine:
         if not self.is_game_running():
             return "Nessuna partita in corso da simulare!"
         
-        # Stop game timer (preserves elapsed_time)
-        self.service.is_game_running = False
-        
         # Trigger complete victory flow
+        # Note: end_game() will handle timer stop via _snapshot_statistics()
         self.end_game(is_victory=True)
         
         return "Vittoria simulata attivata! Report finale in arrivo."
