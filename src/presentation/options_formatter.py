@@ -25,9 +25,12 @@ class OptionsFormatter:
     OPTION_NAMES = [
         "Tipo mazzo",
         "Difficoltà",
+        "Carte Pescate",
         "Timer",
         "Modalità riciclo scarti",
-        "Suggerimenti Comandi"
+        "Suggerimenti Comandi",
+        "Sistema Punti",
+        "Modalità Timer"
     ]
     
     @staticmethod
@@ -38,11 +41,11 @@ class OptionsFormatter:
             first_option_value: Current value of first option (Tipo mazzo)
         
         Returns:
-            "Finestra opzioni. 1 di 5: Tipo mazzo, Carte Francesi. Premi H per aiuto."
+            "Finestra opzioni. 1 di 8: Tipo mazzo, Carte Francesi. Premi H per aiuto."
         """
         return (
             f"Finestra opzioni. "
-            f"1 di 5: Tipo mazzo, {first_option_value}. "
+            f"1 di 8: Tipo mazzo, {first_option_value}. "
             f"Premi H per aiuto."
         )
     
@@ -61,28 +64,28 @@ class OptionsFormatter:
         """Format single option for navigation (arrows/numbers).
         
         Args:
-            index: Option position (0-4)
+            index: Option position (0-7)
             name: Option name
             value: Current value
             include_hint: Add navigation hint (default True)
         
         Returns:
-            Concise format: "3 di 5: Timer, Disattivato."
-            With hint: "3 di 5: Timer, Disattivato. Premi INVIO per modificare."
+            Concise format: "4 di 8: Timer, Disattivato."
+            With hint: "4 di 8: Timer, Disattivato. Premi INVIO per modificare."
         
         Examples:
             >>> format_option_item(0, "Tipo mazzo", "Carte Francesi", True)
-            "1 di 5: Tipo mazzo, Carte Francesi. Premi INVIO per modificare."
+            "1 di 8: Tipo mazzo, Carte Francesi. Premi INVIO per modificare."
             
-            >>> format_option_item(2, "Timer", "10 minuti", False)
-            "3 di 5: Timer, 10 minuti."
+            >>> format_option_item(3, "Timer", "10 minuti", False)
+            "4 di 8: Timer, 10 minuti."
         """
         position = index + 1
-        msg = f"{position} di 5: {name}, {value}."
+        msg = f"{position} di 8: {name}, {value}."
         
         if include_hint:
-            # Special hint for Timer (has extra keys) - v1.5.1 updated
-            if index == 2:  # Timer option
+            # Special hint for Timer (has extra keys) - v1.5.1 updated (now at index 3)
+            if index == 3:  # Timer option
                 if "Disattivato" in value:
                     msg += " Premi T o INVIO per attivare a 5 minuti, o + e - per regolare."
                 else:

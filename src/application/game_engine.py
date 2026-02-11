@@ -31,10 +31,14 @@ from src.domain.services.game_service import GameService
 from src.domain.services.game_settings import GameSettings
 from src.domain.services.cursor_manager import CursorManager
 from src.domain.services.selection_manager import SelectionManager
+from src.domain.services.scoring_service import ScoringService
 from src.domain.rules.solitaire_rules import SolitaireRules
+from src.domain.models.scoring import ScoringConfig
 from src.infrastructure.audio.screen_reader import ScreenReader
 from src.infrastructure.audio.tts_provider import create_tts_provider
+from src.infrastructure.storage.score_storage import ScoreStorage
 from src.presentation.game_formatter import GameFormatter
+from src.presentation.formatters.score_formatter import ScoreFormatter
 
 
 class GameEngine:
@@ -81,7 +85,8 @@ class GameEngine:
         cursor: CursorManager,
         selection: SelectionManager,
         screen_reader: Optional[ScreenReader] = None,
-        settings: Optional[GameSettings] = None  # NEW (Phase 1/7)
+        settings: Optional[GameSettings] = None,  # NEW (Phase 1/7)
+        score_storage: Optional[ScoreStorage] = None  # NEW (Phase 8/8)
     ):
         """Initialize game engine.
         
@@ -93,6 +98,7 @@ class GameEngine:
             selection: Selection manager
             screen_reader: Optional screen reader for audio feedback
             settings: Optional game settings for configuration (NEW v1.4.2.1)
+            score_storage: Optional score storage for persistent statistics (NEW v2.0.0)
         """
         self.table = table
         self.service = service
@@ -104,6 +110,9 @@ class GameEngine:
         
         # Settings integration (Phase 1/7 - Bug #3)
         self.settings = settings
+        
+        # Score storage (Phase 8/8 - v2.0.0)
+        self.score_storage = score_storage
         
         # Configurable attributes with defaults (Phase 1/7)
         # These will be updated from settings in new_game()
@@ -153,9 +162,42 @@ class GameEngine:
         deck.mischia()
         table = GameTable(deck)
         rules = SolitaireRules(deck)
-        service = GameService(table, rules)
+        
+        # Create scoring service if enabled (v2.0.0)
+        scoring = None
+        if settings and settings.scoring_enabled:
+            # 🆕 VALIDATE TIMER CONSTRAINTS FOR LEVELS 4-5
+            if settings.difficulty_level >= 4:
+                if settings.max_time_game <= 0:
+                    # Force timer for levels 4-5
+                    if settings.difficulty_level == 4:
+                        settings.max_time_game = 1800  # 30 min default
+                    else:  # Level 5
+                        settings.max_time_game = 900   # 15 min default
+                elif settings.difficulty_level == 5:
+                    # Enforce 5-20 minute range for level 5
+                    settings.max_time_game = max(300, min(1200, settings.max_time_game))
+                elif settings.difficulty_level == 4:
+                    # Enforce 5-60 minute range for level 4
+                    settings.max_time_game = max(300, min(3600, settings.max_time_game))
+            
+            scoring_config = ScoringConfig()
+            scoring = ScoringService(
+                config=scoring_config,
+                difficulty_level=settings.difficulty_level,
+                deck_type=settings.deck_type,
+                draw_count=settings.draw_count,
+                timer_enabled=settings.max_time_game > 0,
+                timer_limit_seconds=settings.max_time_game
+            )
+        
+        # Create game service with optional scoring
+        service = GameService(table, rules, scoring=scoring)
         cursor = CursorManager(table)
         selection = SelectionManager()
+        
+        # Create score storage (v2.0.0)
+        score_storage = ScoreStorage()
         
         # Create infrastructure (optional)
         screen_reader = None
@@ -167,7 +209,7 @@ class GameEngine:
                 # Graceful degradation if TTS not available
                 screen_reader = None
         
-        return cls(table, service, rules, cursor, selection, screen_reader, settings)
+        return cls(table, service, rules, cursor, selection, screen_reader, settings, score_storage)
     
     # ========================================
     # GAME LIFECYCLE
@@ -666,6 +708,7 @@ class GameEngine:
         
         # Check victory
         if success and self.is_victory():
+            self.end_game(is_victory=True)
             if self.screen_reader:
                 stats = self.service.get_statistics()
                 victory_msg = f"Hai vinto! Mosse: {stats['move_count']}, Tempo: {int(stats['elapsed_time'])} secondi\n"
@@ -717,6 +760,7 @@ class GameEngine:
             self.screen_reader.tts.speak(message, interrupt=False)
         
         if success and self.is_victory():
+            self.end_game(is_victory=True)
             if self.screen_reader:
                 stats = self.service.get_statistics()
                 victory_msg = f"Hai vinto! Mosse: {stats['move_count']}\n"
@@ -909,6 +953,46 @@ class GameEngine:
         """Check if game is won."""
         return self.service.is_victory()
     
+    def end_game(self, is_victory: bool) -> None:
+        """Handle game end with scoring and statistics.
+        
+        Calculates final score, saves to storage, and announces via TTS.
+        Only active when scoring is enabled.
+        
+        Args:
+            is_victory: Whether the game was won
+            
+        Example:
+            >>> engine.end_game(is_victory=True)
+            # Announces: "Vittoria! Punteggio finale: 1015 punti. ..."
+        """
+        # Skip if scoring not enabled
+        if not self.settings or not self.settings.scoring_enabled:
+            return
+        
+        if not self.service.scoring:
+            return
+        
+        # Calculate final score
+        elapsed_time = self.service.get_elapsed_time()
+        move_count = self.service.move_count
+        
+        final_score = self.service.scoring.calculate_final_score(
+            elapsed_seconds=elapsed_time,
+            move_count=move_count,
+            is_victory=is_victory,
+            timer_strict_mode=self.settings.timer_strict_mode if self.settings else True  # v1.5.2.2
+        )
+        
+        # Save to storage
+        if self.score_storage:
+            self.score_storage.save_score(final_score)
+        
+        # Format and announce
+        if self.screen_reader:
+            message = ScoreFormatter.format_final_score(final_score)
+            self.screen_reader.tts.speak(message, interrupt=True)
+    
     def get_pile_info(self, pile_idx: int) -> Optional[Dict[str, Any]]:
         """Get information about specific pile."""
         pile = self._get_pile(pile_idx)
@@ -1024,15 +1108,72 @@ class GameEngine:
         #   Level 1 = 1 card
         #   Level 2 = 2 cards (NOT 3!)
         #   Level 3 = 3 cards (NOT 5!)
+        #   Level 4 = 3 cards (Expert)
+        #   Level 5 = 3 cards (Master)
         if self.settings.difficulty_level == 1:
             self.draw_count = 1
         elif self.settings.difficulty_level == 2:
             self.draw_count = 2  # ✅ CORRECT
         elif self.settings.difficulty_level == 3:
             self.draw_count = 3  # ✅ CORRECT
+        elif self.settings.difficulty_level == 4:
+            self.draw_count = 3  # ✅ Level 4: 3 cards (Expert)
+        elif self.settings.difficulty_level == 5:
+            self.draw_count = 3  # ✅ Level 5: 3 cards (Master)
         else:
             # Fallback for invalid values
             self.draw_count = 1
+        
+        # 1.5️⃣ VALIDATE TIMER CONSTRAINTS FOR LEVELS 4-5
+        if self.settings.difficulty_level >= 4:
+            if self.settings.max_time_game <= 0:
+                # Timer not enabled → force default
+                if self.settings.difficulty_level == 4:
+                    self.settings.max_time_game = 1800  # 30 minutes (middle of 5-60 range)
+                else:  # Level 5
+                    self.settings.max_time_game = 900   # 15 minutes (middle of 5-20 range)
+                
+                if self.screen_reader:
+                    minutes = self.settings.max_time_game // 60
+                    self.screen_reader.tts.speak(
+                        f"Livello {self.settings.difficulty_level} richiede timer obbligatorio. "
+                        f"Impostato automaticamente a {minutes} minuti.",
+                        interrupt=False
+                    )
+            else:
+                # Timer enabled → validate range
+                if self.settings.difficulty_level == 4:
+                    # Level 4: 5-60 minutes (300-3600 seconds)
+                    if self.settings.max_time_game < 300:
+                        self.settings.max_time_game = 300
+                        if self.screen_reader:
+                            self.screen_reader.tts.speak(
+                                "Livello Esperto: limite minimo 5 minuti. Timer aumentato.",
+                                interrupt=False
+                            )
+                    elif self.settings.max_time_game > 3600:
+                        self.settings.max_time_game = 3600
+                        if self.screen_reader:
+                            self.screen_reader.tts.speak(
+                                "Livello Esperto: limite massimo 60 minuti. Timer ridotto.",
+                                interrupt=False
+                            )
+                else:  # Level 5
+                    # Level 5: 5-20 minutes (300-1200 seconds)
+                    if self.settings.max_time_game < 300:
+                        self.settings.max_time_game = 300
+                        if self.screen_reader:
+                            self.screen_reader.tts.speak(
+                                "Livello Maestro: limite minimo 5 minuti. Timer aumentato.",
+                                interrupt=False
+                            )
+                    elif self.settings.max_time_game > 1200:
+                        self.settings.max_time_game = 1200
+                        if self.screen_reader:
+                            self.screen_reader.tts.speak(
+                                "Livello Maestro: limite massimo 20 minuti. Timer ridotto.",
+                                interrupt=False
+                            )
         
         # 2️⃣ Shuffle mode
         # CRITICAL: Correct attribute is shuffle_discards (not waste_shuffle!)
