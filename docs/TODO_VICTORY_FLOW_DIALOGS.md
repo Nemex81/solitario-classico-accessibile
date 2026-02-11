@@ -1021,14 +1021,14 @@ if TYPE_CHECKING:
 
 ### **Verification**:
 
-- [ ] `dialog_provider` parameter added to `__init__()`
-- [ ] `use_native_dialogs` parameter added to `create()`
-- [ ] TYPE_CHECKING import added for forward reference
-- [ ] Graceful degradation if wxPython not available
-- [ ] `end_game()` method rewritten with 8 steps
-- [ ] All imports added (ReportFormatter)
-- [ ] Rematch flow returns early (avoids double reset)
-- [ ] Docstrings updated with new parameters
+- [x] `dialog_provider` parameter added to `__init__()`
+- [x] `use_native_dialogs` parameter added to `create()`
+- [x] TYPE_CHECKING import added for forward reference
+- [x] Graceful degradation if wxPython not available
+- [x] `end_game()` method rewritten with 8 steps
+- [x] All imports added (ReportFormatter)
+- [x] Rematch flow returns early (avoids double reset)
+- [x] Docstrings updated with new parameters
 
 **Quick Test** (manual):
 ```python
