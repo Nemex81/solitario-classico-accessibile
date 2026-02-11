@@ -6,7 +6,7 @@ without coupling domain/application layers to specific UI frameworks.
 """
 
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, Dict, Any
 
 
 class DialogProvider(ABC):
@@ -96,5 +96,55 @@ class DialogProvider(ABC):
             ... )
             >>> if name:
             ...     save_player_name(name)
+        """
+        pass
+    
+    @abstractmethod
+    def show_statistics_report(
+        self,
+        stats: Dict[str, Any],
+        final_score: Optional[Dict[str, Any]],
+        is_victory: bool,
+        deck_type: str
+    ) -> None:
+        """Show structured statistics report dialog.
+        
+        Displays game completion statistics in a dedicated dialog
+        optimized for screen readers and structured data presentation.
+        
+        Args:
+            stats: Final statistics dictionary with keys:
+                - elapsed_time: float (seconds)
+                - move_count: int
+                - recycle_count: int
+                - carte_per_seme: List[int] (cards per suit)
+                - semi_completati: int (completed suits)
+                - completion_percentage: float
+            final_score: Optional score breakdown with keys:
+                - base_points: int
+                - time_bonus: int
+                - move_bonus: int
+                - difficulty_bonus: int
+                - deck_bonus: int
+                - penalties: int
+                - final_score: int
+            is_victory: True if game won (all 4 suits completed)
+            deck_type: "french" or "neapolitan" for suit name formatting
+        
+        Display features:
+            - Multiline read-only TextCtrl with formatted report
+            - Auto-focused for immediate NVDA announcement
+            - OK button to close
+            - Title: "Congratulazioni!" (victory) or "Partita Terminata" (defeat)
+            
+        Example:
+            >>> provider.show_statistics_report(
+            ...     stats={'elapsed_time': 125.5, 'move_count': 87, ...},
+            ...     final_score={'final_score': 1250, ...},
+            ...     is_victory=True,
+            ...     deck_type="french"
+            ... )
+            # Shows dialog with formatted report
+            # NVDA reads: "Congratulazioni! Hai Vinto! Tempo: 2 minuti 5 secondi..."
         """
         pass
