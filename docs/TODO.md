@@ -15,7 +15,7 @@
 **Branch**: `[nome-branch]`  
 **Priority**: [HIGH | MEDIUM | LOW]  
 **Type**: [BUG FIX | FEATURE | REFACTOR | ENHANCEMENT]  
-**Estimated Time**: [X-Y ore]  
+**Estimated Time**: [X-Y ore]  dal punto di vista di copilot considerando le sue prestazioni.
 **Status**: [📋 READY | 🚧 IN PROGRESS | ✅ COMPLETE | ⏸️ BLOCKED]
 ```
 
@@ -27,7 +27,7 @@
 **Branch**: `copilot/implement-scoring-system-v2`  
 **Priority**: HIGH  
 **Type**: BUG FIX + FEATURE  
-**Estimated Time**: 40-50 minuti  
+**Estimated Time**: 4-7 minuti  
 **Status**: 📋 READY FOR IMPLEMENTATION
 ```
 
