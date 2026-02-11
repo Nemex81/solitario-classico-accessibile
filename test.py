@@ -408,6 +408,15 @@ class SolitarioCleanArch:
         # Reset ESC timer
         self.last_esc_time = 0
         
+        # ✅ TASK #1: Reset game engine state (timer, moves, cursor, selection)
+        # Questo resetta: service.start_time, service.move_count, service.is_game_running,
+        # cursor position, selection state
+        self.engine.reset_game()
+        
+        # ✅ TASK #2: Reset timer expiration announcement flag
+        # Questo flag è in test.py, non in engine, quindi va resettato manualmente
+        self._timer_expired_announced = False
+        
         # Return to game submenu
         self.is_menu_open = True
         

@@ -9,6 +9,17 @@ Perfetto! Ecco il testo completo per la nuova sezione **v1.5.2.1** da aggiungere
 
 ---
 
+## [1.5.2.3] - 2026-02-11
+
+### Fixed
+- **Game state reset on abandon**: Fixed bug where abandoning a game in progress did not reset engine state variables (timer, move count, cursor position, selection). Now calls `engine.reset_game()` in `confirm_abandon_game()` to ensure clean state for next game.
+- **Timer announcement flag**: Added reset of `_timer_expired_announced` flag when abandoning game to prevent timer announcement issues in subsequent games.
+
+### Changed
+- `test.py`: Modified `confirm_abandon_game()` to call `self.engine.reset_game()` and reset `self._timer_expired_announced` flag before returning to game menu.
+
+---
+
 ## [1.5.2.2] - 2026-02-11
 
 ### ✨ Nuova Funzionalità: Modalità Timer Configurabile
