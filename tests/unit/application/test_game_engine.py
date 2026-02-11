@@ -166,6 +166,66 @@ class TestGameLifecycle:
         
         # Assert
         assert engine.service.start_time is not None
+    
+    def test_new_game_covers_all_cards_before_redistribution(self):
+        """Test Bug #54 fix: Cards retain covered state from previous game.
+        
+        When starting a new game without changing deck type, all cards should
+        be explicitly covered before redistribution to prevent inheriting
+        uncovered state from the previous game.
+        """
+        # Arrange
+        deck = FrenchDeck()
+        deck.crea()
+        table = GameTable(deck)
+        rules = SolitaireRules(deck)
+        service = GameService(table, rules)
+        screen_reader = Mock(spec=ScreenReader)
+        screen_reader.tts = Mock()
+        cursor = Mock()
+        cursor.pile_idx = 0
+        cursor.card_idx = 0
+        cursor.last_quick_pile = None
+        selection = Mock()
+        engine = GameEngine(table, service, rules, cursor, selection, screen_reader)
+        
+        # Simulate previous game: manually uncover some cards in tableau piles
+        # that should not be uncovered (not the last card)
+        for pile_idx in range(3):  # First 3 tableau piles
+            pile = table.pile_base[pile_idx]
+            if pile.get_card_count() > 1:
+                # Uncover a card that is NOT the last (simulate previous game state)
+                cards = pile.get_all_cards()
+                if len(cards) > 1:
+                    cards[0].set_uncover()  # First card (should be covered)
+        
+        # Verify setup: some non-last cards are uncovered
+        uncovered_non_last_before = 0
+        for pile in table.pile_base:
+            cards = pile.get_all_cards()
+            for i, card in enumerate(cards[:-1]):  # All except last
+                if not card.get_covered:
+                    uncovered_non_last_before += 1
+        assert uncovered_non_last_before > 0, "Test setup failed: no non-last cards uncovered"
+        
+        # Act: Start new game without changing deck type
+        engine.new_game()
+        
+        # Assert: Only the LAST card of each tableau pile should be uncovered
+        for pile_idx, pile in enumerate(table.pile_base):
+            cards = pile.get_all_cards()
+            if len(cards) > 0:
+                # Check all cards except the last should be covered
+                for i, card in enumerate(cards[:-1]):
+                    assert card.get_covered, (
+                        f"Pile {pile_idx}, card {i}: Non-last card should be covered, "
+                        f"but was uncovered"
+                    )
+                # Check the last card should be uncovered
+                last_card = cards[-1]
+                assert not last_card.get_covered, (
+                    f"Pile {pile_idx}: Last card should be uncovered"
+                )
 
 
 class TestMoveExecution:

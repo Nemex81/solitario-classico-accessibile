@@ -276,6 +276,11 @@ class GameEngine:
                 all_cards.extend(self.table.pile_scarti.get_all_cards())
                 self.table.pile_scarti.clear()
             
+            # ✅ BUG #54 FIX: Cover all cards before redistribution
+            # Reset card state to covered to prevent inheriting uncovered state from previous game
+            for card in all_cards:
+                card.set_cover()
+            
             # Put cards back in deck and shuffle
             self.table.mazzo.cards = all_cards
             self.table.mazzo.mischia()
