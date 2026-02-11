@@ -2,13 +2,21 @@
 
 Manages all game configuration parameters including:
 - Deck type (French/Neapolitan)
-- Difficulty level (1-3)
+- Difficulty level (1-5, v2.0.0 extended from 1-3)
+- Draw count (1-3 cards, v2.0.0 separated from difficulty)
 - Timer settings (OFF or 5-60 minutes)
 - Shuffle mode (invert/random)
 - Command hints (v1.5.0) - contextual voice hints
+- Scoring system (v2.0.0) - enable/disable scoring
 
 Provides validation to prevent modifications during active games.
 All methods return (success, message) tuples for TTS feedback.
+
+v2.0.0 Changes:
+- Difficulty extended to 5 levels (was 3)
+- Levels 4-5 have auto-adjustment constraints
+- Draw count separated from difficulty level
+- Scoring system toggle added
 """
 
 from typing import Tuple
@@ -32,10 +40,12 @@ class GameSettings:
     
     Attributes:
         deck_type: "french" or "neapolitan"
-        difficulty_level: 1, 2, or 3 (cards drawn from stock)
+        difficulty_level: 1-5 (v2.0.0: extended from 1-3)
+        draw_count: 1-3 cards drawn from stock (v2.0.0: separated from difficulty)
         max_time_game: Timer in seconds (-1=OFF, or 300-3600)
         shuffle_discards: True=random shuffle, False=invert order
         command_hints_enabled: (v1.5.0) Enable/disable contextual voice hints
+        scoring_enabled: (v2.0.0) Enable/disable scoring system
         game_state: Reference to game state for validation
     
     Design:
@@ -43,6 +53,7 @@ class GameSettings:
         - Validation blocks changes during active games
         - Timer range: OFF or 5-60 minutes (5min increments)
         - Italian language messages for TTS
+        - Levels 4-5 have constraint auto-adjustment (v2.0.0)
     """
     
     def __init__(self, game_state=None):
@@ -53,12 +64,16 @@ class GameSettings:
         """
         # Default settings
         self.deck_type = "french"  # "french" or "neapolitan"
-        self.difficulty_level = 1  # 1, 2, or 3
+        self.difficulty_level = 1  # 1-5 (v2.0.0: was 1-3)
+        self.draw_count = 1        # 1-3 cards (v2.0.0: separated from difficulty)
         self.max_time_game = -1    # -1 = OFF, or seconds (300-3600)
         self.shuffle_discards = False  # False = invert, True = random
         
         # Feature v1.5.0: Command hints
         self.command_hints_enabled = True  # Enable/disable command hints during gameplay
+        
+        # Feature v2.0.0: Scoring system
+        self.scoring_enabled = True  # Enable/disable scoring system
         
         # Game state reference for validation
         self.game_state = game_state or GameState()
@@ -106,28 +121,124 @@ class GameSettings:
     # ========================================
     
     def cycle_difficulty(self) -> Tuple[bool, str]:
-        """Cycle difficulty level through 1 -> 2 -> 3 -> 1.
+        """Cycle difficulty level through 1 -> 2 -> 3 -> 4 -> 5 -> 1.
         
-        Difficulty affects cards drawn from stock:
-        - Level 1: Draw 1 card
-        - Level 2: Draw 2 cards
-        - Level 3: Draw 3 cards
+        v2.0.0: Extended to 5 levels with auto-adjustment constraints:
+        - Levels 1-3: Full flexibility (existing behavior)
+        - Level 4 (Esperto): Timer ≥30min, draw_count ≥2, shuffle locked to invert
+        - Level 5 (Maestro): Timer 15-30min, draw_count=3, shuffle locked to invert
+        
+        When cycling to levels 4-5, settings are auto-adjusted if needed.
         
         Returns:
-            Tuple[bool, str]: (success, message)
+            Tuple[bool, str]: (success, message with adjustments if any)
         
         Examples:
-            >>> settings.difficulty_level = 1
+            >>> settings.difficulty_level = 3
             >>> settings.cycle_difficulty()
-            (True, "Difficoltà impostata a: Livello 2.")
+            (True, "Difficoltà impostata a: Livello 4 - Esperto...")
         """
         if not self.validate_not_running():
             return (False, "Non puoi modificare la difficoltà durante una partita!")
         
-        # Cycle: 1 -> 2 -> 3 -> 1
-        self.difficulty_level = (self.difficulty_level % 3) + 1
+        # Cycle: 1 -> 2 -> 3 -> 4 -> 5 -> 1
+        self.difficulty_level = (self.difficulty_level % 5) + 1
         
-        return (True, f"Difficoltà impostata a: Livello {self.difficulty_level}.")
+        # Get level name
+        level_name = self.get_difficulty_display()
+        base_message = f"Difficoltà impostata a: {level_name}."
+        
+        # Apply constraints for levels 4-5
+        adjustments = []
+        
+        if self.difficulty_level == 4:
+            # Level 4: Timer ≥30min, draw ≥2, shuffle locked
+            if self.max_time_game > 0 and self.max_time_game < 1800:
+                self.max_time_game = 1800  # 30 minutes
+                adjustments.append("Timer aumentato a 30 minuti")
+            
+            if self.draw_count < 2:
+                self.draw_count = 2
+                adjustments.append("Carte pescate impostate a 2")
+            
+            if self.shuffle_discards:
+                self.shuffle_discards = False
+                adjustments.append("Riciclo impostato su Inversione")
+        
+        elif self.difficulty_level == 5:
+            # Level 5: Timer 15-30min, draw=3, shuffle locked
+            if self.max_time_game > 0:
+                if self.max_time_game < 900:
+                    self.max_time_game = 900  # 15 minutes
+                    adjustments.append("Timer aumentato a 15 minuti")
+                elif self.max_time_game > 1800:
+                    self.max_time_game = 1800  # 30 minutes
+                    adjustments.append("Timer ridotto a 30 minuti")
+            
+            if self.draw_count != 3:
+                self.draw_count = 3
+                adjustments.append("Carte pescate impostate a 3")
+            
+            if self.shuffle_discards:
+                self.shuffle_discards = False
+                adjustments.append("Riciclo impostato su Inversione")
+        
+        # Build final message
+        if adjustments:
+            adjustment_text = "; ".join(adjustments)
+            return (True, f"{base_message} Regolazioni automatiche: {adjustment_text}.")
+        
+        return (True, base_message)
+    
+    # ========================================
+    # DRAW COUNT (v2.0.0)
+    # ========================================
+    
+    def cycle_draw_count(self) -> Tuple[bool, str]:
+        """Cycle draw count through 1 -> 2 -> 3 -> 1.
+        
+        v2.0.0: Separated from difficulty level.
+        
+        Validation:
+        - Cannot modify during game
+        - Level 4: draw_count must be ≥2 (auto-corrects invalid values)
+        - Level 5: draw_count must be 3 (auto-corrects invalid values)
+        
+        Returns:
+            Tuple[bool, str]: (success, message with validation if needed)
+        
+        Examples:
+            >>> settings.draw_count = 1
+            >>> settings.cycle_draw_count()
+            (True, "Carte pescate impostate a: 2.")
+        """
+        if not self.validate_not_running():
+            return (False, "Non puoi modificare le carte pescate durante una partita!")
+        
+        # Cycle: 1 -> 2 -> 3 -> 1
+        self.draw_count = (self.draw_count % 3) + 1
+        
+        # Validate against difficulty constraints
+        validation_msg = self._validate_draw_count_for_level()
+        
+        if validation_msg:
+            return (True, f"Carte pescate impostate a: {self.draw_count}. {validation_msg}")
+        
+        return (True, f"Carte pescate impostate a: {self.draw_count}.")
+    
+    def _validate_draw_count_for_level(self) -> str:
+        """Validate draw_count against current difficulty level.
+        
+        Returns:
+            Validation message if adjustments needed, empty string otherwise
+        """
+        if self.difficulty_level == 4 and self.draw_count < 2:
+            self.draw_count = 2
+            return "Livello Esperto richiede almeno 2 carte."
+        elif self.difficulty_level == 5 and self.draw_count != 3:
+            self.draw_count = 3
+            return "Livello Maestro richiede esattamente 3 carte."
+        return ""
     
     # ========================================
     # TIMER
@@ -263,6 +374,8 @@ class GameSettings:
         - False (default): Invert order (simple reverse)
         - True: Random shuffle
         
+        v2.0.0: Levels 4-5 lock shuffle to invert mode (cannot toggle).
+        
         Returns:
             Tuple[bool, str]: (success, message)
         
@@ -274,6 +387,11 @@ class GameSettings:
         if not self.validate_not_running():
             return (False, "Non puoi modificare la modalità riciclo durante una partita!")
         
+        # Check level 4-5 constraint
+        if self.difficulty_level >= 4:
+            self.shuffle_discards = False
+            return (False, "Livelli Esperto e Maestro richiedono Inversione Semplice.")
+        
         # Toggle
         self.shuffle_discards = not self.shuffle_discards
         
@@ -281,6 +399,35 @@ class GameSettings:
             return (True, "Modalità riciclo scarti impostata a: Mescolata Casuale.")
         else:
             return (True, "Modalità riciclo scarti impostata a: Inversione Semplice.")
+    
+    # ========================================
+    # SCORING SYSTEM (v2.0.0)
+    # ========================================
+    
+    def toggle_scoring(self) -> Tuple[bool, str]:
+        """Toggle scoring system on/off.
+        
+        v2.0.0: Enable/disable scoring system for free-play mode.
+        Can be toggled at any time when game is not running.
+        
+        Returns:
+            Tuple[bool, str]: (success, message)
+        
+        Examples:
+            >>> settings.scoring_enabled = True
+            >>> settings.toggle_scoring()
+            (True, "Sistema punti disattivato.")
+        """
+        if not self.validate_not_running():
+            return (False, "Non puoi modificare questa opzione durante una partita!")
+        
+        # Toggle
+        self.scoring_enabled = not self.scoring_enabled
+        
+        if self.scoring_enabled:
+            return (True, "Sistema punti attivo.")
+        else:
+            return (True, "Sistema punti disattivato.")
     
     # ========================================
     # GETTERS (for display)
@@ -291,8 +438,32 @@ class GameSettings:
         return "Carte Francesi" if self.deck_type == "french" else "Carte Napoletane"
     
     def get_difficulty_display(self) -> str:
-        """Get human-readable difficulty."""
-        return f"Livello {self.difficulty_level}"
+        """Get human-readable difficulty with level names.
+        
+        v2.0.0: Extended to 5 levels with names.
+        """
+        level_names = {
+            1: "Livello 1 - Facile",
+            2: "Livello 2 - Medio",
+            3: "Livello 3 - Difficile",
+            4: "Livello 4 - Esperto",
+            5: "Livello 5 - Maestro"
+        }
+        return level_names.get(self.difficulty_level, f"Livello {self.difficulty_level}")
+    
+    def get_draw_count_display(self) -> str:
+        """Get human-readable draw count.
+        
+        v2.0.0: New method for separated draw count option.
+        """
+        return f"{self.draw_count} {'carta' if self.draw_count == 1 else 'carte'}"
+    
+    def get_scoring_display(self) -> str:
+        """Get human-readable scoring status.
+        
+        v2.0.0: New method for scoring toggle option.
+        """
+        return "Attivo" if self.scoring_enabled else "Disattivato"
     
     def get_timer_display(self) -> str:
         """Get human-readable timer value."""
