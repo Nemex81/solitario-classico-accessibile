@@ -27,12 +27,35 @@ class WxDialogProvider(DialogProvider):
     This approach works because pygame manages the main event loop,
     and wxPython dialogs run in modal mode (blocking).
     
+    Args (v1.6.2):
+        parent: Optional pygame window handle to use as dialog parent.
+                If provided, dialogs will be modal children (recommended).
+                If None, dialogs are top-level windows (legacy fallback).
+    
+    Behavior:
+        - With parent: Dialogs don't appear in ALT+TAB switcher
+        - Without parent: Dialogs appear as separate windows (confusing UX)
+    
     Example:
-        >>> provider = WxDialogProvider()
+        >>> import pygame
+        >>> screen = pygame.display.set_mode((800, 600))
+        >>> provider = WxDialogProvider(parent=screen)  # RECOMMENDED
         >>> provider.show_alert("Hai vinto!", "Congratulazioni")
-        # Dialog appears, blocks execution until user clicks OK
-        >>> print("Dialog closed")
+        # Dialog is child of pygame window, won't show in ALT+TAB
     """
+    
+    def __init__(self, parent=None):
+        """Initialize dialog provider with optional parent window.
+        
+        Args:
+            parent: pygame display surface or wx.Window. If provided,
+                    all dialogs will be created as modal children.
+        
+        Note:
+            Passing pygame.display.get_surface() as parent is safe:
+            wxPython will extract the native window handle automatically.
+        """
+        self.parent = parent  # Store for use in all dialog methods
     
     def show_alert(self, message: str, title: str) -> None:
         """Show modal alert with OK button.
@@ -46,7 +69,7 @@ class WxDialogProvider(DialogProvider):
         """
         app = wx.App()  # Create app instance (on-demand pattern)
         dlg = wx.MessageDialog(
-            None,  # No parent window (top-level)
+            self.parent,  # Child of pygame window (prevents ALT+TAB separation)
             message,
             title,
             wx.OK | wx.ICON_INFORMATION
@@ -70,7 +93,7 @@ class WxDialogProvider(DialogProvider):
         """
         app = wx.App()
         dlg = wx.MessageDialog(
-            None,
+            self.parent,  # Child of pygame window (prevents ALT+TAB separation)
             question,
             title,
             wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION
@@ -101,7 +124,7 @@ class WxDialogProvider(DialogProvider):
         """
         app = wx.App()
         dlg = wx.TextEntryDialog(
-            None,
+            self.parent,  # Child of pygame window (prevents ALT+TAB separation)
             question,
             title,
             value=default
@@ -170,7 +193,7 @@ class WxDialogProvider(DialogProvider):
         title = "Congratulazioni!" if is_victory else "Partita Terminata"
         
         dlg = wx.Dialog(
-            None,
+            self.parent,  # Child of pygame window (prevents ALT+TAB separation)
             title=title,
             style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
         )

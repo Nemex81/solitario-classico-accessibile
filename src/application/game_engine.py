@@ -142,7 +142,8 @@ class GameEngine:
         tts_engine: str = "auto",
         verbose: int = 1,
         settings: Optional[GameSettings] = None,
-        use_native_dialogs: bool = False  # ✨ NEW v1.6.0
+        use_native_dialogs: bool = False,  # ✨ NEW v1.6.0
+        parent_window = None  # 🆕 NEW v1.6.2 - pygame screen for modal dialogs
     ) -> "GameEngine":
         """Factory method to create fully initialized game engine.
         
@@ -152,15 +153,22 @@ class GameEngine:
             verbose: Audio verbosity level (0-2)
             settings: GameSettings instance for configuration
             use_native_dialogs: Enable native wxPython dialogs (NEW v1.6.0)
+            parent_window: pygame.display surface for modal dialog parenting (NEW v1.6.2)
+                           If provided, wxDialogs won't appear in ALT+TAB switcher
             
         Returns:
             Initialized GameEngine instance ready to play
             
-        Example:
+        Example (v1.6.2):
+            >>> import pygame
+            >>> screen = pygame.display.set_mode((800, 600))
             >>> settings = GameSettings()
-            >>> settings.deck_type = "neapolitan"
-            >>> engine = GameEngine.create(settings=settings)
-            >>> engine.new_game()  # Uses Neapolitan deck
+            >>> engine = GameEngine.create(
+            ...     settings=settings,
+            ...     use_native_dialogs=True,
+            ...     parent_window=screen  # Dialogs will be modal children
+            ... )
+            >>> # Now dialogs won't show as separate windows in ALT+TAB
             
         Note:
             If settings is None or settings.deck_type is "french",
@@ -225,11 +233,12 @@ class GameEngine:
                 screen_reader = None
         
         # ✨ NEW v1.6.0: Create dialog provider if requested
+        # 🆕 v1.6.2: Pass parent_window to prevent ALT+TAB separation
         dialog_provider = None
         if use_native_dialogs:
             try:
                 from src.infrastructure.ui.wx_dialog_provider import WxDialogProvider
-                dialog_provider = WxDialogProvider()
+                dialog_provider = WxDialogProvider(parent=parent_window)
             except ImportError:
                 # wxPython not available, graceful degradation
                 dialog_provider = None

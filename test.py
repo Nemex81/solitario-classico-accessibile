@@ -144,14 +144,15 @@ class SolitarioCleanArch:
             tts_engine="auto",
             verbose=1,
             settings=self.settings,  # v1.4.2.1
-            use_native_dialogs=True  # v1.6.2 - ENABLE WX DIALOGS
+            use_native_dialogs=True,  # v1.6.2 - Enable wxDialogs
+            parent_window=self.screen  # 🆕 v1.6.2 - Dialogs as modal children (no ALT+TAB)
         )
         
         # 🆕 v1.6.2: Inject end game callback for UI state management
         # This allows engine to delegate UI logic back to test.py after game ends
         self.engine.on_game_ended = self.handle_game_ended
         
-        print("✓ Game engine pronto")
+        print("✓ Game engine pronto con dialog modali")
         
         # Application: Gameplay controller (now with settings!)
         print("Inizializzazione controller gameplay...")
