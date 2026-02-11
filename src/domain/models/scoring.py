@@ -72,10 +72,10 @@ class ScoringConfig:
         5: 2.5,   # Maestro (Master)
     })
     
-    # Deck type bonuses (more cards = more bonus)
+    # Deck type bonuses (v1.5.2.5: rebalanced - fewer cards = harder = more bonus)
     deck_type_bonuses: Dict[str, int] = field(default_factory=lambda: {
-        "neapolitan": 0,    # 40 cards (baseline)
-        "french": 150,      # 52 cards (+12 cards bonus)
+        "neapolitan": 50,   # 40 cards (harder = deserves bonus)
+        "french": 75,       # 52 cards (easier = reduced bonus)
     })
     
     # Draw count bonuses (levels 1-3 only, higher draw = more bonus)

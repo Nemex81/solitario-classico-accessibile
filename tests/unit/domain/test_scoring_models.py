@@ -67,11 +67,11 @@ class TestScoringConfig:
         assert config.difficulty_multipliers[5] == 2.5
     
     def test_default_deck_type_bonuses(self):
-        """Test French deck gets +150 bonus."""
+        """Test deck bonuses: Neapolitan harder = +50, French easier = +75 (v1.5.2.5)."""
         config = ScoringConfig()
         
-        assert config.deck_type_bonuses["neapolitan"] == 0
-        assert config.deck_type_bonuses["french"] == 150
+        assert config.deck_type_bonuses["neapolitan"] == 50
+        assert config.deck_type_bonuses["french"] == 75
     
     def test_default_draw_count_bonuses(self):
         """Test draw count bonuses scale with difficulty."""
