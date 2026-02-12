@@ -58,7 +58,7 @@ engine = GameEngine.create(use_native_dialogs=False)
 
 - Python 3.11 o superiore
 - pip (gestore pacchetti Python)
-- PyGame (per interfaccia audiogame)
+- **wxPython 4.1+** (per interfaccia audiogame)
 
 ### Setup
 
@@ -74,20 +74,33 @@ pip install -r requirements.txt
 pip install -r requirements-dev.txt
 ```
 
-## 🚀 Avvio
+**Note v2.0.0**:
+- ✅ **pygame removed**: The game now uses wxPython exclusively
+- ✅ **Improved accessibility**: Better NVDA/JAWS screen reader integration
+- ✅ **Lighter dependencies**: -2 packages removed (pygame, pygame-menu)
 
-### ✨ Versione Clean Architecture (Consigliata)
+### ✨ Versione Clean Architecture (Consigliata) - **v2.0.0 wxPython-only**
 
 ```bash
 python test.py
 ```
 
-**Caratteristiche**:
+**Caratteristiche v2.0.0**:
+- ✅ **wxPython-only**: Evento loop wxPython nativo (no pygame)
 - ✅ Architettura Clean completa (`src/` modules)
 - ✅ Dependency Injection
 - ✅ Testabilità elevata
 - ✅ Manutenibilità ottimale
-- ✅ Tutte le feature v1.5.2
+- ✅ Tutte le feature v1.6.1
+- ✅ 100% compatibile con versioni precedenti (stesso gameplay)
+- ✅ Migliore accessibilità NVDA/JAWS
+
+**Legacy pygame version** (deprecated):
+```bash
+python test_pygame_legacy.py
+```
+- ⚠️ pygame-based entry point (deprecated in v2.0.0)
+- ⚠️ Kept for reference only
 
 ### 🔧 Versione Legacy (Compatibilità)
 
