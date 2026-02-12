@@ -70,13 +70,13 @@ Il piano completo contiene:
 ### FASE 1: Infrastruttura wx Base (3-4 ore)
 
 #### Task 1.1: Creare `wx_app.py`
-- [ ] Creare file `src/infrastructure/ui/wx_app.py`
-- [ ] Implementare classe `SolitarioWxApp(wx.App)`
-- [ ] Callback `on_init_complete` per post-init setup
-- [ ] Testing: App si avvia senza errori
-- [ ] Testing: `OnInit()` chiamato correttamente
-- [ ] Testing: No crash all'uscita
-- [ ] Commit: `feat(infrastructure): Add wx_app.py base wrapper`
+- [x] Creare file `src/infrastructure/ui/wx_app.py`
+- [x] Implementare classe `SolitarioWxApp(wx.App)`
+- [x] Callback `on_init_complete` per post-init setup
+- [x] Testing: App si avvia senza errori
+- [x] Testing: `OnInit()` chiamato correttamente
+- [x] Testing: No crash all'uscita
+- [x] Commit: `feat(infrastructure): Add wx_app.py base wrapper`
 
 #### Task 1.2: Creare `wx_frame.py`
 - [ ] Creare file `src/infrastructure/ui/wx_frame.py`
