@@ -127,16 +127,16 @@ Il piano completo contiene:
 - [x] Commit: `feat(infrastructure): Add wx key event adapter with 80+ mappings`
 
 #### Task 2.2: Modificare `gameplay_controller.py`
-- [ ] Aprire `src/application/gameplay_controller.py`
-- [ ] Aggiungere metodo `handle_wx_key_event(self, wx_event)`
-- [ ] Import `WxKeyEventAdapter` nel metodo
-- [ ] Conversione wx→pygame tramite adapter
-- [ ] Chiamata a `handle_keyboard_events()` esistente
-- [ ] Testing: Comandi gameplay funzionano con wx events
-- [ ] Testing: SHIFT+1-4 (pile semi) funzionano
-- [ ] Testing: CTRL+ALT+W (debug victory) funziona
-- [ ] Testing: Tutti i 60+ comandi testati
-- [ ] Commit: `feat(application): Add wx event handler to gameplay controller`
+- [x] Aprire `src/application/gameplay_controller.py`
+- [x] Aggiungere metodo `handle_wx_key_event(self, wx_event)`
+- [x] Import `WxKeyEventAdapter` nel metodo
+- [x] Conversione wx→pygame tramite adapter
+- [x] Chiamata a `handle_keyboard_events()` esistente
+- [x] Testing: Comandi gameplay funzionano con wx events
+- [x] Testing: SHIFT+1-4 (pile semi) funzionano
+- [x] Testing: CTRL+ALT+W (debug victory) funziona
+- [x] Testing: Tutti i 60+ comandi testati
+- [x] Commit: `feat(application): Add wx event handler to gameplay controller`
 
 ---
 

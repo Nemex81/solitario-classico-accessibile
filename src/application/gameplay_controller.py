@@ -603,6 +603,45 @@ ESC: abbandona partita."""
     
     # === EVENT HANDLER PRINCIPALE ===
     
+    def handle_wx_key_event(self, wx_event) -> None:
+        """wxPython keyboard event handler (v2.0.0).
+        
+        Adapter method that converts wx.KeyEvent to pygame.event.Event
+        and routes to existing handle_keyboard_events() method.
+        
+        This enables gradual migration from pygame to wxPython event loop
+        while preserving all existing gameplay logic unchanged.
+        
+        Args:
+            wx_event: wx.KeyEvent from wxPython event loop
+        
+        Example:
+            >>> # In wx_main.py event handler:
+            >>> def on_key_event(event):
+            ...     if not is_menu_active:
+            ...         gameplay_controller.handle_wx_key_event(event)
+        
+        Note:
+            Requires WxKeyEventAdapter from infrastructure/ui/wx_key_adapter.py
+            Import is done locally to avoid circular dependencies.
+        
+        New in v2.0.0: wxPython migration - pygame removal
+        """
+        # Import adapter locally to avoid module-level dependency
+        # This allows gameplay_controller to work with both pygame and wx
+        from src.infrastructure.ui.wx_key_adapter import WxKeyEventAdapter
+        
+        # Create adapter instance (lightweight, no state)
+        adapter = WxKeyEventAdapter()
+        
+        # Convert wx event to pygame event
+        pygame_event = adapter.convert_to_pygame_event(wx_event)
+        
+        # If conversion successful, route to existing handler
+        if pygame_event is not None:
+            self.handle_keyboard_events(pygame_event)
+        # If None, key not supported (ignore silently)
+    
     def handle_keyboard_events(self, event: pygame.event.Event) -> None:
         """Main keyboard event handler.
         
