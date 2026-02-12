@@ -27,96 +27,68 @@ class WxDialogProvider(DialogProvider):
     This approach works because pygame manages the main event loop,
     and wxPython dialogs run in modal mode (blocking).
     
-    Args (v1.6.2):
-        parent: Optional pygame window handle to use as dialog parent.
-                If provided, dialogs will be modal children (recommended).
-                If None, dialogs are top-level windows (legacy fallback).
+    Args (v1.6.3.2):
+        parent: IGNORED. Uses invisible wx.Frame as parent for all dialogs.
     
-    Behavior:
-        - With parent: Dialogs don't appear in ALT+TAB switcher
-        - Without parent: Dialogs appear as separate windows (confusing UX)
+    Behavior (v1.6.3.2):
+        - Creates invisible wx.Frame with wx.FRAME_NO_TASKBAR
+        - All dialogs are children of this frame
+        - Frame doesn't appear in ALT+TAB (NO_TASKBAR flag)
+        - Dialogs don't appear in ALT+TAB (modal children)
+    
+    Note:
+        Previous attempts (v1.6.3-v1.6.3.1) used pygame HWND with
+        AssociateHandle(), but that doesn't establish proper modal
+        parent-child relationships in wxPython. Invisible frame is
+        the standard pattern for pygame+wxPython integration.
     
     Example:
-        >>> import pygame
-        >>> screen = pygame.display.set_mode((800, 600))
-        >>> provider = WxDialogProvider(parent=screen)  # RECOMMENDED
+        >>> provider = WxDialogProvider()  # No parent needed!
         >>> provider.show_alert("Hai vinto!", "Congratulazioni")
-        # Dialog is child of pygame window, won't show in ALT+TAB
+        # Dialog is child of invisible frame, won't show in ALT+TAB
     """
     
     def __init__(self, parent=None):
-        """Initialize dialog provider with lazy native handle conversion.
+        """Initialize with invisible wx.Frame parent (v1.6.3.2).
         
         Args:
-            parent: Optional parent window for modal dialogs.
-                    Can be:
-                    - None: Dialogs will be top-level (appear in ALT+TAB)
-                    - int: Native window handle (HWND on Windows, XID on Linux)
-                           Will be converted to wx.Window LAZILY on first dialog call
-                    - wx.Window: Already a valid wxPython window (used as-is)
-        
-        Note (v1.6.3.1 FIX):
-            When parent is an int (native handle from pygame), we store it and
-            convert to wx.Window LAZILY. This avoids wx.PyNoAppError since wx.App
-            doesn't exist yet during __init__. Conversion happens in _get_parent()
-            called by each dialog method.
-        """
-        super().__init__()
-        
-        # 🆕 v1.6.3.1 LAZY INIT FIX: Store handle, convert later
-        if parent is not None and isinstance(parent, int):
-            # Store native handle - conversion deferred to _get_parent()
-            self._parent_handle = parent
-            self._parent_window = None  # Not yet created
-        elif isinstance(parent, wx.Window):
-            # Already a wx.Window - use directly
-            self._parent_handle = None
-            self._parent_window = parent
-        else:
-            # None or unsupported type
-            self._parent_handle = None
-            self._parent_window = None
-    
-    def _get_parent(self):
-        """Get parent window for dialogs with lazy handle conversion.
-        
-        Returns:
-            wx.Window or None: Parent window for modal dialogs.
+            parent: IGNORED. Previous attempts used pygame HWND, but
+                    AssociateHandle() doesn't establish modal relationships.
         
         Note:
-            If parent was provided as int handle, this method creates wx.Window
-            and associates it with the handle on FIRST call. Subsequent calls
-            reuse the cached wx.Window.
+            Creates invisible wx.Frame (lazy) as parent for all dialogs.
+            Frame has wx.FRAME_NO_TASKBAR to prevent ALT+TAB appearance.
+            Standard pattern for pygame+wxPython integration.
         """
-        # If we have a cached window, return it
-        if self._parent_window is not None:
-            return self._parent_window
+        super().__init__()
+        self._parent_frame = None  # Invisible wx.Frame (lazy init)
+    
+    def _get_parent(self):
+        """Get invisible parent frame (lazy initialization).
         
-        # If we have a handle to convert, do it now (lazy initialization)
-        if self._parent_handle is not None:
-            import sys
-            
-            try:
-                # wx.App should exist by now (first dialog call happens after app starts)
-                if sys.platform == "win32":
-                    # Windows: HWND handle
-                    self._parent_window = wx.Window()
-                    self._parent_window.AssociateHandle(self._parent_handle)
-                elif sys.platform.startswith("linux"):
-                    # Linux: X11 window ID (XID)
-                    self._parent_window = wx.Window()
-                    self._parent_window.AssociateHandle(self._parent_handle)
-                else:
-                    # Unsupported platform - fallback to None
-                    self._parent_window = None
-            except Exception:
-                # If conversion fails, fallback to None (top-level dialog)
-                self._parent_window = None
-            
-            return self._parent_window
+        Returns:
+            wx.Frame: Invisible frame for dialog parenting
         
-        # No parent at all
-        return None
+        Note (v1.6.3.2):
+            Creates invisible wx.Frame with wx.FRAME_NO_TASKBAR flag.
+            This prevents the frame itself from appearing in ALT+TAB.
+            All dialogs are created as children of this frame, which
+            makes them modal and prevents ALT+TAB separation.
+            
+            Standard pattern for pygame+wxPython integration.
+        """
+        if self._parent_frame is not None:
+            return self._parent_frame
+        
+        # Create invisible frame (no taskbar, hidden)
+        self._parent_frame = wx.Frame(
+            None,
+            title="Solitario Dialog Parent",
+            style=wx.FRAME_NO_TASKBAR  # CRITICAL: No ALT+TAB
+        )
+        # DO NOT call Show() - keep invisible!
+        
+        return self._parent_frame
     
     def show_alert(self, message: str, title: str) -> None:
         """Show modal alert with OK button.
