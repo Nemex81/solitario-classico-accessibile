@@ -13,7 +13,7 @@
 **Prima di iniziare qualsiasi implementazione, consultare obbligatoriamente**:
 - [`docs/MIGRATION_PLAN_WX_ONLY.md`](./MIGRATION_PLAN_WX_ONLY.md) - Piano completo e dettagliato
 
-**Questo file TODO è solo un sommario operativo**.  
+**Questo file TODO è solo un sommario operativo da consultare all'inizio di ogni fase di implementazione e da aggiornare alla fine di ogni di fase implementazione**.  
 Il piano completo contiene:
 - Analisi architettura attuale e target
 - Gestione conflitti input e priorità eventi  
