@@ -45,43 +45,78 @@ class WxDialogProvider(DialogProvider):
     """
     
     def __init__(self, parent=None):
-        """Initialize dialog provider with native handle conversion.
+        """Initialize dialog provider with lazy native handle conversion.
         
         Args:
             parent: Optional parent window for modal dialogs.
                     Can be:
                     - None: Dialogs will be top-level (appear in ALT+TAB)
                     - int: Native window handle (HWND on Windows, XID on Linux)
-                           Will be converted to wx.Window via AssociateHandle()
+                           Will be converted to wx.Window LAZILY on first dialog call
                     - wx.Window: Already a valid wxPython window (used as-is)
         
-        Note (v1.6.3 FIX):
-            When parent is an int (native handle from pygame), we create a wx.Window
-            and associate it with the handle. This makes dialogs modal children,
-            preventing ALT+TAB separation and crashes.
+        Note (v1.6.3.1 FIX):
+            When parent is an int (native handle from pygame), we store it and
+            convert to wx.Window LAZILY. This avoids wx.PyNoAppError since wx.App
+            doesn't exist yet during __init__. Conversion happens in _get_parent()
+            called by each dialog method.
         """
         super().__init__()
         
-        # 🆕 v1.6.3 BUG FIX: Convert native handle to wx.Window
+        # 🆕 v1.6.3.1 LAZY INIT FIX: Store handle, convert later
         if parent is not None and isinstance(parent, int):
-            # parent is a native window handle (HWND on Windows, XID on Linux)
-            # Create empty wx.Window and associate with native handle
+            # Store native handle - conversion deferred to _get_parent()
+            self._parent_handle = parent
+            self._parent_window = None  # Not yet created
+        elif isinstance(parent, wx.Window):
+            # Already a wx.Window - use directly
+            self._parent_handle = None
+            self._parent_window = parent
+        else:
+            # None or unsupported type
+            self._parent_handle = None
+            self._parent_window = None
+    
+    def _get_parent(self):
+        """Get parent window for dialogs with lazy handle conversion.
+        
+        Returns:
+            wx.Window or None: Parent window for modal dialogs.
+        
+        Note:
+            If parent was provided as int handle, this method creates wx.Window
+            and associates it with the handle on FIRST call. Subsequent calls
+            reuse the cached wx.Window.
+        """
+        # If we have a cached window, return it
+        if self._parent_window is not None:
+            return self._parent_window
+        
+        # If we have a handle to convert, do it now (lazy initialization)
+        if self._parent_handle is not None:
             import sys
             
-            if sys.platform == "win32":
-                # Windows: HWND handle
-                self.parent = wx.Window()
-                self.parent.AssociateHandle(parent)
-            elif sys.platform.startswith("linux"):
-                # Linux: X11 window ID (XID)
-                self.parent = wx.Window()
-                self.parent.AssociateHandle(parent)
-            else:
-                # Unsupported platform - fallback to None
-                self.parent = None
-        else:
-            # parent is already wx.Window or None - use as-is
-            self.parent = parent
+            try:
+                # wx.App should exist by now (first dialog call happens after app starts)
+                if sys.platform == "win32":
+                    # Windows: HWND handle
+                    self._parent_window = wx.Window()
+                    self._parent_window.AssociateHandle(self._parent_handle)
+                elif sys.platform.startswith("linux"):
+                    # Linux: X11 window ID (XID)
+                    self._parent_window = wx.Window()
+                    self._parent_window.AssociateHandle(self._parent_handle)
+                else:
+                    # Unsupported platform - fallback to None
+                    self._parent_window = None
+            except Exception:
+                # If conversion fails, fallback to None (top-level dialog)
+                self._parent_window = None
+            
+            return self._parent_window
+        
+        # No parent at all
+        return None
     
     def show_alert(self, message: str, title: str) -> None:
         """Show modal alert with OK button.
@@ -95,7 +130,7 @@ class WxDialogProvider(DialogProvider):
         """
         app = wx.App()  # Create app instance (on-demand pattern)
         dlg = wx.MessageDialog(
-            self.parent,  # Child of pygame window (prevents ALT+TAB separation)
+            self._get_parent(),  # Lazy handle conversion (prevents ALT+TAB separation)
             message,
             title,
             wx.OK | wx.ICON_INFORMATION
@@ -119,7 +154,7 @@ class WxDialogProvider(DialogProvider):
         """
         app = wx.App()
         dlg = wx.MessageDialog(
-            self.parent,  # Child of pygame window (prevents ALT+TAB separation)
+            self._get_parent(),  # Lazy handle conversion (prevents ALT+TAB separation)
             question,
             title,
             wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION
@@ -150,7 +185,7 @@ class WxDialogProvider(DialogProvider):
         """
         app = wx.App()
         dlg = wx.TextEntryDialog(
-            self.parent,  # Child of pygame window (prevents ALT+TAB separation)
+            self._get_parent(),  # Lazy handle conversion (prevents ALT+TAB separation)
             question,
             title,
             value=default
@@ -219,7 +254,7 @@ class WxDialogProvider(DialogProvider):
         title = "Congratulazioni!" if is_victory else "Partita Terminata"
         
         dlg = wx.Dialog(
-            self.parent,  # Child of pygame window (prevents ALT+TAB separation)
+            self._get_parent(),  # Lazy handle conversion (prevents ALT+TAB separation)
             title=title,
             style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER | wx.FRAME_FLOAT_ON_PARENT  # 🆕 v1.6.3 - Modal!
         )
