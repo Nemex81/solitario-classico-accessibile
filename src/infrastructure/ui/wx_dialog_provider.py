@@ -45,17 +45,43 @@ class WxDialogProvider(DialogProvider):
     """
     
     def __init__(self, parent=None):
-        """Initialize dialog provider with optional parent window.
+        """Initialize dialog provider with native handle conversion.
         
         Args:
-            parent: pygame display surface or wx.Window. If provided,
-                    all dialogs will be created as modal children.
+            parent: Optional parent window for modal dialogs.
+                    Can be:
+                    - None: Dialogs will be top-level (appear in ALT+TAB)
+                    - int: Native window handle (HWND on Windows, XID on Linux)
+                           Will be converted to wx.Window via AssociateHandle()
+                    - wx.Window: Already a valid wxPython window (used as-is)
         
-        Note:
-            Passing pygame.display.get_surface() as parent is safe:
-            wxPython will extract the native window handle automatically.
+        Note (v1.6.3 FIX):
+            When parent is an int (native handle from pygame), we create a wx.Window
+            and associate it with the handle. This makes dialogs modal children,
+            preventing ALT+TAB separation and crashes.
         """
-        self.parent = parent  # Store for use in all dialog methods
+        super().__init__()
+        
+        # 🆕 v1.6.3 BUG FIX: Convert native handle to wx.Window
+        if parent is not None and isinstance(parent, int):
+            # parent is a native window handle (HWND on Windows, XID on Linux)
+            # Create empty wx.Window and associate with native handle
+            import sys
+            
+            if sys.platform == "win32":
+                # Windows: HWND handle
+                self.parent = wx.Window()
+                self.parent.AssociateHandle(parent)
+            elif sys.platform.startswith("linux"):
+                # Linux: X11 window ID (XID)
+                self.parent = wx.Window()
+                self.parent.AssociateHandle(parent)
+            else:
+                # Unsupported platform - fallback to None
+                self.parent = None
+        else:
+            # parent is already wx.Window or None - use as-is
+            self.parent = parent
     
     def show_alert(self, message: str, title: str) -> None:
         """Show modal alert with OK button.
@@ -195,7 +221,7 @@ class WxDialogProvider(DialogProvider):
         dlg = wx.Dialog(
             self.parent,  # Child of pygame window (prevents ALT+TAB separation)
             title=title,
-            style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
+            style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER | wx.FRAME_FLOAT_ON_PARENT  # 🆕 v1.6.3 - Modal!
         )
         
         # Create vertical sizer for layout

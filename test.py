@@ -108,6 +108,30 @@ class SolitarioCleanArch:
         self.screen.fill((255, 255, 255))  # White background
         pygame.display.flip()
         
+        # 🆕 NEW v1.6.3: Extract native window handle for wxDialog parent
+        # wxPython requires native handle (HWND on Windows, XID on Linux),
+        # not pygame.Surface object. This prevents crashes and ALT+TAB separation.
+        import sys
+        
+        window_info = pygame.display.get_wm_info()
+        
+        if sys.platform == "win32":
+            # Windows: Extract HWND (window handle)
+            parent_handle = window_info['window']
+            print(f"✓ Estratto HWND: {parent_handle}")
+        elif sys.platform.startswith("linux"):
+            # Linux: Extract X11 window ID (XID)
+            parent_handle = window_info.get('window', None)
+            if parent_handle:
+                print(f"✓ Estratto X11 XID: {parent_handle}")
+            else:
+                print("⚠ X11 window ID non disponibile, fallback a None")
+                parent_handle = None
+        else:
+            # macOS or other: Fallback to None (untested)
+            print("⚠ Piattaforma non testata per wxDialog parent, uso fallback")
+            parent_handle = None
+        
         # Infrastructure: TTS setup
         print("Inizializzazione TTS...")
         try:
@@ -145,7 +169,7 @@ class SolitarioCleanArch:
             verbose=1,
             settings=self.settings,  # v1.4.2.1
             use_native_dialogs=True,  # v1.6.2 - Enable wxDialogs
-            parent_window=self.screen  # 🆕 v1.6.2 - Dialogs as modal children (no ALT+TAB)
+            parent_window=parent_handle  # 🆕 v1.6.3 - Native handle (HWND/XID), not pygame.Surface!
         )
         
         # 🆕 v1.6.2: Inject end game callback for UI state management
