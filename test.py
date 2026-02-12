@@ -240,6 +240,27 @@ class SolitarioController:
         if result:
             self.return_to_menu()
     
+    def show_new_game_dialog(self) -> None:
+        """Show new game confirmation dialog (called from GameplayController).
+        
+        Asks user if they want to start a new game, abandoning current progress.
+        """
+        result = self.dialog_manager.show_yes_no(
+            "Vuoi iniziare una nuova partita? I progressi attuali andranno persi.",
+            "Nuova Partita"
+        )
+        if result:
+            # Reset and start new game
+            self.engine.reset_game()
+            self.engine.new_game()
+            self._timer_expired_announced = False
+            
+            if self.screen_reader:
+                self.screen_reader.tts.speak(
+                    "Nuova partita avviata! Usa H per l'aiuto comandi.",
+                    interrupt=True
+                )
+    
     def confirm_abandon_game(self, skip_dialog: bool = False) -> None:
         """Abandon game immediately without dialog (double-ESC from GameplayView).
         
