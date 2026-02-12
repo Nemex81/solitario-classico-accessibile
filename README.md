@@ -14,6 +14,44 @@ Un gioco di carte Solitario (Klondike) in versione accessibile per non vedenti, 
 - **Undo/Redo**: Possibilità di annullare e ripetere le mosse
 - **Architettura modulare**: Design pulito con separazione dei livelli (Clean Architecture)
 
+### Victory Flow & Native Dialogs (v1.6.0-v1.6.1)
+
+Il gioco ora supporta dialog box native accessibili in **tutti i contesti interattivi**.
+
+**Contesti Dialog Nativi** (v1.6.1):
+1. ✅ **Vittoria/Sconfitta**: Report finale completo + prompt rivincita
+2. ✅ **ESC durante gameplay**: "Vuoi abbandonare la partita?"
+3. ✅ **N durante gameplay**: "Nuova partita?" (conferma abbandono)
+4. ✅ **ESC in menu di gioco**: "Vuoi tornare al menu principale?"
+5. ✅ **ESC in menu principale**: "Vuoi uscire dall'applicazione?"
+6. ✅ **Chiusura opzioni (modificate)**: "Salvare le modifiche?"
+
+**Caratteristiche**:
+- ✨ **Dialog native wxPython**: Accessibili a screen reader (NVDA, JAWS)
+- 📊 **Statistiche complete**: Tracciamento carte per seme, semi completati, percentuale completamento
+- 🎉 **Report finale dettagliato**: Timer, mosse, rimischiate, statistiche semi, punteggio
+- ⚡ **Double-ESC**: Abbandono rapido (premi ESC 2 volte entro 2 secondi)
+- 🔄 **UX coerente**: Stesso pattern di dialogs in tutta l'app
+- 🐞 **Debug command**: CTRL+ALT+W simula vittoria (solo per test)
+
+**Configurazione**:
+
+```python
+# Abilita dialog native (accessibili NVDA/JAWS)
+engine = GameEngine.create(use_native_dialogs=True)
+
+# Oppure usa solo TTS (default)
+engine = GameEngine.create(use_native_dialogs=False)
+```
+
+**Nota**: Se wxPython non è disponibile, l'applicazione degrada automaticamente a modalità TTS-only.
+
+**Accessibilità**:
+- Tutti i dialog sono navigabili solo da tastiera (Tab, Enter, ESC)
+- Compatibili con NVDA, JAWS (testato su Windows)
+- Report ottimizzato per screen reader (frasi brevi, punteggiatura chiara)
+- Shortcut keys: S=Sì, N=No, ESC=Annulla
+
 ## 📦 Installazione
 
 ### Prerequisiti

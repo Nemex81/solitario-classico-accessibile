@@ -7,13 +7,18 @@ Manages all options window logic including:
 - Save/discard confirmation
 - Input routing and validation
 
+NEW v1.6.1: Integrated with SolitarioDialogManager for native wxDialog prompts.
+
 Architecture: Application Layer (Clean Architecture)
 Depends on: Domain (GameSettings), Presentation (OptionsFormatter)
 """
 
-from typing import Dict, Optional
+from typing import Dict, Optional, TYPE_CHECKING
 from src.domain.services.game_settings import GameSettings
 from src.presentation.options_formatter import OptionsFormatter
+
+if TYPE_CHECKING:
+    from src.application.dialog_manager import SolitarioDialogManager
 
 
 class OptionsWindowController:
@@ -22,6 +27,8 @@ class OptionsWindowController:
     Manages modal window state and user interactions.
     Uses HYBRID navigation (arrows + numbers) with accessibility focus.
     
+    NEW v1.6.1: Optionally uses native wxDialog for save confirmation.
+    
     States:
     - CLOSED: Window not active (gameplay normal)
     - OPEN_CLEAN: Window open, no modifications
@@ -29,19 +36,26 @@ class OptionsWindowController:
     
     Attributes:
         settings: Reference to GameSettings (domain service)
+        dialog_manager: Optional SolitarioDialogManager for native dialogs (v1.6.1)
         cursor_position: Current option index (0-4)
         is_open: Window state flag
         state: Current state ("CLOSED"/"OPEN_CLEAN"/"OPEN_DIRTY")
         original_settings: Snapshot of settings at window open
     """
     
-    def __init__(self, settings: GameSettings):
+    def __init__(
+        self, 
+        settings: GameSettings,
+        dialog_manager: Optional['SolitarioDialogManager'] = None
+    ):
         """Initialize options controller.
         
         Args:
             settings: Game settings service (domain layer)
+            dialog_manager: Optional dialog manager for native wxDialogs (v1.6.1)
         """
         self.settings = settings
+        self.dialog_manager = dialog_manager
         self.cursor_position = 0  # Current option (0-4)
         self.is_open = False
         self.state = "CLOSED"
@@ -76,16 +90,42 @@ class OptionsWindowController:
     def close_window(self) -> str:
         """Close window with confirmation if modifications present.
         
+        NEW v1.6.1: Uses native wxDialog if dialog_manager available,
+        otherwise falls back to TTS virtual prompt.
+        
         Returns:
-            TTS message (direct close or dialog prompt)
+            TTS message (direct close, dialog result, or prompt for fallback)
         
         State transitions:
         - OPEN_CLEAN -> CLOSED (direct)
-        - OPEN_DIRTY -> Show save dialog (stays OPEN_DIRTY until confirmed)
+        - OPEN_DIRTY -> CLOSED (if saved/discarded via dialog)
+        - OPEN_DIRTY -> OPEN_DIRTY (if cancelled or fallback mode)
         """
         if self.state == "OPEN_DIRTY":
-            # Show confirmation dialog
-            return OptionsFormatter.format_save_dialog()
+            # NEW v1.6.1: Use wx dialog if available
+            if self.dialog_manager and self.dialog_manager.is_available:
+                result = self.dialog_manager.show_options_save_prompt()
+                
+                if result is True:
+                    # User chose to save
+                    self._save_snapshot()
+                    self._reset_state()
+                    return OptionsFormatter.format_save_confirmed()
+                
+                elif result is False:
+                    # User chose to discard
+                    self._restore_snapshot()
+                    self._reset_state()
+                    return OptionsFormatter.format_save_discarded()
+                
+                # result is None: Should not happen with current API
+                # (ESC returns False). Treat as cancel.
+                return OptionsFormatter.format_save_cancelled()
+            
+            else:
+                # FALLBACK: TTS virtual prompt (backward compatible)
+                return OptionsFormatter.format_save_dialog()
+        
         else:
             # No changes, close directly
             self._reset_state()

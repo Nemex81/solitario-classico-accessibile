@@ -21,7 +21,7 @@ New in v1.4.2.1 (Bug Fix #3 - Phase 1-7/7 COMPLETE! + Bug #3.1 FIX):
 - Bug #3.1 FIX: Prevent double distribution on deck change
 """
 
-from typing import Optional, Tuple, Dict, Any, List
+from typing import Optional, Tuple, Dict, Any, List, TYPE_CHECKING, Callable
 
 from src.domain.models.table import GameTable
 from src.domain.models.deck import FrenchDeck, NeapolitanDeck
@@ -39,6 +39,9 @@ from src.infrastructure.audio.tts_provider import create_tts_provider
 from src.infrastructure.storage.score_storage import ScoreStorage
 from src.presentation.game_formatter import GameFormatter
 from src.presentation.formatters.score_formatter import ScoreFormatter
+
+if TYPE_CHECKING:
+    from src.infrastructure.ui.dialog_provider import DialogProvider
 
 
 class GameEngine:
@@ -86,7 +89,9 @@ class GameEngine:
         selection: SelectionManager,
         screen_reader: Optional[ScreenReader] = None,
         settings: Optional[GameSettings] = None,  # NEW (Phase 1/7)
-        score_storage: Optional[ScoreStorage] = None  # NEW (Phase 8/8)
+        score_storage: Optional[ScoreStorage] = None,  # NEW (Phase 8/8)
+        dialog_provider: Optional['DialogProvider'] = None,  # ✨ NEW v1.6.0
+        on_game_ended: Optional[Callable[[bool], None]] = None  # 🆕 NEW v1.6.2
     ):
         """Initialize game engine.
         
@@ -99,6 +104,8 @@ class GameEngine:
             screen_reader: Optional screen reader for audio feedback
             settings: Optional game settings for configuration (NEW v1.4.2.1)
             score_storage: Optional score storage for persistent statistics (NEW v2.0.0)
+            dialog_provider: Optional dialog provider for native UI dialogs (NEW v1.6.0)
+            on_game_ended: Optional callback when game ends, receives wants_rematch bool (NEW v1.6.2)
         """
         self.table = table
         self.service = service
@@ -114,6 +121,12 @@ class GameEngine:
         # Score storage (Phase 8/8 - v2.0.0)
         self.score_storage = score_storage
         
+        # ✨ NEW v1.6.0: Dialog integration (opt-in)
+        self.dialogs = dialog_provider
+        
+        # 🆕 NEW v1.6.2: End game callback (opt-in)
+        self.on_game_ended = on_game_ended
+        
         # Configurable attributes with defaults (Phase 1/7)
         # These will be updated from settings in new_game()
         self.draw_count: int = 1  # Default: 1 carta
@@ -128,7 +141,9 @@ class GameEngine:
         audio_enabled: bool = True,
         tts_engine: str = "auto",
         verbose: int = 1,
-        settings: Optional[GameSettings] = None
+        settings: Optional[GameSettings] = None,
+        use_native_dialogs: bool = False,  # ✨ NEW v1.6.0
+        parent_window = None  # 🆕 NEW v1.6.2 - pygame screen for modal dialogs
     ) -> "GameEngine":
         """Factory method to create fully initialized game engine.
         
@@ -137,15 +152,23 @@ class GameEngine:
             tts_engine: TTS engine ("auto", "nvda", "sapi5")
             verbose: Audio verbosity level (0-2)
             settings: GameSettings instance for configuration
+            use_native_dialogs: Enable native wxPython dialogs (NEW v1.6.0)
+            parent_window: pygame.display surface for modal dialog parenting (NEW v1.6.2)
+                           If provided, wxDialogs won't appear in ALT+TAB switcher
             
         Returns:
             Initialized GameEngine instance ready to play
             
-        Example:
+        Example (v1.6.2):
+            >>> import pygame
+            >>> screen = pygame.display.set_mode((800, 600))
             >>> settings = GameSettings()
-            >>> settings.deck_type = "neapolitan"
-            >>> engine = GameEngine.create(settings=settings)
-            >>> engine.new_game()  # Uses Neapolitan deck
+            >>> engine = GameEngine.create(
+            ...     settings=settings,
+            ...     use_native_dialogs=True,
+            ...     parent_window=screen  # Dialogs will be modal children
+            ... )
+            >>> # Now dialogs won't show as separate windows in ALT+TAB
             
         Note:
             If settings is None or settings.deck_type is "french",
@@ -209,7 +232,18 @@ class GameEngine:
                 # Graceful degradation if TTS not available
                 screen_reader = None
         
-        return cls(table, service, rules, cursor, selection, screen_reader, settings, score_storage)
+        # ✨ NEW v1.6.0: Create dialog provider if requested
+        # 🆕 v1.6.2: Pass parent_window to prevent ALT+TAB separation
+        dialog_provider = None
+        if use_native_dialogs:
+            try:
+                from src.infrastructure.ui.wx_dialog_provider import WxDialogProvider
+                dialog_provider = WxDialogProvider(parent=parent_window)
+            except ImportError:
+                # wxPython not available, graceful degradation
+                dialog_provider = None
+        
+        return cls(table, service, rules, cursor, selection, screen_reader, settings, score_storage, dialog_provider)
     
     # ========================================
     # GAME LIFECYCLE
@@ -959,44 +993,159 @@ class GameEngine:
         return self.service.is_victory()
     
     def end_game(self, is_victory: bool) -> None:
-        """Handle game end with scoring and statistics.
+        """Handle game end with full reporting and rematch prompt.
         
-        Calculates final score, saves to storage, and announces via TTS.
-        Only active when scoring is enabled.
+        Complete flow:
+        1. Snapshot statistics (including suits)
+        2. Calculate final score (if scoring enabled)
+        3. Save score to storage (if available)
+        4. Generate complete Italian report
+        5. Announce via TTS (always)
+        6. Show native dialog (if available)
+        7. Prompt for rematch (if dialogs available)
+        8. 🆕 Call on_game_ended callback to return control to test.py
         
         Args:
-            is_victory: Whether the game was won
+            is_victory: True if all 4 suits completed
+            
+        Side effects:
+            - Stops game timer
+            - Saves score to JSON (if scoring enabled)
+            - May start new game (if user chooses rematch AND no callback)
+            
+        Note (v1.6.2):
+            If on_game_ended callback is set, this method NO LONGER handles
+            UI state management (is_menu_open, menu announcements). 
+            All UI logic delegated to test.py.handle_game_ended().
             
         Example:
             >>> engine.end_game(is_victory=True)
-            # Announces: "Vittoria! Punteggio finale: 1015 punti. ..."
+            # TTS announces: "Hai Vinto! ..."
+            # Dialog shows full report
+            # Prompts: "Vuoi giocare ancora?"
+            # Calls: self.on_game_ended(wants_rematch=False)
         """
-        # Skip if scoring not enabled
-        if not self.settings or not self.settings.scoring_enabled:
-            return
         
-        if not self.service.scoring:
-            return
+        # ═══════════════════════════════════════════════════════════
+        # STEP 1: Snapshot Statistics
+        # ═══════════════════════════════════════════════════════════
+        self.service._snapshot_statistics()
+        final_stats = self.service.get_final_statistics()
         
-        # Calculate final score
-        elapsed_time = self.service.get_elapsed_time()
-        move_count = self.service.move_count
+        # ═══════════════════════════════════════════════════════════
+        # STEP 2: Calculate Final Score
+        # ═══════════════════════════════════════════════════════════
+        final_score = None
+        if self.settings and self.settings.scoring_enabled and self.service.scoring:
+            final_score = self.service.scoring.calculate_final_score(
+                elapsed_seconds=final_stats['elapsed_time'],
+                move_count=final_stats['move_count'],
+                is_victory=is_victory,
+                timer_strict_mode=self.settings.timer_strict_mode if self.settings else True
+            )
         
-        final_score = self.service.scoring.calculate_final_score(
-            elapsed_seconds=elapsed_time,
-            move_count=move_count,
-            is_victory=is_victory,
-            timer_strict_mode=self.settings.timer_strict_mode if self.settings else True  # v1.5.2.2
-        )
-        
-        # Save to storage
-        if self.score_storage:
+        # ═══════════════════════════════════════════════════════════
+        # STEP 3: Save Score
+        # ═══════════════════════════════════════════════════════════
+        if final_score and self.score_storage:
             self.score_storage.save_score(final_score)
         
-        # Format and announce
+        # ═══════════════════════════════════════════════════════════
+        # STEP 4: Generate Report
+        # ═══════════════════════════════════════════════════════════
+        from src.presentation.formatters.report_formatter import ReportFormatter
+        
+        deck_type = self.settings.deck_type if self.settings else "french"
+        report = ReportFormatter.format_final_report(
+            stats=final_stats,
+            final_score=final_score,
+            is_victory=is_victory,
+            deck_type=deck_type
+        )
+        
+        # ═══════════════════════════════════════════════════════════
+        # STEP 5: TTS Announcement (Always, even if dialogs enabled)
+        # ═══════════════════════════════════════════════════════════
         if self.screen_reader:
-            message = ScoreFormatter.format_final_score(final_score)
-            self.screen_reader.tts.speak(message, interrupt=True)
+            self.screen_reader.tts.speak(report, interrupt=True)
+        
+        # ═══════════════════════════════════════════════════════════
+        # STEP 6: Native Statistics Dialog (Structured, Accessible)
+        # ═══════════════════════════════════════════════════════════
+        wants_rematch = False
+        if self.dialogs:
+            # Use dedicated statistics dialog (v1.6.1+)
+            # Replaces generic show_alert() with structured wxDialog
+            self.dialogs.show_statistics_report(
+                stats=final_stats,
+                final_score=final_score,
+                is_victory=is_victory,
+                deck_type=deck_type
+            )
+            
+            # ═══════════════════════════════════════════════════════
+            # STEP 7: Rematch Prompt
+            # ═══════════════════════════════════════════════════════
+            wants_rematch = self.dialogs.show_yes_no(
+                "Vuoi giocare ancora?", 
+                "Rivincita?"
+            )
+        
+        # ═══════════════════════════════════════════════════════════
+        # STEP 8: 🆕 Delegate to test.py via Callback (v1.6.2)
+        # ═══════════════════════════════════════════════════════════
+        if self.on_game_ended:
+            # NEW BEHAVIOR (v1.6.2): Pass control back to test.py
+            # test.py will handle:
+            # - UI state management (is_menu_open)
+            # - Menu announcements
+            # - Rematch logic (call start_game if wanted)
+            self.on_game_ended(wants_rematch)
+        else:
+            # FALLBACK: Old behavior (no callback set)
+            # This path used for backward compatibility or unit tests
+            if wants_rematch:
+                self.new_game()
+                return  # Exit early (new_game() already resets)
+            else:
+                self.service.reset_game()
+    
+    def _debug_force_victory(self) -> str:
+        """🔥 DEBUG ONLY: Simulate victory for testing end_game flow.
+        
+        Keyboard binding: CTRL+ALT+W
+        
+        ⚠️ WARNING: This is a debug feature for testing the victory flow!
+        
+        Simulates victory without actually completing the game.
+        Useful for testing:
+        - Final report formatting
+        - Dialog appearance and accessibility
+        - Score calculation accuracy
+        - Rematch flow behavior
+        - Suit statistics display
+        
+        Returns:
+            Empty string (end_game() handles all TTS announcements)
+            
+        Example:
+            >>> msg = engine._debug_force_victory()
+            >>> print(msg)
+            ""
+            
+            # end_game() announces victory report via TTS
+            # Dialog shows full statistics
+            # Prompts for rematch
+        """
+        if not self.is_game_running():
+            return "Nessuna partita in corso da simulare!"
+        
+        # Trigger complete victory flow
+        # Note: end_game() handles all TTS announcements and dialogs
+        # Return empty string to avoid interrupting the report
+        self.end_game(is_victory=True)
+        
+        return ""
     
     def get_pile_info(self, pile_idx: int) -> Optional[Dict[str, Any]]:
         """Get information about specific pile."""

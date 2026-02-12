@@ -55,6 +55,25 @@ class GameService:
         self.start_time: Optional[float] = None
         self.draw_count = 0
         self.scoring = scoring
+        
+        # ✨ NEW v1.6.0: Live suit statistics tracking
+        self.carte_per_seme: List[int] = [0, 0, 0, 0]
+        #   Index mapping: 0=Hearts, 1=Diamonds, 2=Clubs, 3=Spades
+        #   For Neapolitan: 0=Coppe, 1=Denari, 2=Bastoni, 3=Spade
+        #   Increments with each card moved to foundation
+        
+        self.semi_completati: int = 0
+        #   Count of completed suits (carte_per_seme[i] == max_cards_per_suit)
+        #   Max is 13 for French deck, 10 for Neapolitan deck
+        
+        # ✨ NEW v1.6.0: Final statistics snapshot (preserved during reset)
+        self.final_carte_per_seme: List[int] = [0, 0, 0, 0]
+        self.final_semi_completati: int = 0
+        #   These are set by _snapshot_statistics() before reset_game()
+        #   Allows consulting last game stats after starting new game
+        
+        # Recycle count tracking (for statistics)
+        self.recycle_count: int = 0
     
     # ========================================
     # GAME LIFECYCLE
@@ -67,11 +86,26 @@ class GameService:
             self.start_time = time.time()
     
     def reset_game(self) -> None:
-        """Reset game state for new game."""
+        """Reset game state for new game.
+        
+        Clears move counters, timer, and live statistics.
+        IMPORTANT: Does NOT clear final_* snapshot attributes,
+        allowing consultation of last game stats after reset.
+        
+        Example:
+            >>> service._snapshot_statistics()  # Save current stats
+            >>> service.reset_game()
+            >>> # Live stats cleared, final_* preserved
+        """
         self.is_game_running = False
         self.move_count = 0
         self.start_time = None
         self.draw_count = 0
+        self.recycle_count = 0
+        self.carte_per_seme = [0, 0, 0, 0]  # Reset live
+        self.semi_completati = 0  # Reset live
+        # final_carte_per_seme NOT reset (preserved)
+        # final_semi_completati NOT reset (preserved)
         if self.scoring:
             self.scoring.reset()
     
@@ -194,6 +228,10 @@ class GameService:
                 f"{source_pile.get_top_card()}"
             )
         
+        # ✨ NEW v1.6.0: Update suit statistics after foundation move
+        if is_foundation_target:
+            self._update_suit_statistics()
+        
         return True, f"Mossa eseguita (#{self.move_count})"
     
     def _get_movable_sequence(
@@ -222,6 +260,56 @@ class GameService:
             return []
         
         return sequence
+    
+    def _update_suit_statistics(self) -> None:
+        """Update live suit statistics by scanning foundation piles.
+        
+        Called after every successful move to foundation.
+        Recalculates from scratch (idempotent operation).
+        
+        Foundation pile indices: 7, 8, 9, 10
+        Suit order matches deck.SUITS order.
+        
+        Example:
+            After moving 7 of Hearts to foundation:
+            >>> self._update_suit_statistics()
+            >>> print(self.carte_per_seme)  # [7, 0, 0, 0]
+            >>> print(self.semi_completati)  # 0 (not complete yet)
+        """
+        # Get cards needed for complete suit (13 French, 10 Neapolitan)
+        cards_per_suit = len(self.table.mazzo.VALUES)
+        
+        # Reset completed counter
+        self.semi_completati = 0
+        
+        # Scan all 4 foundation piles
+        for i in range(4):
+            foundation_pile = self.table.pile_semi[i]
+            
+            # Count cards in this suit
+            num_cards = foundation_pile.get_card_count()
+            self.carte_per_seme[i] = num_cards
+            
+            # Check if suit completed
+            if num_cards == cards_per_suit:
+                self.semi_completati += 1
+    
+    def _snapshot_statistics(self) -> None:
+        """Snapshot current statistics before reset.
+        
+        Called by GameEngine.end_game() to preserve final values.
+        Uses .copy() to avoid reference sharing with live lists.
+        
+        These snapshot values remain accessible after reset_game(),
+        allowing post-game consultation of statistics.
+        
+        Example:
+            >>> self._snapshot_statistics()
+            >>> self.reset_game()  # Clears live stats
+            >>> print(self.final_carte_per_seme)  # Still accessible!
+        """
+        self.final_carte_per_seme = self.carte_per_seme.copy()
+        self.final_semi_completati = self.semi_completati
     
     def _uncover_top_card(self, pile: Pile) -> None:
         """Uncover top card of pile if it's covered.
@@ -321,6 +409,9 @@ class GameService:
         # Move to stock
         for card in cards:
             stock.aggiungi_carta(card)
+        
+        # ✨ NEW v1.6.0: Increment recycle counter
+        self.recycle_count += 1
         
         # Record scoring event
         if self.scoring:
@@ -422,6 +513,52 @@ class GameService:
             "draw_count": self.draw_count,
             "foundation_progress": foundation_progress,
             "total_foundation_cards": sum(foundation_progress)
+        }
+    
+    def get_final_statistics(self) -> Dict[str, Any]:
+        """Get snapshot of final statistics.
+        
+        Returns statistics preserved by _snapshot_statistics() before reset.
+        Includes suit-specific data not available in get_statistics().
+        
+        Returns:
+            Dictionary with all final game statistics including:
+            - move_count: Total moves made
+            - elapsed_time: Game duration in seconds
+            - recycle_count: Number of waste pile reshuffles
+            - carte_per_seme: List[int] with cards per suit [0-13 or 0-10]
+            - semi_completati: Count of completed suits (0-4)
+            - total_foundation_cards: Sum of all foundation cards
+            - completion_percentage: Percentage of deck in foundations
+            
+        Example:
+            >>> stats = service.get_final_statistics()
+            >>> print(stats['carte_per_seme'])  # [13, 13, 10, 8]
+            >>> print(stats['completion_percentage'])  # 84.6
+        """
+        # Calculate total cards in foundations
+        total_foundation_cards = sum(self.final_carte_per_seme)
+        total_deck_cards = len(self.table.mazzo.cards) if hasattr(self.table.mazzo, 'cards') else 52
+        
+        # Handle edge case: empty deck (use standard count)
+        if total_deck_cards == 0:
+            # Infer from deck type
+            from src.domain.models.deck import NeapolitanDeck
+            if isinstance(self.table.mazzo, NeapolitanDeck):
+                total_deck_cards = 40
+            else:
+                total_deck_cards = 52
+        
+        completion_pct = (total_foundation_cards / total_deck_cards) * 100 if total_deck_cards > 0 else 0.0
+        
+        return {
+            "move_count": self.move_count,
+            "elapsed_time": self.get_elapsed_time(),
+            "recycle_count": self.recycle_count,
+            "carte_per_seme": self.final_carte_per_seme,
+            "semi_completati": self.final_semi_completati,
+            "total_foundation_cards": total_foundation_cards,
+            "completion_percentage": completion_pct
         }
     
     # ========================================
