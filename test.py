@@ -138,7 +138,8 @@ class SolitarioController:
         
         # Dialog manager will be passed to options_controller in run()
         
-        # State flags (v2.0.1 - simplified with ViewManager)
+        # State flags (v2.0.1 - hybrid legacy + ViewManager)
+        self.is_menu_open = True  # App starts in menu
         self.is_options_mode = False
         self._timer_expired_announced = False
         
@@ -176,6 +177,7 @@ class SolitarioController:
         """
         if self.view_manager:
             self.view_manager.push_view('gameplay')
+            self.is_menu_open = False  # Sync flag: now in gameplay
             # Initialize game
             self.engine.reset_game()
             self.engine.new_game()
@@ -195,6 +197,7 @@ class SolitarioController:
         """
         if self.view_manager:
             self.view_manager.pop_view()
+            self.is_menu_open = True  # Sync flag: back in menu
             
             if self.screen_reader:
                 self.screen_reader.tts.speak(
@@ -290,18 +293,10 @@ class SolitarioController:
         
         if wants_rematch:
             print("→ User chose rematch - Starting new game")
-            self.start_game()
+            self.start_gameplay()
         else:
-            print("→ User declined rematch - Returning to game submenu")
-            self.is_menu_open = True
-            
-            if self.screen_reader:
-                self.screen_reader.tts.speak(
-                    "Ritorno al menu di gioco.",
-                    interrupt=True
-                )
-                wx.MilliSleep(400)
-                self.game_submenu.announce_welcome()
+            print("→ User declined rematch - Returning to menu")
+            self.return_to_menu()
         
         print("="*60)
     
@@ -324,30 +319,38 @@ class SolitarioController:
         print("Finestra opzioni aperta.")
         print("="*60)
     
-    def close_options_and_return_to_menu(self) -> None:
-        """Close options window and return to game submenu."""
-        print("\n" + "="*60)
-        print("CHIUSURA OPZIONI - RITORNO AL MENU")
-        print("="*60)
-        
-        self.is_options_mode = False
-        self.is_menu_open = True
-        
-        if self.screen_reader:
-            self.screen_reader.tts.speak(
-                "Ritorno al menu di gioco.",
-                interrupt=True
-            )
-            wx.MilliSleep(300)
-            self.game_submenu._announce_menu_open()
+    # DEPRECATED v2.0.1: Legacy method, use return_to_menu() instead
+    # def close_options_and_return_to_menu(self) -> None:
+    #     """Close options window and return to game submenu."""
+    #     print("\n" + "="*60)
+    #     print("CHIUSURA OPZIONI - RITORNO AL MENU")
+    #     print("="*60)
+    #     
+    #     self.is_options_mode = False
+    #     self.is_menu_open = True
+    #     
+    #     if self.screen_reader:
+    #         self.screen_reader.tts.speak(
+    #             "Ritorno al menu di gioco.",
+    #             interrupt=True
+    #         )
+    #         wx.MilliSleep(300)
+    #         self.game_submenu._announce_menu_open()
     
     # === TIMER MANAGEMENT ===
     
     def _check_timer_expiration(self) -> None:
         """Check timer expiration (called every second by wx.Timer)."""
         # Skip if not in gameplay mode
-        if self.is_menu_open or self.is_options_mode:
-            return
+        # PRIORITY 1: Use ViewManager if available (modern approach)
+        if self.view_manager:
+            current_view = self.view_manager.get_current_view()
+            if current_view != 'gameplay' or self.is_options_mode:
+                return
+        else:
+            # PRIORITY 2: Fallback to legacy flags during initialization
+            if self.is_menu_open or self.is_options_mode:
+                return
         
         # Skip if timer disabled
         if self.settings.max_time_game <= 0:
@@ -419,12 +422,8 @@ class SolitarioController:
             self.screen_reader.tts.speak(defeat_msg, interrupt=True)
             wx.MilliSleep(2000)
         
-        self.is_menu_open = True
         self._timer_expired_announced = False
-        
-        if self.screen_reader:
-            wx.MilliSleep(500)
-            self.game_submenu.announce_welcome()
+        self.return_to_menu()
     
     # === EVENT HANDLERS (v2.0.1 - Simplified with ViewManager) ===
     
