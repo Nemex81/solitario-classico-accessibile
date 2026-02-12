@@ -92,17 +92,17 @@ Il piano completo contiene:
 - [x] Commit: `feat(infrastructure): Add wx_frame.py event sink`
 
 #### Task 1.3: Creare `wx_menu.py`
-- [ ] Creare file `src/infrastructure/ui/wx_menu.py`
-- [ ] Implementare classe `WxVirtualMenu`
-- [ ] Metodi: `next_item()`, `prev_item()`, `execute()`, `handle_key_event()`
-- [ ] Navigazione UP/DOWN con wrap-around
-- [ ] Feedback TTS per ogni azione
-- [ ] Testing: Menu annuncia apertura
-- [ ] Testing: UP/DOWN navigano correttamente
-- [ ] Testing: ENTER esegue callback
-- [ ] Testing: Wrap-around (ultimo→primo)
-- [ ] Verifica API compatibile con `infrastructure/ui/menu.py` esistente
-- [ ] Commit: `feat(infrastructure): Add wx_menu.py virtual menu`
+- [x] Creare file `src/infrastructure/ui/wx_menu.py`
+- [x] Implementare classe `WxVirtualMenu`
+- [x] Metodi: `next_item()`, `prev_item()`, `execute()`, `handle_key_event()`
+- [x] Navigazione UP/DOWN con wrap-around
+- [x] Feedback TTS per ogni azione
+- [x] Testing: Menu annuncia apertura
+- [x] Testing: UP/DOWN navigano correttamente
+- [x] Testing: ENTER esegue callback
+- [x] Testing: Wrap-around (ultimo→primo)
+- [x] Verifica API compatibile con `infrastructure/ui/menu.py` esistente
+- [x] Commit: `feat(infrastructure): Add wx_menu.py virtual menu`
 
 ---
 
