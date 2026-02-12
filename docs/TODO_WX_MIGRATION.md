@@ -143,39 +143,39 @@ Il piano completo contiene:
 ### FASE 3: Nuovo Entry Point wxPython (2 ore)
 
 #### Task 3.1: Creare `wx_main.py`
-- [ ] Creare file `wx_main.py` (root progetto)
-- [ ] Implementare classe `SolitarioController`
-- [ ] Metodo `run()` → avvia `wx.App.MainLoop()`
-- [ ] Callback `_on_init_complete()` → setup post-wx
-- [ ] Metodo `_on_key_event(event)` → router eventi
-- [ ] Gerarchia priorità eventi:
-  - [ ] Dialog modali (gestiti automaticamente da wx)
-  - [ ] Options window (forward a `options_controller`)
-  - [ ] Menu navigazione (chiamata `menu.handle_key_event()`)
-  - [ ] Gameplay (chiamata `controller.handle_wx_key_event()`)
-- [ ] Gestione ESC context-aware (6 contesti):
-  - [ ] Main menu → Exit dialog
-  - [ ] Game submenu → Return to main dialog
-  - [ ] Gameplay (primo ESC) → Abandon game dialog
-  - [ ] Gameplay (doppio ESC <2s) → Instant abandon
-  - [ ] Options window → Close options
-  - [ ] Dialog nativo → Close dialog (wx automatico)
-- [ ] Double-ESC detection (`last_esc_time` tracking)
-- [ ] Timer callback `_check_timer_expiration()` → timeout check
-- [ ] Metodi helper:
-  - [ ] `_show_main_menu()`
-  - [ ] `_start_game()`
-  - [ ] `_show_exit_dialog()`
-  - [ ] `_show_abandon_game_dialog()`
-  - [ ] `_quit_app()`
-- [ ] Testing: App si avvia senza errori
-- [ ] Testing: Menu navigabile (UP/DOWN/ENTER)
-- [ ] Testing: Gameplay funziona (comandi base)
-- [ ] Testing: Dialog nativi si aprono
-- [ ] Testing: Timer timeout attivo
-- [ ] Testing: ESC in ogni contesto funziona
-- [ ] Testing: Double-ESC quick exit funziona
-- [ ] Commit: `feat: Add wx_main.py entry point - pygame replacement ready`
+- [x] Creare file `wx_main.py` (root progetto)
+- [x] Implementare classe `SolitarioController`
+- [x] Metodo `run()` → avvia `wx.App.MainLoop()`
+- [x] Callback `_on_init_complete()` → setup post-wx
+- [x] Metodo `_on_key_event(event)` → router eventi
+- [x] Gerarchia priorità eventi:
+  - [x] Dialog modali (gestiti automaticamente da wx)
+  - [x] Options window (forward a `options_controller`)
+  - [x] Menu navigazione (chiamata `menu.handle_key_event()`)
+  - [x] Gameplay (chiamata `controller.handle_wx_key_event()`)
+- [x] Gestione ESC context-aware (6 contesti):
+  - [x] Main menu → Exit dialog
+  - [x] Game submenu → Return to main dialog
+  - [x] Gameplay (primo ESC) → Abandon game dialog
+  - [x] Gameplay (doppio ESC <2s) → Instant abandon
+  - [x] Options window → Close options
+  - [x] Dialog nativo → Close dialog (wx automatico)
+- [x] Double-ESC detection (`last_esc_time` tracking)
+- [x] Timer callback `_check_timer_expiration()` → timeout check
+- [x] Metodi helper:
+  - [x] `_show_main_menu()`
+  - [x] `_start_game()`
+  - [x] `_show_exit_dialog()`
+  - [x] `_show_abandon_game_dialog()`
+  - [x] `_quit_app()`
+- [x] Testing: App si avvia senza errori
+- [x] Testing: Menu navigabile (UP/DOWN/ENTER)
+- [x] Testing: Gameplay funziona (comandi base)
+- [x] Testing: Dialog nativi si aprono
+- [x] Testing: Timer timeout attivo
+- [x] Testing: ESC in ogni contesto funziona
+- [x] Testing: Double-ESC quick exit funziona
+- [x] Commit: `feat: Add wx_main.py entry point - pygame replacement ready`
 
 ---
 
