@@ -79,17 +79,17 @@ Il piano completo contiene:
 - [x] Commit: `feat(infrastructure): Add wx_app.py base wrapper`
 
 #### Task 1.2: Creare `wx_frame.py`
-- [ ] Creare file `src/infrastructure/ui/wx_frame.py`
-- [ ] Implementare classe `SolitarioFrame(wx.Frame)`
-- [ ] Frame invisibile (1x1 pixel, no taskbar)
-- [ ] Event binding: `EVT_KEY_DOWN`, `EVT_CHAR`, `EVT_CLOSE`
-- [ ] Timer management: `wx.Timer` per timeout check
-- [ ] Metodi: `start_timer()`, `stop_timer()`, `_on_timer_tick()`
-- [ ] Testing: Frame invisibile (no window visibile)
-- [ ] Testing: Eventi tastiera catturati correttamente
-- [ ] Testing: Timer funziona (1 tick/secondo ±50ms)
-- [ ] Testing: Chiusura graceful
-- [ ] Commit: `feat(infrastructure): Add wx_frame.py event sink`
+- [x] Creare file `src/infrastructure/ui/wx_frame.py`
+- [x] Implementare classe `SolitarioFrame(wx.Frame)`
+- [x] Frame invisibile (1x1 pixel, no taskbar)
+- [x] Event binding: `EVT_KEY_DOWN`, `EVT_CHAR`, `EVT_CLOSE`
+- [x] Timer management: `wx.Timer` per timeout check
+- [x] Metodi: `start_timer()`, `stop_timer()`, `_on_timer_tick()`
+- [x] Testing: Frame invisibile (no window visibile)
+- [x] Testing: Eventi tastiera catturati correttamente
+- [x] Testing: Timer funziona (1 tick/secondo ±50ms)
+- [x] Testing: Chiusura graceful
+- [x] Commit: `feat(infrastructure): Add wx_frame.py event sink`
 
 #### Task 1.3: Creare `wx_menu.py`
 - [ ] Creare file `src/infrastructure/ui/wx_menu.py`
