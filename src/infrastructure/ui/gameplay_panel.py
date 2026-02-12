@@ -1,15 +1,15 @@
-"""GameplayView - Audiogame view for gameplay (hs_deckmanager pattern).
+"""GameplayPanel - Audiogame panel for gameplay (single-frame pattern).
 
-This module provides the gameplay view which is essentially invisible (audiogame
+This module provides the gameplay panel which is essentially invisible (audiogame
 mode) but captures all keyboard input and routes it to GameplayController.
 
-Pattern: hs_deckmanager GameplayView
+Pattern: Single-frame panel-swap (wxPython standard)
 Clean Architecture Layer: Infrastructure/UI
 Dependency: wxPython 4.1.x+
 Platform: Windows (primary), Linux (tested), macOS (untested)
 
 Usage:
-    >>> gameplay = GameplayView(parent=None, controller=my_ctrl)
+    >>> gameplay = GameplayPanel(parent=frame.panel_container, controller=my_ctrl)
     >>> gameplay.Show()
     # User presses H → GameplayController.handle_wx_key_event(H)
     # User presses ESC → _handle_esc() with double-ESC detection
@@ -17,11 +17,11 @@ Usage:
 
 import wx
 import time
-from .basic_view import BasicView
+from .basic_panel import BasicPanel
 
 
-class GameplayView(BasicView):
-    """Gameplay view for audiogame mode (hs_deckmanager pattern).
+class GameplayPanel(BasicPanel):
+    """Gameplay panel for audiogame mode (single-frame pattern).
     
     Provides minimal UI (just a label) but captures all keyboard events
     and routes them to GameplayController. Implements double-ESC detection
@@ -41,27 +41,27 @@ class GameplayView(BasicView):
     
     Example:
         >>> controller = SolitarioController()
-        >>> gameplay = GameplayView(None, controller)
+        >>> gameplay = GameplayPanel(parent=frame.panel_container, controller=controller)
         >>> gameplay.Show()
         # User presses 1 → Handled by GameplayController
         # User presses H → Shows help
         # User presses ESC twice → Instant abandon
     
     Note:
-        Based on hs_deckmanager pattern. All gameplay logic remains in
-        GameplayController - this view is just a keyboard event sink.
+        Based on wxPython single-frame pattern. All gameplay logic remains in
+        GameplayController - this panel is just a keyboard event sink.
     """
     
     # Double-ESC threshold in seconds
     DOUBLE_ESC_THRESHOLD = 2.0
     
     def __init__(self, parent, controller, **kwargs):
-        """Initialize GameplayView with controller.
+        """Initialize GameplayPanel with controller.
         
         Args:
-            parent: Parent frame (None for independent window)
+            parent: Parent panel container (frame.panel_container)
             controller: Application controller with gameplay_controller attribute
-            **kwargs: Additional arguments passed to BasicView
+            **kwargs: Additional arguments passed to BasicPanel
         
         Attributes:
             last_esc_time: Timestamp of last ESC press (for double-ESC detection)
@@ -78,8 +78,6 @@ class GameplayView(BasicView):
         super().__init__(
             parent=parent,
             controller=controller,
-            title="Solitario - Partita in corso",
-            size=(400, 300),
             **kwargs
         )
     
@@ -95,10 +93,11 @@ class GameplayView(BasicView):
         Note:
             This is just a placeholder. Real audiogame has no visual UI,
             but wxPython requires some window content for proper operation.
+            Parent is self (not self.panel) in single-frame pattern.
         """
         # Simple label (audiogame mode - no visual gameplay)
         label = wx.StaticText(
-            self.panel,
+            self,
             label="Partita in corso\n\nPremi H per comandi disponibili"
         )
         label.SetFont(wx.Font(12, wx.DEFAULT, wx.NORMAL, wx.NORMAL))
@@ -199,4 +198,4 @@ class GameplayView(BasicView):
 
 
 # Module-level documentation
-__all__ = ['GameplayView']
+__all__ = ['GameplayPanel']

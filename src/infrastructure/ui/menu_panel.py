@@ -1,27 +1,27 @@
-"""MenuView - Native wxPython menu with button widgets (hs_deckmanager pattern).
+"""MenuPanel - Native wxPython menu with button widgets (single-frame pattern).
 
-This module provides the main menu view using real wx.Button widgets instead
+This module provides the main menu panel using real wx.Button widgets instead
 of virtual text-based navigation. Improves NVDA accessibility with native
 focus management.
 
-Pattern: hs_deckmanager MenuView
+Pattern: Single-frame panel-swap (wxPython standard)
 Clean Architecture Layer: Infrastructure/UI
 Dependency: wxPython 4.1.x+
 Platform: Windows (primary), Linux (tested), macOS (untested)
 
 Usage:
-    >>> menu = MenuView(parent=None, controller=my_ctrl)
+    >>> menu = MenuPanel(parent=frame.panel_container, controller=my_ctrl)
     >>> menu.Show()
     # User navigates with TAB, activates with ENTER
     # NVDA announces button labels on focus
 """
 
 import wx
-from .basic_view import BasicView
+from .basic_panel import BasicPanel
 
 
-class MenuView(BasicView):
-    """Main menu view with native wxPython buttons (hs_deckmanager pattern).
+class MenuPanel(BasicPanel):
+    """Main menu panel with native wxPython buttons (single-frame pattern).
     
     Replaces pygame-based virtual menu with real wx.Button widgets that are
     navigable via TAB and accessible to screen readers.
@@ -40,39 +40,37 @@ class MenuView(BasicView):
     
     Example:
         >>> controller = SolitarioController()
-        >>> menu = MenuView(None, controller)
+        >>> menu = MenuPanel(parent=frame.panel_container, controller=controller)
         >>> menu.Show()
         # User presses TAB → NVDA announces "Gioca al solitario classico"
         # User presses ENTER → calls controller.start_gameplay()
     
     Note:
-        Based on hs_deckmanager HearthstoneAppFrame pattern.
+        Based on wxPython single-frame panel-swap pattern.
         Requires controller with methods: start_gameplay(), show_options(),
         show_exit_dialog().
     """
     
     def __init__(self, parent, controller, **kwargs):
-        """Initialize MenuView with controller.
+        """Initialize MenuPanel with controller.
         
         Args:
-            parent: Parent frame (None for independent window)
+            parent: Parent panel container (frame.panel_container)
             controller: Application controller with menu action methods
-            **kwargs: Additional arguments passed to BasicView
+            **kwargs: Additional arguments passed to BasicPanel
         
         Note:
-            Automatically shows menu with focus on first button and
-            announces "Menu principale. 3 opzioni disponibili."
+            Automatically announces "Menu principale. 3 opzioni disponibili."
+            after initialization.
         """
         super().__init__(
             parent=parent,
             controller=controller,
-            title="Solitario Classico Accessibile - Menu",
-            size=(600, 400),
             **kwargs
         )
     
     def init_ui_elements(self) -> None:
-        """Create menu buttons with accessibility (hs_deckmanager pattern).
+        """Create menu buttons with accessibility (single-frame pattern).
         
         Creates:
         - Title label (bold, 16pt)
@@ -92,26 +90,27 @@ class MenuView(BasicView):
         Note:
             Buttons are expanded horizontally with wx.EXPAND flag.
             Focus announcements use self.announce() for TTS.
+            Parent is self (not self.panel) in single-frame pattern.
         """
         # Title label (bold, 16pt)
-        title = wx.StaticText(self.panel, label="Menu Principale")
+        title = wx.StaticText(self, label="Menu Principale")
         title.SetFont(wx.Font(16, wx.DEFAULT, wx.NORMAL, wx.BOLD))
         self.sizer.Add(title, flag=wx.CENTER | wx.TOP, border=20)
         
         # Create buttons
-        btn_play = wx.Button(self.panel, label="Gioca al solitario classico")
+        btn_play = wx.Button(self, label="Gioca al solitario classico")
         btn_play.Bind(wx.EVT_BUTTON, self.on_play_click)
         btn_play.Bind(wx.EVT_SET_FOCUS, self.on_button_focus)
         
-        btn_options = wx.Button(self.panel, label="Opzioni di gioco")
+        btn_options = wx.Button(self, label="Opzioni di gioco")
         btn_options.Bind(wx.EVT_BUTTON, self.on_options_click)
         btn_options.Bind(wx.EVT_SET_FOCUS, self.on_button_focus)
         
-        btn_exit = wx.Button(self.panel, label="Esci dal gioco")
+        btn_exit = wx.Button(self, label="Esci dal gioco")
         btn_exit.Bind(wx.EVT_BUTTON, self.on_exit_click)
         btn_exit.Bind(wx.EVT_SET_FOCUS, self.on_button_focus)
         
-        # Add buttons to vertical sizer (hs_deckmanager layout)
+        # Add buttons to vertical sizer
         btn_sizer = wx.BoxSizer(wx.VERTICAL)
         for btn in [btn_play, btn_options, btn_exit]:
             btn_sizer.Add(btn, 0, wx.ALL | wx.EXPAND, 20)
@@ -196,4 +195,4 @@ class MenuView(BasicView):
 
 
 # Module-level documentation
-__all__ = ['MenuView']
+__all__ = ['MenuPanel']
