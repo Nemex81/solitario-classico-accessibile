@@ -130,8 +130,23 @@ Il progetto segue una **Clean Architecture** (implementata in branch `refactorin
 │  (Models: Card/Deck/Table, Rules, Services - Pure BL)   │
 ├─────────────────────────────────────────────────────────┤
 │                INFRASTRUCTURE LAYER                      │
-│  (ScreenReader, TTS, Menu, DI Container - Adapters)     │
+│  (ScreenReader, TTS, wxPython UI, DI Container)         │
 └─────────────────────────────────────────────────────────┘
+```
+
+### UI Architecture (v1.7.3)
+
+**Single-Frame Panel-Swap Pattern** (wxPython standard):
+- **1 Frame**: `SolitarioFrame` (600x450, visible and centered)
+- **Panel Container**: Hosts multiple panels
+- **Panel Swap**: MenuPanel ↔ GameplayPanel via Show/Hide
+- **Benefits**: Native TAB navigation, proper NVDA focus, standard wxPython UX
+
+```
+SolitarioFrame (single window)
+└── panel_container (wx.Panel)
+    ├── MenuPanel (wx.Panel - shown/hidden)
+    └── GameplayPanel (wx.Panel - shown/hidden)
 ```
 
 ### Struttura Directory
@@ -154,7 +169,7 @@ solitario-classico-accessibile/
 │   ├── infrastructure/      # External adapters
 │   │   ├── accessibility/   # ScreenReader + TTS
 │   │   ├── storage/         # ScoreStorage (JSON)
-│   │   ├── ui/             # PyGame Menu
+│   │   ├── ui/             # wxPython single-frame UI
 │   │   └── di_container.py # Dependency Injection
 │   └── presentation/        # Output formatting
 │       └── formatters/      # GameFormatter, ScoreFormatter

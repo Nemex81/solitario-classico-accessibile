@@ -7,6 +7,41 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 ---
 
+## [1.7.3] - 2026-02-13
+
+### Changed
+- **REFACTOR**: Migrated to single-frame panel-swap architecture (wxPython standard pattern)
+  - Fixed dual-window issue (2 separate windows at startup)
+  - Enabled native TAB navigation in menu
+  - Improved NVDA screen reader integration
+  
+#### Architecture Changes
+- `BasicView(wx.Frame)` → `BasicPanel(wx.Panel)`: Views are now panels, not independent windows
+- `ViewManager`: Changed from frame stack (push/pop) to panel dictionary (show/hide)
+- `SolitarioFrame`: Now single visible window (600x450) with `panel_container`
+- `MenuView` → `MenuPanel`: Native button-based menu as panel
+- `GameplayView` → `GameplayPanel`: Audiogame interface as panel
+
+#### Benefits
+- ✅ **Single Window**: Only one frame visible (no more dual-window confusion)
+- ✅ **TAB Navigation**: Native wx focus management works correctly
+- ✅ **Better UX**: Standard wxPython behavior (minimize/maximize, ALT+TAB)
+- ✅ **NVDA Optimized**: Proper focus announcements
+- ✅ **Cleaner Code**: Panel-swap is simpler than frame stack
+
+#### Technical Details
+- 3 atomic commits: base components, view components, controller integration
+- Files renamed: `basic_view.py`, `menu_view.py`, `gameplay_view.py` → `*_panel.py`
+- API changes: `push_view()` → `show_panel()`, `pop_view()` → `show_panel(name)`
+- No breaking changes for users (same keyboard commands, same functionality)
+
+### References
+- Issue #59: wxPython single-frame refactoring
+- Pattern: Single-frame panel-swap (wxPython best practices)
+- Documentation: `docs/REFACTOR_SINGLE_FRAME_PANEL_SWAP.md`
+
+---
+
 ## [1.7.1] - 2026-02-12
 
 ### Fixed
