@@ -36,8 +36,8 @@ from src.infrastructure.ui.wx_app import SolitarioWxApp
 from src.infrastructure.ui.wx_frame import SolitarioFrame
 from src.infrastructure.ui.wx_menu import WxVirtualMenu
 from src.infrastructure.ui.view_manager import ViewManager
-from src.infrastructure.ui.menu_view import MenuView
-from src.infrastructure.ui.gameplay_view import GameplayView
+from src.infrastructure.ui.menu_panel import MenuPanel
+from src.infrastructure.ui.gameplay_panel import GameplayPanel
 
 # Infrastructure layer - Accessibility
 from src.infrastructure.accessibility.screen_reader import ScreenReader
@@ -167,16 +167,16 @@ class SolitarioController:
     # === MENU HANDLERS (v2.0.1 - Updated for ViewManager) ===
     
     def start_gameplay(self) -> None:
-        """Start gameplay (called from MenuView).
+        """Start gameplay (called from MenuPanel).
         
-        Pushes GameplayView onto ViewManager stack, initializing new game.
-        MenuView is hidden but kept alive for return.
+        Shows GameplayPanel via ViewManager, initializing new game.
+        MenuPanel is hidden but remains in memory.
         
         Note:
-            This replaces the old handle_menu_selection logic.
+            Uses show_panel() instead of push_view() (panel-swap pattern).
         """
         if self.view_manager:
-            self.view_manager.push_view('gameplay')
+            self.view_manager.show_panel('gameplay')
             self.is_menu_open = False  # Sync flag: now in gameplay
             # Initialize game
             self.engine.reset_game()
@@ -190,13 +190,13 @@ class SolitarioController:
                 )
     
     def return_to_menu(self) -> None:
-        """Return from gameplay to menu (pop GameplayView).
+        """Return from gameplay to menu (show MenuPanel).
         
-        Pops current view (GameplayView) and restores MenuView.
+        Shows MenuPanel and hides GameplayPanel.
         Called after game abandonment or completion.
         """
         if self.view_manager:
-            self.view_manager.pop_view()
+            self.view_manager.show_panel('menu')
             self.is_menu_open = True  # Sync flag: back in menu
             
             if self.screen_reader:
@@ -455,7 +455,7 @@ class SolitarioController:
     def run(self) -> None:
         """Start wxPython application and enter main loop.
         
-        Creates wxPython app, invisible frame, and starts timer.
+        Creates wxPython app, visible frame, and starts timer.
         Blocks until application closes.
         """
         print("\nAvvio wxPython MainLoop()...")
@@ -463,15 +463,14 @@ class SolitarioController:
         # Create wxPython app
         def on_init(app):
             """Callback after wx.App initialization."""
-            # Create visible frame for event capture (hs_deckmanager pattern)
-            # Note: Frame no longer routes keys - views handle their own
+            # Create visible frame (single-frame pattern)
+            # Note: Frame no longer routes keys - panels handle their own
             self.frame = SolitarioFrame(
-                on_key_event=None,  # Views handle keyboard events
                 on_timer_tick=self._on_timer_tick,
                 on_close=self._on_frame_close
             )
             
-            # Initialize dialog manager with parent frame (v2.0.1 - hs_deckmanager pattern)
+            # Initialize dialog manager with parent frame (v1.7.3 - single-frame pattern)
             print("Inizializzazione dialog manager con parent frame...")
             from src.infrastructure.ui.wx_dialog_provider import WxDialogProvider
             dialog_provider = WxDialogProvider(parent_frame=self.frame)
@@ -484,30 +483,33 @@ class SolitarioController:
             # Pass dialog_manager to options_controller
             self.gameplay_controller.options_controller.dialog_manager = self.dialog_manager
             
-            # Initialize ViewManager (v2.0.1 - hs_deckmanager pattern)
+            # Initialize ViewManager (v1.7.3 - single-frame panel-swap pattern)
             print("Inizializzazione ViewManager...")
             self.view_manager = ViewManager(self.frame)
             
-            # Register view factories
-            self.view_manager.register_view(
-                'menu',
-                lambda parent: MenuView(parent, controller=self)
+            # Create panels as children of frame.panel_container
+            print("Creazione panels...")
+            menu_panel = MenuPanel(
+                parent=self.frame.panel_container,
+                controller=self
             )
-            self.view_manager.register_view(
-                'gameplay',
-                lambda parent: GameplayView(parent, controller=self)
+            gameplay_panel = GameplayPanel(
+                parent=self.frame.panel_container,
+                controller=self
             )
-            print("✓ ViewManager pronto (menu, gameplay registrati)")
             
-            # Push initial menu view
+            # Register panels with ViewManager
+            self.view_manager.register_panel('menu', menu_panel)
+            self.view_manager.register_panel('gameplay', gameplay_panel)
+            print("✓ ViewManager pronto (menu, gameplay panels registrati)")
+            
+            # Show initial menu panel
             print("Apertura menu iniziale...")
-            self.view_manager.push_view('menu')
+            self.view_manager.show_panel('menu')
             print("✓ Menu visualizzato")
             
             # Start timer (1 second interval)
             self.frame.start_timer(1000)
-            
-            # Frame is already shown and minimized by __init__
         
         self.app = SolitarioWxApp(on_init_complete=on_init)
         
