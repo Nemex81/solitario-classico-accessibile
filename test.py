@@ -35,6 +35,9 @@ from src.domain.services.game_settings import GameSettings
 from src.infrastructure.ui.wx_app import SolitarioWxApp
 from src.infrastructure.ui.wx_frame import SolitarioFrame
 from src.infrastructure.ui.wx_menu import WxVirtualMenu
+from src.infrastructure.ui.view_manager import ViewManager
+from src.infrastructure.ui.menu_view import MenuView
+from src.infrastructure.ui.gameplay_view import GameplayView
 
 # Infrastructure layer - Accessibility
 from src.infrastructure.accessibility.screen_reader import ScreenReader
@@ -55,19 +58,18 @@ class SolitarioController:
     
     Attributes:
         app: SolitarioWxApp (wxPython application)
-        frame: SolitarioFrame (invisible 1x1 event sink)
+        frame: SolitarioFrame (visible minimized frame)
+        view_manager: ViewManager for multi-window stack
         screen_reader: ScreenReader with TTS provider
         settings: GameSettings for configuration
         engine: GameEngine facade for game logic
         gameplay_controller: Keyboard command orchestrator
         dialog_manager: wxDialog provider for native dialogs
-        menu: WxVirtualMenu (main menu)
-        game_submenu: WxVirtualMenu (secondary menu)
         
         # State flags
-        is_menu_open: Current UI state (True = menu, False = gameplay/options)
+        is_menu_open: DEPRECATED - use view_manager instead
         is_options_mode: Options window active
-        last_esc_time: Timestamp for double-ESC detection
+        last_esc_time: DEPRECATED - moved to GameplayView
         _timer_expired_announced: Prevents repeated timeout messages
     
     Example:
@@ -136,44 +138,14 @@ class SolitarioController:
         
         # Dialog manager will be passed to options_controller in run()
         
-        # Infrastructure: Virtual menu hierarchy (wxPython version)
-        print("Inizializzazione menu...")
-        
-        # Main menu
-        self.menu = WxVirtualMenu(
-            items=[
-                "Gioca al solitario classico",
-                "Esci dal gioco"
-            ],
-            callback=self.handle_menu_selection,
-            screen_reader=self.screen_reader
-        )
-        
-        # Game submenu with welcome message
-        self.game_submenu = WxVirtualMenu(
-            items=[
-                "Nuova partita",
-                "Opzioni",
-                "Chiudi"
-            ],
-            callback=self.handle_game_submenu_selection,
-            screen_reader=self.screen_reader,
-            parent_menu=self.menu,
-            welcome_message="Benvenuto nel menu di gioco del Solitario Classico!",
-            show_controls_hint=True
-        )
-        
-        print("✓ Menu pronto")
-        
-        # State flags
-        self.is_menu_open = True
+        # State flags (v2.0.1 - simplified with ViewManager)
         self.is_options_mode = False
-        self.last_esc_time = 0
         self._timer_expired_announced = False
         
         # wxPython components (created in run())
         self.app: SolitarioWxApp = None
         self.frame: SolitarioFrame = None
+        self.view_manager: ViewManager = None
         
         print("="*60)
         print("✓ Applicazione avviata con successo!")
@@ -191,33 +163,67 @@ class SolitarioController:
             tts = DummyTTS()
         return DummySR()
     
-    # === MENU HANDLERS ===
+    # === MENU HANDLERS (v2.0.1 - Updated for ViewManager) ===
     
-    def handle_menu_selection(self, index: int) -> None:
-        """Handle main menu selection."""
-        if index == 0:  # "Gioca"
-            self.menu.open_submenu(self.game_submenu)
-            self.game_submenu.announce_welcome()
-        elif index == 1:  # "Esci"
-            self.show_exit_dialog()
+    def start_gameplay(self) -> None:
+        """Start gameplay (called from MenuView).
+        
+        Pushes GameplayView onto ViewManager stack, initializing new game.
+        MenuView is hidden but kept alive for return.
+        
+        Note:
+            This replaces the old handle_menu_selection logic.
+        """
+        if self.view_manager:
+            self.view_manager.push_view('gameplay')
+            # Initialize game
+            self.engine.reset_game()
+            self.engine.new_game()
+            self._timer_expired_announced = False
+            
+            if self.screen_reader:
+                self.screen_reader.tts.speak(
+                    "Nuova partita avviata! Usa H per l'aiuto comandi.",
+                    interrupt=True
+                )
     
-    def handle_game_submenu_selection(self, index: int) -> None:
-        """Handle game submenu selection."""
-        if index == 0:  # "Nuova partita"
-            # Check if game is running
-            if self.engine.service.get_elapsed_time() > 0 and not self.engine.is_game_over():
-                self.show_new_game_dialog()
-            else:
-                self._start_new_game()
-        elif index == 1:  # "Opzioni"
-            self.open_options()
-        elif index == 2:  # "Chiudi"
-            self.show_return_to_main_dialog()
+    def return_to_menu(self) -> None:
+        """Return from gameplay to menu (pop GameplayView).
+        
+        Pops current view (GameplayView) and restores MenuView.
+        Called after game abandonment or completion.
+        """
+        if self.view_manager:
+            self.view_manager.pop_view()
+            
+            if self.screen_reader:
+                self.screen_reader.tts.speak(
+                    "Ritorno al menu di gioco.",
+                    interrupt=True
+                )
     
-    # === DIALOG HANDLERS ===
+    def show_options(self) -> None:
+        """Show options window (called from MenuView).
+        
+        Opens options controller window. This doesn't use ViewManager
+        because options is a modal-ish dialog-style window.
+        """
+        print("\n" + "="*60)
+        print("APERTURA FINESTRA OPZIONI")
+        print("="*60)
+        
+        self.is_options_mode = True
+        
+        msg = self.gameplay_controller.options_controller.open_window()
+        
+        if self.screen_reader:
+            self.screen_reader.tts.speak(msg, interrupt=True)
+        
+        print("Finestra opzioni aperta.")
+        print("="*60)
     
     def show_exit_dialog(self) -> None:
-        """Show exit confirmation dialog."""
+        """Show exit confirmation dialog (called from MenuView)."""
         result = self.dialog_manager.show_yes_no(
             "Vuoi davvero uscire dal gioco?",
             "Conferma uscita"
@@ -225,96 +231,32 @@ class SolitarioController:
         if result:
             self.quit_app()
     
-    def show_return_to_main_dialog(self) -> None:
-        """Show return to main menu confirmation."""
-        result = self.dialog_manager.show_yes_no(
-            "Vuoi tornare al menu principale?",
-            "Conferma"
-        )
-        if result:
-            self.game_submenu.close()
-    
     def show_abandon_game_dialog(self) -> None:
-        """Show abandon game confirmation."""
+        """Show abandon game confirmation dialog (called from GameplayView)."""
         result = self.dialog_manager.show_yes_no(
-            "Vuoi abbandonare la partita corrente?",
-            "Abbandona partita"
+            "Vuoi abbandonare la partita e tornare al menu di gioco?",
+            "Abbandono Partita"
         )
         if result:
-            self.confirm_abandon_game()
+            self.return_to_menu()
     
-    def show_new_game_dialog(self) -> None:
-        """Show new game confirmation when game is active."""
-        result = self.dialog_manager.show_yes_no(
-            "C'è già una partita in corso. Vuoi abbandonarla e iniziare una nuova partita?",
-            "Nuova partita"
-        )
-        if result:
-            self._confirm_new_game()
-        else:
-            self._cancel_new_game()
-    
-    def _confirm_new_game(self) -> None:
-        """Callback: User confirmed new game."""
-        if self.screen_reader:
-            self.screen_reader.tts.speak(
-                "Partita precedente abbandonata.",
-                interrupt=True
-            )
-            wx.MilliSleep(300)
-        self._start_new_game()
-    
-    def _cancel_new_game(self) -> None:
-        """Callback: User cancelled new game."""
-        if self.screen_reader:
-            self.screen_reader.tts.speak(
-                "Azione annullata. Torno alla partita.",
-                interrupt=True
-            )
-            wx.MilliSleep(300)
-    
-    def confirm_abandon_game(self) -> None:
-        """Abandon current game and return to menu."""
-        if self.screen_reader:
+    def confirm_abandon_game(self, skip_dialog: bool = False) -> None:
+        """Abandon game immediately without dialog (double-ESC from GameplayView).
+        
+        Args:
+            skip_dialog: If True, skips confirmation (for double-ESC)
+        """
+        if self.screen_reader and skip_dialog:
             self.screen_reader.tts.speak(
                 "Partita abbandonata.",
                 interrupt=True
             )
             wx.MilliSleep(300)
         
-        self.is_menu_open = True
-        self.last_esc_time = 0
         self._timer_expired_announced = False
-        
-        if self.screen_reader:
-            self.game_submenu.announce_welcome()
+        self.return_to_menu()
     
-    # === GAME LIFECYCLE ===
-    
-    def _start_new_game(self) -> None:
-        """Start new game without confirmation."""
-        self.is_menu_open = False
-        self.start_game()
-    
-    def start_game(self) -> None:
-        """Start new game session."""
-        print("\n" + "="*60)
-        print("AVVIO PARTITA")
-        print("="*60)
-        
-        self.engine.reset_game()
-        self.engine.new_game()
-        self.last_esc_time = 0
-        self._timer_expired_announced = False
-        
-        if self.screen_reader:
-            self.screen_reader.tts.speak(
-                "Nuova partita avviata! Usa H per l'aiuto comandi.",
-                interrupt=True
-            )
-        
-        print("Partita in corso...")
-        print("Premi H per l'aiuto comandi.")
+    # === GAME LIFECYCLE (v2.0.1 - Updated for ViewManager) ===
         print("Premi ESC per tornare al menu (doppio ESC per uscita rapida).")
     
     def handle_game_ended(self, wants_rematch: bool) -> None:
@@ -463,74 +405,7 @@ class SolitarioController:
             wx.MilliSleep(500)
             self.game_submenu.announce_welcome()
     
-    # === EVENT ROUTING ===
-    
-    def _on_key_event(self, event: wx.KeyEvent) -> None:
-        """Main keyboard event handler (wxPython).
-        
-        Routes events based on current application state:
-        - Menu open: Route to menu navigation (with ESC interception)
-        - Options mode: Route to options controller
-        - Gameplay: Route to gameplay controller (with double-ESC detection)
-        
-        Args:
-            event: wx.KeyEvent from frame
-        
-        Note:
-            event.Skip() is called by frame, not here
-        """
-        key_code = event.GetKeyCode()
-        
-        if self.is_menu_open:
-            # ESC in main menu → Exit dialog
-            if key_code == wx.WXK_ESCAPE:
-                if self.menu._active_submenu is None:
-                    self.show_exit_dialog()
-                    return
-                elif self.menu._active_submenu == self.game_submenu:
-                    self.show_return_to_main_dialog()
-                    return
-            
-            # Normal menu navigation (delegates to submenu if active)
-            self.menu.handle_key_event(event)
-        
-        elif self.is_options_mode:
-            # Options window mode - route to gameplay controller
-            self.gameplay_controller.handle_wx_key_event(event)
-            
-            # Check if options was closed
-            if not self.gameplay_controller.options_controller.is_open:
-                self.close_options_and_return_to_menu()
-        
-        else:
-            # GAMEPLAY MODE - with double-ESC detection
-            if key_code == wx.WXK_ESCAPE:
-                if not self.gameplay_controller.options_controller.is_open:
-                    current_time = time.time()
-                    
-                    # Check for double-ESC
-                    if self.last_esc_time > 0 and current_time - self.last_esc_time <= self.DOUBLE_ESC_THRESHOLD:
-                        # Double-ESC detected - instant abandon
-                        print("\n[DOUBLE-ESC] Uscita rapida!")
-                        
-                        if self.screen_reader:
-                            self.screen_reader.tts.speak(
-                                "Uscita rapida!",
-                                interrupt=True
-                            )
-                            wx.MilliSleep(300)
-                        
-                        self.confirm_abandon_game()
-                        self.last_esc_time = 0
-                    else:
-                        # First ESC - show dialog
-                        self.last_esc_time = current_time
-                        self.show_abandon_game_dialog()
-                    
-                    return
-            
-            # Normal gameplay commands
-            self.gameplay_controller.handle_wx_key_event(event)
+    # === EVENT HANDLERS (v2.0.1 - Simplified with ViewManager) ===
     
     def _on_timer_tick(self) -> None:
         """Timer tick handler (called every 1 second)."""
@@ -569,8 +444,9 @@ class SolitarioController:
         def on_init(app):
             """Callback after wx.App initialization."""
             # Create visible frame for event capture (hs_deckmanager pattern)
+            # Note: Frame no longer routes keys - views handle their own
             self.frame = SolitarioFrame(
-                on_key_event=self._on_key_event,
+                on_key_event=None,  # Views handle keyboard events
                 on_timer_tick=self._on_timer_tick,
                 on_close=self._on_frame_close
             )
@@ -587,6 +463,26 @@ class SolitarioController:
             
             # Pass dialog_manager to options_controller
             self.gameplay_controller.options_controller.dialog_manager = self.dialog_manager
+            
+            # Initialize ViewManager (v2.0.1 - hs_deckmanager pattern)
+            print("Inizializzazione ViewManager...")
+            self.view_manager = ViewManager(self.frame)
+            
+            # Register view factories
+            self.view_manager.register_view(
+                'menu',
+                lambda parent: MenuView(parent, controller=self)
+            )
+            self.view_manager.register_view(
+                'gameplay',
+                lambda parent: GameplayView(parent, controller=self)
+            )
+            print("✓ ViewManager pronto (menu, gameplay registrati)")
+            
+            # Push initial menu view
+            print("Apertura menu iniziale...")
+            self.view_manager.push_view('menu')
+            print("✓ Menu visualizzato")
             
             # Start timer (1 second interval)
             self.frame.start_timer(1000)
