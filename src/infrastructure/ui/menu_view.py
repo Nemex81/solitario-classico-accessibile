@@ -144,7 +144,7 @@ class MenuView(BasicView):
         self.announce(button.GetLabel(), interrupt=False)
         event.Skip()
     
-    def on_play_click(self, event: wx.ButtonEvent) -> None:
+    def on_play_click(self, event: wx.CommandEvent) -> None:
         """Handle "Gioca al solitario classico" button click.
         
         Delegates to controller.start_gameplay() which should:
@@ -153,40 +153,43 @@ class MenuView(BasicView):
         3. Initialize new game
         
         Args:
-            event: wx.ButtonEvent from button click or ENTER key
+            event: wx.CommandEvent from button click or ENTER key
         
         Note:
             Controller is responsible for view management and game initialization.
+            wxPython button events are wx.CommandEvent, not wx.ButtonEvent.
         """
         if self.controller:
             self.controller.start_gameplay()
     
-    def on_options_click(self, event: wx.ButtonEvent) -> None:
+    def on_options_click(self, event: wx.CommandEvent) -> None:
         """Handle "Opzioni di gioco" button click.
         
         Delegates to controller.show_options() which should display
         the options configuration dialog or view.
         
         Args:
-            event: wx.ButtonEvent from button click or ENTER key
+            event: wx.CommandEvent from button click or ENTER key
         
         Note:
             Controller is responsible for showing options dialog.
+            wxPython button events are wx.CommandEvent, not wx.ButtonEvent.
         """
         if self.controller:
             self.controller.show_options()
     
-    def on_exit_click(self, event: wx.ButtonEvent) -> None:
+    def on_exit_click(self, event: wx.CommandEvent) -> None:
         """Handle "Esci dal gioco" button click.
         
         Delegates to controller.show_exit_dialog() which should show
         a confirmation dialog before exiting the application.
         
         Args:
-            event: wx.ButtonEvent from button click or ENTER key
+            event: wx.CommandEvent from button click or ENTER key
         
         Note:
             Controller is responsible for confirmation dialog and exit logic.
+            wxPython button events are wx.CommandEvent, not wx.ButtonEvent.
         """
         if self.controller:
             self.controller.show_exit_dialog()
