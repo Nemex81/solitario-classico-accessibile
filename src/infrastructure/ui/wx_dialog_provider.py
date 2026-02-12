@@ -48,35 +48,41 @@ class WxDialogProvider(DialogProvider):
         # Dialog is child of invisible frame, won't show in ALT+TAB
     """
     
-    def __init__(self, parent=None):
-        """Initialize with invisible wx.Frame parent (v1.6.3.2).
+    def __init__(self, parent_frame: Optional[wx.Frame] = None):
+        """Initialize with parent frame for proper modal hierarchy (v2.0.1).
         
         Args:
-            parent: IGNORED. Previous attempts used pygame HWND, but
-                    AssociateHandle() doesn't establish modal relationships.
+            parent_frame: Optional wx.Frame to use as parent for all dialogs.
+                         If None, creates invisible frame (legacy behavior).
+                         If provided, dialogs will be modal children of this frame.
         
         Note:
-            Creates invisible wx.Frame (lazy) as parent for all dialogs.
-            Frame has wx.FRAME_NO_TASKBAR to prevent ALT+TAB appearance.
-            Standard pattern for pygame+wxPython integration.
+            hs_deckmanager pattern: Always provide parent_frame for proper
+            modal relationships. Dialogs will appear over parent and won't
+            show as separate windows in ALT+TAB.
         """
         super().__init__()
-        self._parent_frame = None  # Invisible wx.Frame (lazy init)
+        self.parent_frame = parent_frame  # Store parent frame reference
+        self._parent_frame = None  # Invisible wx.Frame (lazy init, fallback)
     
     def _get_parent(self):
-        """Get invisible parent frame (lazy initialization).
+        """Get parent frame for dialogs (v2.0.1 - hs_deckmanager pattern).
         
         Returns:
-            wx.Frame: Invisible frame for dialog parenting
+            wx.Frame: Parent frame for dialog parenting
         
-        Note (v1.6.3.2):
-            Creates invisible wx.Frame with wx.FRAME_NO_TASKBAR flag.
-            This prevents the frame itself from appearing in ALT+TAB.
-            All dialogs are created as children of this frame, which
-            makes them modal and prevents ALT+TAB separation.
+        Note:
+            If parent_frame was provided in __init__, use it (preferred).
+            Otherwise, create invisible frame (legacy fallback).
             
-            Standard pattern for pygame+wxPython integration.
+            hs_deckmanager pattern: Always use explicit parent_frame for
+            proper modal hierarchy and OS focus management.
         """
+        # Use explicit parent frame if provided (hs_deckmanager pattern)
+        if self.parent_frame is not None:
+            return self.parent_frame
+        
+        # Fallback: Create invisible frame (lazy init)
         if self._parent_frame is not None:
             return self._parent_frame
         

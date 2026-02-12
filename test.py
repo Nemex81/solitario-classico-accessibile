@@ -105,13 +105,9 @@ class SolitarioController:
         self.settings = GameSettings()
         print("✓ Impostazioni pronte")
         
-        # Infrastructure: Dialog manager
-        print("Inizializzazione dialog manager...")
-        self.dialog_manager = SolitarioDialogManager()
-        if self.dialog_manager.is_available:
-            print("✓ Dialog nativi wxPython attivi")
-        else:
-            print("⚠ wxPython non disponibile, uso fallback TTS")
+        # Infrastructure: Dialog manager (v2.0.1 - initialized after frame in run())
+        # Will be set in run() after frame is created (hs_deckmanager pattern)
+        self.dialog_manager = None
         
         # Application: Game engine setup
         print("Inizializzazione motore di gioco...")
@@ -138,8 +134,7 @@ class SolitarioController:
         )
         print("✓ Controller pronto")
         
-        # Pass dialog_manager to options_controller
-        self.gameplay_controller.options_controller.dialog_manager = self.dialog_manager
+        # Dialog manager will be passed to options_controller in run()
         
         # Infrastructure: Virtual menu hierarchy (wxPython version)
         print("Inizializzazione menu...")
@@ -573,18 +568,30 @@ class SolitarioController:
         # Create wxPython app
         def on_init(app):
             """Callback after wx.App initialization."""
-            # Create invisible frame for event capture
+            # Create visible frame for event capture (hs_deckmanager pattern)
             self.frame = SolitarioFrame(
                 on_key_event=self._on_key_event,
                 on_timer_tick=self._on_timer_tick,
                 on_close=self._on_frame_close
             )
             
+            # Initialize dialog manager with parent frame (v2.0.1 - hs_deckmanager pattern)
+            print("Inizializzazione dialog manager con parent frame...")
+            from src.infrastructure.ui.wx_dialog_provider import WxDialogProvider
+            dialog_provider = WxDialogProvider(parent_frame=self.frame)
+            self.dialog_manager = SolitarioDialogManager(dialog_provider=dialog_provider)
+            if self.dialog_manager.is_available:
+                print("✓ Dialog nativi wxPython attivi (parent hierarchy corretto)")
+            else:
+                print("⚠ wxPython non disponibile, uso fallback TTS")
+            
+            # Pass dialog_manager to options_controller
+            self.gameplay_controller.options_controller.dialog_manager = self.dialog_manager
+            
             # Start timer (1 second interval)
             self.frame.start_timer(1000)
             
-            # Show frame (stays invisible due to 1x1 size)
-            self.frame.Show()
+            # Frame is already shown and minimized by __init__
         
         self.app = SolitarioWxApp(on_init_complete=on_init)
         
