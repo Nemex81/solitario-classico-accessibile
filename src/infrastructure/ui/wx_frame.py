@@ -1,12 +1,16 @@
-"""Invisible wxPython frame for keyboard event capture.
+"""Visible minimized wxPython frame for keyboard event capture.
 
-This module provides an invisible 1x1 pixel frame that acts as an event sink
-for keyboard input. Replaces pygame window with wx.Frame that doesn't appear
-in taskbar or ALT+TAB switcher.
+This module provides a visible but minimized frame that acts as the main
+application window for keyboard input. Uses hs_deckmanager pattern with
+proper OS focus handling.
+
+CRITICAL FIX (v2.0.1): Previous 1x1px invisible frame was denied focus by OS.
+Now uses 400x300px frame that is minimized to maintain OS focus.
 
 Clean Architecture Layer: Infrastructure/UI
 Dependency: wxPython 4.1.x+
 Platform: Windows (primary), Linux (tested), macOS (untested)
+Pattern: hs_deckmanager
 
 Usage:
     >>> frame = SolitarioFrame(
@@ -14,7 +18,7 @@ Usage:
     ...     on_close=lambda: cleanup()
     ... )
     >>> frame.start_timer(1000)  # 1-second interval
-    >>> frame.Show()  # Actually stays invisible due to size/style
+    >>> # Frame is shown and minimized automatically
 """
 
 import wx
@@ -22,18 +26,22 @@ from typing import Optional, Callable
 
 
 class SolitarioFrame(wx.Frame):
-    """Invisible frame for keyboard event capture.
+    """Visible minimized frame for keyboard event capture (hs_deckmanager pattern).
     
-    This frame serves as an event sink for keyboard input without displaying
-    a visible window. It's sized at 1x1 pixel with wx.FRAME_NO_TASKBAR style
-    to prevent appearance in taskbar or ALT+TAB switcher.
+    This frame serves as the main application window, sized properly for OS
+    focus handling but minimized to taskbar. Uses hs_deckmanager pattern
+    for reliable keyboard event capture.
+    
+    CRITICAL FIX: Previous 1x1px invisible frame was denied focus by OS window
+    manager. This version uses proper size (400x300) with Iconize() to minimize
+    but maintain focus capability.
     
     Features:
-    - Invisible window (1x1 pixel, no taskbar entry)
-    - Keyboard event capture (EVT_KEY_DOWN, EVT_CHAR)
+    - Visible frame (400x300px, minimized to taskbar)
+    - Global keyboard capture via EVT_CHAR_HOOK
     - Timer management (wx.Timer for periodic checks)
     - Close event handling (EVT_CLOSE)
-    - Focus handling to ensure events are captured
+    - Panel with label for identification
     
     Attributes:
         on_key_event: Callback for keyboard events
@@ -43,6 +51,7 @@ class SolitarioFrame(wx.Frame):
         on_close: Optional callback for frame closure
             Signature: callback() -> None
         timer: wx.Timer instance for periodic events (lazy init)
+        panel: wx.Panel for UI elements
     
     Example:
         >>> def handle_key(event):
@@ -59,72 +68,84 @@ class SolitarioFrame(wx.Frame):
         ...     on_close=lambda: print("Closing...")
         ... )
         >>> frame.start_timer(1000)  # 1 second interval
-        >>> frame.Show()
+        >>> # Frame is automatically shown and minimized
     
     Note:
-        Despite calling Show(), the frame remains invisible due to:
-        - 1x1 pixel size (imperceptible)
-        - wx.FRAME_NO_TASKBAR flag (no taskbar entry)
-        - No parent window (standalone but hidden)
+        Based on hs_deckmanager pattern. Frame is visible in taskbar but
+        minimized to avoid visual distraction while maintaining OS focus.
     """
     
     def __init__(
         self,
-        on_key_event: Callable[[wx.KeyEvent], None],
+        on_key_event: Optional[Callable[[wx.KeyEvent], None]] = None,
         on_timer_tick: Optional[Callable[[], None]] = None,
         on_close: Optional[Callable[[], None]] = None,
         parent: Optional[wx.Window] = None,
         id: int = wx.ID_ANY,
-        title: str = "Solitario Event Sink"
+        title: str = "Solitario Classico Accessibile"
     ):
-        """Initialize invisible frame with event callbacks.
+        """Initialize visible minimized frame with event callbacks.
         
         Args:
-            on_key_event: Required callback for keyboard events.
-                Called for both EVT_KEY_DOWN and EVT_CHAR events.
+            on_key_event: Optional callback for keyboard events.
+                Called for EVT_CHAR_HOOK events (global capture).
             on_timer_tick: Optional callback for timer ticks.
                 Called at interval specified in start_timer().
             on_close: Optional callback for frame closure.
                 Called before frame is destroyed.
             parent: Optional parent window (None for standalone)
             id: Window ID (default wx.ID_ANY)
-            title: Frame title (not visible, used for debugging)
+            title: Frame title (visible in taskbar and ALT+TAB)
         
         Note:
-            Frame is created but not shown. Call Show() after creation,
-            though it will remain invisible due to size and style.
+            Frame is automatically shown and minimized after creation.
+            Uses hs_deckmanager pattern for reliable OS focus.
         """
         # Initialize callbacks
         self.on_key_event = on_key_event
         self.on_timer_tick = on_timer_tick
         self.on_close = on_close
         
-        # Create invisible frame (1x1 pixel, no taskbar)
+        # Create visible frame (400x300, normal style for OS focus)
         super().__init__(
             parent=parent,
             id=id,
             title=title,
-            pos=(0, 0),  # Top-left corner (off-screen on some systems)
-            size=(1, 1),  # Minimum size (imperceptible)
-            style=wx.FRAME_NO_TASKBAR  # Critical: no ALT+TAB appearance
+            size=(400, 300),  # Proper size for OS focus handling
+            style=wx.DEFAULT_FRAME_STYLE  # Standard frame style
         )
         
         # Timer for periodic checks (lazy initialization)
         self._timer: Optional[wx.Timer] = None
         
-        # Bind keyboard events
-        self.Bind(wx.EVT_KEY_DOWN, self._on_key_down)
-        self.Bind(wx.EVT_CHAR, self._on_char)
+        # Setup panel with label (hs_deckmanager pattern)
+        self.panel = wx.Panel(self)
+        self.sizer = wx.BoxSizer(wx.VERTICAL)
+        
+        label = wx.StaticText(
+            self.panel, 
+            label="Solitario Classico Accessibile\n\nFrame principale wxPython"
+        )
+        self.sizer.Add(label, 1, wx.ALIGN_CENTER)
+        self.panel.SetSizer(self.sizer)
+        
+        # Bind keyboard events - use EVT_CHAR_HOOK for global capture
+        self.Bind(wx.EVT_CHAR_HOOK, self._on_char_hook)
         
         # Bind close event
         self.Bind(wx.EVT_CLOSE, self._on_close_event)
         
-        # Set focus to ensure events are captured
-        # Note: This may not work reliably if frame is not shown
-        self.SetFocus()
+        # hs_deckmanager pattern: Centre, Show, then Iconize
+        self.Centre()
+        self.Show()
+        self.Iconize()  # Minimize to taskbar but maintain focus capability
     
-    def _on_key_down(self, event: wx.KeyEvent) -> None:
-        """Internal handler for EVT_KEY_DOWN events.
+    def _on_char_hook(self, event: wx.KeyEvent) -> None:
+        """Internal handler for EVT_CHAR_HOOK events (global keyboard capture).
+        
+        EVT_CHAR_HOOK provides global keyboard capture before any other
+        processing. This is the hs_deckmanager pattern for reliable
+        keyboard event handling.
         
         Forwards event to user-provided callback, then calls Skip()
         to allow normal event processing (e.g., for screen readers).
@@ -135,32 +156,14 @@ class SolitarioFrame(wx.Frame):
         Note:
             event.Skip() is critical for NVDA integration - it ensures
             screen readers can process the event after our handler.
+            EVT_CHAR_HOOK captures all keys globally, replacing the
+            previous EVT_KEY_DOWN + EVT_CHAR combination.
         """
-        # Call user callback
+        # Call user callback if provided
         if self.on_key_event is not None:
             self.on_key_event(event)
         
         # Allow event to propagate (critical for screen readers)
-        event.Skip()
-    
-    def _on_char(self, event: wx.KeyEvent) -> None:
-        """Internal handler for EVT_CHAR events.
-        
-        EVT_CHAR provides character-level input (e.g., 'a', 'A', '1').
-        Forwards to on_key_event callback for consistency.
-        
-        Args:
-            event: wx.KeyEvent from keyboard
-        
-        Note:
-            Some keys only generate EVT_CHAR (not EVT_KEY_DOWN), so
-            binding both events ensures comprehensive capture.
-        """
-        # Call user callback (same handler as KEY_DOWN)
-        if self.on_key_event is not None:
-            self.on_key_event(event)
-        
-        # Allow event to propagate
         event.Skip()
     
     def _on_close_event(self, event: wx.CloseEvent) -> None:
