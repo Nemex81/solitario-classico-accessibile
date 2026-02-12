@@ -109,22 +109,22 @@ Il piano completo contiene:
 ### FASE 2: Key Event Adapter (2-3 ore)
 
 #### Task 2.1: Creare `wx_key_adapter.py`
-- [ ] Creare file `src/infrastructure/ui/wx_key_adapter.py`
-- [ ] Implementare classe `WxKeyEventAdapter`
-- [ ] Mapping completo `WX_TO_PYGAME_MAP` (80+ key codes)
-  - [ ] Frecce (UP, DOWN, LEFT, RIGHT)
-  - [ ] Tasti speciali (RETURN, SPACE, ESC, TAB, DELETE, HOME, END)
-  - [ ] Function keys (F1-F12)
-  - [ ] Numeri row (0-9)
-  - [ ] Lettere (A-Z maiuscole e minuscole)
-  - [ ] Numpad (0-9, ENTER, operatori)
-- [ ] Metodo `convert_to_pygame_event(wx_event)` → pygame.event.Event
-- [ ] Metodo `_get_pygame_mods(wx_event)` → traduzione modificatori
-- [ ] Testing: Mapping 60+ tasti usati nel gioco
-- [ ] Testing: Modificatori (SHIFT, CTRL, ALT) corretti
-- [ ] Testing: Lettere maiuscole/minuscole
-- [ ] Testing: Numpad vs numeri normali
-- [ ] Commit: `feat(infrastructure): Add wx key event adapter with 80+ mappings`
+- [x] Creare file `src/infrastructure/ui/wx_key_adapter.py`
+- [x] Implementare classe `WxKeyEventAdapter`
+- [x] Mapping completo `WX_TO_PYGAME_MAP` (80+ key codes)
+  - [x] Frecce (UP, DOWN, LEFT, RIGHT)
+  - [x] Tasti speciali (RETURN, SPACE, ESC, TAB, DELETE, HOME, END)
+  - [x] Function keys (F1-F12)
+  - [x] Numeri row (0-9)
+  - [x] Lettere (A-Z maiuscole e minuscole)
+  - [x] Numpad (0-9, ENTER, operatori)
+- [x] Metodo `convert_to_pygame_event(wx_event)` → pygame.event.Event
+- [x] Metodo `_get_pygame_mods(wx_event)` → traduzione modificatori
+- [x] Testing: Mapping 60+ tasti usati nel gioco
+- [x] Testing: Modificatori (SHIFT, CTRL, ALT) corretti
+- [x] Testing: Lettere maiuscole/minuscole
+- [x] Testing: Numpad vs numeri normali
+- [x] Commit: `feat(infrastructure): Add wx key event adapter with 80+ mappings`
 
 #### Task 2.2: Modificare `gameplay_controller.py`
 - [ ] Aprire `src/application/gameplay_controller.py`
