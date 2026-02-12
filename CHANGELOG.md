@@ -7,6 +7,26 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 ---
 
+## [1.7.1] - 2026-02-12
+
+### Fixed
+- **CRITICAL**: Fixed `TypeError: unexpected keyword argument 'parent'` in `game_engine.py`
+  - Changed `WxDialogProvider(parent=...)` to `WxDialogProvider(parent_frame=...)`
+  - Aligned parameter naming with hs_deckmanager pattern (COMMIT 2)
+  - Ensures modal dialog parent hierarchy works correctly
+  - Fixed line 241 in `game_engine.py`
+
+### Technical
+- Verified parameter naming alignment with hs_deckmanager pattern
+- Confirmed all `WxDialogProvider` calls use `parent_frame=` keyword argument
+- Enhanced consistency across wxPython infrastructure components
+
+### References
+- Issue #59: Post-implementation bugfixes
+- Pattern: hs_deckmanager parameter naming conventions
+
+---
+
 ## [v2.0.0] - 2026-02-12
 
 ### 🚨 BREAKING CHANGES

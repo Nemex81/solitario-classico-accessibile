@@ -238,7 +238,7 @@ class GameEngine:
         if use_native_dialogs:
             try:
                 from src.infrastructure.ui.wx_dialog_provider import WxDialogProvider
-                dialog_provider = WxDialogProvider(parent=parent_window)
+                dialog_provider = WxDialogProvider(parent_frame=parent_window)
             except ImportError:
                 # wxPython not available, graceful degradation
                 dialog_provider = None
