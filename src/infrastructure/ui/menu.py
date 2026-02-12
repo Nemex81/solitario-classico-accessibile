@@ -1,5 +1,12 @@
 """Virtual menu for audiogame navigation.
 
+⚠️ DEPRECATED in v2.0.0: This pygame-based menu is replaced by WxVirtualMenu
+in src/infrastructure/ui/wx_menu.py. This file is kept for reference only.
+
+Migration path:
+- Old: VirtualMenu (pygame-based) - deprecated
+- New: WxVirtualMenu (wxPython-based) - active
+
 Provides keyboard-navigable menu without visual widgets,
 using only screen reader feedback for accessibility.
 

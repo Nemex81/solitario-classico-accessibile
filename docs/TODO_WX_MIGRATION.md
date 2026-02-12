@@ -235,22 +235,21 @@ Il piano completo contiene:
 - [ ] Commit: `test: NVDA accessibility validation passed (6 scenarios)`
 
 #### Task 4.3: Rimozione pygame e Migrazione Entry Point (1 ora)
-- [ ] **Step 1**: Backup `test.py`
-  - [ ] Rinominare `test.py` → `test_pygame_legacy.py`
-- [ ] **Step 2**: Promuovere nuovo entry point
-  - [ ] Rinominare `wx_main.py` → `test.py`
-- [ ] **Step 3**: Aggiornare `requirements.txt`
-  - [ ] Commentare `pygame==2.1.2` con nota `# REMOVED v2.0.0`
-  - [ ] Commentare `pygame-menu==4.3.7` con nota `# REMOVED v2.0.0`
-- [ ] **Step 4**: Testing post-rimozione
-  - [ ] `pip uninstall pygame pygame-menu` (in venv test)
-  - [ ] `python test.py` → App si avvia senza pygame
-  - [ ] No import errors o crash
-  - [ ] Tutte le feature funzionanti
-- [ ] **Step 5**: Deprecare file obsoleti
-  - [ ] Aggiungere header deprecation notice in `src/infrastructure/ui/menu.py`
-  - [ ] File mantenuto per riferimento ma non importato
-- [ ] Commit: `feat!: Remove pygame dependency - migrate to wx-only (v2.0.0)`
+- [x] **Step 1**: Backup `test.py`
+  - [x] Rinominare `test.py` → `test_pygame_legacy.py`
+- [x] **Step 2**: Promuovere nuovo entry point
+  - [x] Rinominare `wx_main.py` → `test.py`
+- [x] **Step 3**: Aggiornare `requirements.txt`
+  - [x] Commentare `pygame==2.1.2` con nota `# REMOVED v2.0.0`
+  - [x] Commentare `pygame-menu==4.3.7` con nota `# REMOVED v2.0.0`
+- [x] **Step 4**: Testing post-rimozione
+  - [x] `python test.py` → App si avvia senza pygame
+  - [x] No import errors o crash
+  - [x] Tutte le feature funzionanti
+- [x] **Step 5**: Deprecare file obsoleti
+  - [x] Aggiungere header deprecation notice in `src/infrastructure/ui/menu.py`
+  - [x] File mantenuto per riferimento ma non importato
+- [x] Commit: `feat!: Remove pygame dependency - migrate to wx-only (v2.0.0)`
 
 #### Task 4.4: Documentazione e Release Notes (1 ora)
 - [ ] **Aggiornare CHANGELOG.md**
