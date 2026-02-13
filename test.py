@@ -306,6 +306,11 @@ class SolitarioController:
             "Abbandono Partita"
         )
         if result:
+            # Reset game engine (clear cards, score, timer)
+            print("\n→ User confirmed abandon - Resetting game engine")
+            self.engine.reset_game()
+            
+            # Return to main menu
             self.return_to_menu()
     
     def show_new_game_dialog(self) -> None:
@@ -342,6 +347,10 @@ class SolitarioController:
             )
             wx.MilliSleep(300)
         
+        # Reset game engine (clear cards, score, timer)
+        print("\n→ Double-ESC detected - Resetting game engine")
+        self.engine.reset_game()
+        
         self._timer_expired_announced = False
         self.return_to_menu()
     
@@ -361,6 +370,8 @@ class SolitarioController:
             self.start_gameplay()
         else:
             print("→ User declined rematch - Returning to menu")
+            # Reset game engine before returning to menu
+            self.engine.reset_game()
             self.return_to_menu()
         
         print("="*60)
@@ -473,6 +484,10 @@ class SolitarioController:
         if self.screen_reader:
             self.screen_reader.tts.speak(defeat_msg, interrupt=True)
             wx.MilliSleep(2000)
+        
+        # Reset game engine (clear cards, score, timer)
+        print("\n→ Timeout defeat - Resetting game engine")
+        self.engine.reset_game()
         
         self._timer_expired_announced = False
         self.return_to_menu()
