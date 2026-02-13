@@ -7,7 +7,7 @@ Stato: [READY | IN PROGRESS | DONE | BLOCKED]
 📖 Riferimento Documentazione
 Prima di iniziare qualsiasi implementazione, consultare obbligatoriamente:
 docs/[NOME_FILE_PIANO_COMPLETO].md
-Questo file TODO è solo un sommario operativo.
+Questo file TODO è solo un sommario operativo da consultare e aggiornared urante ogni fase dell'implementazione.
 Il piano completo contiene analisi, architettura, edge case e dettagli tecnici.
  
 🎯 Obiettivo Implementazione
@@ -98,3 +98,6 @@ MAJOR → breaking change
 📌 Note
 Eventuali note rapide operative (non sostituiscono il piano completo).
  
+Fine.
+Snello, consultabile in 20 secondi, zero fronzoli.
+Il documento lungo resta come fonte di verità tecnica. Questo è il cruscotto operativo.
