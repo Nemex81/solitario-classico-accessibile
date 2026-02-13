@@ -615,23 +615,43 @@ ESC: abbandona partita."""
         Returns:
             bool: True if key was handled, False if not recognized
         
-        Mapped Keys (v1.7.5 - full keyboard support):
+        Mapped Keys (v1.7.5 - complete 60+ command support):
             Navigation:
-            - Arrow keys: Cursor navigation (_cursor_up/down/left/right)
             - Numbers 1-7: Jump to tableau pile
-            - HOME: First card in pile
-            - END: Last card in pile
+            - SHIFT+1-4: Jump to foundation pile
+            - SHIFT+S: Jump to waste pile
+            - SHIFT+M: Jump to stock pile
+            - Arrow keys: Cursor navigation
+            - HOME/END: First/last card in pile
             - TAB: Jump to different pile type
             - DELETE: Cancel selection
             
             Actions:
             - ENTER/RETURN: Select card
+            - CTRL+ENTER: Select from waste
             - SPACE: Move cards
             - D/P: Draw cards
+            
+            Query Commands (info):
+            - F: Focus/cursor position
+            - G: Table info (all piles)
+            - R: Game report (stats/time)
+            - X: Card detailed info
+            - C: Selected cards info
+            - S: Waste top card
+            - M: Stock count
+            - T: Timer status
+            - I: Current settings
+            - H: Help/command list
+            
+            Game Management:
+            - N: New game
+            - O: Options window
+            - CTRL+ALT+W: Debug force victory
         
         Note:
             Does not call event.Skip() - caller decides whether to propagate.
-            Modifier keys (SHIFT/CTRL) will be handled in next iteration.
+            All keys are case-insensitive where applicable.
         
         Example:
             >>> # In GameplayPanel.on_key_down():
@@ -640,22 +660,65 @@ ESC: abbandona partita."""
             ...     return  # Key consumed
             >>> event.Skip()  # Key not handled, propagate
         
-        New in v1.7.5: Complete keyboard mapping (24+ commands)
+        New in v1.7.5: Complete keyboard mapping (60+ commands)
         """
         # Import wx locally to avoid module-level dependency
         import wx
         
         key_code = event.GetKeyCode()
         
-        # Get modifier state for future use (SHIFT/CTRL/ALT)
+        # Get modifier state
         modifiers = event.GetModifiers()
         has_shift = bool(modifiers & wx.MOD_SHIFT)
         has_ctrl = bool(modifiers & wx.MOD_CONTROL)
         has_alt = bool(modifiers & wx.MOD_ALT)
         
         # ═══════════════════════════════════════════════════════════
-        # NUMBER KEYS 1-7: Tableau piles (pile base)
-        # Note: SHIFT+numbers will be handled in next iteration
+        # PRIORITY 1: SHIFT COMBINATIONS (must check before plain keys)
+        # ═══════════════════════════════════════════════════════════
+        if has_shift:
+            # SHIFT+1-4: Foundation piles (semi)
+            if key_code == ord('1'):
+                self._nav_pile_semi(7)  # Hearts (Cuori)
+                return True
+            elif key_code == ord('2'):
+                self._nav_pile_semi(8)  # Diamonds (Quadri)
+                return True
+            elif key_code == ord('3'):
+                self._nav_pile_semi(9)  # Clubs (Fiori)
+                return True
+            elif key_code == ord('4'):
+                self._nav_pile_semi(10)  # Spades (Picche)
+                return True
+            
+            # SHIFT+S: Waste pile (scarti)
+            elif key_code in (ord('S'), ord('s')):
+                self._nav_pile_scarti()
+                return True
+            
+            # SHIFT+M: Stock pile (mazzo)
+            elif key_code in (ord('M'), ord('m')):
+                self._nav_pile_mazzo()
+                return True
+        
+        # ═══════════════════════════════════════════════════════════
+        # PRIORITY 2: CTRL COMBINATIONS
+        # ═══════════════════════════════════════════════════════════
+        if has_ctrl:
+            # CTRL+ENTER: Select from waste pile
+            if key_code in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER):
+                self._select_from_waste()
+                return True
+            
+            # CTRL+ALT+W: Debug force victory
+            if has_alt and key_code in (ord('W'), ord('w')):
+                msg = self.engine._debug_force_victory()
+                if msg:
+                    self._vocalizza(msg)
+                return True
+        
+        # ═══════════════════════════════════════════════════════════
+        # NUMBER KEYS 1-7: Tableau piles (pile base) - NO SHIFT
         # ═══════════════════════════════════════════════════════════
         if not has_shift and ord('1') <= key_code <= ord('7'):
             pile_idx = key_code - ord('1')  # 0-6
@@ -710,6 +773,76 @@ ESC: abbandona partita."""
         # ═══════════════════════════════════════════════════════════
         elif key_code in (ord('D'), ord('d'), ord('P'), ord('p')):
             self._draw_cards()
+            return True
+        
+        # ═══════════════════════════════════════════════════════════
+        # QUERY INFORMATION KEYS (10 commands)
+        # ═══════════════════════════════════════════════════════════
+        
+        # F: Get focus (cursor position)
+        elif key_code in (ord('F'), ord('f')):
+            self._get_focus()
+            return True
+        
+        # G: Get table info (all piles status)
+        elif key_code in (ord('G'), ord('g')):
+            self._get_table_info()
+            return True
+        
+        # R: Get game report (stats, time, moves)
+        elif key_code in (ord('R'), ord('r')):
+            self._get_game_report()
+            return True
+        
+        # X: Get card info (detailed card at cursor)
+        elif key_code in (ord('X'), ord('x')):
+            self._get_card_info()
+            return True
+        
+        # C: Get selected cards (current selection)
+        elif key_code in (ord('C'), ord('c')):
+            self._get_selected_cards()
+            return True
+        
+        # S: Get scarto top (waste pile top card)
+        # NOTE: SHIFT+S handled above, this is plain S
+        elif not has_shift and key_code in (ord('S'), ord('s')):
+            self._get_scarto_top()
+            return True
+        
+        # M: Get deck count (stock pile remaining)
+        # NOTE: SHIFT+M handled above, this is plain M
+        elif not has_shift and key_code in (ord('M'), ord('m')):
+            self._get_deck_count()
+            return True
+        
+        # T: Get timer (elapsed or countdown)
+        elif key_code in (ord('T'), ord('t')):
+            self._get_timer()
+            return True
+        
+        # I: Get settings (current game configuration)
+        elif key_code in (ord('I'), ord('i')):
+            self._get_settings()
+            return True
+        
+        # H: Show help (command list)
+        elif key_code in (ord('H'), ord('h')):
+            self._show_help()
+            return True
+        
+        # ═══════════════════════════════════════════════════════════
+        # GAME MANAGEMENT KEYS
+        # ═══════════════════════════════════════════════════════════
+        
+        # N: New game
+        elif key_code in (ord('N'), ord('n')):
+            self._new_game()
+            return True
+        
+        # O: Open/close options window
+        elif key_code in (ord('O'), ord('o')):
+            self._handle_o_key()
             return True
         
         # ═══════════════════════════════════════════════════════════
