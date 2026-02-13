@@ -7,6 +7,34 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 ---
 
+## [2.0.2] - 2026-02-13
+
+### Fixed
+- **CRITICAL: Crash su ritorno al menu da gameplay**: Risolto crash critico quando si abbandona partita (ESC), scade timer (STRICT mode), o si rifiuta rematch invertendo ordine operazioni
+  - **Root cause**: `engine.reset_game()` invalidava riferimenti (service, table, timer) che `GameplayPanel.Hide()` tentava di accedere durante panel swap
+  - **Soluzione**: Invertito ordine operazioni in tutti i 3 scenari (Hide → Reset → Show invece di Reset → Hide)
+  - **Pattern safe implementato**: 1) Nascondi gameplay panel, 2) Resetta engine, 3) Mostra menu panel, 4) Resetta flag timer
+  - **Metodi corretti**: `show_abandon_game_dialog()`, `_handle_game_over_by_timeout()`, `handle_game_ended()`
+- **Diagnostico dettagliato in return_to_menu()**: Aggiunto logging completo per troubleshooting (check ViewManager, panel validity, try/except con traceback)
+
+### Changed
+- **Docstring espanse**: Tutti i 4 metodi modificati ora documentano l'ordine critico delle operazioni (CRITICAL pattern)
+- **Error handling migliorato**: Try/except per ogni step con logging dettagliato (isola failures, facilita debugging)
+- **Caller responsibility chiarita**: `return_to_menu()` ora documenta esplicitamente che reset engine DEVE essere fatto PRIMA della chiamata
+
+### Technical
+- `return_to_menu()`: Aggiunto logging step-by-step con separatori, check panel validity (`IsBeingDeleted()`), try/except su `show_panel()` e TTS
+- `show_abandon_game_dialog()`: 4-step pattern (Hide → Reset → Show → Flag) con logging dettagliato per ogni step
+- `_handle_game_over_by_timeout()`: Stesso 4-step pattern per timeout STRICT mode
+- `handle_game_ended()`: 4-step pattern applicato solo al decline rematch path (rematch path resta invariato)
+
+### Impact
+- **Breaking**: Nessuno (fix interno, API pubbliche invariate)
+- **UX**: Identica esperienza utente, ora senza crash
+- **Performance**: Trascurabile (stesse operazioni, ordine diverso)
+
+---
+
 ## [1.8.0] - 2026-02-13
 
 ### Added
