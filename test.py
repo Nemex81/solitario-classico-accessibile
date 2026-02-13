@@ -206,23 +206,40 @@ class SolitarioController:
                 )
     
     def show_options(self) -> None:
-        """Show options window (called from MenuView).
+        """Show options window using OptionsDialog (STEP 3).
         
-        Opens options controller window. This doesn't use ViewManager
-        because options is a modal-ish dialog-style window.
+        Opens modal OptionsDialog with OptionsWindowController.
+        Uses wxPython native dialog for proper window behavior.
+        
+        Flow:
+        1. Set is_options_mode flag
+        2. Create OptionsDialog with controller
+        3. Show modal (blocks until closed)
+        4. Clean up and reset flag
+        
+        Note:
+            STEP 3: Basic dialog with ESC handling
+            STEP 4: Full keyboard mapping (UP/DOWN/ENTER/etc)
         """
+        from src.infrastructure.ui.options_dialog import OptionsDialog
+        
         print("\n" + "="*60)
-        print("APERTURA FINESTRA OPZIONI")
+        print("APERTURA FINESTRA OPZIONI (OptionsDialog)")
         print("="*60)
         
         self.is_options_mode = True
         
-        msg = self.gameplay_controller.options_controller.open_window()
+        # Create and show modal options dialog
+        dlg = OptionsDialog(
+            parent=self.frame,
+            controller=self.gameplay_controller.options_controller
+        )
+        dlg.ShowModal()
+        dlg.Destroy()
         
-        if self.screen_reader:
-            self.screen_reader.tts.speak(msg, interrupt=True)
+        self.is_options_mode = False
         
-        print("Finestra opzioni aperta.")
+        print("Finestra opzioni chiusa.")
         print("="*60)
     
     def show_exit_dialog(self) -> None:
