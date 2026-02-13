@@ -300,6 +300,9 @@ class OptionsDialog(wx.Dialog):
         
         # Load current settings into widgets
         self._load_settings_to_widgets()
+        
+        # Bind events for change detection
+        self._bind_widget_events()
     
     def _load_settings_to_widgets(self) -> None:
         """Load current settings from controller into widgets.
@@ -355,6 +358,181 @@ class OptionsDialog(wx.Dialog):
         # 8. Modalità Timer (True=STRICT, False=PERMISSIVE)
         strict_selection = 0 if settings.timer_strict_mode else 1
         self.timer_strict_radio.SetSelection(strict_selection)
+    
+    def _bind_widget_events(self) -> None:
+        """Bind widget events to detect changes and update settings.
+        
+        All widget changes:
+        1. Call _save_widgets_to_settings() (live update)
+        2. Mark controller as DIRTY (modifications present)
+        3. Enable save confirmation on ESC
+        
+        Special cases:
+        - timer_check: Also enables/disables timer_combo
+        - All others: Standard change detection
+        
+        Note:
+            Settings are updated IMMEDIATELY (live mode).
+            Original values saved in controller snapshot (for discard).
+        """
+        # RadioBox widgets
+        self.deck_type_radio.Bind(wx.EVT_RADIOBOX, self.on_setting_changed)
+        self.difficulty_radio.Bind(wx.EVT_RADIOBOX, self.on_setting_changed)
+        self.draw_count_radio.Bind(wx.EVT_RADIOBOX, self.on_setting_changed)
+        self.shuffle_radio.Bind(wx.EVT_RADIOBOX, self.on_setting_changed)
+        self.timer_strict_radio.Bind(wx.EVT_RADIOBOX, self.on_setting_changed)
+        
+        # CheckBox widgets
+        self.timer_check.Bind(wx.EVT_CHECKBOX, self.on_timer_toggled)  # Special handler
+        self.command_hints_check.Bind(wx.EVT_CHECKBOX, self.on_setting_changed)
+        self.scoring_check.Bind(wx.EVT_CHECKBOX, self.on_setting_changed)
+        
+        # ComboBox widget
+        self.timer_combo.Bind(wx.EVT_COMBOBOX, self.on_setting_changed)
+        
+        # Buttons
+        self.btn_save.Bind(wx.EVT_BUTTON, self.on_save_click)
+        self.btn_cancel.Bind(wx.EVT_BUTTON, self.on_cancel_click)
+    
+    def on_setting_changed(self, event: wx.Event) -> None:
+        """Handle any setting change from widgets.
+        
+        Called when user modifies any widget (RadioBox, CheckBox, ComboBox).
+        
+        Actions:
+        1. Save current widget values to settings (live update)
+        2. Mark controller as DIRTY (enable save confirmation)
+        
+        Args:
+            event: wx.Event from widget (EVT_RADIOBOX, EVT_CHECKBOX, EVT_COMBOBOX)
+        
+        Note:
+            Settings are updated immediately (GameSettings modified live).
+            Original snapshot saved by controller.open_window() for rollback.
+        """
+        # Update GameSettings from current widget values
+        self._save_widgets_to_settings()
+        
+        # Mark controller as dirty (modifications present)
+        if self.options_controller.state == "OPEN_CLEAN":
+            self.options_controller.state = "OPEN_DIRTY"
+        
+        # Propagate event
+        event.Skip()
+    
+    def on_timer_toggled(self, event: wx.CommandEvent) -> None:
+        """Handle timer checkbox toggle.
+        
+        Special handler for timer enable/disable:
+        - Enables/disables timer_combo based on checkbox state
+        - Then calls standard on_setting_changed()
+        
+        Args:
+            event: wx.CommandEvent from timer_check
+        """
+        enabled = self.timer_check.GetValue()
+        self.timer_combo.Enable(enabled)
+        
+        # Call standard change handler
+        self.on_setting_changed(event)
+    
+    def on_save_click(self, event: wx.CommandEvent) -> None:
+        """Handle Save button click.
+        
+        Calls controller.save_and_close() which:
+        1. Updates settings snapshot (modifications become permanent)
+        2. Resets controller state to CLOSED
+        3. Returns TTS confirmation message
+        
+        Args:
+            event: wx.CommandEvent from btn_save
+        
+        Note:
+            Settings already updated live via on_setting_changed().
+            This just commits the snapshot.
+        """
+        msg = self.options_controller.save_and_close()
+        
+        # Vocalize confirmation (optional - buttons are visual)
+        if self.screen_reader and self.screen_reader.tts:
+            self.screen_reader.tts.speak(msg, interrupt=True)
+        
+        # Close dialog with OK status
+        self.EndModal(wx.ID_OK)
+    
+    def on_cancel_click(self, event: wx.CommandEvent) -> None:
+        """Handle Cancel button click.
+        
+        Calls controller.discard_and_close() which:
+        1. Restores original settings snapshot (undo modifications)
+        2. Resets controller state to CLOSED
+        3. Returns TTS confirmation message
+        
+        Args:
+            event: wx.CommandEvent from btn_cancel
+        
+        Note:
+            Rollback restores ALL settings to values at dialog open time.
+        """
+        msg = self.options_controller.discard_and_close()
+        
+        # Vocalize confirmation (optional - buttons are visual)
+        if self.screen_reader and self.screen_reader.tts:
+            self.screen_reader.tts.speak(msg, interrupt=True)
+        
+        # Close dialog with Cancel status
+        self.EndModal(wx.ID_CANCEL)
+    
+    def _save_widgets_to_settings(self) -> None:
+        """Save current widget values back to GameSettings.
+        
+        Called on every widget change (live update mode).
+        Maps wx widget selections to GameSettings attributes.
+        
+        Mappings:
+        - deck_type_radio: 0->"french", 1->"neapolitan"
+        - difficulty_radio: 0/1/2 -> difficulty_level 1/2/3
+        - draw_count_radio: 0/1/2 -> draw_count 1/2/3
+        - timer_check + timer_combo: boolean + minutes -> max_time_game seconds
+        - shuffle_radio: 0->False (Inversione), 1->True (Mescolata)
+        - command_hints_check: boolean -> command_hints_enabled
+        - scoring_check: boolean -> scoring_enabled
+        - timer_strict_radio: 0->True (STRICT), 1->False (PERMISSIVE)
+        
+        Note:
+            This is "live update" mode - settings changed immediately.
+            Original values preserved in controller snapshot for rollback.
+        """
+        settings = self.options_controller.settings
+        
+        # 1. Tipo Mazzo
+        settings.deck_type = "french" if self.deck_type_radio.GetSelection() == 0 else "neapolitan"
+        
+        # 2. Difficoltà (0/1/2 -> 1/2/3)
+        settings.difficulty_level = self.difficulty_radio.GetSelection() + 1
+        
+        # 3. Carte Pescate (0/1/2 -> 1/2/3)
+        settings.draw_count = self.draw_count_radio.GetSelection() + 1
+        
+        # 4. Timer
+        if self.timer_check.GetValue():
+            # Extract minutes from "X minuti" string
+            minutes_str = self.timer_combo.GetValue().split()[0]  # "10 minuti" -> "10"
+            settings.max_time_game = int(minutes_str) * 60  # Convert to seconds
+        else:
+            settings.max_time_game = 0  # Disabled
+        
+        # 5. Riciclo Scarti (0->False, 1->True)
+        settings.shuffle_discards = (self.shuffle_radio.GetSelection() == 1)
+        
+        # 6. Suggerimenti Comandi
+        settings.command_hints_enabled = self.command_hints_check.GetValue()
+        
+        # 7. Sistema Punti
+        settings.scoring_enabled = self.scoring_check.GetValue()
+        
+        # 8. Modalità Timer (0->True STRICT, 1->False PERMISSIVE)
+        settings.timer_strict_mode = (self.timer_strict_radio.GetSelection() == 0)
 
 
 # Module exports
