@@ -135,22 +135,33 @@ class OptionsDialog(wx.Dialog):
         """Handle keyboard events for options navigation.
         
         Routes keyboard input to OptionsWindowController methods.
+        All messages from controller are vocalized via ScreenReader TTS.
         
         Args:
             event: wx.KeyEvent from keyboard
         
-        Key Mapping (STEP 4 - complete):
+        Key Mapping (Complete - v1.7.5):
         - ESC: Close dialog with cancel
         - UP/DOWN: Navigate options (navigate_up/down)
         - ENTER: Modify current option (modify_current_option)
-        - 1-5: Jump to option 1-5 (jump_to_option)
+        - 1-8: Jump to specific option:
+            1. Tipo Mazzo (Francese/Napoletano)
+            2. Difficoltà (1-3 carte)
+            3. Carte Pescate (1-3)
+            4. Timer (OFF, 5-60 min)
+            5. Riciclo Scarti (Inversione/Mescolata)
+            6. Suggerimenti Comandi (ON/OFF)
+            7. Sistema Punti (Attivo/Disattivato)
+            8. Modalità Timer (STRICT/PERMISSIVE)
         - T: Toggle timer on/off (toggle_timer)
         - +: Increment timer value (increment_timer)
         - -: Decrement timer value (decrement_timer)
+        - I: Read all settings (read_all_settings)
+        - H: Show help text (show_help)
         
         Note:
-            Controller methods return TTS messages.
-            In future, these could be vocalized via ScreenReader.
+            Both main keyboard and numpad keys are supported.
+            Controller methods return TTS messages vocalized by dialog.
         """
         key_code = event.GetKeyCode()
         msg = None  # Message from controller
@@ -173,17 +184,23 @@ class OptionsDialog(wx.Dialog):
         elif key_code in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER):
             msg = self.options_controller.modify_current_option()
         
-        # Numbers 1-5: Jump to specific option
+        # Numbers 1-8: Jump to specific option (complete set)
         elif key_code in (ord('1'), wx.WXK_NUMPAD1):
-            msg = self.options_controller.jump_to_option(0)  # Index 0 = Option 1
+            msg = self.options_controller.jump_to_option(0)  # Tipo Mazzo
         elif key_code in (ord('2'), wx.WXK_NUMPAD2):
-            msg = self.options_controller.jump_to_option(1)  # Index 1 = Option 2
+            msg = self.options_controller.jump_to_option(1)  # Difficoltà
         elif key_code in (ord('3'), wx.WXK_NUMPAD3):
-            msg = self.options_controller.jump_to_option(2)  # Index 2 = Option 3
+            msg = self.options_controller.jump_to_option(2)  # Carte Pescate
         elif key_code in (ord('4'), wx.WXK_NUMPAD4):
-            msg = self.options_controller.jump_to_option(3)  # Index 3 = Option 4
+            msg = self.options_controller.jump_to_option(3)  # Timer
         elif key_code in (ord('5'), wx.WXK_NUMPAD5):
-            msg = self.options_controller.jump_to_option(4)  # Index 4 = Option 5
+            msg = self.options_controller.jump_to_option(4)  # Riciclo Scarti
+        elif key_code in (ord('6'), wx.WXK_NUMPAD6):
+            msg = self.options_controller.jump_to_option(5)  # Suggerimenti Comandi
+        elif key_code in (ord('7'), wx.WXK_NUMPAD7):
+            msg = self.options_controller.jump_to_option(6)  # Sistema Punti
+        elif key_code in (ord('8'), wx.WXK_NUMPAD8):
+            msg = self.options_controller.jump_to_option(7)  # Modalità Timer
         
         # T: Toggle timer on/off
         elif key_code in (ord('T'), ord('t')):
@@ -196,6 +213,14 @@ class OptionsDialog(wx.Dialog):
         # -/_: Decrement timer value
         elif key_code in (ord('-'), ord('_'), wx.WXK_NUMPAD_SUBTRACT):
             msg = self.options_controller.decrement_timer()
+        
+        # I: Read all settings recap
+        elif key_code in (ord('I'), ord('i')):
+            msg = self.options_controller.read_all_settings()
+        
+        # H: Show help text
+        elif key_code in (ord('H'), ord('h')):
+            msg = self.options_controller.show_help()
         
         # If key was handled, vocalize message via TTS
         if msg is not None:
