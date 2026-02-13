@@ -7,6 +7,53 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 ---
 
+## [1.7.5] - 2026-02-13
+
+### Fixed
+- **CRITICAL**: Fixed ALT+F4 infinite loop in `quit_app()`
+  - Removed `frame.Close()` call that triggered recursive EVT_CLOSE
+  - Let `_on_close_event` handle frame destruction naturally
+  - App now exits cleanly without recursion
+  
+- **CRITICAL**: Fixed exit dialog validation
+  - Added null check for `dialog_manager` before showing dialog
+  - Handle `False` result (user cancelled) with TTS feedback
+  - Fallback to direct quit if dialog_manager not initialized
+  - Prevents crash when dialog_manager is None
+
+- **CRITICAL**: Fixed options navigation TTS feedback
+  - Pass `screen_reader` to `OptionsDialog` constructor
+  - Vocalize all controller messages in `on_key_down`
+  - UP/DOWN arrows now announce option name/value via TTS
+  - Numbers 1-8 now vocalize when jumping to option
+  - Fixed silent navigation issue
+
+### Added
+- **ESC handling in MenuPanel**
+  - ESC in main menu now shows exit confirmation dialog
+  - Consistent with GameplayPanel ESC pattern
+  - Provides keyboard shortcut for exit without clicking button
+
+- **Complete options keyboard support (1-8)**
+  - Restored missing options 6-8:
+    * 6 → Suggerimenti Comandi (ON/OFF)
+    * 7 → Sistema Punti (Attivo/Disattivato)
+    * 8 → Modalità Timer (STRICT/PERMISSIVE)
+  - Added I key → `read_all_settings()` (complete settings recap)
+  - Added H key → `show_help()` (help text)
+  - Achieves feature parity with refactoring-engine branch
+
+### Technical Details
+- 5 atomic commits: ALT+F4 fix, MenuPanel ESC, dialog validation, TTS feedback, options 6-8
+- Files modified: `test.py`, `menu_panel.py`, `options_dialog.py`
+- No breaking changes (backward compatible)
+
+### References
+- Documentation: `docs/WX_APP_EXIT_OPTIONS_NAVIGATION_FIX.md`
+- Issue #59: Post-refactoring bugfixes
+
+---
+
 ## [1.7.3] - 2026-02-13
 
 ### Changed
