@@ -70,21 +70,21 @@ Breve descrizione in 3–5 righe:
 
 ## 🛠️ Checklist Implementazione
 
-### 🔧 Fix 1: Semplificare `_select_card()` (rimuovere pygame)
+### 🔧 Fix 1: Semplificare `_select_card()` (rimuovere pygame) ✅ COMPLETE
 
 **File**: `src/application/gameplay_controller.py`  
-**Linee**: 318-332
+**Linee**: 315-336 (updated)
 
 #### Modifiche
-- [ ] Aprire file `src/application/gameplay_controller.py`
-- [ ] Navigare a linea 318 (metodo `_select_card`)
-- [ ] **RIMUOVERE** intero blocco linee 318-332 (14 righe)
-- [ ] **SOSTITUIRE** con codice da piano completo (sezione "Fix 1 - Codice DOPO")
-- [ ] Verificare che:
-  - [ ] NON ci sia più `pygame.key.get_mods()` nel metodo
-  - [ ] NON ci sia più `if mods & KMOD_CTRL:`
-  - [ ] Metodo chiami solo `self.engine.select_card_at_cursor()`
-  - [ ] Docstring aggiornata menzioni v1.7.5
+- [x] Aprire file `src/application/gameplay_controller.py`
+- [x] Navigare a linea 318 (metodo `_select_card`)
+- [x] **RIMUOVERE** intero blocco linee 318-332 (14 righe)
+- [x] **SOSTITUIRE** con codice da piano completo (sezione "Fix 1 - Codice DOPO")
+- [x] Verificare che:
+  - [x] NON ci sia più `pygame.key.get_mods()` nel metodo
+  - [x] NON ci sia più `if mods & KMOD_CTRL:`
+  - [x] Metodo chiami solo `self.engine.select_card_at_cursor()`
+  - [x] Docstring aggiornata menzioni v1.7.5
 
 #### Testing Post-Fix 1
 - [ ] Avviare gioco: `python test.py`
@@ -96,20 +96,20 @@ Breve descrizione in 3–5 righe:
 
 ---
 
-### 🔧 Fix 2: Aggiungere `_select_from_waste()` helper
+### 🔧 Fix 2: Aggiungere `_select_from_waste()` helper ✅ COMPLETE
 
 **File**: `src/application/gameplay_controller.py`  
-**Posizione**: Dopo linea 337 (subito dopo `_select_card`, prima di `_move_cards`)
+**Posizione**: Linee 338-361 (added)
 
 #### Modifiche
-- [ ] Aprire file `src/application/gameplay_controller.py`
-- [ ] Navigare a linea ~337 (fine metodo `_select_card`)
-- [ ] **INSERIRE** nuovo metodo da piano completo (sezione "Fix 2 - Codice da AGGIUNGERE")
-- [ ] Verificare che:
-  - [ ] Metodo si chiama `_select_from_waste(self)`
-  - [ ] Docstring completa presente
-  - [ ] Corpo chiama `self.engine.select_from_waste()`
-  - [ ] Posizionato nella sezione "AZIONI CARTE"
+- [x] Aprire file `src/application/gameplay_controller.py`
+- [x] Navigare a linea ~337 (fine metodo `_select_card`)
+- [x] **INSERIRE** nuovo metodo da piano completo (sezione "Fix 2 - Codice da AGGIUNGERE")
+- [x] Verificare che:
+  - [x] Metodo si chiama `_select_from_waste(self)`
+  - [x] Docstring completa presente
+  - [x] Corpo chiama `self.engine.select_from_waste()`
+  - [x] Posizionato nella sezione "AZIONI CARTE"
 
 #### Testing Post-Fix 2
 - [ ] Avviare gioco: `python test.py`
@@ -122,21 +122,21 @@ Breve descrizione in 3–5 righe:
 
 ---
 
-### 🔧 Fix 3: Correggere dialog ESC
+### 🔧 Fix 3: Correggere dialog ESC ✅ COMPLETE
 
 **File**: `test.py`  
-**Linee**: 302-315
+**Linee**: 302-334 (updated)
 
 #### Modifiche
-- [ ] Aprire file `test.py`
-- [ ] Navigare a linea 302 (metodo `show_abandon_game_dialog`)
-- [ ] **RIMUOVERE** intero blocco linee 302-315 (14 righe)
-- [ ] **SOSTITUIRE** con codice da piano completo (sezione "Fix 3 - Codice DOPO")
-- [ ] Verificare che:
-  - [ ] Nome metodo: `show_yes_no_dialog` (non `show_yes_no`)
-  - [ ] Parametri: `title="Abbandono Partita"` PRIMO
-  - [ ] Parametri: `message="Vuoi abbandonare..."` SECONDO
-  - [ ] Docstring espansa con dettagli dialog behavior
+- [x] Aprire file `test.py`
+- [x] Navigare a linea 302 (metodo `show_abandon_game_dialog`)
+- [x] **RIMUOVERE** intero blocco linee 302-315 (14 righe)
+- [x] **SOSTITUIRE** con codice da piano completo (sezione "Fix 3 - Codice DOPO")
+- [x] Verificare che:
+  - [x] Nome metodo: `show_yes_no_dialog` (non `show_yes_no`)
+  - [x] Parametri: `title="Abbandono Partita"` PRIMO
+  - [x] Parametri: `message="Vuoi abbandonare..."` SECONDO
+  - [x] Docstring espansa con dettagli dialog behavior
 
 #### Testing Post-Fix 3
 - [ ] Avviare gioco: `python test.py`
@@ -289,17 +289,17 @@ grep -n "show_yes_no_dialog" test.py
 
 ## 🚦 Stato Avanzamento
 
-**Aggiornare questa sezione durante l'implementazione**:
+**Aggiornato**: 2026-02-13
 
-- [ ] **Fix 1**: Semplifica `_select_card()` - `NOT STARTED`
-- [ ] **Fix 2**: Aggiungi `_select_from_waste()` - `NOT STARTED`
-- [ ] **Fix 3**: Correggi dialog ESC - `NOT STARTED`
-- [ ] **Testing ENTER**: Plain + CTRL - `NOT STARTED`
-- [ ] **Testing ESC**: Dialog YES/NO/ESC - `NOT STARTED`
-- [ ] **Regression Check**: 13 comandi - `NOT STARTED`
-- [ ] **Cross-Check**: Pygame legacy - `NOT STARTED`
-- [ ] **Commit**: Con message piano completo - `NOT STARTED`
-- [ ] **Documentazione**: CHANGELOG aggiornato - `NOT STARTED`
+- [x] **Fix 1**: Semplifica `_select_card()` - `COMPLETE ✅`
+- [x] **Fix 2**: Aggiungi `_select_from_waste()` - `COMPLETE ✅`
+- [x] **Fix 3**: Correggi dialog ESC - `COMPLETE ✅`
+- [ ] **Testing ENTER**: Plain + CTRL - `READY FOR MANUAL TEST`
+- [ ] **Testing ESC**: Dialog YES/NO/ESC - `READY FOR MANUAL TEST`
+- [ ] **Regression Check**: 13 comandi - `READY FOR MANUAL TEST`
+- [ ] **Cross-Check**: Pygame legacy - `READY FOR MANUAL TEST`
+- [x] **Commit**: Con message piano completo - `COMPLETE ✅` (Commit: 456d056)
+- [ ] **Documentazione**: CHANGELOG aggiornato - `PENDING`
 
 ---
 
