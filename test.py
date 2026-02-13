@@ -659,15 +659,28 @@ class SolitarioController:
     def _handle_game_over_by_timeout(self) -> None:
         """Handle game over by timeout in STRICT mode.
         
-        Order of Operations (CRITICAL - Same as abandon game):
-            1. Show timeout defeat message + statistics
-            2. Hide gameplay panel FIRST
-            3. Reset game engine SECOND
-            4. Show menu panel THIRD
-            5. Reset timer flag FINALLY
+        Shows defeat message with statistics, then defers menu transition.
+        
+        Defer Pattern (CRITICAL to prevent crashes):
+            ✅ CORRECT: Show TTS message, then use wx.CallAfter()
+                → Message shown (may take 2+ seconds)
+                → Defer _safe_timeout_to_menu()
+                → Timer check completes immediately
+                → wxPython idle loop executes deferred transition
+                → NO nested event loops = NO crash
+            
+            ❌ WRONG: Perform UI transition directly in timer check
+                → Would create nested event loops
+                → SafeYield() crash during panel swap
+        
+        Why this fixes crashes:
+            Timer check runs inside wx.Timer callback (event context). Deferring
+            ensures panel swap happens outside the timer event, preventing nested
+            loops caused by SafeYield() during UI updates.
         
         Version:
             v2.0.2: Fixed operation order to prevent crash (Hide → Reset → Show)
+            v2.0.4: Added wx.CallAfter() defer pattern to prevent nested event loops
         """
         max_time = self.settings.max_time_game
         elapsed = self.engine.service.get_elapsed_time()
@@ -697,50 +710,41 @@ class SolitarioController:
             self.screen_reader.tts.speak(defeat_msg, interrupt=True)
             wx.MilliSleep(2000)
         
-        # ✅ Safe transition: Hide → Reset → Show pattern
-        print("\n" + "="*60)
-        print("TIMEOUT DEFEAT: Starting safe transition to menu")
-        print("="*60)
+        # ✅ Defer UI transition until AFTER timer event completes
+        print("→ Timeout defeat - Scheduling deferred transition...")
+        wx.CallAfter(self._safe_timeout_to_menu)
+    
+    def _safe_timeout_to_menu(self) -> None:
+        """Deferred handler for timeout defeat → menu transition (called via wx.CallAfter).
         
-        # ✅ STEP 1: Hide gameplay panel BEFORE engine reset
-        print("→ STEP 1/4: Hiding gameplay panel...")
+        This method runs AFTER the timer event completes, preventing nested
+        event loops and crashes. Performs safe 3-step transition:
+            1. Hide gameplay panel
+            2. Reset game engine
+            3. Return to menu
+        
+        IMPORTANT: Do NOT call this method directly from timer callbacks.
+        Always use wx.CallAfter(self._safe_timeout_to_menu) instead.
+        
+        Version:
+            v2.0.4: Created as deferred handler for timeout defeat flow
+        """
+        print("\n→ Executing deferred timeout transition...")
+        
+        # Hide gameplay panel
         if self.view_manager:
             gameplay_panel = self.view_manager.get_panel('gameplay')
             if gameplay_panel:
-                try:
-                    gameplay_panel.Hide()
-                    print("  ✓ Gameplay panel hidden")
-                except Exception as e:
-                    print(f"  ⚠ Error hiding gameplay: {e}")
-            else:
-                print("  ⚠ Gameplay panel not found")
-        else:
-            print("  ⚠ ViewManager not initialized")
+                gameplay_panel.Hide()
         
-        # ✅ STEP 2: Reset engine AFTER UI hidden
-        print("→ STEP 2/4: Resetting game engine...")
-        try:
-            self.engine.reset_game()
-            print("  ✓ Engine reset complete")
-        except Exception as e:
-            print(f"  ⚠ Error resetting engine: {e}")
-        
-        # ✅ STEP 3: Show menu panel
-        print("→ STEP 3/4: Showing menu panel...")
-        try:
-            self.return_to_menu()
-            print("  ✓ Menu shown")
-        except Exception as e:
-            print(f"  ⚠ Error showing menu: {e}")
-        
-        # ✅ STEP 4: Reset timer flag
-        print("→ STEP 4/4: Resetting timer flag...")
+        # Reset game engine
+        self.engine.reset_game()
         self._timer_expired_announced = False
-        print("  ✓ Timer flag reset")
         
-        print("="*60)
-        print("TIMEOUT DEFEAT: Safe transition completed")
-        print("="*60 + "\n")
+        # Return to menu
+        self.return_to_menu()
+        
+        print("→ Timeout transition completed\n")
     
     # === EVENT HANDLERS (v2.0.1 - Simplified with ViewManager) ===
     
