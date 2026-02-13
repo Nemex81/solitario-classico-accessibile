@@ -267,83 +267,78 @@ class SolitarioController:
     def show_exit_dialog(self) -> None:
         """Show exit confirmation dialog (called from MenuPanel).
         
-        Shows native wxDialog for exit confirmation.
-        If dialog_manager not available, falls back to direct quit.
+        Delegates to quit_app() which shows dialog and handles exit.
         
-        Note:
-            dialog_manager.show_yes_no() returns:
-            - True: User clicked Yes
-            - False: User clicked No or ESC
-            - None: Should not happen with current implementation
+        Version:
+            v1.7.5: Simplified to delegate to quit_app()
         """
         # Fallback if dialog_manager not initialized
         if not self.dialog_manager or not hasattr(self.dialog_manager, 'is_available'):
             print("⚠ Dialog manager not available, exiting directly")
-            self.quit_app()
+            sys.exit(0)
             return
         
-        # Show confirmation dialog
-        result = self.dialog_manager.show_yes_no(
-            "Vuoi davvero uscire dal gioco?",
-            "Conferma uscita"
-        )
-        
-        # Handle result
-        if result is True:
-            self.quit_app()
-        elif result is False:
-            # User cancelled, do nothing
-            if self.screen_reader:
-                self.screen_reader.tts.speak("Uscita annullata.", interrupt=True)
-        else:
-            # result is None (should not happen)
-            print("⚠ Unexpected dialog result: None")
+        # Delegate to quit_app() which now shows dialog
+        self.quit_app()
     
     def show_abandon_game_dialog(self) -> None:
         """Show abandon game confirmation dialog (called from GameplayPanel ESC handler).
         
         Displays native wxDialog asking user to confirm game abandonment.
-        If user confirms (YES), resets game engine and returns to menu.
-        If user cancels (NO/ESC), returns to gameplay.
+        If user confirms (Sì), resets game engine and returns to menu.
+        If user cancels (No/ESC), returns to gameplay.
         
         Called from:
             GameplayPanel._handle_esc() when ESC pressed during gameplay
         
-        Dialog behavior:
+        Dialog behavior (pre-configured in SolitarioDialogManager):
             - Title: "Abbandono Partita"
             - Message: "Vuoi abbandonare la partita e tornare al menu di gioco?"
-            - Buttons: YES (confirm) / NO (cancel)
-            - ESC key: Same as NO (cancel)
+            - Buttons: Sì (confirm) / No (cancel)
+            - ESC key: Same as No (cancel)
         
         Returns:
             None (side effect: may reset game and switch to menu)
         
         Version:
-            v1.7.5: Fixed dialog method name and parameter order
+            v1.7.5: Fixed to use semantic API without parameters
         """
-        result = self.dialog_manager.show_yes_no_dialog(
-            title="Abbandono Partita",
-            message="Vuoi abbandonare la partita e tornare al menu di gioco?"
-        )
+        # Show confirmation dialog using SEMANTIC API
+        result = self.dialog_manager.show_abandon_game_prompt()
         
         if result:
-            # User confirmed abandon
+            # User confirmed abandon (Sì button)
             print("\n→ User confirmed abandon - Resetting game engine")
             self.engine.reset_game()
             self.return_to_menu()
-        # else: User cancelled, do nothing (dialog already closed)
+        # else: User cancelled (No or ESC), do nothing (dialog already closed)
     
     def show_new_game_dialog(self) -> None:
         """Show new game confirmation dialog (called from GameplayController).
         
         Asks user if they want to start a new game, abandoning current progress.
+        
+        Dialog behavior (pre-configured in SolitarioDialogManager):
+            - Title: "Nuova Partita"
+            - Message: "Una partita è già in corso. Vuoi abbandonarla e avviarne una nuova?"
+            - Buttons: Sì (confirm) / No (cancel)
+            - ESC key: Same as No (cancel)
+        
+        Called from:
+            - GamePlayController via N key during gameplay
+            - Menu "Nuova partita" when game already active
+        
+        Returns:
+            None (side effect: may reset and start new game)
+        
+        Version:
+            v1.7.5: Fixed to use semantic API without parameters
         """
-        result = self.dialog_manager.show_yes_no(
-            "Vuoi iniziare una nuova partita? I progressi attuali andranno persi.",
-            "Nuova Partita"
-        )
+        # Show confirmation dialog using SEMANTIC API
+        result = self.dialog_manager.show_new_game_prompt()
+        
         if result:
-            # Reset and start new game
+            # User confirmed (Sì button) - Reset and start new game
             self.engine.reset_game()
             self.engine.new_game()
             self._timer_expired_announced = False
@@ -353,6 +348,7 @@ class SolitarioController:
                     "Nuova partita avviata! Usa H per l'aiuto comandi.",
                     interrupt=True
                 )
+        # else: User cancelled (No or ESC), do nothing
     
     def confirm_abandon_game(self, skip_dialog: bool = False) -> None:
         """Abandon game immediately without dialog (double-ESC from GameplayView).
@@ -522,28 +518,49 @@ class SolitarioController:
         """Frame close handler."""
         self.quit_app()
     
-    def quit_app(self) -> None:
-        """Graceful application shutdown.
+    def quit_app(self) -> bool:
+        """Graceful application shutdown with confirmation dialog.
+        
+        Shows exit confirmation dialog. If user confirms, exits application.
+        If user cancels, returns control to caller (veto support for ALT+F4).
         
         Called from:
-        - show_exit_dialog() (menu "Esci")
+        - show_exit_dialog() (menu "Esci" button, ESC in menu)
         - _on_frame_close() (ALT+F4, X button)
         
+        Returns:
+            bool: True if application will exit (user confirmed)
+                  False if exit cancelled (user clicked No/ESC)
+        
         Pattern:
-        - Do NOT call frame.Close() (would trigger EVT_CLOSE again)
-        - Let _on_close_event handle frame destruction
-        - sys.exit(0) ensures complete shutdown
+        - Shows dialog via dialog_manager.show_exit_app_prompt()
+        - If confirmed: calls sys.exit(0)
+        - If cancelled: returns False (allows frame veto)
+        
+        Version:
+            v1.7.5: Changed return type from None to bool for veto support
         """
-        print("\n" + "="*60)
-        print("CHIUSURA APPLICAZIONE")
-        print("="*60)
+        # Show confirmation dialog using SEMANTIC API
+        result = self.dialog_manager.show_exit_app_prompt()
         
-        if self.screen_reader:
-            self.screen_reader.tts.speak("Chiusura in corso.", interrupt=True)
-            wx.MilliSleep(800)
-        
-        # Exit app (frame destruction handled by EVT_CLOSE)
-        sys.exit(0)
+        if result:
+            # User confirmed (Sì button) - Proceed with exit
+            print("\n" + "="*60)
+            print("CHIUSURA APPLICAZIONE")
+            print("="*60)
+            
+            if self.screen_reader:
+                self.screen_reader.tts.speak("Chiusura in corso.", interrupt=True)
+                wx.MilliSleep(800)
+            
+            # Exit app (frame destruction handled by EVT_CLOSE)
+            sys.exit(0)
+        else:
+            # User cancelled (No or ESC) - Veto exit
+            print("[quit_app] Exit cancelled by user")
+            if self.screen_reader:
+                self.screen_reader.tts.speak("Uscita annullata.", interrupt=True)
+            return False
     
     # === MAIN ENTRY POINT ===
     

@@ -125,26 +125,73 @@ class SolitarioFrame(wx.Frame):
         self.Show()
     
     def _on_close_event(self, event: wx.CloseEvent) -> None:
-        """Internal handler for EVT_CLOSE events.
+        """Internal handler for EVT_CLOSE events with veto support.
         
-        Stops timer if running, calls user callback, then destroys frame.
+        Saves timer state, calls user callback, and handles veto if needed.
+        If callback returns False, veto the close and restart timer.
+        If callback returns True (or None for backward compat), proceed with destruction.
         
         Args:
-            event: wx.CloseEvent from frame closure request
+            event: wx.CloseEvent from frame closure request (ALT+F4, X button, etc.)
+        
+        Version:
+            v1.7.5: Added veto support for exit confirmation dialog
         
         Note:
             This is called when Close() is invoked, or when user closes
-            the frame via window controls.
+            the frame via window controls (ALT+F4, X button).
+            
+            Veto support pattern:
+            - User callback can return bool to signal should_close
+            - True (or None): Proceed with exit
+            - False: Veto close and restore previous state (timer continues)
         """
-        # Stop timer if active
+        print("[Frame] Close event received")
+        
+        # Save timer state before stopping (for potential restart after veto)
+        timer_was_running = False
+        timer_interval = 1000  # Default fallback
+        
         if self._timer is not None and self._timer.IsRunning():
+            timer_was_running = True
+            # Retrieve stored interval (set in start_timer)
+            timer_interval = getattr(self, '_timer_interval', 1000)
+            print(f"[Frame] Timer was running with interval: {timer_interval}ms")
             self.stop_timer()
         
-        # Call user callback
-        if self.on_close is not None:
-            self.on_close()
+        # Call user callback and check return value
+        should_close = True  # Default: allow close
         
-        # Destroy frame
+        if self.on_close is not None:
+            result = self.on_close()
+            
+            # Handle bool return (v1.7.5+) or None (backward compat)
+            if result is False:
+                should_close = False
+                print("[Frame] Close vetoed by callback (user cancelled)")
+            elif result is True or result is None:
+                should_close = True
+                print("[Frame] Close approved by callback")
+        
+        # Handle veto if callback returned False
+        if not should_close:
+            # Check if we can veto (not all close events can be vetoed)
+            if event.CanVeto():
+                print("[Frame] Vetoing close event - restoring state")
+                event.Veto()
+                
+                # Restart timer if it was running
+                if timer_was_running:
+                    print(f"[Frame] Restarting timer with {timer_interval}ms interval")
+                    self.start_timer(timer_interval)
+                
+                return  # Exit without destroying
+            else:
+                # Forced close (can't veto) - proceed anyway
+                print("[Frame] Close event cannot be vetoed (forced)")
+        
+        # Proceed with destruction
+        print("[Frame] Destroying frame")
         self.Destroy()
     
     def _on_timer_event(self, event: wx.TimerEvent) -> None:
@@ -179,10 +226,16 @@ class SolitarioFrame(wx.Frame):
         Note:
             If timer is already running, it will be stopped and restarted
             with the new interval.
+        
+        Version:
+            v1.7.5: Stores interval for potential restart after veto
         """
         # Stop existing timer if running
         if self._timer is not None and self._timer.IsRunning():
             self.stop_timer()
+        
+        # Store interval for potential restart after veto
+        self._timer_interval = interval_ms
         
         # Create new timer
         self._timer = wx.Timer(self)
