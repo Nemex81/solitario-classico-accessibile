@@ -130,36 +130,71 @@ class OptionsDialog(wx.Dialog):
         Args:
             event: wx.KeyEvent from keyboard
         
-        Key Mapping (STEP 3 - basic):
+        Key Mapping (STEP 4 - complete):
         - ESC: Close dialog with cancel
-        
-        TODO (STEP 4):
-        - UP/DOWN: Navigate options
-        - ENTER: Modify current option
-        - 1-5: Jump to option
-        - T: Toggle timer
-        - +/-: Increment/decrement timer
+        - UP/DOWN: Navigate options (navigate_up/down)
+        - ENTER: Modify current option (modify_current_option)
+        - 1-5: Jump to option 1-5 (jump_to_option)
+        - T: Toggle timer on/off (toggle_timer)
+        - +: Increment timer value (increment_timer)
+        - -: Decrement timer value (decrement_timer)
         
         Note:
-            Full key mapping will be added in STEP 4.
-            This is minimal implementation for STEP 3.
+            Controller methods return TTS messages.
+            In future, these could be vocalized via ScreenReader.
         """
         key_code = event.GetKeyCode()
+        msg = None  # Message from controller
         
         # ESC: Cancel and close dialog
         if key_code == wx.WXK_ESCAPE:
-            # Use controller to handle cancel logic
             msg = self.options_controller.cancel_close()
-            
-            # Vocalize message if present (via controller's screen reader)
-            # Note: Screen reader access will be improved in STEP 4
-            
-            # Close dialog with cancel status
             self.EndModal(wx.ID_CANCEL)
             return
         
-        # Other keys: Not handled yet (STEP 4)
-        # For now, just propagate
+        # UP: Navigate to previous option
+        elif key_code == wx.WXK_UP:
+            msg = self.options_controller.navigate_up()
+        
+        # DOWN: Navigate to next option
+        elif key_code == wx.WXK_DOWN:
+            msg = self.options_controller.navigate_down()
+        
+        # ENTER: Modify current option
+        elif key_code in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER):
+            msg = self.options_controller.modify_current_option()
+        
+        # Numbers 1-5: Jump to specific option
+        elif key_code in (ord('1'), wx.WXK_NUMPAD1):
+            msg = self.options_controller.jump_to_option(0)  # Index 0 = Option 1
+        elif key_code in (ord('2'), wx.WXK_NUMPAD2):
+            msg = self.options_controller.jump_to_option(1)  # Index 1 = Option 2
+        elif key_code in (ord('3'), wx.WXK_NUMPAD3):
+            msg = self.options_controller.jump_to_option(2)  # Index 2 = Option 3
+        elif key_code in (ord('4'), wx.WXK_NUMPAD4):
+            msg = self.options_controller.jump_to_option(3)  # Index 3 = Option 4
+        elif key_code in (ord('5'), wx.WXK_NUMPAD5):
+            msg = self.options_controller.jump_to_option(4)  # Index 4 = Option 5
+        
+        # T: Toggle timer on/off
+        elif key_code in (ord('T'), ord('t')):
+            msg = self.options_controller.toggle_timer()
+        
+        # +/=: Increment timer value
+        elif key_code in (ord('+'), ord('='), wx.WXK_NUMPAD_ADD):
+            msg = self.options_controller.increment_timer()
+        
+        # -/_: Decrement timer value
+        elif key_code in (ord('-'), ord('_'), wx.WXK_NUMPAD_SUBTRACT):
+            msg = self.options_controller.decrement_timer()
+        
+        # If key was handled but no message, just return
+        if msg is not None:
+            # TODO (future): Vocalize msg via ScreenReader if available
+            # For now, controller handles TTS internally
+            return
+        
+        # Key not handled: propagate
         event.Skip()
 
 
