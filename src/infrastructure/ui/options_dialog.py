@@ -136,25 +136,27 @@ class OptionsDialog(wx.Dialog):
     def _create_ui(self) -> None:
         """Create native wx widgets for all game options.
         
-        Layout (v1.8.0 - native widgets, STEP 1 - options 1-4):
+        Layout (v1.8.0 - native widgets, ALL 8 options + buttons):
         - RadioBox for deck type (Francese/Napoletano)
         - RadioBox for difficulty (1/2/3 carte)
         - RadioBox for draw count (1/2/3 carte)
         - CheckBox + ComboBox for timer (enable + duration)
+        - RadioBox for shuffle mode (Inversione/Mescolata)
+        - CheckBox for command hints (ON/OFF)
+        - CheckBox for scoring system (ON/OFF)
+        - RadioBox for timer strict mode (STRICT/PERMISSIVE)
+        - Buttons: Salva / Annulla
         
         Navigation:
         - TAB to move between widgets (standard wx behavior)
         - UP/DOWN arrows to change value in RadioBox/ComboBox
         - SPACE to toggle CheckBox
+        - ENTER to activate focused button
         
         Accessibility:
         - NVDA reads all widgets automatically (native support)
         - No custom TTS needed - wx handles screen reader communication
         - All widgets have descriptive labels for screen readers
-        
-        Note:
-            Options 5-8 and buttons will be added in STEP 2.
-            This is STEP 1 - first 4 options only.
         """
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         
@@ -227,8 +229,74 @@ class OptionsDialog(wx.Dialog):
         
         main_sizer.Add(timer_box, 0, wx.ALL | wx.EXPAND, 10)
         
-        # Set sizer
+        # ========================================
+        # OPZIONE 5: RICICLO SCARTI
+        # ========================================
+        shuffle_box = wx.StaticBoxSizer(wx.VERTICAL, self, "Riciclo Scarti")
+        self.shuffle_radio = wx.RadioBox(
+            self,
+            label="Modalità di riciclo quando il tallone è vuoto:",
+            choices=["Inversione (ribalta mazzo scarti)", "Mescolata (rimescola scarti)"],
+            majorDimension=1,  # Vertical layout
+            style=wx.RA_SPECIFY_COLS
+        )
+        shuffle_box.Add(self.shuffle_radio, 0, wx.ALL | wx.EXPAND, 5)
+        main_sizer.Add(shuffle_box, 0, wx.ALL | wx.EXPAND, 10)
+        
+        # ========================================
+        # OPZIONE 6: SUGGERIMENTI COMANDI
+        # ========================================
+        self.command_hints_check = wx.CheckBox(
+            self,
+            label="Suggerimenti comandi attivi (mostra aiuto per comandi disponibili)"
+        )
+        main_sizer.Add(self.command_hints_check, 0, wx.ALL, 10)
+        
+        # ========================================
+        # OPZIONE 7: SISTEMA PUNTI
+        # ========================================
+        self.scoring_check = wx.CheckBox(
+            self,
+            label="Sistema punti attivo (calcola punteggio durante partita)"
+        )
+        main_sizer.Add(self.scoring_check, 0, wx.ALL, 10)
+        
+        # ========================================
+        # OPZIONE 8: MODALITÀ TIMER
+        # ========================================
+        strict_box = wx.StaticBoxSizer(wx.VERTICAL, self, "Modalità Timer")
+        self.timer_strict_radio = wx.RadioBox(
+            self,
+            label="Comportamento quando il timer scade:",
+            choices=[
+                "STRICT (sconfitta automatica)",
+                "PERMISSIVE (penalità punti, partita continua)"
+            ],
+            majorDimension=1,  # Vertical layout
+            style=wx.RA_SPECIFY_COLS
+        )
+        strict_box.Add(self.timer_strict_radio, 0, wx.ALL | wx.EXPAND, 5)
+        main_sizer.Add(strict_box, 0, wx.ALL | wx.EXPAND, 10)
+        
+        # ========================================
+        # PULSANTI SALVA / ANNULLA
+        # ========================================
+        button_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        
+        self.btn_save = wx.Button(self, id=wx.ID_OK, label="&Salva modifiche")
+        self.btn_save.SetToolTip("Salva le modifiche e chiudi la finestra opzioni (ALT+S)")
+        
+        self.btn_cancel = wx.Button(self, id=wx.ID_CANCEL, label="&Annulla modifiche")
+        self.btn_cancel.SetToolTip("Annulla le modifiche e chiudi la finestra opzioni (ALT+A)")
+        
+        button_sizer.Add(self.btn_save, 0, wx.ALL, 5)
+        button_sizer.Add(self.btn_cancel, 0, wx.ALL, 5)
+        
+        main_sizer.Add(button_sizer, 0, wx.ALIGN_CENTER | wx.ALL, 15)
+        
+        # Set sizer and auto-resize dialog
         self.SetSizer(main_sizer)
+        self.Fit()  # Auto-resize to fit all widgets
         
         # Load current settings into widgets
         self._load_settings_to_widgets()
@@ -244,9 +312,10 @@ class OptionsDialog(wx.Dialog):
         - difficulty_level: 1/2/3 -> RadioBox selection 0/1/2
         - draw_count: 1/2/3 -> RadioBox selection 0/1/2
         - max_time_game: seconds -> CheckBox + ComboBox (minutes)
-        
-        Note:
-            This method will be extended in STEP 2 for options 5-8.
+        - shuffle_discards: False -> 0 (Inversione), True -> 1 (Mescolata)
+        - command_hints_enabled: boolean -> CheckBox
+        - scoring_enabled: boolean -> CheckBox
+        - timer_strict_mode: True -> 0 (STRICT), False -> 1 (PERMISSIVE)
         """
         settings = self.options_controller.settings
         
@@ -272,6 +341,20 @@ class OptionsDialog(wx.Dialog):
         
         # Enable/disable combo based on checkbox
         self.timer_combo.Enable(timer_enabled)
+        
+        # 5. Riciclo Scarti (False=Inversione, True=Mescolata)
+        shuffle_selection = 1 if settings.shuffle_discards else 0
+        self.shuffle_radio.SetSelection(shuffle_selection)
+        
+        # 6. Suggerimenti Comandi
+        self.command_hints_check.SetValue(settings.command_hints_enabled)
+        
+        # 7. Sistema Punti
+        self.scoring_check.SetValue(settings.scoring_enabled)
+        
+        # 8. Modalità Timer (True=STRICT, False=PERMISSIVE)
+        strict_selection = 0 if settings.timer_strict_mode else 1
+        self.timer_strict_radio.SetSelection(strict_selection)
 
 
 # Module exports
