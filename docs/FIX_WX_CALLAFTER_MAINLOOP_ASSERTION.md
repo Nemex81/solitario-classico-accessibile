@@ -821,3 +821,5 @@ wx.CallLater(10, some_method)
 **Commit Message**: "fix(ui): replace wx.CallAfter with wx.CallLater to prevent assertion error"
 
 **Estimated Time**: 2 minutes (search/replace + test)
+
+Dopo aver letto questo documento pe rl aprima volta, copilkot dovrà creare il file sommario doto, utilizza come modello dicreazione il file docs/exaple TODO.md assicurati di includere i riferimento alla documentazioen completa che dovrai consultare ad igni fase di implementazione. dopo aver creato questo file todo copiklot può cominciare la codifica delle modifiche richeiste esaminando ilfile doto appena creato e seguedno l'ordine di implementazione, per approfondimenti sulle singole implememntazioni copilot dovraà obbligatoriament econsultare questa documentazioen estesa.
