@@ -615,16 +615,23 @@ ESC: abbandona partita."""
         Returns:
             bool: True if key was handled, False if not recognized
         
-        Mapped Keys (STEP 1 - basic navigation and actions):
+        Mapped Keys (v1.7.5 - full keyboard support):
+            Navigation:
             - Arrow keys: Cursor navigation (_cursor_up/down/left/right)
-            - ENTER/RETURN: Select card (_select_card)
-            - SPACE: Move cards (_move_cards)
-            - D: Draw cards (_draw_cards)
-            - P: Draw cards (_draw_cards)
+            - Numbers 1-7: Jump to tableau pile
+            - HOME: First card in pile
+            - END: Last card in pile
+            - TAB: Jump to different pile type
+            - DELETE: Cancel selection
+            
+            Actions:
+            - ENTER/RETURN: Select card
+            - SPACE: Move cards
+            - D/P: Draw cards
         
         Note:
             Does not call event.Skip() - caller decides whether to propagate.
-            More keys will be mapped in future iterations.
+            Modifier keys (SHIFT/CTRL) will be handled in next iteration.
         
         Example:
             >>> # In GameplayPanel.on_key_down():
@@ -633,14 +640,31 @@ ESC: abbandona partita."""
             ...     return  # Key consumed
             >>> event.Skip()  # Key not handled, propagate
         
-        New in v1.7.4: Direct wx event routing (refactoring)
+        New in v1.7.5: Complete keyboard mapping (24+ commands)
         """
         # Import wx locally to avoid module-level dependency
         import wx
         
         key_code = event.GetKeyCode()
         
-        # Arrow keys - Cursor navigation
+        # Get modifier state for future use (SHIFT/CTRL/ALT)
+        modifiers = event.GetModifiers()
+        has_shift = bool(modifiers & wx.MOD_SHIFT)
+        has_ctrl = bool(modifiers & wx.MOD_CONTROL)
+        has_alt = bool(modifiers & wx.MOD_ALT)
+        
+        # ═══════════════════════════════════════════════════════════
+        # NUMBER KEYS 1-7: Tableau piles (pile base)
+        # Note: SHIFT+numbers will be handled in next iteration
+        # ═══════════════════════════════════════════════════════════
+        if not has_shift and ord('1') <= key_code <= ord('7'):
+            pile_idx = key_code - ord('1')  # 0-6
+            self._nav_pile_base(pile_idx)
+            return True
+        
+        # ═══════════════════════════════════════════════════════════
+        # ARROW KEYS: Cursor navigation
+        # ═══════════════════════════════════════════════════════════
         if key_code == wx.WXK_UP:
             self._cursor_up()
             return True
@@ -654,22 +678,43 @@ ESC: abbandona partita."""
             self._cursor_right()
             return True
         
-        # ENTER/RETURN - Select card
+        # ═══════════════════════════════════════════════════════════
+        # ADVANCED NAVIGATION: HOME/END/TAB/DELETE
+        # ═══════════════════════════════════════════════════════════
+        elif key_code == wx.WXK_HOME:
+            self._cursor_home()
+            return True
+        elif key_code == wx.WXK_END:
+            self._cursor_end()
+            return True
+        elif key_code == wx.WXK_TAB:
+            self._cursor_tab()
+            return True
+        elif key_code == wx.WXK_DELETE:
+            self._cancel_selection()
+            return True
+        
+        # ═══════════════════════════════════════════════════════════
+        # ACTION KEYS: Select and Move
+        # ═══════════════════════════════════════════════════════════
         elif key_code in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER):
             self._select_card()
             return True
         
-        # SPACE - Move cards
         elif key_code == wx.WXK_SPACE:
             self._move_cards()
             return True
         
-        # D or P - Draw cards
-        elif key_code in (ord('D'), ord('P'), ord('d'), ord('p')):
+        # ═══════════════════════════════════════════════════════════
+        # DRAW KEYS: D or P
+        # ═══════════════════════════════════════════════════════════
+        elif key_code in (ord('D'), ord('d'), ord('P'), ord('p')):
             self._draw_cards()
             return True
         
-        # Key not handled
+        # ═══════════════════════════════════════════════════════════
+        # KEY NOT RECOGNIZED
+        # ═══════════════════════════════════════════════════════════
         return False
     
     def handle_keyboard_events(self, event: pygame.event.Event) -> None:
