@@ -1,5 +1,26 @@
 """Virtual menu for wxPython-based audiogame navigation.
 
+⚠️ DEPRECATED in v1.7.4 (STEP 5): This virtual menu system is no longer used
+in the main application flow. Replaced by:
+- MenuPanel (wx.Panel with wx.Button widgets) for main menu
+- OptionsDialog (wx.Dialog) for options window
+
+This module is kept for backward compatibility or potential secondary uses,
+but the primary menu/options flow now uses native wxPython components.
+
+Migration Path:
+- Main menu: Use MenuPanel instead of WxVirtualMenu
+- Options: Use OptionsDialog with OptionsWindowController
+- Submenu-style navigation: Consider wx.Choice or wx.RadioBox
+
+Original Purpose:
+Audio-only menu navigation using keyboard and TTS (no visual widgets).
+Designed for audiogame accessibility during pygame → wxPython migration.
+
+Current Status: DEPRECATED - Use MenuPanel + OptionsDialog
+Last Used: v1.7.3 (before panel-swap refactoring)
+Replacement: v1.7.4+ (MenuPanel, OptionsDialog, GameplayPanel)
+
 This module provides keyboard-navigable menu without visual widgets,
 using only screen reader feedback for accessibility. Replaces pygame-based
 VirtualMenu with wxPython event handling.
@@ -8,7 +29,7 @@ Clean Architecture Layer: Infrastructure/UI
 Dependency: wxPython 4.1.x+
 Platform: Windows (primary), Linux (tested), macOS (untested)
 
-Usage:
+Usage (DEPRECATED):
     >>> menu = WxVirtualMenu(
     ...     items=["Gioca", "Esci"],
     ...     callback=lambda idx: handle_selection(idx),
@@ -31,6 +52,14 @@ if TYPE_CHECKING:
 
 class WxVirtualMenu:
     """Keyboard-navigable virtual menu for wxPython audiogame.
+    
+    ⚠️ DEPRECATED in v1.7.4: Use MenuPanel + OptionsDialog instead.
+    
+    This class is kept for backward compatibility but is no longer used
+    in the main application flow. The new architecture uses:
+    - MenuPanel: Native wx.Panel with wx.Button widgets
+    - OptionsDialog: Native wx.Dialog for options
+    - GameplayPanel: Direct keyboard routing to GamePlayController
     
     Pure audio interface without visual widgets. Uses TTS for all feedback.
     Navigation via UP/DOWN arrows, selection via ENTER.

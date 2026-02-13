@@ -34,7 +34,7 @@ from src.domain.services.game_settings import GameSettings
 # Infrastructure layer - UI components (wxPython)
 from src.infrastructure.ui.wx_app import SolitarioWxApp
 from src.infrastructure.ui.wx_frame import SolitarioFrame
-from src.infrastructure.ui.wx_menu import WxVirtualMenu
+# WxVirtualMenu removed in v1.7.4 - replaced by MenuPanel + OptionsDialog
 from src.infrastructure.ui.view_manager import ViewManager
 from src.infrastructure.ui.menu_panel import MenuPanel
 from src.infrastructure.ui.gameplay_panel import GameplayPanel
