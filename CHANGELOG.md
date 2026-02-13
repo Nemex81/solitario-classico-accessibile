@@ -7,6 +7,82 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 ---
 
+## [1.8.0] - 2026-02-13
+
+### Added
+- **OptionsDialog con wx widgets nativi completi**: Tutte le 8 opzioni ora hanno controlli wx visibili
+  - RadioBox per Tipo Mazzo (Francese/Napoletano)
+  - RadioBox per Difficoltà (1/2/3 carte)
+  - RadioBox per Carte Pescate (1/2/3)
+  - CheckBox + ComboBox per Timer (enable + durata 5-60 minuti)
+  - RadioBox per Riciclo Scarti (Inversione/Mescolata)
+  - CheckBox per Suggerimenti Comandi (ON/OFF)
+  - CheckBox per Sistema Punti (ON/OFF)
+  - RadioBox per Modalità Timer (STRICT/PERMISSIVE)
+- **Pulsanti Salva/Annulla**: Controlli nativi TAB-navigabili con mnemonics ALT+S/ALT+A
+- **ESC intelligente con tracking modifiche**: Chiede conferma salvataggio solo se ci sono modifiche non salvate
+- **Snapshot settings all'apertura**: `open_window()` salva stato iniziale per rollback su annullamento
+
+### Fixed
+- **Reset gameplay su abbandono ESC**: `engine.reset_game()` ora chiamato quando si abbandona partita con conferma
+- **Reset gameplay su doppio ESC**: `engine.reset_game()` chiamato anche per uscita rapida (< 2 secondi)
+- **Reset gameplay su timeout STRICT**: `engine.reset_game()` chiamato quando timer scade in modalità STRICT
+- **Reset gameplay su rifiuto rematch**: `engine.reset_game()` chiamato quando utente rifiuta nuova partita dopo vittoria/sconfitta
+
+### Changed
+- **Navigazione opzioni completamente riscritta**: Da virtuale (frecce/numeri) a standard wxPython (TAB tra widget, frecce dentro widget)
+- **Accessibilità NVDA migliorata**: Widget nativi letti automaticamente da screen reader (no TTS custom)
+- **UI ibrida**: Supporto completo mouse (click su widget) + tastiera (TAB navigation)
+- **Live update mode**: Settings aggiornati immediatamente quando cambi widget (con rollback su annulla)
+
+### Removed
+- **Navigazione virtuale opzioni**: Rimossi comandi frecce SU/GIÙ e numeri 1-8 (sostituiti da TAB standard)
+- **EVT_CHAR_HOOK per frecce**: Rimosso handler custom keyboard (tranne ESC)
+- **Metodi controller navigate_up/down/jump_to_option**: Non più chiamati da OptionsDialog (logic spostata in widgets)
+
+### Technical
+- `OptionsDialog._create_ui()`: Completamente riscritto con 8 wx.RadioBox/CheckBox/ComboBox + 2 wx.Button
+- `OptionsDialog._load_settings_to_widgets()`: Popola widget da GameSettings all'apertura
+- `OptionsDialog._save_widgets_to_settings()`: Salva widget a GameSettings su ogni modifica (live)
+- `OptionsDialog._bind_widget_events()`: Collega tutti i widget a handler change detection
+- `OptionsDialog.on_setting_changed()`: Handler generico per widget changes (marca DIRTY)
+- `OptionsDialog.on_timer_toggled()`: Handler speciale per timer enable/disable
+- `OptionsDialog.on_save_click()` / `on_cancel_click()`: Handler pulsanti (commit/rollback)
+- `OptionsDialog.on_key_down()`: ESC intelligente con chiamata `controller.close_window()`
+- `SolitarioController.show_options()`: Chiama `options_controller.open_window()` prima di mostrare dialog
+- `SolitarioController.show_abandon_game_dialog()`: Aggiunta chiamata `engine.reset_game()`
+- `SolitarioController.confirm_abandon_game()`: Aggiunta chiamata `engine.reset_game()`
+- `SolitarioController._handle_game_over_by_timeout()`: Aggiunta chiamata `engine.reset_game()`
+- `SolitarioController.handle_game_ended()`: Aggiunta chiamata `engine.reset_game()` se no rematch
+
+### Migration Notes
+Aggiornamento da v1.7.5 a v1.8.0:
+
+**Opzioni - Nuova Esperienza**:
+- **Non più frecce/numeri**: Usa TAB per navigare tra opzioni, frecce SU/GIÙ per cambiare valore dentro RadioBox/ComboBox
+- **Widget visibili**: Ora vedi tutti i controlli (radio buttons, checkboxes, dropdown)
+- **ESC intelligente**: Se modifichi opzioni, ESC chiede "Vuoi salvare?" prima di chiudere
+- **Pulsanti sempre visibili**: "Salva modifiche" e "Annulla modifiche" in fondo al dialog
+- **Accessibilità**: NVDA legge automaticamente tutti i widget nativi
+
+**Gameplay - Reset Garantito**:
+- Abbandonare partita (qualsiasi metodo) ora resetta completamente lo stato
+- Nessuna carta o dato residuo tra partite
+- Menu sempre pulito dopo abbandono
+
+### Breaking Changes
+⚠️ **Navigazione Opzioni**: Comandi vecchi (frecce/numeri) **NON funzionano più**. Usa TAB + frecce standard.
+
+Se usavi script/automazione che simulavano frecce/numeri nel dialog opzioni, dovrai aggiornarli per usare TAB navigation.
+
+### References
+- Documentation: `docs/WX_OPTIONS_WIDGETS_RESET_GAMEPLAY_v1.8.0.md`
+- TODO Tracking: `docs/TODO_v1.8.0_WX_WIDGETS_RESET.md`
+- Issue #59: wxPython migration - major feature release
+- Commits: 6 atomic commits (widgets 1-4, widgets 5-8, binding, ESC, reset, changelog)
+
+---
+
 ## [1.7.5] - 2026-02-13
 
 ### Fixed
