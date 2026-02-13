@@ -300,18 +300,38 @@ class SolitarioController:
             print("⚠ Unexpected dialog result: None")
     
     def show_abandon_game_dialog(self) -> None:
-        """Show abandon game confirmation dialog (called from GameplayView)."""
-        result = self.dialog_manager.show_yes_no(
-            "Vuoi abbandonare la partita e tornare al menu di gioco?",
-            "Abbandono Partita"
+        """Show abandon game confirmation dialog (called from GameplayPanel ESC handler).
+        
+        Displays native wxDialog asking user to confirm game abandonment.
+        If user confirms (YES), resets game engine and returns to menu.
+        If user cancels (NO/ESC), returns to gameplay.
+        
+        Called from:
+            GameplayPanel._handle_esc() when ESC pressed during gameplay
+        
+        Dialog behavior:
+            - Title: "Abbandono Partita"
+            - Message: "Vuoi abbandonare la partita e tornare al menu di gioco?"
+            - Buttons: YES (confirm) / NO (cancel)
+            - ESC key: Same as NO (cancel)
+        
+        Returns:
+            None (side effect: may reset game and switch to menu)
+        
+        Version:
+            v1.7.5: Fixed dialog method name and parameter order
+        """
+        result = self.dialog_manager.show_yes_no_dialog(
+            title="Abbandono Partita",
+            message="Vuoi abbandonare la partita e tornare al menu di gioco?"
         )
+        
         if result:
-            # Reset game engine (clear cards, score, timer)
+            # User confirmed abandon
             print("\n→ User confirmed abandon - Resetting game engine")
             self.engine.reset_game()
-            
-            # Return to main menu
             self.return_to_menu()
+        # else: User cancelled, do nothing (dialog already closed)
     
     def show_new_game_dialog(self) -> None:
         """Show new game confirmation dialog (called from GameplayController).

@@ -313,21 +313,52 @@ class GamePlayController:
     # === AZIONI CARTE ===
     
     def _select_card(self) -> None:
-        """ENTER: Select card under cursor.
+        """ENTER: Select card under cursor (simple selection).
         
-        Special behavior:
+        This method is called from handle_wx_key_event() which already
+        handles CTRL+ENTER separately via _select_from_waste().
+        This method ONLY handles plain ENTER (no modifiers).
+        
+        Behavior:
         - On stock pile: Draw cards
         - On other piles: Select/toggle card
-        - CTRL+ENTER: Select from waste pile
-        """
-        mods = pygame.key.get_mods()
         
-        if mods & KMOD_CTRL:
-            # CTRL+ENTER: Seleziona da scarti
-            self.engine.select_from_waste()
-        else:
-            # ENTER normale: Seleziona carta o pesca
-            self.engine.select_card_at_cursor()
+        Note:
+            CTRL+ENTER is handled separately in handle_wx_key_event()
+            at line ~739 as direct call to _select_from_waste().
+            This separation ensures clean wxPython integration.
+        
+        Version:
+            v1.7.5: Simplified for wxPython (removed pygame.key.get_mods)
+        """
+        # wxPython version: No modifier check needed
+        # Modifiers already handled by caller handle_wx_key_event()
+        self.engine.select_card_at_cursor()
+    
+    def _select_from_waste(self) -> None:
+        """CTRL+ENTER: Select card from waste pile directly.
+        
+        Shortcut command for selecting top card from waste pile
+        without needing to navigate cursor to it first.
+        
+        This is a convenience wrapper around engine.select_from_waste()
+        for wxPython keyboard mapping.
+        
+        Called from:
+            - handle_wx_key_event() when CTRL+ENTER pressed (line ~739)
+        
+        Equivalent pygame command:
+            - CTRL+ENTER in handle_keyboard_events()
+        
+        Example:
+            User presses CTRL+ENTER while cursor is on tableau pile.
+            Instead of moving cursor to waste, this directly selects
+            the top waste card for moving.
+        
+        Version:
+            v1.7.5: New helper method for wxPython keyboard mapping
+        """
+        self.engine.select_from_waste()
     
     def _move_cards(self) -> None:
         """SPACE: Move selected cards to target pile."""
