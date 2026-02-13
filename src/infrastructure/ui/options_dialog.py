@@ -10,14 +10,18 @@ Platform: Windows (primary), Linux (tested), macOS (untested)
 
 Usage:
     >>> from src.application.options_controller import OptionsWindowController
+    >>> from src.infrastructure.accessibility.screen_reader import ScreenReader
     >>> controller = OptionsWindowController(settings)
-    >>> dlg = OptionsDialog(parent=frame, controller=controller)
+    >>> dlg = OptionsDialog(parent=frame, controller=controller, screen_reader=sr)
     >>> dlg.ShowModal()
     >>> dlg.Destroy()
 """
 
 import wx
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.infrastructure.accessibility.screen_reader import ScreenReader
 
 from src.application.options_controller import OptionsWindowController
 
@@ -55,23 +59,27 @@ class OptionsDialog(wx.Dialog):
         self,
         parent: wx.Window,
         controller: OptionsWindowController,
+        screen_reader: Optional['ScreenReader'] = None,
         title: str = "Opzioni di gioco",
         size: tuple = (500, 400)
     ):
-        """Initialize OptionsDialog with controller.
+        """Initialize OptionsDialog with controller and screen reader.
         
         Args:
             parent: Parent window (typically main frame)
             controller: OptionsWindowController instance
+            screen_reader: ScreenReader for TTS feedback (optional)
             title: Dialog title (default: "Opzioni di gioco")
             size: Dialog size in pixels (default: 500x400)
         
         Attributes:
             options_controller: Reference to OptionsWindowController
+            screen_reader: Reference to ScreenReader for TTS
         
         Note:
             Controller must be initialized with GameSettings instance.
             The dialog routes keyboard events to controller methods.
+            If screen_reader is provided, vocalize controller messages.
         """
         super().__init__(
             parent=parent,
@@ -81,6 +89,7 @@ class OptionsDialog(wx.Dialog):
         )
         
         self.options_controller = controller
+        self.screen_reader = screen_reader
         
         # Create minimal UI
         self._create_ui()
@@ -188,10 +197,10 @@ class OptionsDialog(wx.Dialog):
         elif key_code in (ord('-'), ord('_'), wx.WXK_NUMPAD_SUBTRACT):
             msg = self.options_controller.decrement_timer()
         
-        # If key was handled but no message, just return
+        # If key was handled, vocalize message via TTS
         if msg is not None:
-            # TODO (future): Vocalize msg via ScreenReader if available
-            # For now, controller handles TTS internally
+            if self.screen_reader and self.screen_reader.tts:
+                self.screen_reader.tts.speak(msg, interrupt=True)
             return
         
         # Key not handled: propagate

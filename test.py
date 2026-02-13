@@ -208,18 +208,17 @@ class SolitarioController:
     def show_options(self) -> None:
         """Show options window using OptionsDialog (STEP 3).
         
-        Opens modal OptionsDialog with OptionsWindowController.
-        Uses wxPython native dialog for proper window behavior.
+        Opens modal OptionsDialog with OptionsWindowController and ScreenReader.
         
         Flow:
         1. Set is_options_mode flag
-        2. Create OptionsDialog with controller
+        2. Create OptionsDialog with controller + screen_reader
         3. Show modal (blocks until closed)
         4. Clean up and reset flag
         
         Note:
-            STEP 3: Basic dialog with ESC handling
-            STEP 4: Full keyboard mapping (UP/DOWN/ENTER/etc)
+            screen_reader enables TTS feedback for navigation (UP/DOWN/numbers).
+            All controller messages are vocalized via ScreenReader TTS.
         """
         from src.infrastructure.ui.options_dialog import OptionsDialog
         
@@ -229,10 +228,11 @@ class SolitarioController:
         
         self.is_options_mode = True
         
-        # Create and show modal options dialog
+        # Create and show modal options dialog (with TTS support)
         dlg = OptionsDialog(
             parent=self.frame,
-            controller=self.gameplay_controller.options_controller
+            controller=self.gameplay_controller.options_controller,
+            screen_reader=self.screen_reader
         )
         dlg.ShowModal()
         dlg.Destroy()
