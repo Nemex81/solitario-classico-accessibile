@@ -243,13 +243,39 @@ class SolitarioController:
         print("="*60)
     
     def show_exit_dialog(self) -> None:
-        """Show exit confirmation dialog (called from MenuView)."""
+        """Show exit confirmation dialog (called from MenuPanel).
+        
+        Shows native wxDialog for exit confirmation.
+        If dialog_manager not available, falls back to direct quit.
+        
+        Note:
+            dialog_manager.show_yes_no() returns:
+            - True: User clicked Yes
+            - False: User clicked No or ESC
+            - None: Should not happen with current implementation
+        """
+        # Fallback if dialog_manager not initialized
+        if not self.dialog_manager or not hasattr(self.dialog_manager, 'is_available'):
+            print("⚠ Dialog manager not available, exiting directly")
+            self.quit_app()
+            return
+        
+        # Show confirmation dialog
         result = self.dialog_manager.show_yes_no(
             "Vuoi davvero uscire dal gioco?",
             "Conferma uscita"
         )
-        if result:
+        
+        # Handle result
+        if result is True:
             self.quit_app()
+        elif result is False:
+            # User cancelled, do nothing
+            if self.screen_reader:
+                self.screen_reader.tts.speak("Uscita annullata.", interrupt=True)
+        else:
+            # result is None (should not happen)
+            print("⚠ Unexpected dialog result: None")
     
     def show_abandon_game_dialog(self) -> None:
         """Show abandon game confirmation dialog (called from GameplayView)."""
