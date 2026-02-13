@@ -206,40 +206,62 @@ class SolitarioController:
                 )
     
     def show_options(self) -> None:
-        """Show options window using OptionsDialog (STEP 3).
+        """Show options window using OptionsDialog with native wx widgets.
         
-        Opens modal OptionsDialog with OptionsWindowController and ScreenReader.
+        Opens modal OptionsDialog with:
+        - Native wx.RadioBox, wx.CheckBox, wx.ComboBox for all 8 options
+        - Salva/Annulla buttons
+        - Smart ESC (confirmation if modifications present)
         
         Flow:
         1. Set is_options_mode flag
-        2. Create OptionsDialog with controller + screen_reader
-        3. Show modal (blocks until closed)
-        4. Clean up and reset flag
+        2. Call controller.open_window() (sets state=OPEN_CLEAN, saves snapshot)
+        3. Vocalize opening message (optional)
+        4. Create OptionsDialog with controller + screen_reader
+        5. Show modal (blocks until closed)
+        6. Clean up and reset flag
         
-        Note:
-            screen_reader enables TTS feedback for navigation (UP/DOWN/numbers).
-            All controller messages are vocalized via ScreenReader TTS.
+        State Management:
+        - controller.open_window() saves settings snapshot for change tracking
+        - Any widget change sets state to OPEN_DIRTY
+        - ESC with OPEN_DIRTY triggers save confirmation dialog
+        - Buttons or ESC with OPEN_CLEAN close directly
+        
+        Navigation:
+        - TAB: Move between widgets (standard wx)
+        - UP/DOWN: Change value in RadioBox/ComboBox
+        - SPACE: Toggle CheckBox
+        - ENTER: Activate focused button
+        - ESC: Smart close (confirmation if dirty)
         """
         from src.infrastructure.ui.options_dialog import OptionsDialog
         
         print("\n" + "="*60)
-        print("APERTURA FINESTRA OPZIONI (OptionsDialog)")
+        print("APERTURA FINESTRA OPZIONI (OptionsDialog - Native Widgets)")
         print("="*60)
         
         self.is_options_mode = True
         
-        # Create and show modal options dialog (with TTS support)
+        # Initialize controller state (OPEN_CLEAN, save snapshot)
+        open_msg = self.gameplay_controller.options_controller.open_window()
+        if self.screen_reader:
+            self.screen_reader.tts.speak(open_msg, interrupt=True)
+            wx.MilliSleep(500)  # Brief pause before showing dialog
+        
+        # Create and show modal options dialog
         dlg = OptionsDialog(
             parent=self.frame,
             controller=self.gameplay_controller.options_controller,
             screen_reader=self.screen_reader
         )
-        dlg.ShowModal()
+        result = dlg.ShowModal()
         dlg.Destroy()
         
         self.is_options_mode = False
         
-        print("Finestra opzioni chiusa.")
+        # Log dialog result (for debugging)
+        result_str = "OK (saved)" if result == wx.ID_OK else "CANCEL (discarded)"
+        print(f"Finestra opzioni chiusa: {result_str}")
         print("="*60)
     
     def show_exit_dialog(self) -> None:

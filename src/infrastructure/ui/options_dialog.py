@@ -130,6 +130,9 @@ class OptionsDialog(wx.Dialog):
         # Create native wx widgets UI
         self._create_ui()
         
+        # Bind ESC key for smart close
+        self.Bind(wx.EVT_CHAR_HOOK, self.on_key_down)
+        
         # Center dialog on parent
         self.Centre()
     
@@ -533,6 +536,55 @@ class OptionsDialog(wx.Dialog):
         
         # 8. Modalità Timer (0->True STRICT, 1->False PERMISSIVE)
         settings.timer_strict_mode = (self.timer_strict_radio.GetSelection() == 0)
+    
+    def on_key_down(self, event: wx.KeyEvent) -> None:
+        """Handle keyboard events for ESC key only.
+        
+        ESC behavior (v1.8.0 smart close):
+        - If no modifications (OPEN_CLEAN): Close directly
+        - If modifications present (OPEN_DIRTY): Show save confirmation dialog
+          * Dialog options: Sì (save), No (discard), Annulla (cancel)
+          * If user cancels: Stay open (don't close)
+        
+        Other keys: Propagated normally (TAB, arrows, SPACE handled by wx)
+        
+        Args:
+            event: wx.KeyEvent from keyboard
+        
+        Note:
+            Virtual navigation (arrows/numbers) removed in v1.8.0.
+            Use standard wx navigation: TAB between widgets,
+            arrows within RadioBox/ComboBox.
+        """
+        key_code = event.GetKeyCode()
+        
+        # ESC: Smart close with confirmation if dirty
+        if key_code == wx.WXK_ESCAPE:
+            # Call close_window() which handles DIRTY/CLEAN states
+            msg = self.options_controller.close_window()
+            
+            # Check if dialog was actually closed
+            # (controller sets state to CLOSED if user confirmed save/discard)
+            if self.options_controller.state == "CLOSED":
+                # Closing confirmed (saved or discarded)
+                if self.screen_reader and self.screen_reader.tts:
+                    self.screen_reader.tts.speak(msg, interrupt=True)
+                
+                # Determine exit code based on message content
+                # ("salv" in msg means user chose to save)
+                exit_code = wx.ID_OK if "salv" in msg.lower() else wx.ID_CANCEL
+                self.EndModal(exit_code)
+            else:
+                # Closing cancelled (user pressed Annulla in save dialog)
+                # or fallback mode (no dialog_manager available)
+                if self.screen_reader and self.screen_reader.tts:
+                    self.screen_reader.tts.speak(msg, interrupt=True)
+                # Stay open (don't call EndModal)
+            
+            return  # Event handled
+        
+        # All other keys: Propagate normally (TAB, arrows, SPACE, etc.)
+        event.Skip()
 
 
 # Module exports
