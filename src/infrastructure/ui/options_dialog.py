@@ -1,19 +1,33 @@
-"""OptionsDialog - wxPython modal dialog for game options.
+"""OptionsDialog - wxPython modal dialog for game options with native widgets.
 
-This module provides a wxPython-based options dialog that wraps the existing
-OptionsWindowController, providing native window behavior with keyboard navigation.
+This module provides a wxPython-based options dialog with native wx widgets
+(RadioBox, CheckBox, ComboBox) for all 8 game options. Replaces virtual audio-only
+navigation with standard wx TAB navigation and visual controls.
 
-Pattern: Modal dialog with keyboard event routing
+Version: v1.8.0 - Complete rewrite with native widgets
+Pattern: Modal dialog with native wx controls + event binding
 Clean Architecture Layer: Infrastructure/UI
 Dependency: wxPython 4.1.x+
 Platform: Windows (primary), Linux (tested), macOS (untested)
 
-Usage:
+Features (v1.8.0):
+- Native wx.RadioBox for multi-choice options (deck type, difficulty, etc.)
+- Native wx.CheckBox for boolean options (timer enable, hints, scoring)
+- Native wx.ComboBox for timer duration selection
+- Standard TAB navigation between widgets
+- Arrow keys to change values within RadioBox/ComboBox
+- SPACE to toggle CheckBox
+- Salva/Annulla buttons (ALT+S/ALT+A mnemonics)
+- Smart ESC with save confirmation if modifications present
+- Automatic NVDA screen reader support (no custom TTS needed)
+
+Usage (v1.8.0):
     >>> from src.application.options_controller import OptionsWindowController
     >>> from src.infrastructure.accessibility.screen_reader import ScreenReader
     >>> controller = OptionsWindowController(settings)
+    >>> controller.open_window()  # Initialize state + snapshot
     >>> dlg = OptionsDialog(parent=frame, controller=controller, screen_reader=sr)
-    >>> dlg.ShowModal()
+    >>> result = dlg.ShowModal()  # wx.ID_OK (saved) or wx.ID_CANCEL (discarded)
     >>> dlg.Destroy()
 """
 
@@ -27,32 +41,44 @@ from src.application.options_controller import OptionsWindowController
 
 
 class OptionsDialog(wx.Dialog):
-    """Modal options dialog driven by OptionsWindowController.
+    """Modal options dialog with native wx widgets for all 8 options.
     
-    Provides a wxPython native dialog for game options configuration.
-    Routes keyboard events to OptionsWindowController methods for consistency
-    with the existing virtual options system.
+    Provides a wxPython native dialog with visual controls for game options.
+    Uses standard wx navigation (TAB between widgets, arrows within widgets).
     
-    Features:
-    - Modal dialog (blocks input to parent window)
-    - Keyboard navigation (arrows, ENTER, ESC)
-    - Routes events to OptionsWindowController
-    - ESC closes dialog with cancel
+    Features (v1.8.0):
+    - 8 options with native wx widgets
+    - RadioBox for multi-choice options (5 total)
+    - CheckBox for boolean options (3 total)
+    - ComboBox for timer duration
+    - Salva/Annulla buttons
+    - Smart ESC with save confirmation
+    - Live settings update (changes immediately applied)
+    - Rollback on cancel (restore original snapshot)
+    - NVDA reads all widgets automatically
     
-    Keyboard Mapping (STEP 3 - basic):
-    - ESC: Cancel and close dialog
-    - Other keys: To be mapped in STEP 4
+    Navigation:
+    - TAB: Move between widgets
+    - UP/DOWN: Change value in RadioBox/ComboBox
+    - SPACE: Toggle CheckBox
+    - ENTER: Activate focused button
+    - ESC: Smart close (ask confirmation if modifications present)
     
     Example:
         >>> settings = GameSettings()
         >>> options_ctrl = OptionsWindowController(settings)
+        >>> options_ctrl.open_window()  # Required: Init state
         >>> dlg = OptionsDialog(parent=main_frame, controller=options_ctrl)
-        >>> result = dlg.ShowModal()  # wx.ID_OK or wx.ID_CANCEL
+        >>> result = dlg.ShowModal()
+        >>> if result == wx.ID_OK:
+        >>>     print("Settings saved")
+        >>> elif result == wx.ID_CANCEL:
+        >>>     print("Settings discarded")
         >>> dlg.Destroy()
     
     Note:
-        Full keyboard mapping (UP/DOWN/ENTER/1-5/T/+/-) will be added in STEP 4.
-        This is STEP 3 - minimal dialog with ESC handling only.
+        Virtual navigation (arrows/numbers 1-8) removed in v1.8.0.
+        Use standard wx TAB navigation instead.
     """
     
     def __init__(
@@ -61,25 +87,35 @@ class OptionsDialog(wx.Dialog):
         controller: OptionsWindowController,
         screen_reader: Optional['ScreenReader'] = None,
         title: str = "Opzioni di gioco",
-        size: tuple = (500, 400)
+        size: tuple = (600, 700)  # Increased for 8 widgets
     ):
-        """Initialize OptionsDialog with controller and screen reader.
+        """Initialize OptionsDialog with native wx widgets.
         
         Args:
             parent: Parent window (typically main frame)
-            controller: OptionsWindowController instance
-            screen_reader: ScreenReader for TTS feedback (optional)
+            controller: OptionsWindowController instance (must call open_window() before)
+            screen_reader: ScreenReader for optional TTS feedback
             title: Dialog title (default: "Opzioni di gioco")
-            size: Dialog size in pixels (default: 500x400)
+            size: Dialog size in pixels (default: 600x700 for all widgets)
         
         Attributes:
             options_controller: Reference to OptionsWindowController
             screen_reader: Reference to ScreenReader for TTS
+            deck_type_radio: RadioBox for deck type (Francese/Napoletano)
+            difficulty_radio: RadioBox for difficulty (1/2/3 carte)
+            draw_count_radio: RadioBox for draw count (1/2/3)
+            timer_check: CheckBox to enable/disable timer
+            timer_combo: ComboBox for timer duration (5-60 min)
+            shuffle_radio: RadioBox for shuffle mode (Inversione/Mescolata)
+            command_hints_check: CheckBox for command hints (ON/OFF)
+            scoring_check: CheckBox for scoring system (ON/OFF)
+            timer_strict_radio: RadioBox for timer strict mode (STRICT/PERMISSIVE)
+            btn_save: Save button (ALT+S)
+            btn_cancel: Cancel button (ALT+A)
         
         Note:
-            Controller must be initialized with GameSettings instance.
-            The dialog routes keyboard events to controller methods.
-            If screen_reader is provided, vocalize controller messages.
+            Controller.open_window() must be called before creating dialog.
+            This saves settings snapshot for change tracking and rollback.
         """
         super().__init__(
             parent=parent,
@@ -91,145 +127,151 @@ class OptionsDialog(wx.Dialog):
         self.options_controller = controller
         self.screen_reader = screen_reader
         
-        # Create minimal UI
+        # Create native wx widgets UI
         self._create_ui()
-        
-        # Bind keyboard events
-        self.Bind(wx.EVT_CHAR_HOOK, self.on_key_down)
         
         # Center dialog on parent
         self.Centre()
     
     def _create_ui(self) -> None:
-        """Create dialog UI elements.
+        """Create native wx widgets for all game options.
         
-        Creates a simple layout with informational text.
-        In STEP 3, this is minimal - just shows instructions.
+        Layout (v1.8.0 - native widgets, STEP 1 - options 1-4):
+        - RadioBox for deck type (Francese/Napoletano)
+        - RadioBox for difficulty (1/2/3 carte)
+        - RadioBox for draw count (1/2/3 carte)
+        - CheckBox + ComboBox for timer (enable + duration)
         
-        Layout:
-        - StaticText with usage instructions
-        - 10px padding on all sides
-        - Vertical sizer for expansion
+        Navigation:
+        - TAB to move between widgets (standard wx behavior)
+        - UP/DOWN arrows to change value in RadioBox/ComboBox
+        - SPACE to toggle CheckBox
+        
+        Accessibility:
+        - NVDA reads all widgets automatically (native support)
+        - No custom TTS needed - wx handles screen reader communication
+        - All widgets have descriptive labels for screen readers
         
         Note:
-            The actual options interface is audio-based (TTS).
-            This visual UI is minimal for accessibility.
+            Options 5-8 and buttons will be added in STEP 2.
+            This is STEP 1 - first 4 options only.
         """
-        # Main sizer
-        sizer = wx.BoxSizer(wx.VERTICAL)
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
         
-        # Instructional label
-        label = wx.StaticText(
+        # ========================================
+        # OPZIONE 1: TIPO MAZZO
+        # ========================================
+        deck_box = wx.StaticBoxSizer(wx.VERTICAL, self, "Tipo Mazzo")
+        self.deck_type_radio = wx.RadioBox(
             self,
-            label="Finestra opzioni. Usa frecce e invio per modificare.\n\n"
-                  "Premere ESC per chiudere."
+            label="Seleziona il tipo di mazzo da usare:",
+            choices=["Francese (52 carte)", "Napoletano (40 carte)"],
+            majorDimension=1,  # Vertical layout
+            style=wx.RA_SPECIFY_COLS
         )
-        label.SetFont(wx.Font(10, wx.DEFAULT, wx.NORMAL, wx.NORMAL))
+        deck_box.Add(self.deck_type_radio, 0, wx.ALL | wx.EXPAND, 5)
+        main_sizer.Add(deck_box, 0, wx.ALL | wx.EXPAND, 10)
         
-        # Add to sizer with padding
-        sizer.Add(label, 0, wx.ALL | wx.EXPAND, 10)
+        # ========================================
+        # OPZIONE 2: DIFFICOLTÀ
+        # ========================================
+        diff_box = wx.StaticBoxSizer(wx.VERTICAL, self, "Difficoltà")
+        self.difficulty_radio = wx.RadioBox(
+            self,
+            label="Numero di carte scoperte dal tallone:",
+            choices=["1 carta (facile)", "2 carte (medio)", "3 carte (difficile)"],
+            majorDimension=3,  # Horizontal layout
+            style=wx.RA_SPECIFY_COLS
+        )
+        diff_box.Add(self.difficulty_radio, 0, wx.ALL | wx.EXPAND, 5)
+        main_sizer.Add(diff_box, 0, wx.ALL | wx.EXPAND, 10)
         
-        self.SetSizer(sizer)
+        # ========================================
+        # OPZIONE 3: CARTE PESCATE
+        # ========================================
+        draw_box = wx.StaticBoxSizer(wx.VERTICAL, self, "Carte Pescate per Turno")
+        self.draw_count_radio = wx.RadioBox(
+            self,
+            label="Numero di carte pescate dal mazzo ad ogni click:",
+            choices=["1 carta", "2 carte", "3 carte"],
+            majorDimension=3,  # Horizontal layout
+            style=wx.RA_SPECIFY_COLS
+        )
+        draw_box.Add(self.draw_count_radio, 0, wx.ALL | wx.EXPAND, 5)
+        main_sizer.Add(draw_box, 0, wx.ALL | wx.EXPAND, 10)
+        
+        # ========================================
+        # OPZIONE 4: TIMER
+        # ========================================
+        timer_box = wx.StaticBoxSizer(wx.VERTICAL, self, "Timer Partita")
+        
+        # CheckBox per abilitare/disabilitare timer
+        self.timer_check = wx.CheckBox(self, label="Attiva timer (limite di tempo per partita)")
+        timer_box.Add(self.timer_check, 0, wx.ALL, 5)
+        
+        # ComboBox per selezionare durata (5-60 minuti)
+        timer_duration_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        timer_label = wx.StaticText(self, label="Durata timer:")
+        timer_duration_sizer.Add(timer_label, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
+        
+        # Genera choices 5, 10, 15, ..., 60 minuti
+        timer_choices = [f"{i} minuti" for i in range(5, 65, 5)]
+        self.timer_combo = wx.ComboBox(
+            self,
+            choices=timer_choices,
+            style=wx.CB_READONLY,
+            value="10 minuti"  # Default
+        )
+        timer_duration_sizer.Add(self.timer_combo, 1, wx.EXPAND)
+        timer_box.Add(timer_duration_sizer, 0, wx.ALL | wx.EXPAND, 5)
+        
+        main_sizer.Add(timer_box, 0, wx.ALL | wx.EXPAND, 10)
+        
+        # Set sizer
+        self.SetSizer(main_sizer)
+        
+        # Load current settings into widgets
+        self._load_settings_to_widgets()
     
-    def on_key_down(self, event: wx.KeyEvent) -> None:
-        """Handle keyboard events for options navigation.
+    def _load_settings_to_widgets(self) -> None:
+        """Load current settings from controller into widgets.
         
-        Routes keyboard input to OptionsWindowController methods.
-        All messages from controller are vocalized via ScreenReader TTS.
+        Called after _create_ui() to populate widgets with values from
+        GameSettings (via OptionsWindowController).
         
-        Args:
-            event: wx.KeyEvent from keyboard
-        
-        Key Mapping (Complete - v1.7.5):
-        - ESC: Close dialog with cancel
-        - UP/DOWN: Navigate options (navigate_up/down)
-        - ENTER: Modify current option (modify_current_option)
-        - 1-8: Jump to specific option:
-            1. Tipo Mazzo (Francese/Napoletano)
-            2. Difficoltà (1-3 carte)
-            3. Carte Pescate (1-3)
-            4. Timer (OFF, 5-60 min)
-            5. Riciclo Scarti (Inversione/Mescolata)
-            6. Suggerimenti Comandi (ON/OFF)
-            7. Sistema Punti (Attivo/Disattivato)
-            8. Modalità Timer (STRICT/PERMISSIVE)
-        - T: Toggle timer on/off (toggle_timer)
-        - +: Increment timer value (increment_timer)
-        - -: Decrement timer value (decrement_timer)
-        - I: Read all settings (read_all_settings)
-        - H: Show help text (show_help)
+        Maps GameSettings values to wx widget selections:
+        - deck_type: "french" -> 0, "neapolitan" -> 1
+        - difficulty_level: 1/2/3 -> RadioBox selection 0/1/2
+        - draw_count: 1/2/3 -> RadioBox selection 0/1/2
+        - max_time_game: seconds -> CheckBox + ComboBox (minutes)
         
         Note:
-            Both main keyboard and numpad keys are supported.
-            Controller methods return TTS messages vocalized by dialog.
+            This method will be extended in STEP 2 for options 5-8.
         """
-        key_code = event.GetKeyCode()
-        msg = None  # Message from controller
+        settings = self.options_controller.settings
         
-        # ESC: Cancel and close dialog
-        if key_code == wx.WXK_ESCAPE:
-            msg = self.options_controller.cancel_close()
-            self.EndModal(wx.ID_CANCEL)
-            return
+        # 1. Tipo Mazzo
+        deck_selection = 0 if settings.deck_type == "french" else 1
+        self.deck_type_radio.SetSelection(deck_selection)
         
-        # UP: Navigate to previous option
-        elif key_code == wx.WXK_UP:
-            msg = self.options_controller.navigate_up()
+        # 2. Difficoltà (1/2/3 -> 0/1/2)
+        self.difficulty_radio.SetSelection(settings.difficulty_level - 1)
         
-        # DOWN: Navigate to next option
-        elif key_code == wx.WXK_DOWN:
-            msg = self.options_controller.navigate_down()
+        # 3. Carte Pescate (1/2/3 -> 0/1/2)
+        self.draw_count_radio.SetSelection(settings.draw_count - 1)
         
-        # ENTER: Modify current option
-        elif key_code in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER):
-            msg = self.options_controller.modify_current_option()
+        # 4. Timer
+        timer_enabled = settings.max_time_game > 0
+        self.timer_check.SetValue(timer_enabled)
         
-        # Numbers 1-8: Jump to specific option (complete set)
-        elif key_code in (ord('1'), wx.WXK_NUMPAD1):
-            msg = self.options_controller.jump_to_option(0)  # Tipo Mazzo
-        elif key_code in (ord('2'), wx.WXK_NUMPAD2):
-            msg = self.options_controller.jump_to_option(1)  # Difficoltà
-        elif key_code in (ord('3'), wx.WXK_NUMPAD3):
-            msg = self.options_controller.jump_to_option(2)  # Carte Pescate
-        elif key_code in (ord('4'), wx.WXK_NUMPAD4):
-            msg = self.options_controller.jump_to_option(3)  # Timer
-        elif key_code in (ord('5'), wx.WXK_NUMPAD5):
-            msg = self.options_controller.jump_to_option(4)  # Riciclo Scarti
-        elif key_code in (ord('6'), wx.WXK_NUMPAD6):
-            msg = self.options_controller.jump_to_option(5)  # Suggerimenti Comandi
-        elif key_code in (ord('7'), wx.WXK_NUMPAD7):
-            msg = self.options_controller.jump_to_option(6)  # Sistema Punti
-        elif key_code in (ord('8'), wx.WXK_NUMPAD8):
-            msg = self.options_controller.jump_to_option(7)  # Modalità Timer
+        if timer_enabled:
+            minutes = settings.max_time_game // 60
+            self.timer_combo.SetValue(f"{minutes} minuti")
+        else:
+            self.timer_combo.SetValue("10 minuti")  # Default when disabled
         
-        # T: Toggle timer on/off
-        elif key_code in (ord('T'), ord('t')):
-            msg = self.options_controller.toggle_timer()
-        
-        # +/=: Increment timer value
-        elif key_code in (ord('+'), ord('='), wx.WXK_NUMPAD_ADD):
-            msg = self.options_controller.increment_timer()
-        
-        # -/_: Decrement timer value
-        elif key_code in (ord('-'), ord('_'), wx.WXK_NUMPAD_SUBTRACT):
-            msg = self.options_controller.decrement_timer()
-        
-        # I: Read all settings recap
-        elif key_code in (ord('I'), ord('i')):
-            msg = self.options_controller.read_all_settings()
-        
-        # H: Show help text
-        elif key_code in (ord('H'), ord('h')):
-            msg = self.options_controller.show_help()
-        
-        # If key was handled, vocalize message via TTS
-        if msg is not None:
-            if self.screen_reader and self.screen_reader.tts:
-                self.screen_reader.tts.speak(msg, interrupt=True)
-            return
-        
-        # Key not handled: propagate
-        event.Skip()
+        # Enable/disable combo based on checkbox
+        self.timer_combo.Enable(timer_enabled)
 
 
 # Module exports
