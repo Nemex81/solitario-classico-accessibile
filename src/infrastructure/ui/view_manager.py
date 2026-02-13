@@ -145,16 +145,33 @@ class ViewManager:
         Note:
             Uses Hide/Show/Layout pattern for smooth transitions.
             SetFocus() ensures keyboard input goes to correct panel.
+            
+            CRITICAL FIX (v2.0.3): Force wxPython event processing before
+            checking panel visibility to avoid race condition where IsShown()
+            doesn't immediately reflect Hide() state. This prevents crashes
+            when manually hiding panel before calling show_panel().
         """
         if name not in self.panels:
             logger.error(f"Panel not registered: {name}")
             return None
         
-        # Hide all panels
+        # ✅ FIX: Force wxPython to process pending events before checking states
+        # This ensures IsShown() reflects any manual Hide() calls made before
+        wx.SafeYield()
+        logger.debug("Forced wxPython event processing before panel swap")
+        
+        # Hide all panels (skip target to avoid redundant operations)
         for panel_name, panel in self.panels.items():
+            if panel_name == name:
+                continue  # Skip target panel - will be shown next
+            
+            # Check if panel is shown before hiding (avoid redundant Hide())
             if panel.IsShown():
-                panel.Hide()
-                logger.debug(f"Hidden panel: {panel_name}")
+                try:
+                    panel.Hide()
+                    logger.debug(f"Hidden panel: {panel_name}")
+                except Exception as e:
+                    logger.warning(f"Error hiding panel {panel_name}: {e}")
         
         # Show requested panel
         target_panel = self.panels[name]
