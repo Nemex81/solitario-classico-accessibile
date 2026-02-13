@@ -12,11 +12,10 @@ Usage:
     >>> gameplay = GameplayPanel(parent=frame.panel_container, controller=my_ctrl)
     >>> gameplay.Show()
     # User presses H → GameplayController.handle_wx_key_event(H)
-    # User presses ESC → _handle_esc() with double-ESC detection
+    # User presses ESC → _handle_esc() shows abandon confirmation dialog
 """
 
 import wx
-import time
 from .basic_panel import BasicPanel
 
 
@@ -24,20 +23,20 @@ class GameplayPanel(BasicPanel):
     """Gameplay panel for audiogame mode (single-frame pattern).
     
     Provides minimal UI (just a label) but captures all keyboard events
-    and routes them to GameplayController. Implements double-ESC detection
-    for quick game abandonment.
+    and routes them to GameplayController. ESC key always shows abandon
+    confirmation dialog.
     
     Features:
     - Minimal UI (audiogame mode - no visual gameplay)
     - Full keyboard capture via EVT_CHAR_HOOK
     - Routes all keys to GameplayController.handle_wx_key_event()
-    - ESC handling with double-tap detection (< 2 seconds)
+    - ESC handling always shows confirmation dialog
     - Simple label showing instructions
     
-    Double-ESC Detection:
-    - First ESC (>2s since last): Show abandon dialog
-    - Second ESC (<2s since first): Instant abandon (no dialog)
-    - Threshold: 2.0 seconds (same as original pygame version)
+    ESC Handling:
+    - ESC always shows "Vuoi abbandonare?" dialog
+    - User chooses Yes (abandon) or No (continue)
+    - Prevents accidental game abandonment
     
     Example:
         >>> controller = SolitarioController()
@@ -45,15 +44,12 @@ class GameplayPanel(BasicPanel):
         >>> gameplay.Show()
         # User presses 1 → Handled by GameplayController
         # User presses H → Shows help
-        # User presses ESC twice → Instant abandon
+        # User presses ESC → Confirmation dialog shown
     
     Note:
         Based on wxPython single-frame pattern. All gameplay logic remains in
         GameplayController - this panel is just a keyboard event sink.
     """
-    
-    # Double-ESC threshold in seconds
-    DOUBLE_ESC_THRESHOLD = 2.0
     
     def __init__(self, parent, controller, **kwargs):
         """Initialize GameplayPanel with controller.
@@ -63,18 +59,11 @@ class GameplayPanel(BasicPanel):
             controller: Application controller with gameplay_controller attribute
             **kwargs: Additional arguments passed to BasicPanel
         
-        Attributes:
-            last_esc_time: Timestamp of last ESC press (for double-ESC detection)
-        
         Note:
             Controller must have:
             - gameplay_controller: GamePlayController instance
             - show_abandon_game_dialog(): Method to show abandon confirmation
-            - confirm_abandon_game(skip_dialog=True): Method to abandon without dialog
         """
-        # Initialize double-ESC detection
-        self.last_esc_time = 0.0
-        
         super().__init__(
             parent=parent,
             controller=controller,
@@ -145,58 +134,34 @@ class GameplayPanel(BasicPanel):
         event.Skip()  # Allow screen readers to process unhandled keys
     
     def _handle_esc(self, event: wx.KeyEvent) -> None:
-        """Handle ESC with context-aware double-tap detection.
+        """Handle ESC key by showing abandon game confirmation dialog.
         
-        Implements double-ESC quick exit feature:
-        - First ESC: Show abandon game confirmation dialog
-        - Second ESC (within 2 seconds): Instant abandon (no dialog)
-        
-        Timing:
-        - If time since last ESC > 2.0s: Show dialog (fresh ESC)
-        - If time since last ESC ≤ 2.0s: Instant abandon (double-ESC)
+        Always shows confirmation dialog when ESC is pressed during gameplay.
+        User must explicitly choose Yes or No to abandon or continue.
         
         Flow:
-        First ESC:
-            1. Record current time
-            2. Call controller.show_abandon_game_dialog()
-            3. User chooses Yes/No in dialog
-        
-        Second ESC (< 2s):
-            1. Detect time since first < 2.0s
-            2. Announce "Uscita rapida!"
-            3. Call controller.confirm_abandon_game(skip_dialog=True)
-            4. Reset last_esc_time to 0
+            1. User presses ESC
+            2. Show "Vuoi abbandonare la partita?" dialog
+            3. User chooses:
+               - Yes: Abandon game and return to menu
+               - No: Continue playing
         
         Args:
             event: wx.KeyEvent for ESC key
         
         Example:
-            User presses ESC → Dialog shown
-            User presses ESC again within 2s → "Uscita rapida!" + instant abandon
+            User presses ESC → Dialog shown with Yes/No options
+            User selects No → Game continues
+            User presses ESC again → Dialog shown again
         
         Note:
-            This implements the same double-ESC behavior as the original
-            pygame version for consistency.
-        """
-        current_time = time.time()
+            This prevents accidental game abandonment by always requiring
+            explicit user confirmation via dialog.
         
-        # Check for double-ESC (< 2 second threshold)
-        if self.last_esc_time > 0 and current_time - self.last_esc_time <= self.DOUBLE_ESC_THRESHOLD:
-            # Double-ESC detected: Instant abandon
-            self.announce("Uscita rapida!", interrupt=True)
-            
-            if self.controller:
-                # Skip dialog and abandon immediately
-                self.controller.confirm_abandon_game(skip_dialog=True)
-            
-            # Reset timer
-            self.last_esc_time = 0.0
-        else:
-            # First ESC: Show dialog
-            self.last_esc_time = current_time
-            
-            if self.controller:
-                self.controller.show_abandon_game_dialog()
+        New in v1.7.5: Simplified to always show dialog (removed double-ESC quick exit)
+        """
+        if self.controller:
+            self.controller.show_abandon_game_dialog()
 
 
 # Module-level documentation
