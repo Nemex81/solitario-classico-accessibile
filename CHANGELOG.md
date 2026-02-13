@@ -7,6 +7,33 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 ---
 
+## [2.0.3] - 2026-02-13
+
+### Fixed
+- **CRITICAL: Race condition in show_panel() causing app closure**: Risolto crash critico quando ViewManager tentava di nascondere panel già nascosti manualmente
+  - **Root cause**: `IsShown()` non riflette immediatamente lo stato dopo `Hide()` - wxPython necessita tempo per processare eventi
+  - **Sintomo**: App si chiude quando si ritorna al menu perché `show_panel()` chiama `Hide()` su panel già nascosto, triggerando evento di chiusura
+  - **Soluzione**: Aggiunto `wx.SafeYield()` prima del loop hide per forzare processing eventi + skip target panel + try/except per safety
+  - **Pattern safe**: 1) Force event processing con SafeYield, 2) Skip target panel nel loop, 3) Check IsShown() prima di Hide(), 4) Try/except per errori
+- **Prevenzione hide ridondanti**: show_panel() ora salta il panel target nel loop hide (evita operazioni Hide/Show ridondanti sullo stesso panel)
+
+### Changed
+- **Docstring espansa in show_panel()**: Aggiunta documentazione race condition con note su uso di SafeYield (v2.0.3)
+- **Error handling migliorato**: Try/except intorno a panel.Hide() con warning log (previene crash se panel in stato invalido)
+- **Logging dettagliato**: Log esplicito dopo SafeYield per debugging race conditions
+
+### Technical
+- `show_panel()`: Aggiunto `wx.SafeYield()` prima del loop (forza processing eventi pendenti wxPython)
+- Skip target panel check: `if panel_name == name: continue` (evita hide del panel che stiamo per mostrare)
+- Try/except safety: Wrappa `panel.Hide()` per prevenire crash su panel invalidi
+
+### Impact
+- **Breaking**: Nessuno (fix interno, API pubblica invariata)
+- **UX**: Identica, ora senza chiusure inaspettate
+- **Performance**: Negligibile (SafeYield aggiunge ~1ms, skip target ottimizza)
+
+---
+
 ## [2.0.2] - 2026-02-13
 
 ### Fixed
