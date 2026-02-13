@@ -603,44 +603,74 @@ ESC: abbandona partita."""
     
     # === EVENT HANDLER PRINCIPALE ===
     
-    def handle_wx_key_event(self, wx_event) -> None:
-        """wxPython keyboard event handler (v2.0.0).
+    def handle_wx_key_event(self, event) -> bool:
+        """Handle wxPython keyboard events by routing directly to gameplay methods.
         
-        Adapter method that converts wx.KeyEvent to pygame.event.Event
-        and routes to existing handle_keyboard_events() method.
-        
-        This enables gradual migration from pygame to wxPython event loop
-        while preserving all existing gameplay logic unchanged.
+        Maps wx.KeyEvent to gameplay commands without pygame conversion.
+        Returns True if the key was handled, False otherwise.
         
         Args:
-            wx_event: wx.KeyEvent from wxPython event loop
+            event: wx.KeyEvent from wxPython event loop
         
-        Example:
-            >>> # In wx_main.py event handler:
-            >>> def on_key_event(event):
-            ...     if not is_menu_active:
-            ...         gameplay_controller.handle_wx_key_event(event)
+        Returns:
+            bool: True if key was handled, False if not recognized
+        
+        Mapped Keys (STEP 1 - basic navigation and actions):
+            - Arrow keys: Cursor navigation (_cursor_up/down/left/right)
+            - ENTER/RETURN: Select card (_select_card)
+            - SPACE: Move cards (_move_cards)
+            - D: Draw cards (_draw_cards)
+            - P: Draw cards (_draw_cards)
         
         Note:
-            Requires WxKeyEventAdapter from infrastructure/ui/wx_key_adapter.py
-            Import is done locally to avoid circular dependencies.
+            Does not call event.Skip() - caller decides whether to propagate.
+            More keys will be mapped in future iterations.
         
-        New in v2.0.0: wxPython migration - pygame removal
+        Example:
+            >>> # In GameplayPanel.on_key_down():
+            >>> handled = controller.gameplay_controller.handle_wx_key_event(event)
+            >>> if handled:
+            ...     return  # Key consumed
+            >>> event.Skip()  # Key not handled, propagate
+        
+        New in v1.7.4: Direct wx event routing (refactoring)
         """
-        # Import adapter locally to avoid module-level dependency
-        # This allows gameplay_controller to work with both pygame and wx
-        from src.infrastructure.ui.wx_key_adapter import WxKeyEventAdapter
+        # Import wx locally to avoid module-level dependency
+        import wx
         
-        # Create adapter instance (lightweight, no state)
-        adapter = WxKeyEventAdapter()
+        key_code = event.GetKeyCode()
         
-        # Convert wx event to pygame event
-        pygame_event = adapter.convert_to_pygame_event(wx_event)
+        # Arrow keys - Cursor navigation
+        if key_code == wx.WXK_UP:
+            self._cursor_up()
+            return True
+        elif key_code == wx.WXK_DOWN:
+            self._cursor_down()
+            return True
+        elif key_code == wx.WXK_LEFT:
+            self._cursor_left()
+            return True
+        elif key_code == wx.WXK_RIGHT:
+            self._cursor_right()
+            return True
         
-        # If conversion successful, route to existing handler
-        if pygame_event is not None:
-            self.handle_keyboard_events(pygame_event)
-        # If None, key not supported (ignore silently)
+        # ENTER/RETURN - Select card
+        elif key_code in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER):
+            self._select_card()
+            return True
+        
+        # SPACE - Move cards
+        elif key_code == wx.WXK_SPACE:
+            self._move_cards()
+            return True
+        
+        # D or P - Draw cards
+        elif key_code in (ord('D'), ord('P'), ord('d'), ord('p')):
+            self._draw_cards()
+            return True
+        
+        # Key not handled
+        return False
     
     def handle_keyboard_events(self, event: pygame.event.Event) -> None:
         """Main keyboard event handler.

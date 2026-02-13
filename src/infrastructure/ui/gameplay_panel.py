@@ -138,9 +138,11 @@ class GameplayPanel(BasicPanel):
         
         # All other keys: Route to gameplay controller
         if self.controller and hasattr(self.controller, 'gameplay_controller'):
-            self.controller.gameplay_controller.handle_wx_key_event(event)
+            handled = self.controller.gameplay_controller.handle_wx_key_event(event)
+            if handled:
+                return  # Key consumed, don't propagate
         
-        event.Skip()  # Allow screen readers to process
+        event.Skip()  # Allow screen readers to process unhandled keys
     
     def _handle_esc(self, event: wx.KeyEvent) -> None:
         """Handle ESC with context-aware double-tap detection.
