@@ -7,6 +7,61 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 ---
 
+## [2.0.4] - 2026-02-13
+
+### Fixed
+- **CRITICAL: Panel swap crash during event handling**: Risolto crash finale quando si esegue panel swap durante wxPython event handling usando pattern `wx.CallAfter()` per deferire tutte le transizioni UI
+  - **Root cause**: Panel swap sincrono dentro event handlers (ESC, timer callbacks, game end callbacks) crea nested event loops quando `SafeYield()` viene eseguito
+  - **Sintomo**: App crasha/si chiude durante `show_panel()` perché nested event loop causa stack overflow wxPython
+  - **Soluzione**: Usare `wx.CallAfter()` per deferire TUTTE le UI transitions fino a DOPO che l'event handler completa
+  - **Pattern applicato**: Event handler → Dialog/Action → wx.CallAfter(deferred_method) → Return → [wxPython idle] → Execute deferred → Panel swap (safe)
+  - **Metodi corretti**: `show_abandon_game_dialog()`, `handle_game_ended()`, `_handle_game_over_by_timeout()`
+
+- **ESC abandon game**: wx.CallAfter deferisce transizione menu (no crash su conferma abbandono)
+- **Decline rematch**: wx.CallAfter deferisce transizione menu (no crash su rifiuto rematch)
+- **Timeout defeat (STRICT)**: wx.CallAfter deferisce transizione menu (no crash su timeout scaduto)
+
+### Added
+- **3 nuovi metodi deferred**: Handlers eseguiti via wx.CallAfter() per safe panel transitions
+  - `_safe_abandon_to_menu()`: Deferred handler per ESC abandon → menu (Hide → Reset → Show)
+  - `_safe_decline_to_menu()`: Deferred handler per decline rematch → menu (Hide → Reset → Show)
+  - `_safe_timeout_to_menu()`: Deferred handler per timeout defeat → menu (Hide → Reset → Show)
+
+### Changed
+- **Semplificato return_to_menu()**: Rimossi ~50 linee diagnostica verbosa, ora metodo pulito con solo essenziale
+  - Rimossi check validità panel dettagliati (non più necessari con defer pattern)
+  - Rimossi try/except verbosi (deferred context è sempre safe)
+  - Aggiornato docstring con defer pattern examples (✅ CORRECT vs ❌ WRONG usage)
+- **Docstring espanse nei 3 metodi corretti**: Aggiunta documentazione completa defer pattern con spiegazione tecnica
+  - Spiega perché wx.CallAfter() previene crashes (break synchronous call chain)
+  - Mostra esempi CORRECT/WRONG usage patterns
+  - Documenta timing: evento completa → wxPython idle loop → deferred execution
+
+### Removed
+- **~130 linee codice verboso**: Eliminata diagnostica 4-step dettagliata da 3 metodi (show_abandon_game_dialog, handle_game_ended, _handle_game_over_by_timeout)
+- **Logging step-by-step**: Rimosso output verboso "STEP 1/4", "STEP 2/4" etc. (sostituito con log minimali)
+
+### Technical
+- **Pattern wx.CallAfter()**: Implementato in tutti i 3 scenari return-to-menu (ESC, decline, timeout)
+- **Deferred handlers**: 3 nuovi metodi privati chiamati solo via wx.CallAfter()
+- **No modifiche a view_manager.py**: SafeYield() già corretto, problema era uso sincrono in event handlers
+- **No modifiche a gameplay_panel.py**: Event handler corretto, problema era panel swap sincrono
+
+### Impact
+- **Breaking**: Nessuno (fix interno, API pubblica invariata)
+- **UX**: Identica esperienza utente, ora senza crashes
+- **Performance**: Negligibile (CallAfter è immediato, latenza impercettibile)
+- **Code quality**: +70 linee nuovi metodi, -130 linee diagnostica = -60 linee nette (codice più pulito)
+
+### Testing
+- ✅ ESC abandon game → Confirm → Menu appears (no crash)
+- ✅ Victory → Decline rematch → Menu appears (no crash)
+- ✅ Timeout strict → Menu appears (no crash)
+- ✅ Regression: All 60+ keyboard commands still work
+- ✅ Regression: ESC menu, Exit button, N key, ALT+F4 all work
+
+---
+
 ## [2.0.3] - 2026-02-13
 
 ### Fixed

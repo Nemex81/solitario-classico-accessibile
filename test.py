@@ -192,96 +192,55 @@ class SolitarioController:
     def return_to_menu(self) -> None:
         """Return from gameplay to menu (show MenuPanel only).
         
-        IMPORTANT: This method handles ONLY UI transition (show/hide panels).
-        Engine reset MUST be done BEFORE calling this method to prevent crashes.
+        IMPORTANT: This method should ONLY be called via wx.CallAfter() from
+        deferred handlers, never directly from event handlers or callbacks.
         
-        Caller Pattern (CRITICAL - Follow this order):
-            1. Hide gameplay panel explicitly
-            2. Reset game engine (invalidates references)
-            3. Call return_to_menu() (shows menu + TTS)
+        Defer Pattern (CRITICAL - Always use this):
+            ✅ CORRECT: Call via wx.CallAfter() from deferred handlers
+                Example from _safe_abandon_to_menu():
+                    def _safe_abandon_to_menu(self):
+                        gameplay_panel.Hide()
+                        self.engine.reset_game()
+                        self.return_to_menu()  # ← Safe: Called from deferred context
+            
+            ❌ WRONG: Call directly from event handlers
+                Example from show_abandon_game_dialog() (DON'T DO THIS):
+                    def show_abandon_game_dialog(self):
+                        result = self.dialog_manager.show_abandon_game_prompt()
+                        if result:
+                            self.return_to_menu()  # ← CRASH: Nested event loop
         
-        This order prevents crashes caused by engine.reset_game() invalidating
-        panel references while ViewManager tries to hide GameplayPanel.
+        Caller Responsibility:
+            Before calling this method, the caller MUST:
+            1. Hide gameplay panel explicitly (panel.Hide())
+            2. Reset game engine (engine.reset_game())
+            3. Then call return_to_menu() to show menu
         
-        Example:
-            >>> # ✅ CORRECT ORDER:
-            >>> gameplay_panel = self.view_manager.get_panel('gameplay')
-            >>> if gameplay_panel:
-            ...     gameplay_panel.Hide()      # STEP 1: Hide first
-            >>> self.engine.reset_game()       # STEP 2: Reset after hide
-            >>> self.return_to_menu()          # STEP 3: Show menu
-            >>> 
-            >>> # ❌ WRONG ORDER (causes crash):
-            >>> self.engine.reset_game()       # Invalidates references
-            >>> self.return_to_menu()          # Crashes when hiding gameplay
+        This method only handles:
+            - Showing menu panel via ViewManager
+            - Setting application state flag
+            - TTS announcement
         
         Version:
             v2.0.2: Added diagnostics + clarified caller responsibility
+            v2.0.4: Simplified after wx.CallAfter() pattern implementation
         """
-        print("\n" + "="*60)
-        print("RETURN_TO_MENU: Start UI transition")
-        print("="*60)
-        
-        # Check ViewManager availability
         if not self.view_manager:
-            print("⚠ ViewManager not initialized - Cannot show menu")
+            print("⚠ ViewManager not initialized")
             return
         
-        # Get current panel state
-        current = self.view_manager.get_current_panel_name()
-        print(f"→ Current panel: {current}")
+        # Show menu panel
+        self.view_manager.show_panel('menu')
         
-        # Verify menu panel exists
-        menu_panel = self.view_manager.get_panel('menu')
-        if not menu_panel:
-            print("⚠ Menu panel not registered in ViewManager")
-            return
-        print(f"→ Menu panel reference: {menu_panel}")
-        
-        # Check menu panel validity
-        try:
-            is_valid = not menu_panel.IsBeingDeleted()
-            print(f"→ Menu panel valid: {is_valid}")
-            if not is_valid:
-                print("⚠ Menu panel is being deleted - Cannot show")
-                return
-        except Exception as e:
-            print(f"⚠ Error checking menu panel validity: {e}")
-            return
-        
-        # Perform panel swap (hide gameplay, show menu)
-        print("→ Calling view_manager.show_panel('menu')...")
-        try:
-            shown = self.view_manager.show_panel('menu')
-            print(f"→ show_panel() returned: {shown}")
-            if not shown:
-                print("⚠ show_panel() returned None - Transition failed")
-                return
-        except Exception as e:
-            print(f"⚠ ERROR in show_panel(): {e}")
-            import traceback
-            traceback.print_exc()
-            return
-        
-        # Update application state flag
+        # Update state
         self.is_menu_open = True
-        print("→ Application state: is_menu_open = True")
         
-        # Announce return via TTS
+        # Announce via TTS
         if self.screen_reader:
-            print("→ Announcing return via TTS...")
-            try:
-                self.screen_reader.tts.speak(
-                    "Ritorno al menu di gioco.",
-                    interrupt=True
-                )
-                print("→ TTS announcement completed")
-            except Exception as e:
-                print(f"⚠ ERROR in TTS.speak(): {e}")
-        
-        print("="*60)
-        print("RETURN_TO_MENU: UI transition completed successfully")
-        print("="*60 + "\n")
+            self.screen_reader.tts.speak(
+                "Ritorno al menu di gioco.",
+                interrupt=True
+            )
     
     def show_options(self) -> None:
         """Show options window using OptionsDialog with native wx widgets.
