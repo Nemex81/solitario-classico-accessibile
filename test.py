@@ -363,7 +363,7 @@ class SolitarioController:
         """Show abandon game confirmation dialog (called from GameplayPanel ESC handler).
         
         Displays native wxDialog asking user to confirm game abandonment.
-        If user confirms (Sì), resets game engine and returns to menu.
+        If user confirms (Sì), performs safe UI transition back to menu.
         If user cancels (No/ESC), returns to gameplay.
         
         Called from:
@@ -375,20 +375,78 @@ class SolitarioController:
             - Buttons: Sì (confirm) / No (cancel)
             - ESC key: Same as No (cancel)
         
+        Order of Operations (CRITICAL - Follow exactly to prevent crashes):
+            1. Show confirmation dialog
+            2. If confirmed:
+               a. Hide gameplay panel FIRST (prevents crash)
+               b. Reset game engine SECOND (safe after hide)
+               c. Show menu panel THIRD (UI transition)
+               d. Reset timer flag FINALLY
+        
+        This order prevents crashes caused by engine.reset_game() invalidating
+        references that GameplayPanel.Hide() might access during panel swap.
+        
         Returns:
             None (side effect: may reset game and switch to menu)
         
         Version:
             v1.7.5: Fixed to use semantic API without parameters
+            v2.0.2: Fixed operation order to prevent crash (Hide → Reset → Show)
         """
         # Show confirmation dialog using SEMANTIC API
         result = self.dialog_manager.show_abandon_game_prompt()
         
         if result:
             # User confirmed abandon (Sì button)
-            print("\n→ User confirmed abandon - Resetting game engine")
-            self.engine.reset_game()
-            self.return_to_menu()
+            print("\n" + "="*60)
+            print("ABANDON GAME: User confirmed - Starting safe transition")
+            print("="*60)
+            
+            # ✅ STEP 1: Hide gameplay panel BEFORE engine reset
+            print("→ STEP 1/4: Hiding gameplay panel...")
+            if self.view_manager:
+                gameplay_panel = self.view_manager.get_panel('gameplay')
+                if gameplay_panel:
+                    try:
+                        gameplay_panel.Hide()
+                        print("  ✓ Gameplay panel hidden successfully")
+                    except Exception as e:
+                        print(f"  ⚠ Error hiding gameplay panel: {e}")
+                        import traceback
+                        traceback.print_exc()
+                else:
+                    print("  ⚠ Gameplay panel not found in ViewManager")
+            else:
+                print("  ⚠ ViewManager not initialized")
+            
+            # ✅ STEP 2: Reset engine AFTER UI hidden (safe now)
+            print("→ STEP 2/4: Resetting game engine...")
+            try:
+                self.engine.reset_game()
+                print("  ✓ Game engine reset complete")
+            except Exception as e:
+                print(f"  ⚠ Error resetting game engine: {e}")
+                import traceback
+                traceback.print_exc()
+            
+            # ✅ STEP 3: Show menu panel (UI transition)
+            print("→ STEP 3/4: Showing menu panel...")
+            try:
+                self.return_to_menu()
+                print("  ✓ Menu panel shown successfully")
+            except Exception as e:
+                print(f"  ⚠ Error showing menu panel: {e}")
+                import traceback
+                traceback.print_exc()
+            
+            # ✅ STEP 4: Reset timer announcement flag
+            print("→ STEP 4/4: Resetting timer flag...")
+            self._timer_expired_announced = False
+            print("  ✓ Timer flag reset")
+            
+            print("="*60)
+            print("ABANDON GAME: Safe transition completed successfully")
+            print("="*60 + "\n")
         # else: User cancelled (No or ESC), do nothing (dialog already closed)
     
     def show_new_game_dialog(self) -> None:
@@ -452,7 +510,23 @@ class SolitarioController:
         print("Premi ESC per tornare al menu (doppio ESC per uscita rapida).")
     
     def handle_game_ended(self, wants_rematch: bool) -> None:
-        """Handle game end callback from GameEngine."""
+        """Handle game end callback from GameEngine.
+        
+        Called after game victory or defeat (timeout excluded).
+        User is prompted for rematch via dialog.
+        
+        Args:
+            wants_rematch: True if user wants rematch, False to return to menu
+        
+        Order of Operations (when wants_rematch=False):
+            1. Hide gameplay panel FIRST
+            2. Reset game engine SECOND
+            3. Show menu panel THIRD
+            4. Reset timer flag FINALLY
+        
+        Version:
+            v2.0.2: Fixed operation order for decline rematch path
+        """
         print("\n" + "="*60)
         print(f"CALLBACK: Game ended - Rematch requested: {wants_rematch}")
         print("="*60)
@@ -460,15 +534,50 @@ class SolitarioController:
         self._timer_expired_announced = False
         
         if wants_rematch:
+            # User wants rematch - start new game immediately
             print("→ User chose rematch - Starting new game")
-            self.start_gameplay()
+            self.start_gameplay()        # ✅ OK: Shows gameplay (no crash)
         else:
-            print("→ User declined rematch - Returning to menu")
-            # Reset game engine before returning to menu
-            self.engine.reset_game()
-            self.return_to_menu()
+            # User declined rematch - safe transition to menu
+            print("→ User declined rematch - Starting safe transition")
+            
+            # ✅ STEP 1: Hide gameplay panel BEFORE engine reset
+            print("→ STEP 1/4: Hiding gameplay panel...")
+            if self.view_manager:
+                gameplay_panel = self.view_manager.get_panel('gameplay')
+                if gameplay_panel:
+                    try:
+                        gameplay_panel.Hide()
+                        print("  ✓ Gameplay hidden")
+                    except Exception as e:
+                        print(f"  ⚠ Error hiding gameplay: {e}")
+                else:
+                    print("  ⚠ Gameplay panel not found")
+            else:
+                print("  ⚠ ViewManager not initialized")
+            
+            # ✅ STEP 2: Reset engine AFTER UI hidden
+            print("→ STEP 2/4: Resetting game engine...")
+            try:
+                self.engine.reset_game()
+                print("  ✓ Engine reset complete")
+            except Exception as e:
+                print(f"  ⚠ Error resetting engine: {e}")
+            
+            # ✅ STEP 3: Show menu panel
+            print("→ STEP 3/4: Showing menu panel...")
+            try:
+                self.return_to_menu()
+                print("  ✓ Menu shown")
+            except Exception as e:
+                print(f"  ⚠ Error showing menu: {e}")
+            
+            # ✅ STEP 4: Timer flag already reset above
+            print("→ STEP 4/4: Timer flag already reset")
         
         print("="*60)
+        print("CALLBACK: Game end handling completed")
+        print("="*60 + "\n")
     
     # === OPTIONS HANDLING ===
     
@@ -550,7 +659,18 @@ class SolitarioController:
                 self._timer_expired_announced = True
     
     def _handle_game_over_by_timeout(self) -> None:
-        """Handle game over by timeout in STRICT mode."""
+        """Handle game over by timeout in STRICT mode.
+        
+        Order of Operations (CRITICAL - Same as abandon game):
+            1. Show timeout defeat message + statistics
+            2. Hide gameplay panel FIRST
+            3. Reset game engine SECOND
+            4. Show menu panel THIRD
+            5. Reset timer flag FINALLY
+        
+        Version:
+            v2.0.2: Fixed operation order to prevent crash (Hide → Reset → Show)
+        """
         max_time = self.settings.max_time_game
         elapsed = self.engine.service.get_elapsed_time()
         
@@ -579,12 +699,50 @@ class SolitarioController:
             self.screen_reader.tts.speak(defeat_msg, interrupt=True)
             wx.MilliSleep(2000)
         
-        # Reset game engine (clear cards, score, timer)
-        print("\n→ Timeout defeat - Resetting game engine")
-        self.engine.reset_game()
+        # ✅ Safe transition: Hide → Reset → Show pattern
+        print("\n" + "="*60)
+        print("TIMEOUT DEFEAT: Starting safe transition to menu")
+        print("="*60)
         
+        # ✅ STEP 1: Hide gameplay panel BEFORE engine reset
+        print("→ STEP 1/4: Hiding gameplay panel...")
+        if self.view_manager:
+            gameplay_panel = self.view_manager.get_panel('gameplay')
+            if gameplay_panel:
+                try:
+                    gameplay_panel.Hide()
+                    print("  ✓ Gameplay panel hidden")
+                except Exception as e:
+                    print(f"  ⚠ Error hiding gameplay: {e}")
+            else:
+                print("  ⚠ Gameplay panel not found")
+        else:
+            print("  ⚠ ViewManager not initialized")
+        
+        # ✅ STEP 2: Reset engine AFTER UI hidden
+        print("→ STEP 2/4: Resetting game engine...")
+        try:
+            self.engine.reset_game()
+            print("  ✓ Engine reset complete")
+        except Exception as e:
+            print(f"  ⚠ Error resetting engine: {e}")
+        
+        # ✅ STEP 3: Show menu panel
+        print("→ STEP 3/4: Showing menu panel...")
+        try:
+            self.return_to_menu()
+            print("  ✓ Menu shown")
+        except Exception as e:
+            print(f"  ⚠ Error showing menu: {e}")
+        
+        # ✅ STEP 4: Reset timer flag
+        print("→ STEP 4/4: Resetting timer flag...")
         self._timer_expired_announced = False
-        self.return_to_menu()
+        print("  ✓ Timer flag reset")
+        
+        print("="*60)
+        print("TIMEOUT DEFEAT: Safe transition completed")
+        print("="*60 + "\n")
     
     # === EVENT HANDLERS (v2.0.1 - Simplified with ViewManager) ===
     
