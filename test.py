@@ -440,7 +440,17 @@ class SolitarioController:
         self.quit_app()
     
     def quit_app(self) -> None:
-        """Graceful application shutdown."""
+        """Graceful application shutdown.
+        
+        Called from:
+        - show_exit_dialog() (menu "Esci")
+        - _on_frame_close() (ALT+F4, X button)
+        
+        Pattern:
+        - Do NOT call frame.Close() (would trigger EVT_CLOSE again)
+        - Let _on_close_event handle frame destruction
+        - sys.exit(0) ensures complete shutdown
+        """
         print("\n" + "="*60)
         print("CHIUSURA APPLICAZIONE")
         print("="*60)
@@ -449,9 +459,7 @@ class SolitarioController:
             self.screen_reader.tts.speak("Chiusura in corso.", interrupt=True)
             wx.MilliSleep(800)
         
-        # Close frame and exit app
-        if self.frame:
-            self.frame.Close()
+        # Exit app (frame destruction handled by EVT_CLOSE)
         sys.exit(0)
     
     # === MAIN ENTRY POINT ===
