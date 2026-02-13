@@ -363,7 +363,7 @@ class SolitarioController:
         """Show abandon game confirmation dialog (called from GameplayPanel ESC handler).
         
         Displays native wxDialog asking user to confirm game abandonment.
-        If user confirms (Sì), performs safe UI transition back to menu.
+        If user confirms (Sì), defers UI transition using wx.CallAfter() pattern.
         If user cancels (No/ESC), returns to gameplay.
         
         Called from:
@@ -375,79 +375,74 @@ class SolitarioController:
             - Buttons: Sì (confirm) / No (cancel)
             - ESC key: Same as No (cancel)
         
-        Order of Operations (CRITICAL - Follow exactly to prevent crashes):
-            1. Show confirmation dialog
-            2. If confirmed:
-               a. Hide gameplay panel FIRST (prevents crash)
-               b. Reset game engine SECOND (safe after hide)
-               c. Show menu panel THIRD (UI transition)
-               d. Reset timer flag FINALLY
+        Defer Pattern (CRITICAL to prevent crashes):
+            ✅ CORRECT: Use wx.CallAfter() to defer UI transition
+                → Dialog shown inside event handler
+                → If confirmed: schedule _safe_abandon_to_menu() for LATER
+                → Event handler completes immediately
+                → wxPython idle loop executes deferred transition
+                → NO nested event loops = NO crash
+            
+            ❌ WRONG: Perform UI transition directly in event handler
+                → Dialog shown inside event handler
+                → If confirmed: call show_panel() immediately
+                → show_panel() calls SafeYield() → nested event loop
+                → wxPython stack overflow → CRASH
         
-        This order prevents crashes caused by engine.reset_game() invalidating
-        references that GameplayPanel.Hide() might access during panel swap.
+        Why this fixes crashes:
+            wx.CallAfter() breaks the synchronous call chain, allowing the ESC
+            key event handler to complete before any panel swap occurs. This
+            prevents nested event loops caused by SafeYield() during UI updates.
         
         Returns:
-            None (side effect: may reset game and switch to menu)
+            None (side effect: may schedule deferred menu transition)
         
         Version:
             v1.7.5: Fixed to use semantic API without parameters
             v2.0.2: Fixed operation order to prevent crash (Hide → Reset → Show)
+            v2.0.4: Added wx.CallAfter() defer pattern to prevent nested event loops
         """
         # Show confirmation dialog using SEMANTIC API
         result = self.dialog_manager.show_abandon_game_prompt()
         
         if result:
             # User confirmed abandon (Sì button)
-            print("\n" + "="*60)
-            print("ABANDON GAME: User confirmed - Starting safe transition")
-            print("="*60)
-            
-            # ✅ STEP 1: Hide gameplay panel BEFORE engine reset
-            print("→ STEP 1/4: Hiding gameplay panel...")
-            if self.view_manager:
-                gameplay_panel = self.view_manager.get_panel('gameplay')
-                if gameplay_panel:
-                    try:
-                        gameplay_panel.Hide()
-                        print("  ✓ Gameplay panel hidden successfully")
-                    except Exception as e:
-                        print(f"  ⚠ Error hiding gameplay panel: {e}")
-                        import traceback
-                        traceback.print_exc()
-                else:
-                    print("  ⚠ Gameplay panel not found in ViewManager")
-            else:
-                print("  ⚠ ViewManager not initialized")
-            
-            # ✅ STEP 2: Reset engine AFTER UI hidden (safe now)
-            print("→ STEP 2/4: Resetting game engine...")
-            try:
-                self.engine.reset_game()
-                print("  ✓ Game engine reset complete")
-            except Exception as e:
-                print(f"  ⚠ Error resetting game engine: {e}")
-                import traceback
-                traceback.print_exc()
-            
-            # ✅ STEP 3: Show menu panel (UI transition)
-            print("→ STEP 3/4: Showing menu panel...")
-            try:
-                self.return_to_menu()
-                print("  ✓ Menu panel shown successfully")
-            except Exception as e:
-                print(f"  ⚠ Error showing menu panel: {e}")
-                import traceback
-                traceback.print_exc()
-            
-            # ✅ STEP 4: Reset timer announcement flag
-            print("→ STEP 4/4: Resetting timer flag...")
-            self._timer_expired_announced = False
-            print("  ✓ Timer flag reset")
-            
-            print("="*60)
-            print("ABANDON GAME: Safe transition completed successfully")
-            print("="*60 + "\n")
+            # ✅ Defer UI transition until AFTER event handler completes
+            print("→ User confirmed abandon - Scheduling deferred transition...")
+            wx.CallAfter(self._safe_abandon_to_menu)
         # else: User cancelled (No or ESC), do nothing (dialog already closed)
+    
+    def _safe_abandon_to_menu(self) -> None:
+        """Deferred handler for abandon game → menu transition (called via wx.CallAfter).
+        
+        This method runs AFTER the ESC event handler completes, preventing nested
+        event loops and crashes. Performs safe 3-step transition:
+            1. Hide gameplay panel
+            2. Reset game engine
+            3. Return to menu
+        
+        IMPORTANT: Do NOT call this method directly from event handlers.
+        Always use wx.CallAfter(self._safe_abandon_to_menu) instead.
+        
+        Version:
+            v2.0.4: Created as deferred handler for abandon game flow
+        """
+        print("\n→ Executing deferred abandon transition...")
+        
+        # Hide gameplay panel
+        if self.view_manager:
+            gameplay_panel = self.view_manager.get_panel('gameplay')
+            if gameplay_panel:
+                gameplay_panel.Hide()
+        
+        # Reset game engine
+        self.engine.reset_game()
+        self._timer_expired_announced = False
+        
+        # Return to menu
+        self.return_to_menu()
+        
+        print("→ Abandon transition completed\n")
     
     def show_new_game_dialog(self) -> None:
         """Show new game confirmation dialog (called from GameplayController).
