@@ -62,26 +62,37 @@ class ViewManager:
     """
     
     def __init__(self, parent_frame: wx.Frame):
-        """Initialize ViewManager with parent frame reference.
+        """Initialize with container sizer reference.
         
         Args:
-            parent_frame: Main application frame (for context)
+            parent_frame: Main application frame (must have panel_container)
         
-        Note:
-            Parent frame is stored for context but panels are created
-            separately and passed to register_panel().
+        Raises:
+            AttributeError: If frame doesn't have panel_container
+            ValueError: If panel_container doesn't have sizer
         """
         self.parent_frame = parent_frame
+        
+        # ✅ FIX 2: Get panel container and sizer
+        if not hasattr(parent_frame, 'panel_container'):
+            raise AttributeError("Frame must have 'panel_container'")
+        
+        self.panel_container = parent_frame.panel_container
+        self.container_sizer = self.panel_container.GetSizer()
+        
+        if self.container_sizer is None:
+            raise ValueError("panel_container must have sizer")
+        
         self.panels: Dict[str, wx.Panel] = {}
         self.current_panel_name: Optional[str] = None
         
-        logger.debug(f"ViewManager initialized with parent_frame: {parent_frame}")
+        logger.debug(f"ViewManager initialized with sizer: {self.container_sizer}")
     
     def register_panel(self, name: str, panel: wx.Panel) -> None:
-        """Register a panel for show/hide management.
+        """Register panel and add to container sizer.
         
-        Stores panel instance in registry for later show/hide operations.
-        Panel should already be created and parented to frame.panel_container.
+        Stores panel instance and adds it to the container sizer layout tree.
+        Panel should be created with panel_container as parent.
         
         Args:
             name: Unique identifier for this panel (e.g., 'menu', 'gameplay')
@@ -102,6 +113,13 @@ class ViewManager:
             logger.warning(f"Overwriting existing panel: {name}")
         
         self.panels[name] = panel
+        
+        # ✅ FIX 3: Add to container sizer
+        # proportion=1: Takes all available space
+        # wx.EXPAND: Expands to fill available space
+        self.container_sizer.Add(panel, 1, wx.EXPAND)
+        logger.debug(f"✓ Added panel '{name}' to sizer")
+        
         panel.Hide()  # Initially hidden
         logger.debug(f"Registered panel: {name}")
     
@@ -142,11 +160,17 @@ class ViewManager:
         target_panel = self.panels[name]
         target_panel.Show()
         
-        # Refresh layout
-        parent = target_panel.GetParent()
+        # ✅ FIX 5: Refresh layout (container + frame)
+        parent = target_panel.GetParent()  # panel_container
         if parent:
-            parent.Layout()
-            parent.Refresh()
+            parent.Layout()  # Layout container
+            parent.Refresh()  # Repaint
+            
+            # ✅ NEW: Also layout frame hierarchy
+            frame = parent.GetParent()  # SolitarioFrame
+            if frame:
+                frame.Layout()  # Complete propagation
+                logger.debug(f"✓ Laid out frame for panel: {name}")
         
         # Set focus to panel
         target_panel.SetFocus()

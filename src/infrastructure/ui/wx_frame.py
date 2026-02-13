@@ -107,6 +107,12 @@ class SolitarioFrame(wx.Frame):
         
         # Setup panel container (for child panels)
         self.panel_container = wx.Panel(self)
+        
+        # ✅ FIX 1: Create sizer for container
+        container_sizer = wx.BoxSizer(wx.VERTICAL)
+        self.panel_container.SetSizer(container_sizer)
+        
+        # Frame sizer (contains the container)
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.sizer.Add(self.panel_container, 1, wx.EXPAND)
         self.SetSizer(self.sizer)

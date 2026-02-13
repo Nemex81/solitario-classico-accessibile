@@ -302,22 +302,9 @@ class SolitarioController:
     
     # === OPTIONS HANDLING ===
     
-    def open_options(self) -> None:
-        """Open virtual options window."""
-        print("\n" + "="*60)
-        print("APERTURA FINESTRA OPZIONI")
-        print("="*60)
-        
-        self.is_menu_open = False
-        self.is_options_mode = True
-        
-        msg = self.gameplay_controller.options_controller.open_window()
-        
-        if self.screen_reader:
-            self.screen_reader.tts.speak(msg, interrupt=True)
-        
-        print("Finestra opzioni aperta.")
-        print("="*60)
+    # === OPTIONS HANDLING ===
+    # (Empty section - open_options() removed)
+    # Use show_options() at line ~208 ✅
     
     # DEPRECATED v2.0.1: Legacy method, use return_to_menu() instead
     # def close_options_and_return_to_menu(self) -> None:
