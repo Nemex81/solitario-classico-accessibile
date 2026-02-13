@@ -513,66 +513,69 @@ class SolitarioController:
         Args:
             wants_rematch: True if user wants rematch, False to return to menu
         
-        Order of Operations (when wants_rematch=False):
-            1. Hide gameplay panel FIRST
-            2. Reset game engine SECOND
-            3. Show menu panel THIRD
-            4. Reset timer flag FINALLY
+        Defer Pattern (CRITICAL to prevent crashes):
+            ✅ CORRECT: Use wx.CallAfter() for BOTH branches
+                → Rematch: defer start_gameplay() 
+                → Decline: defer _safe_decline_to_menu()
+                → Callback completes immediately
+                → wxPython idle loop executes deferred action
+                → NO nested event loops = NO crash
+            
+            ❌ WRONG: Call UI transitions directly from callback
+                → Would create nested event loops
+                → SafeYield() crash possible
+        
+        Why this fixes crashes:
+            Game end callback may be triggered from various contexts (timer check,
+            user action, etc). Deferring ensures UI transitions happen outside any
+            active event handling, preventing nested loops.
         
         Version:
             v2.0.2: Fixed operation order for decline rematch path
+            v2.0.4: Added wx.CallAfter() defer pattern for both branches
         """
-        print("\n" + "="*60)
-        print(f"CALLBACK: Game ended - Rematch requested: {wants_rematch}")
-        print("="*60)
-        
+        print(f"\n→ Game ended callback - Rematch: {wants_rematch}")
         self._timer_expired_announced = False
         
         if wants_rematch:
-            # User wants rematch - start new game immediately
-            print("→ User chose rematch - Starting new game")
-            self.start_gameplay()        # ✅ OK: Shows gameplay (no crash)
+            # User wants rematch - defer new game start
+            print("→ Scheduling deferred rematch...")
+            wx.CallAfter(self.start_gameplay)
         else:
-            # User declined rematch - safe transition to menu
-            print("→ User declined rematch - Starting safe transition")
-            
-            # ✅ STEP 1: Hide gameplay panel BEFORE engine reset
-            print("→ STEP 1/4: Hiding gameplay panel...")
-            if self.view_manager:
-                gameplay_panel = self.view_manager.get_panel('gameplay')
-                if gameplay_panel:
-                    try:
-                        gameplay_panel.Hide()
-                        print("  ✓ Gameplay hidden")
-                    except Exception as e:
-                        print(f"  ⚠ Error hiding gameplay: {e}")
-                else:
-                    print("  ⚠ Gameplay panel not found")
-            else:
-                print("  ⚠ ViewManager not initialized")
-            
-            # ✅ STEP 2: Reset engine AFTER UI hidden
-            print("→ STEP 2/4: Resetting game engine...")
-            try:
-                self.engine.reset_game()
-                print("  ✓ Engine reset complete")
-            except Exception as e:
-                print(f"  ⚠ Error resetting engine: {e}")
-            
-            # ✅ STEP 3: Show menu panel
-            print("→ STEP 3/4: Showing menu panel...")
-            try:
-                self.return_to_menu()
-                print("  ✓ Menu shown")
-            except Exception as e:
-                print(f"  ⚠ Error showing menu: {e}")
-            
-            # ✅ STEP 4: Timer flag already reset above
-            print("→ STEP 4/4: Timer flag already reset")
+            # User declined rematch - defer menu transition
+            print("→ Scheduling deferred decline transition...")
+            wx.CallAfter(self._safe_decline_to_menu)
+    
+    def _safe_decline_to_menu(self) -> None:
+        """Deferred handler for decline rematch → menu transition (called via wx.CallAfter).
         
-        print("="*60)
-        print("CALLBACK: Game end handling completed")
-        print("="*60 + "\n")
+        This method runs AFTER the game end callback completes, preventing nested
+        event loops and crashes. Performs safe 3-step transition:
+            1. Hide gameplay panel
+            2. Reset game engine
+            3. Return to menu
+        
+        IMPORTANT: Do NOT call this method directly from callbacks.
+        Always use wx.CallAfter(self._safe_decline_to_menu) instead.
+        
+        Version:
+            v2.0.4: Created as deferred handler for decline rematch flow
+        """
+        print("\n→ Executing deferred decline transition...")
+        
+        # Hide gameplay panel
+        if self.view_manager:
+            gameplay_panel = self.view_manager.get_panel('gameplay')
+            if gameplay_panel:
+                gameplay_panel.Hide()
+        
+        # Reset game engine
+        self.engine.reset_game()
+        
+        # Return to menu
+        self.return_to_menu()
+        
+        print("→ Decline transition completed\n")
     
     # === OPTIONS HANDLING ===
     
