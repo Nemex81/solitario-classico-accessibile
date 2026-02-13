@@ -192,6 +192,30 @@ class MenuPanel(BasicPanel):
         """
         if self.controller:
             self.controller.show_exit_dialog()
+    
+    def on_key_down(self, event: wx.KeyEvent) -> None:
+        """Handle keyboard events in menu panel.
+        
+        ESC in menu → show exit confirmation dialog.
+        Other keys → propagate to parent.
+        
+        Args:
+            event: wx.KeyEvent from keyboard
+        
+        Pattern:
+            Similar to GameplayPanel ESC handling, but calls show_exit_dialog
+            instead of show_abandon_game_dialog.
+        """
+        key_code = event.GetKeyCode()
+        
+        # ESC: Show exit confirmation
+        if key_code == wx.WXK_ESCAPE:
+            if self.controller:
+                self.controller.show_exit_dialog()
+            return
+        
+        # Other keys: propagate
+        event.Skip()
 
 
 # Module-level documentation
