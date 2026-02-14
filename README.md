@@ -295,15 +295,45 @@ Il gioco include un sistema di punteggio completo basato sullo standard Microsof
 | Fondazione → Tableau | **-15** | Penalità per spostamento indietro |
 | Riciclo Scarti | **-20** | Penalità dopo il 3° riciclo |
 
-### Moltiplicatori Difficoltà
+### Sistema Difficoltà v2.4.0 (5 Livelli con Preset)
 
-| Livello | Nome | Moltiplicatore | Vincoli |
-|---------|------|----------------|---------|
-| 1 | **Facile** | 1.0x | Nessuno |
-| 2 | **Medio** | 1.25x | Nessuno |
-| 3 | **Difficile** | 1.5x | Nessuno |
-| 4 | **Esperto** | 2.0x | Timer ≥30min, Draw ≥2, Shuffle locked |
-| 5 | **Maestro** | 2.5x | Timer 15-30min, Draw=3, Shuffle locked |
+Il gioco implementa un sistema di preset intelligenti che bloccano progressivamente le opzioni per garantire coerenza e fair play.
+
+| Livello | Nome | Moltiplicatore | Opzioni Bloccate | Descrizione |
+|---------|------|----------------|------------------|-------------|
+| 1 | **Principiante** | 1.0x | 1 (Timer OFF) | Ideale per imparare, nessun limite di tempo |
+| 2 | **Facile** | 1.25x | 1 (Timer PERMISSIVE) | Timer con malus punti, molto personalizzabile |
+| 3 | **Normale** | 1.5x | 1 (Draw=3) | Regole Vegas standard, 3 carte obbligatorie |
+| 4 | **Esperto** | 2.0x | 5 opzioni | Time Attack 30 minuti, senza suggerimenti |
+| 5 | **Maestro** | 2.5x | 6 opzioni | **Tournament Mode**: 15 min strict, tutto bloccato |
+
+#### Dettagli Preset
+
+**Livello 1 - Principiante**:
+- ✅ Personalizzabile: Carte pescate, Riciclo, Punti, Suggerimenti
+- 🔒 Bloccato: Timer (sempre OFF per principianti)
+- 🎯 Obiettivo: Imparare il gioco senza pressione temporale
+
+**Livello 2 - Facile**:
+- ✅ Personalizzabile: Timer durata, Carte pescate, Riciclo, Punti, Suggerimenti
+- 🔒 Bloccato: Modalità Timer (PERMISSIVE - continua con malus)
+- 🎯 Obiettivo: Partite casual con possibilità di recupero
+
+**Livello 3 - Normale**:
+- ✅ Personalizzabile: Timer, Modalità Timer, Riciclo, Punti, Suggerimenti
+- 🔒 Bloccato: Carte Pescate (3 - standard Vegas)
+- 🎯 Obiettivo: Esperienza Solitaire classica Vegas
+
+**Livello 4 - Esperto**:
+- ✅ Personalizzabile: Sistema Punti (può essere disattivato per focus su tempo)
+- 🔒 Bloccato: Timer (30 min), Draw (3), Riciclo (Inversione), Suggerimenti (OFF), Modalità Timer (PERMISSIVE)
+- 🎯 Obiettivo: Time Attack Challenge - completa in 30 minuti
+
+**Livello 5 - Maestro**:
+- ✅ Personalizzabile: Solo Tipo Mazzo (estetica)
+- 🔒 Bloccato: **TUTTO** (Timer 15min STRICT, Draw 3, Inversione, Punti ON, Suggerimenti OFF)
+- 🎯 Obiettivo: **Modalità Tournament** - regole uniformi per competizioni ufficiali
+- 🛡️ Anti-Cheat: Preset riapplicato automaticamente al caricamento salvataggi
 
 ### Bonus Punti
 
