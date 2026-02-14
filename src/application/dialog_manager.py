@@ -265,6 +265,54 @@ class SolitarioDialogManager:
             callback=callback
         )
     
+    def show_rematch_prompt_async(self, callback: Callable[[bool], None]) -> None:
+        """Show rematch confirmation dialog (non-blocking).
+        
+        Asks user if they want to play another game after completing current one.
+        
+        Args:
+            callback: Function called with result (True=rematch, False=return to menu)
+        
+        Italian message:
+            Title: "Rivincita?"
+            Message: "Vuoi giocare ancora?"
+        
+        Flow:
+            1. Dialog.Show() called (non-blocking)
+            2. User responds YES/NO
+            3. Dialog closes
+            4. [wxPython event loop processes callback]
+            5. callback(wants_rematch) invoked (deferred context)
+            6. Caller handles rematch logic safely
+        
+        Note:
+            This is the async version of the deprecated show_yes_no() call
+            used in GameEngine.end_game(). Provides consistent async pattern
+            with abandon_game, new_game, and exit_app prompts.
+        
+        Example:
+            >>> def on_result(wants_rematch):
+            ...     if wants_rematch:
+            ...         self.start_gameplay()
+            ...     else:
+            ...         self._safe_return_to_main_menu()
+            >>> dialog_manager.show_rematch_prompt_async(on_result)
+        
+        Version:
+            v2.5.0: Added for Bug #68 async refactoring
+        """
+        if not self.is_available:
+            # Fallback: No dialogs available, default to NO rematch
+            # Invoke callback with False to maintain async signature
+            callback(False)
+            return
+        
+        self.dialogs.show_yes_no_async(
+            title="Rivincita?",
+            message="Vuoi giocare ancora?",
+            callback=callback
+        )
+    
     def show_new_game_prompt_async(self, callback: Callable[[bool], None]) -> None:
         """Show new game confirmation dialog (non-blocking).
         
