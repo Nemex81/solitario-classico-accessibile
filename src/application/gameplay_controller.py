@@ -342,11 +342,17 @@ class GamePlayController:
             try:
                 pile = self.engine.cursor.get_current_pile()
                 pile_name = self._get_pile_name(pile)
-                # Card info is in the message, but we'll log success
+                # Get the selected card from pile
+                card_name = "unknown"
+                if pile and not pile.is_empty():
+                    card = pile.get_top_card()
+                    if card:
+                        card_name = card.get_name()
+                
                 log.card_moved(
                     from_pile=pile_name,
                     to_pile="selected",
-                    card="[card]",  # Message has card but hard to parse reliably
+                    card=card_name,
                     success=True
                 )
             except:
@@ -380,12 +386,23 @@ class GamePlayController:
         
         # Log waste card selection
         if success and "selezionat" in message.lower():
-            log.card_moved(
-                from_pile="waste",
-                to_pile="selected",
-                card="[card]",
-                success=True
-            )
+            # Extract card name from waste pile
+            try:
+                card_name = "unknown"
+                waste_pile = self.engine.service.table.waste
+                if waste_pile and not waste_pile.is_empty():
+                    card = waste_pile.get_top_card()
+                    if card:
+                        card_name = card.get_name()
+                
+                log.card_moved(
+                    from_pile="waste",
+                    to_pile="selected",
+                    card=card_name,
+                    success=True
+                )
+            except:
+                pass  # Don't crash on logging errors
     
     def _move_cards(self) -> None:
         """SPACE: Move selected cards to target pile."""
@@ -400,10 +417,20 @@ class GamePlayController:
                 origin_pile = self.engine.selection.origin_pile if self.engine.selection.has_selection() else None
                 origin_name = self._get_pile_name(origin_pile) if origin_pile else "unknown"
                 
+                # Get card names from selection
+                card_names = "unknown"
+                if self.engine.selection.has_selection():
+                    cards = self.engine.selection.selected_cards
+                    if cards:
+                        if len(cards) == 1:
+                            card_names = cards[0].get_name()
+                        else:
+                            card_names = f"{len(cards)} cards ({cards[0].get_name()} + {len(cards)-1} more)"
+                
                 log.card_moved(
                     from_pile=origin_name,
                     to_pile=dest_name,
-                    card="[cards]",  # Multiple cards possible
+                    card=card_names,
                     success=True
                 )
             except:
