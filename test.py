@@ -989,14 +989,12 @@ def main():
         controller.run()
     except KeyboardInterrupt:
         print("\n\nInterrotto dall'utente (Ctrl+C)")
-        log.app_shutdown()
         sys.exit(0)
     except Exception as e:
         print(f"\n\n⚠ ERRORE FATALE: {e}")
         import traceback
         traceback.print_exc()
         log.error_occurred("Application", "Unhandled exception in main loop", e)
-        log.app_shutdown()
         sys.exit(1)
     finally:
         log.app_shutdown()
