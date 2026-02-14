@@ -16,6 +16,7 @@ from typing import Dict, Callable, Optional
 from src.application.game_engine import GameEngine
 from src.application.options_controller import OptionsWindowController
 from src.domain.services.game_settings import GameSettings
+from src.infrastructure.logging import game_logger as log
 
 
 class GamePlayController:
@@ -333,7 +334,24 @@ class GamePlayController:
         """
         # wxPython version: No modifier check needed
         # Modifiers already handled by caller handle_wx_key_event()
-        self.engine.select_card_at_cursor()
+        success, message = self.engine.select_card_at_cursor()
+        
+        # Log card selection for analytics
+        if success and "selezionat" in message.lower():
+            # Extract card and pile info from current state
+            try:
+                pile = self.engine.cursor.get_current_pile()
+                pile_name = self._get_pile_name(pile)
+                # Card info is in the message, but we'll log success
+                log.card_moved(
+                    from_pile=pile_name,
+                    to_pile="selected",
+                    card="[card]",  # Message has card but hard to parse reliably
+                    success=True
+                )
+            except:
+                # If extraction fails, skip logging rather than crash
+                pass
     
     def _select_from_waste(self) -> None:
         """CTRL+ENTER: Select card from waste pile directly.
@@ -358,12 +376,44 @@ class GamePlayController:
         Version:
             v1.7.5: New helper method for wxPython keyboard mapping
         """
-        self.engine.select_from_waste()
+        success, message = self.engine.select_from_waste()
+        
+        # Log waste card selection
+        if success and "selezionat" in message.lower():
+            log.card_moved(
+                from_pile="waste",
+                to_pile="selected",
+                card="[card]",
+                success=True
+            )
     
     def _move_cards(self) -> None:
         """SPACE: Move selected cards to target pile."""
         success, message = self.engine.execute_move()
         # Message already vocalized by engine
+        
+        # Log card move for analytics
+        if success:
+            try:
+                dest_pile = self.engine.cursor.get_current_pile()
+                dest_name = self._get_pile_name(dest_pile)
+                origin_pile = self.engine.selection.origin_pile if self.engine.selection.has_selection() else None
+                origin_name = self._get_pile_name(origin_pile) if origin_pile else "unknown"
+                
+                log.card_moved(
+                    from_pile=origin_name,
+                    to_pile=dest_name,
+                    card="[cards]",  # Multiple cards possible
+                    success=True
+                )
+            except:
+                pass  # Don't crash on logging errors
+        elif "Invalid" in message or "Non" in message:
+            # Failed move - log as invalid action
+            log.invalid_action(
+                action="move_cards",
+                reason=message[:100]  # Truncate if too long
+            )
     
     def _cancel_selection(self) -> None:
         """DELETE: Cancel current card selection."""
@@ -373,6 +423,12 @@ class GamePlayController:
         """D or P: Draw cards from stock pile."""
         success, message = self.engine.draw_from_stock()
         # Message already vocalized by engine
+        
+        # Log card draw (DEBUG level - high frequency event)
+        if success:
+            # Determine draw count from settings
+            draw_count = 3 if self.settings.deck_type == "draw_three" else 1
+            log.cards_drawn(count=draw_count)
     
     # === QUERY INFORMAZIONI ===
     
@@ -475,6 +531,21 @@ ESC: abbandona partita."""
         # Start new game immediately (no game running OR no callback)
         self.engine.new_game()
         # Message vocalized by engine.new_game()
+        
+        # Log new game started with settings
+        try:
+            deck_type = "draw_three" if self.settings.deck_type == "draw_three" else "draw_one"
+            difficulty = getattr(self.settings, 'difficulty', 'medium')
+            timer_enabled = getattr(self.settings, 'timer_enabled', False)
+            
+            log.game_started(
+                deck_type=deck_type,
+                difficulty=str(difficulty),
+                timer_enabled=timer_enabled
+            )
+        except:
+            # If settings are unavailable, log minimal info
+            log.game_started(deck_type="unknown", difficulty="unknown", timer_enabled=False)
     
     def _handle_o_key(self) -> None:
         """O: Open/close options window.
@@ -942,3 +1013,37 @@ ESC: abbandona partita."""
             # === COMANDI NORMALI ===
             if event.key in self.callback_dict:
                 self.callback_dict[event.key]()
+    
+    def _get_pile_name(self, pile) -> str:
+        """Helper to get human-readable pile name for logging.
+        
+        Args:
+            pile: Pile object from game engine
+        
+        Returns:
+            String name like "tableau_1", "foundation_2", "stock", "waste"
+        """
+        if pile is None:
+            return "unknown"
+        
+        try:
+            # Try to get pile type from the engine's pile structure
+            tableau_piles = self.engine.service.table.tableau
+            for i, tableau_pile in enumerate(tableau_piles, 1):
+                if pile == tableau_pile:
+                    return f"tableau_{i}"
+            
+            foundation_piles = self.engine.service.table.foundations
+            for i, foundation_pile in enumerate(foundation_piles, 1):
+                if pile == foundation_pile:
+                    return f"foundation_{i}"
+            
+            if pile == self.engine.service.table.stock:
+                return "stock"
+            
+            if pile == self.engine.service.table.waste:
+                return "waste"
+        except:
+            pass
+        
+        return "unknown"
