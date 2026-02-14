@@ -425,58 +425,42 @@ class SolitarioController:
     # ============================================================================
     
     def show_abandon_game_dialog(self) -> None:
-        """Show abandon game confirmation dialog (called from GameplayPanel ESC handler).
+        """Show abandon game confirmation dialog (non-blocking).
         
-        Displays native wxDialog asking user to confirm game abandonment.
-        If user confirms (Sì), defers UI transition using wx.CallAfter() pattern.
-        If user cancels (No/ESC), returns to gameplay.
+        Uses async dialog API to prevent nested event loops.
+        Callback invoked after user responds.
         
         Called from:
             GameplayPanel._handle_esc() when ESC pressed during gameplay
         
-        Dialog behavior (pre-configured in SolitarioDialogManager):
+        Dialog behavior:
             - Title: "Abbandono Partita"
             - Message: "Vuoi abbandonare la partita e tornare al menu di gioco?"
-            - Buttons: Sì (confirm) / No (cancel)
-            - ESC key: Same as No (cancel)
+            - Non-blocking Show() (not ShowModal)
+            - Callback pattern for result handling
         
-        Defer Pattern (CRITICAL to prevent crashes):
-            ✅ CORRECT: Use wx.CallAfter() to defer UI transition
-                → Dialog shown inside event handler
-                → If confirmed: schedule _safe_abandon_to_menu() for LATER
-                → Event handler completes immediately
-                → Frame's event queue processes deferred transition
-                → NO nested event loops = NO crash
-            
-            ❌ WRONG: Perform UI transition directly in event handler
-                → Dialog shown inside event handler
-                → If confirmed: call show_panel() immediately
-                → show_panel() calls SafeYield() → nested event loop
-                → wxPython stack overflow → CRASH
-        
-        Why frame.CallAfter() works:
-            Uses frame's instance event queue directly, bypassing global wx.App
-            lookup. Works immediately after frame creation, no timing issues.
-            Guaranteed to work in all app lifecycle phases.
+        Async Pattern Benefits:
+            ✅ No nested event loops (Show vs ShowModal)
+            ✅ No wx.CallAfter needed (callback already deferred by dialog)
+            ✅ Better focus management
+            ✅ Screen reader friendly
         
         Returns:
-            None (side effect: may schedule deferred menu transition)
+            None (dialog shows immediately, callback handles result)
         
         Version:
             v1.7.5: Fixed to use semantic API without parameters
-            v2.0.2: Fixed operation order to prevent crash (Hide → Reset → Show)
-            v2.0.4: Added wx.CallAfter() defer pattern to prevent nested event loops
-            v2.0.6: Changed to wx.CallAfter() (DEFINITIVE FIX)
+            v2.0.2-v2.0.9: Used blocking ShowModal + CallAfter deferred
+            v2.2: Migrated to async dialog API (no CallAfter needed)
         """
-        # Show confirmation dialog using SEMANTIC API
-        result = self.dialog_manager.show_abandon_game_prompt()
+        def on_abandon_result(confirmed: bool):
+            if confirmed:
+                # No CallAfter needed, callback already deferred by Show()
+                self._safe_abandon_to_menu()
         
-        if result:
-            # User confirmed abandon (Sì button)
-            # ✅ Defer UI transition until AFTER event handler completes
-            print("→ User confirmed abandon - Scheduling deferred transition...")
-            self.app.CallAfter(self._safe_abandon_to_menu)
-        # else: User cancelled (No or ESC), do nothing (dialog already closed)
+        self.dialog_manager.show_abandon_game_prompt_async(
+            callback=on_abandon_result
+        )
     
     def _safe_abandon_to_menu(self) -> None:
         """Deferred handler for abandon game → menu transition (called via self.app.CallAfter).
@@ -521,41 +505,42 @@ class SolitarioController:
         print("→ Abandon transition completed\n")
     
     def show_new_game_dialog(self) -> None:
-        """Show new game confirmation dialog (called from GameplayController).
+        """Show new game confirmation dialog (non-blocking).
         
-        Asks user if they want to start a new game, abandoning current progress.
+        Uses async dialog API to prevent nested event loops.
         
-        Dialog behavior (pre-configured in SolitarioDialogManager):
+        Dialog behavior:
             - Title: "Nuova Partita"
-            - Message: "Una partita è già in corso. Vuoi abbandonarla e avviarne una nuova?"
-            - Buttons: Sì (confirm) / No (cancel)
-            - ESC key: Same as No (cancel)
+            - Message: "Una partita è già in corso..."
+            - Non-blocking Show() (not ShowModal)
+            - Callback pattern for result handling
         
         Called from:
             - GamePlayController via N key during gameplay
             - Menu "Nuova partita" when game already active
         
         Returns:
-            None (side effect: may reset and start new game)
+            None (dialog shows immediately, callback handles result)
         
         Version:
             v1.7.5: Fixed to use semantic API without parameters
+            v2.2: Migrated to async dialog API
         """
-        # Show confirmation dialog using SEMANTIC API
-        result = self.dialog_manager.show_new_game_prompt()
+        def on_new_game_result(confirmed: bool):
+            if confirmed:
+                self.engine.reset_game()
+                self.engine.new_game()
+                self._timer_expired_announced = False
+                
+                if self.screen_reader:
+                    self.screen_reader.tts.speak(
+                        "Nuova partita avviata! Usa H per l'aiuto comandi.",
+                        interrupt=True
+                    )
         
-        if result:
-            # User confirmed (Sì button) - Reset and start new game
-            self.engine.reset_game()
-            self.engine.new_game()
-            self._timer_expired_announced = False
-            
-            if self.screen_reader:
-                self.screen_reader.tts.speak(
-                    "Nuova partita avviata! Usa H per l'aiuto comandi.",
-                    interrupt=True
-                )
-        # else: User cancelled (No or ESC), do nothing
+        self.dialog_manager.show_new_game_prompt_async(
+            callback=on_new_game_result
+        )
     
     def confirm_abandon_game(self, skip_dialog: bool = False) -> None:
         """Abandon game immediately without dialog (double-ESC from GameplayView).
@@ -855,48 +840,46 @@ class SolitarioController:
         self.quit_app()
     
     def quit_app(self) -> bool:
-        """Graceful application shutdown with confirmation dialog.
+        """Graceful application shutdown with confirmation dialog (non-blocking).
         
         Shows exit confirmation dialog. If user confirms, exits application.
         If user cancels, returns control to caller (veto support for ALT+F4).
+        
+        Uses async dialog API. Note: Currently returns False immediately
+        because async dialog doesn't block. For veto support with async
+        dialogs, frame close handling needs refactoring.
         
         Called from:
         - show_exit_dialog() (menu "Esci" button, ESC in menu)
         - _on_frame_close() (ALT+F4, X button)
         
         Returns:
-            bool: True if application will exit (user confirmed)
-                  False if exit cancelled (user clicked No/ESC)
-        
-        Pattern:
-        - Shows dialog via dialog_manager.show_exit_app_prompt()
-        - If confirmed: calls sys.exit(0)
-        - If cancelled: returns False (allows frame veto)
+            bool: False (dialog shown, callback will handle exit)
         
         Version:
             v1.7.5: Changed return type from None to bool for veto support
+            v2.2: Migrated to async dialog API (veto not yet supported)
         """
-        # Show confirmation dialog using SEMANTIC API
-        result = self.dialog_manager.show_exit_app_prompt()
+        def on_quit_result(confirmed: bool):
+            if confirmed:
+                print("\n" + "="*60)
+                print("CHIUSURA APPLICAZIONE")
+                print("="*60)
+                
+                if self.screen_reader:
+                    self.screen_reader.tts.speak("Chiusura in corso.", interrupt=True)
+                    wx.MilliSleep(800)
+                
+                sys.exit(0)
+            else:
+                print("[quit_app] Exit cancelled by user")
+                if self.screen_reader:
+                    self.screen_reader.tts.speak("Uscita annullata.", interrupt=True)
         
-        if result:
-            # User confirmed (Sì button) - Proceed with exit
-            print("\n" + "="*60)
-            print("CHIUSURA APPLICAZIONE")
-            print("="*60)
-            
-            if self.screen_reader:
-                self.screen_reader.tts.speak("Chiusura in corso.", interrupt=True)
-                wx.MilliSleep(800)
-            
-            # Exit app (frame destruction handled by EVT_CLOSE)
-            sys.exit(0)
-        else:
-            # User cancelled (No or ESC) - Veto exit
-            print("[quit_app] Exit cancelled by user")
-            if self.screen_reader:
-                self.screen_reader.tts.speak("Uscita annullata.", interrupt=True)
-            return False
+        self.dialog_manager.show_exit_app_prompt_async(
+            callback=on_quit_result
+        )
+        return False  # Async dialog doesn't block, callback handles exit
     
     # === MAIN ENTRY POINT ===
     
