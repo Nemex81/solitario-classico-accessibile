@@ -634,7 +634,7 @@ class SolitarioController:
             
             # ✅ CORRECT: Use wx.CallAfter (global function)
             # In wxPython 4.1.1, CallAfter is a module-level function
-            wx.CallAfter(self.start_gameplay)
+            self.start_gameplay()
             
         else:
             # ═══════════════════════════════════════════════════════════
@@ -644,7 +644,7 @@ class SolitarioController:
             
             # ✅ CORRECT: Use wx.CallAfter (global function)
             # In wxPython 4.1.1, CallAfter is a module-level function
-            wx.CallAfter(self._safe_return_to_main_menu)
+            self._safe_return_to_main_menu()
     
     def _safe_decline_to_menu(self) -> None:
         """Deferred handler for decline rematch → menu transition (called via wx.CallAfter).
