@@ -705,4 +705,6 @@ Alla fine dell'implementazione v2.1, dovresti consegnare:
 
 ---
 
+Al termine della prima lettura di qeusto documento, copilot dovrà impegnarsi nella creazione di unfile todo, che funga come sommario delle mdoifiche richeiste inquesto documento. salva il file sempr enella cartella docs e utilizza il file exaple TODO.md come modello di creazione per il file richeisto.
+Dopo la creazione di questo file copilot potrà impegnarsi nella codifica delelmodficmdelel modifiche richeiste cominciando con ilconsultare proprio ilfikel todo appena creato. nel file todo specifica di seguire rigorosamente questo file di documentazione in ogni fase dell'implementazione. L'implementazioen deve procedere in modo incrementale su più commit.
 **Fine Documento**
