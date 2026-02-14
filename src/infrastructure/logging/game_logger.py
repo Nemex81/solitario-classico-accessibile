@@ -346,3 +346,84 @@ def timer_paused(remaining: int) -> None:
         Optional feature - only log if pause functionality is implemented
     """
     _game_logger.debug(f"Timer paused - Remaining: {remaining}s")
+
+
+# ===== NAVIGATION TRACKING (DEBUG LEVEL) =====
+
+def cursor_moved(from_position: str, to_position: str) -> None:
+    """
+    Log cursor movement (DEBUG level - verbose).
+    
+    Args:
+        from_position: Previous cursor position (e.g. "tableau_3[5]")
+        to_position: New cursor position
+    
+    Note:
+        DEBUG level to avoid noise in INFO logs.
+        Useful for UX heatmap analytics (which piles/cards focused most).
+    
+    Example:
+        >>> cursor_moved("tableau_3[5]", "tableau_3[4]")
+        2026-02-14 15:05:00 - DEBUG - game - Cursor: tableau_3[5] → tableau_3[4]
+    """
+    _game_logger.debug(f"Cursor: {from_position} → {to_position}")
+
+
+def pile_jumped(from_pile: str, to_pile: str) -> None:
+    """
+    Log direct pile jump (1-7 keys, SHIFT+1-4, etc.).
+    
+    Args:
+        from_pile: Previous pile (e.g. "tableau_1")
+        to_pile: Target pile (e.g. "foundation_2")
+    
+    Example:
+        >>> pile_jumped("tableau_1", "foundation_2")
+        2026-02-14 15:05:05 - DEBUG - game - Pile jump: tableau_1 → foundation_2
+    """
+    _game_logger.debug(f"Pile jump: {from_pile} → {to_pile}")
+
+
+# ===== QUERY COMMANDS TRACKING =====
+
+def info_query_requested(query_type: str, context: str = "") -> None:
+    """
+    Log information query command.
+    
+    Args:
+        query_type: Type of info requested (e.g. "table_info", "cursor_position")
+        context: Optional context (e.g. current pile)
+    
+    Note:
+        INFO level - questi comandi sono meno frequenti delle navigation keys.
+        Utile per capire quali info users cercano più spesso.
+    
+    Example:
+        >>> info_query_requested("table_info", "during_gameplay")
+        2026-02-14 15:10:00 - INFO - game - Info query: table_info (during_gameplay)
+    """
+    if context:
+        _game_logger.info(f"Info query: {query_type} ({context})")
+    else:
+        _game_logger.info(f"Info query: {query_type}")
+
+
+# ===== TTS FEEDBACK TRACKING (OPTIONAL) =====
+
+def tts_spoken(message: str, interrupt: bool) -> None:
+    """
+    Log TTS vocalization (DEBUG level).
+    
+    Args:
+        message: Text vocalized
+        interrupt: Whether previous speech interrupted
+    
+    Note:
+        DEBUG level - molto verboso (ogni azione genera TTS).
+        Utile per accessibility audits e TTS testing.
+    
+    Example:
+        >>> tts_spoken("7 di cuori su 8 di picche", True)
+        2026-02-14 15:15:00 - DEBUG - ui - TTS: "7 di cuori su 8 di picche" (interrupt=True)
+    """
+    _ui_logger.debug(f'TTS: "{message}" (interrupt={interrupt})')

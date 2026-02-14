@@ -434,33 +434,40 @@ class GamePlayController:
     
     def _get_focus(self) -> None:
         """F: Get current cursor position."""
+        log.info_query_requested("cursor_position")
         self.engine.get_cursor_info()
     
     def _get_table_info(self) -> None:
         """G: Get complete table state with hint support (v1.5.0)."""
+        log.info_query_requested("table_info")
         msg, hint = self.engine.service.get_table_info()
         self._speak_with_hint(msg, hint)
     
     def _get_game_report(self) -> None:
         """R: Get game report (time, moves, stats) with hint support (v1.5.0)."""
+        log.info_query_requested("game_report")
         msg, hint = self.engine.service.get_game_report()
         self._speak_with_hint(msg, hint)
     
     def _get_card_info(self) -> None:
         """X: Get detailed info about card under cursor."""
+        log.info_query_requested("card_info")
         self.engine.get_card_at_cursor()
     
     def _get_selected_cards(self) -> None:
         """C: Get list of currently selected cards."""
+        log.info_query_requested("selected_cards")
         self.engine.get_selected_info()
     
     def _get_scarto_top(self) -> None:
         """S: Get top card from waste pile with hint support (v1.5.0)."""
+        log.info_query_requested("waste_top")
         msg, hint = self.engine.service.get_waste_info()
         self._speak_with_hint(msg, hint)
     
     def _get_deck_count(self) -> None:
         """M: Get remaining cards in stock pile with hint support (v1.5.0)."""
+        log.info_query_requested("stock_count")
         msg, hint = self.engine.service.get_stock_info()
         self._speak_with_hint(msg, hint)
     
@@ -474,6 +481,7 @@ class GamePlayController:
         
         No hint vocalized during gameplay (v1.5.1 user request).
         """
+        log.info_query_requested("timer_status")
         # Pass max_time from settings to service (v1.5.1)
         msg, hint = self.engine.service.get_timer_info(
             max_time=self.settings.max_time_game
@@ -484,11 +492,13 @@ class GamePlayController:
     
     def _get_settings(self) -> None:
         """I: Get current game settings with hint support (v1.5.0)."""
+        log.info_query_requested("settings_info")
         msg, hint = self.engine.service.get_settings_info()
         self._speak_with_hint(msg, hint)
     
     def _show_help(self) -> None:
         """H: Show available commands help."""
+        log.info_query_requested("help")
         help_text = """COMANDI PRINCIPALI:
 Frecce: navigazione carte e pile.
 1 a 7: vai alla pila base.
