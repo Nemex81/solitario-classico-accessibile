@@ -326,7 +326,7 @@ class OptionsDialog(wx.Dialog):
         deck_selection = 0 if settings.deck_type == "french" else 1
         self.deck_type_radio.SetSelection(deck_selection)
         
-        # 2. Difficoltà (1/2/3 -> 0/1/2)
+        # 2. Difficoltà (1/2/3/4/5 -> 0/1/2/3/4)
         self.difficulty_radio.SetSelection(settings.difficulty_level - 1)
         
         # 3. Carte Pescate (1/2/3 -> 0/1/2)
@@ -481,7 +481,7 @@ class OptionsDialog(wx.Dialog):
         # 1. Tipo Mazzo
         settings.deck_type = "french" if self.deck_type_radio.GetSelection() == 0 else "neapolitan"
         
-        # 2. Difficoltà (0/1/2 -> 1/2/3)
+        # 2. Difficoltà (0/1/2/3/4 -> 1/2/3/4/5)
         settings.difficulty_level = self.difficulty_radio.GetSelection() + 1
         
         # 3. Carte Pescate (0/1/2 -> 1/2/3)

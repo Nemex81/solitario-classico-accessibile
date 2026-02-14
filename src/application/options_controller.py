@@ -465,13 +465,26 @@ class OptionsWindowController:
         return msg
     
     def _modify_difficulty(self) -> str:
-        """Cycle difficulty (1 -> 2 -> 3 -> 1)."""
+        """Cycle difficulty (1 -> 2 -> 3 -> 4 -> 5 -> 1) with preset application."""
         old_value = self.settings.difficulty_level
         success, msg = self.settings.cycle_difficulty()
+        
         if success:
             new_value = self.settings.difficulty_level
             log.settings_changed("difficulty_level", old_value, new_value)
-        return msg
+            
+            # v2.4.0: Announce preset details (locked options count)
+            preset = self.settings.get_current_preset()
+            locked_count = len(preset.get_locked_options())
+            
+            # Use preset formatter instead of generic message
+            return OptionsFormatter.format_preset_applied(
+                level=new_value,
+                preset_name=preset.name,
+                locked_count=locked_count
+            )
+        
+        return msg  # Fallback for errors
     
     def _cycle_timer_preset(self) -> str:
         """Cycle timer with +5min increments and wrap-around (v1.5.1).
