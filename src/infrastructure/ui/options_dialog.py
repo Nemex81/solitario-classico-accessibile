@@ -310,6 +310,8 @@ class OptionsDialog(wx.Dialog):
         Called after _create_ui() to populate widgets with values from
         GameSettings (via OptionsWindowController).
         
+        Version: v2.4.2 - Added lock state update call
+        
         Maps GameSettings values to wx widget selections:
         - deck_type: "french" -> 0, "neapolitan" -> 1
         - difficulty_level: 1/2/3/4/5 -> RadioBox selection 0/1/2/3/4
@@ -351,6 +353,10 @@ class OptionsDialog(wx.Dialog):
         # 8. Modalità Timer (True=STRICT, False=PERMISSIVE)
         strict_selection = 0 if settings.timer_strict_mode else 1
         self.timer_strict_radio.SetSelection(strict_selection)
+        
+        # ✅ FIX BUG #67: Update widget lock states after loading
+        # This ensures locked widgets are disabled when dialog opens
+        self._update_widget_lock_states()
     
     def _bind_widget_events(self) -> None:
         """Bind widget events to detect changes and update settings.
@@ -386,21 +392,51 @@ class OptionsDialog(wx.Dialog):
     def on_setting_changed(self, event: wx.Event) -> None:
         """Handle any setting change from widgets.
         
-        Called when user modifies any widget (RadioBox, CheckBox, ComboBox).
+        Special handling for difficulty change:
+        - Apply preset values to settings
+        - Refresh ALL widgets to show new preset values
+        - Update widget lock states (disable/enable based on preset)
         
-        Actions:
-        1. Save current widget values to settings (live update)
-        2. Mark controller as DIRTY (enable save confirmation)
+        Version: v2.4.2 - Fixed preset application on difficulty change (Bug #67)
         
         Args:
             event: wx.Event from widget (EVT_RADIOBOX, EVT_CHECKBOX, EVT_COMBOBOX)
         
-        Note:
-            Settings are updated immediately (GameSettings modified live).
-            Original snapshot saved by controller.open_window() for rollback.
+        Flow:
+            1. Save current widget value to settings
+            2. If difficulty changed:
+               a. Get current preset
+               b. Apply preset values (timer, draw_count, etc.)
+               c. Refresh ALL widgets to show new values
+               d. Update widget lock states (disable locked ones)
+               e. TTS announcement (optional)
+            3. Mark controller as DIRTY
         """
         # Update GameSettings from current widget values
         self._save_widgets_to_settings()
+        
+        # ✅ FIX BUG #67: Special handling for difficulty change
+        if event.GetEventObject() == self.difficulty_radio:
+            # Get current preset for new difficulty level
+            preset = self.options_controller.settings.get_current_preset()
+            
+            # Apply preset values to settings (timer, draw_count, shuffle, etc.)
+            preset.apply_to(self.options_controller.settings)
+            
+            # Refresh ALL widgets to show new preset values
+            # This updates timer_combo, draw_count_radio, shuffle_radio, etc.
+            self._load_settings_to_widgets()
+            
+            # Update widget lock states (disable locked widgets)
+            self._update_widget_lock_states()
+            
+            # TTS announcement (optional - helps blind users understand changes)
+            if self.screen_reader and self.screen_reader.tts:
+                locked_count = len(preset.get_locked_options())
+                self.screen_reader.tts.speak(
+                    f"{preset.name} applicato. {locked_count} opzioni bloccate.",
+                    interrupt=True
+                )
         
         # Mark controller as dirty (modifications present)
         if self.options_controller.state == "OPEN_CLEAN":
@@ -502,6 +538,67 @@ class OptionsDialog(wx.Dialog):
         
         # 8. Modalità Timer (0->True STRICT, 1->False PERMISSIVE)
         settings.timer_strict_mode = (self.timer_strict_radio.GetSelection() == 0)
+    
+    def _update_widget_lock_states(self) -> None:
+        """Update widget enable/disable states based on current preset locks.
+        
+        Disables widgets that are locked by the current difficulty preset.
+        This provides visual feedback that options cannot be modified.
+        
+        Locked widgets are grayed out and cannot be interacted with.
+        
+        Version: v2.4.2 - Added for preset lock enforcement (Bug #67)
+        
+        Mappings (option_name -> widget):
+            draw_count          -> self.draw_count_radio
+            max_time_game       -> self.timer_combo
+            shuffle_discards    -> self.shuffle_radio
+            command_hints_enabled -> self.command_hints_check
+            scoring_enabled     -> self.scoring_check
+            timer_strict_mode   -> self.timer_strict_radio
+        
+        Never locked:
+            deck_type           -> self.deck_type_radio (always enabled)
+            difficulty_level    -> self.difficulty_radio (always enabled)
+        
+        Example:
+            >>> # Level 5 (Maestro) locks most options
+            >>> preset = DifficultyPreset.get_preset(5)
+            >>> self._update_widget_lock_states()
+            >>> # draw_count_radio is now DISABLED (grayed out)
+            >>> # timer_combo is now DISABLED (grayed out)
+            >>> # User cannot modify these options
+        """
+        preset = self.options_controller.settings.get_current_preset()
+        
+        # Draw count (option: draw_count)
+        is_draw_locked = preset.is_locked("draw_count")
+        self.draw_count_radio.Enable(not is_draw_locked)
+        
+        # Timer duration (option: max_time_game)
+        is_timer_locked = preset.is_locked("max_time_game")
+        self.timer_combo.Enable(not is_timer_locked)
+        
+        # Shuffle mode (option: shuffle_discards)
+        is_shuffle_locked = preset.is_locked("shuffle_discards")
+        self.shuffle_radio.Enable(not is_shuffle_locked)
+        
+        # Command hints (option: command_hints_enabled)
+        is_hints_locked = preset.is_locked("command_hints_enabled")
+        self.command_hints_check.Enable(not is_hints_locked)
+        
+        # Scoring system (option: scoring_enabled)
+        is_scoring_locked = preset.is_locked("scoring_enabled")
+        self.scoring_check.Enable(not is_scoring_locked)
+        
+        # Timer strict mode (option: timer_strict_mode)
+        is_strict_locked = preset.is_locked("timer_strict_mode")
+        self.timer_strict_radio.Enable(not is_strict_locked)
+        
+        # Deck type and difficulty are NEVER locked
+        # (always allow user to change these)
+        self.deck_type_radio.Enable(True)
+        self.difficulty_radio.Enable(True)
     
     def on_key_down(self, event: wx.KeyEvent) -> None:
         """Handle keyboard events for ESC key only.
