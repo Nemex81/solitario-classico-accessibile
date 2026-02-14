@@ -39,6 +39,7 @@ from src.infrastructure.audio.tts_provider import create_tts_provider
 from src.infrastructure.storage.score_storage import ScoreStorage
 from src.presentation.game_formatter import GameFormatter
 from src.presentation.formatters.score_formatter import ScoreFormatter
+from src.infrastructure.logging import game_logger as log
 
 if TYPE_CHECKING:
     from src.infrastructure.ui.dialog_provider import DialogProvider
@@ -1031,6 +1032,29 @@ class GameEngine:
         # ═══════════════════════════════════════════════════════════
         self.service._snapshot_statistics()
         final_stats = self.service.get_final_statistics()
+        
+        # Log game end with statistics
+        if is_victory:
+            # Extract score (0 if scoring disabled)
+            score = 0
+            if self.settings and self.settings.scoring_enabled and self.service.scoring:
+                score = self.service.scoring.calculate_final_score(
+                    elapsed_seconds=final_stats['elapsed_time'],
+                    move_count=final_stats['move_count'],
+                    is_victory=True,
+                    timer_strict_mode=self.settings.timer_strict_mode if self.settings else True
+                )
+            
+            log.game_won(
+                elapsed_time=int(final_stats['elapsed_time']),
+                moves_count=final_stats['move_count'],
+                score=score
+            )
+        else:
+            log.game_abandoned(
+                elapsed_time=int(final_stats['elapsed_time']),
+                moves_count=final_stats['move_count']
+            )
         
         # ═══════════════════════════════════════════════════════════
         # STEP 2: Calculate Final Score

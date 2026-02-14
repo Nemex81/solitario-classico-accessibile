@@ -14,6 +14,7 @@ from src.domain.models.pile import Pile
 from src.domain.rules.solitaire_rules import SolitaireRules
 from src.domain.services.scoring_service import ScoringService
 from src.domain.models.scoring import ScoreEventType
+from src.infrastructure.logging import game_logger as log
 
 
 class GameService:
@@ -412,6 +413,9 @@ class GameService:
         
         # ✨ NEW v1.6.0: Increment recycle counter
         self.recycle_count += 1
+        
+        # Log waste recycle for analytics
+        log.waste_recycled(recycle_count=self.recycle_count)
         
         # Record scoring event
         if self.scoring:
