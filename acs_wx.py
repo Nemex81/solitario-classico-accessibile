@@ -673,6 +673,7 @@ class SolitarioController:
         Called via wx.CallAfter() when user declines rematch in end game dialog.
         
         Flow:
+        0. Hide gameplay panel (CRITICAL - prevents UI freeze)
         1. Reset game state (service.reset_game())
         2. Switch to MenuPanel (show main menu)
         3. Announce return to menu via TTS
@@ -689,6 +690,12 @@ class SolitarioController:
             - CallAfter defers execution until after dialog closes
             - Ensures clean UI state transition
         
+        Pattern Consistency:
+            This method follows the same 3-step pattern as:
+            - _safe_abandon_to_menu() (ESC → menu)
+            - _safe_timeout_to_menu() (timeout → menu)
+            All use: Hide panel → Reset game → Show menu
+        
         Example:
             >>> # User finishes game
             >>> # Dialog: "Vuoi giocare ancora?"
@@ -697,9 +704,17 @@ class SolitarioController:
             >>> # → wx.CallAfter(self._safe_return_to_main_menu)
             >>> # → Dialog closes
             >>> # → _safe_return_to_main_menu() executes
-            >>> # → Game reset + switch to menu + TTS announcement
+            >>> # → Panel hidden + Game reset + switch to menu + TTS announcement
         """
         print("→ _safe_return_to_main_menu() called")
+        
+        # 0. Hide gameplay panel (CRITICAL FIX for Bug #68)
+        # Without this, gameplay panel remains visible over menu → UI freeze
+        if self.view_manager:
+            gameplay_panel = self.view_manager.get_panel('gameplay')
+            if gameplay_panel:
+                gameplay_panel.Hide()
+        print("  ✓ Gameplay panel hidden")
         
         # 1. Reset game state
         # Stops timer, resets move count, clears statistics
