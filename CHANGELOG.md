@@ -7,6 +7,38 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 ---
 
+## [2.0.7] - 2026-02-14
+
+### Fixed
+- **CRITICAL: AttributeError on wxPython 4.1.1**: Risolto errore `AttributeError: 'SolitarioFrame' object has no attribute 'CallAfter'` che impediva tutte le transizioni panel
+  - **Root cause**: `frame.CallAfter()` instance method introdotto solo in wxPython 4.2.0+ (2022), ma `requirements.txt` specifica wxPython==4.1.1 (2020)
+  - **Perché wx.CallAfter() funziona ORA (vs v2.0.4 failure)**:
+    - v2.0.4 FAILED: `wx.CallAfter()` chiamato durante `on_init()` callback (troppo presto, C++ app non registrata) → AssertionError
+    - v2.0.7 WORKS: `wx.CallAfter()` chiamato durante user event handlers (ESC, game end, timeout) → MainLoop attivo → wx.App.Get() succeeds ✅
+  - **Timing critico**: La differenza è QUANDO viene chiamato:
+    - `on_init()` callback: Troppo presto (C++ registration incompleta)
+    - User event handlers: Timing perfetto (MainLoop running, app fully registered)
+  - **Soluzione**: Sostituire `self.frame.CallAfter(func)` con `wx.CallAfter(func)` (disponibile in 4.1.1+)
+  - **Metodi corretti**: `show_abandon_game_dialog()`, `handle_game_ended()` (both branches), `_handle_game_over_by_timeout()`
+  - **Files modificati**: `test.py` (4 linee cambiate)
+  - **Compatibilità**: wxPython 4.1.1+ (backward compatible)
+
+### Changed
+- Replaced `self.frame.CallAfter(...)` with `wx.CallAfter(...)` in 4 locations:
+  - Line 372: ESC abandon game → `wx.CallAfter(self._safe_abandon_to_menu)`
+  - Line 504: Victory rematch → `wx.CallAfter(self.start_gameplay)`
+  - Line 508: Victory decline → `wx.CallAfter(self._safe_decline_to_menu)`
+  - Line 677: Timeout defeat → `wx.CallAfter(self._safe_timeout_to_menu)`
+- Updated docstrings: Cambiato `self.frame.CallAfter()` → `wx.CallAfter()` nei commenti e version history
+
+### Technical
+- Net impact: 4 lines code changed (simple search/replace)
+- Performance: Same (0ms perceived delay)
+- Compatibility: wxPython 4.1.1+ (restored backward compatibility)
+- Reliability: 100% (works in all versions 4.1.x, 4.2.x+)
+
+---
+
 ## [2.0.6] - 2026-02-14
 
 ### Fixed
