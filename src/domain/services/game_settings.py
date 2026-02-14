@@ -17,9 +17,15 @@ v2.0.0 Changes:
 - Levels 4-5 have auto-adjustment constraints
 - Draw count separated from difficulty level
 - Scoring system toggle added
+
+v2.4.0 Changes:
+- Difficulty preset system with option locking
+- Progressive lock rules (Level 1: 1 lock → Level 5: 6 locks)
+- Tournament mode (Level 5) with strict enforcement
 """
 
-from typing import Tuple
+from typing import Tuple, Set
+from src.domain.models.difficulty_preset import DifficultyPreset
 
 
 class GameState:
@@ -99,6 +105,99 @@ class GameSettings:
         return not self.game_state.is_running
     
     # ========================================
+    # DIFFICULTY PRESET SYSTEM (v2.4.0)
+    # ========================================
+    
+    def apply_difficulty_preset(self, level: int) -> None:
+        """Apply difficulty preset for specified level.
+        
+        Applies all preset values (locked and default) for the given
+        difficulty level. Used when cycling difficulty or loading from save.
+        
+        Args:
+            level: Difficulty level (1-5)
+        
+        Example:
+            >>> settings.apply_difficulty_preset(5)  # Apply Maestro preset
+            >>> settings.draw_count  # 3 (locked)
+            >>> settings.max_time_game  # 900 (15 min, locked)
+        
+        Note:
+            This method directly sets attribute values without validation.
+            It's intended for internal use during difficulty changes.
+        
+        Version: v2.4.0
+        """
+        preset = DifficultyPreset.get_preset(level)
+        
+        # Apply all preset values
+        for option_name, value in preset.preset_values.items():
+            if hasattr(self, option_name):
+                setattr(self, option_name, value)
+    
+    def is_option_locked(self, option_name: str) -> bool:
+        """Check if option is locked at current difficulty level.
+        
+        Args:
+            option_name: Name of the option (e.g., "draw_count", "max_time_game")
+        
+        Returns:
+            True if option is locked (cannot be modified), False otherwise
+        
+        Example:
+            >>> settings.difficulty_level = 5
+            >>> settings.is_option_locked("draw_count")  # True
+            >>> settings.is_option_locked("deck_type")  # False (never locked)
+        
+        Note:
+            Used by OptionsController to block modification attempts.
+        
+        Version: v2.4.0
+        """
+        try:
+            preset = DifficultyPreset.get_preset(self.difficulty_level)
+            return preset.is_locked(option_name)
+        except ValueError:
+            # Invalid difficulty level - no locks
+            return False
+    
+    def get_locked_options(self) -> Set[str]:
+        """Get set of all locked options at current difficulty level.
+        
+        Returns:
+            Set of option names that are locked
+        
+        Example:
+            >>> settings.difficulty_level = 5
+            >>> locked = settings.get_locked_options()
+            >>> "draw_count" in locked  # True
+            >>> "deck_type" in locked  # False
+        
+        Version: v2.4.0
+        """
+        try:
+            preset = DifficultyPreset.get_preset(self.difficulty_level)
+            return preset.get_locked_options()
+        except ValueError:
+            # Invalid difficulty level - no locks
+            return set()
+    
+    def get_current_preset(self) -> DifficultyPreset:
+        """Get the current difficulty preset.
+        
+        Returns:
+            DifficultyPreset for current difficulty_level
+        
+        Example:
+            >>> settings.difficulty_level = 3
+            >>> preset = settings.get_current_preset()
+            >>> preset.name  # "Normale"
+        
+        Version: v2.4.0
+        """
+        return DifficultyPreset.get_preset(self.difficulty_level)
+    
+    # ========================================
     # DECK TYPE
     # ========================================
     
@@ -131,20 +230,24 @@ class GameSettings:
     def cycle_difficulty(self) -> Tuple[bool, str]:
         """Cycle difficulty level through 1 -> 2 -> 3 -> 4 -> 5 -> 1.
         
-        v2.0.0: Extended to 5 levels with auto-adjustment constraints:
-        - Levels 1-3: Full flexibility (existing behavior)
-        - Level 4 (Esperto): Timer ≥30min, draw_count ≥2, shuffle locked to invert
-        - Level 5 (Maestro): Timer 15-30min, draw_count=3, shuffle locked to invert
+        v2.4.0: Uses DifficultyPreset system for automatic configuration:
+        - Level 1 (Principiante): Timer OFF, beginner-friendly
+        - Level 2 (Facile): PERMISSIVE timer, customizable
+        - Level 3 (Normale): 3-card draw locked, Vegas standard
+        - Level 4 (Esperto): Time Attack 30min, 5 options locked
+        - Level 5 (Maestro): Tournament strict 15min, all options locked
         
-        When cycling to levels 4-5, settings are auto-adjusted if needed.
+        Preset values are applied automatically via apply_difficulty_preset().
         
         Returns:
-            Tuple[bool, str]: (success, message with adjustments if any)
+            Tuple[bool, str]: (success, message with applied changes)
         
         Examples:
             >>> settings.difficulty_level = 3
             >>> settings.cycle_difficulty()
             (True, "Difficoltà impostata a: Livello 4 - Esperto...")
+        
+        Version: v2.4.0 - Refactored to use DifficultyPreset system
         """
         if not self.validate_not_running():
             return (False, "Non puoi modificare la difficoltà durante una partita!")
@@ -152,106 +255,41 @@ class GameSettings:
         # Cycle: 1 -> 2 -> 3 -> 4 -> 5 -> 1
         self.difficulty_level = (self.difficulty_level % 5) + 1
         
+        # Apply difficulty preset
+        self.apply_difficulty_preset(self.difficulty_level)
+        
         # Get level name
         level_name = self.get_difficulty_display()
         base_message = f"Difficoltà impostata a: {level_name}."
         
-        # Apply constraints for levels 1-5
+        # Get preset to announce locked options
+        preset = self.get_current_preset()
+        locked_options = preset.get_locked_options()
+        
+        # Build announcement of applied changes
         adjustments = []
         
-        # Auto-presets for levels 1-3 (v1.5.2.5 - modifiable by user via Option #3)
+        # Announce key locked values based on level
         if self.difficulty_level == 1:
-            if self.draw_count != 1:
-                self.draw_count = 1
-                adjustments.append("Carte pescate: 1 (preset)")
-        
+            adjustments.append("Timer disattivato (preset principiante)")
         elif self.difficulty_level == 2:
-            if self.draw_count != 2:
-                self.draw_count = 2
-                adjustments.append("Carte pescate: 2 (preset)")
-        
+            adjustments.append("Modalità timer: Permissive")
         elif self.difficulty_level == 3:
-            if self.draw_count != 3:
-                self.draw_count = 3
-                adjustments.append("Carte pescate: 3 (preset)")
-            
-            # NEW: Scoring mandatory from level 3+
-            if not self.scoring_enabled:
-                self.scoring_enabled = True
-                adjustments.append("Sistema punti attivato (obbligatorio)")
-        
-        # Level 4-5: Strict competitive constraints
-        if self.difficulty_level == 4:
-            # Level 4: Timer 5-30min MANDATORY, draw ≥2, shuffle locked
-            # v1.5.2.5: Timer now mandatory for competitive level
-            if self.max_time_game <= 0:
-                self.max_time_game = 1800  # Force 30min default
-                adjustments.append("Timer attivato: 30 minuti (obbligatorio)")
-            elif self.max_time_game < 300:
-                self.max_time_game = 300  # Min 5min
-                adjustments.append("Timer: minimo 5 minuti")
-            elif self.max_time_game > 1800:
-                self.max_time_game = 1800  # Max 30min (reduced from 60min)
-                adjustments.append("Timer: massimo 30 minuti")
-            
-            if self.draw_count < 2:
-                self.draw_count = 2
-                adjustments.append("Carte pescate impostate a 2")
-            
-            if self.shuffle_discards:
-                self.shuffle_discards = False
-                adjustments.append("Riciclo impostato su Inversione")
-            
-            # NEW CONSTRAINTS v1.5.2.4
-            if self.command_hints_enabled:
-                self.command_hints_enabled = False
-                adjustments.append("Suggerimenti comandi disattivati")
-            
-            if not self.scoring_enabled:
-                self.scoring_enabled = True
-                adjustments.append("Sistema punti attivato (obbligatorio)")
-        
+            adjustments.append("Carte pescate: 3 (Vegas standard)")
+        elif self.difficulty_level == 4:
+            adjustments.append("Timer: 30 minuti (Time Attack)")
+            adjustments.append("Suggerimenti disattivati")
         elif self.difficulty_level == 5:
-            # Level 5: Timer 5-15min MANDATORY, draw=3, shuffle locked
-            # v1.5.2.5: Timer now mandatory, max reduced from 30min to 15min
-            if self.max_time_game <= 0:
-                self.max_time_game = 900  # Force 15min default
-                adjustments.append("Timer attivato: 15 minuti (obbligatorio)")
-            elif self.max_time_game < 300:
-                self.max_time_game = 300  # Min 5min
-                adjustments.append("Timer: minimo 5 minuti")
-            elif self.max_time_game > 900:
-                self.max_time_game = 900  # Max 15min (reduced from 30min)
-                adjustments.append("Timer: massimo 15 minuti")
-            
-            if self.draw_count != 3:
-                self.draw_count = 3
-                adjustments.append("Carte pescate impostate a 3")
-            
-            if self.shuffle_discards:
-                self.shuffle_discards = False
-                adjustments.append("Riciclo impostato su Inversione")
-            
-            # NEW CONSTRAINTS v1.5.2.4
-            if self.command_hints_enabled:
-                self.command_hints_enabled = False
-                adjustments.append("Suggerimenti comandi disattivati")
-            
-            if not self.scoring_enabled:
-                self.scoring_enabled = True
-                adjustments.append("Sistema punti attivato (obbligatorio)")
-            
-            if not self.timer_strict_mode:
-                self.timer_strict_mode = True
-                adjustments.append("Modalità timer STRICT attivata (obbligatoria)")
+            adjustments.append("Timer: 15 minuti STRICT (Tournament)")
+            adjustments.append("Tutte le opzioni bloccate")
         
         # Build final message
         if adjustments:
             adjustment_text = "; ".join(adjustments)
-            return (True, f"{base_message} Regolazioni automatiche: {adjustment_text}.")
+            return (True, f"{base_message} {adjustment_text}.")
         
         return (True, base_message)
-    
+        
     # ========================================
     # DRAW COUNT (v2.0.0)
     # ========================================
