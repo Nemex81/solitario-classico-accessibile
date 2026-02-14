@@ -125,74 +125,62 @@ class SolitarioFrame(wx.Frame):
         self.Show()
     
     def _on_close_event(self, event: wx.CloseEvent) -> None:
-        """Internal handler for EVT_CLOSE events with veto support.
+        """Internal handler for EVT_CLOSE events with async dialog support.
         
-        Saves timer state, calls user callback, and handles veto if needed.
-        If callback returns False, veto the close and restart timer.
-        If callback returns True (or None for backward compat), proceed with destruction.
+        Pattern: Always veto initially, show confirmation dialog async, then
+        exit programmatically (via sys.exit) if user confirms. This pattern
+        works correctly with async dialogs that return immediately.
+        
+        Flow:
+            1. ALT+F4 or X button pressed
+            2. EVT_CLOSE triggered
+            3. Veto close event (if possible)
+            4. Call on_close callback (shows async dialog)
+            5. Dialog callback handles:
+               - YES: Call sys.exit(0) to close programmatically
+               - NO: Do nothing (veto already applied, app continues)
+        
+        Why This Works:
+            - Async dialog returns immediately (no blocking)
+            - Veto prevents immediate close
+            - Dialog callback has full control over exit
+            - If user confirms: sys.exit(0) closes everything cleanly
+            - If user cancels: Veto keeps app running
         
         Args:
             event: wx.CloseEvent from frame closure request (ALT+F4, X button, etc.)
         
         Version:
             v1.7.5: Added veto support for exit confirmation dialog
+            v2.2.1: Fixed for async dialog pattern (always veto first)
         
         Note:
-            This is called when Close() is invoked, or when user closes
-            the frame via window controls (ALT+F4, X button).
-            
-            Veto support pattern:
-            - User callback can return bool to signal should_close
-            - True (or None): Proceed with exit
-            - False: Veto close and restore previous state (timer continues)
+            Timer state management removed (not needed with async pattern).
+            If dialog is cancelled, app simply continues with existing state.
         """
-        print("[Frame] Close event received")
+        print("[Frame] Close event received (ALT+F4 or X button)")
         
-        # Save timer state before stopping (for potential restart after veto)
-        timer_was_running = False
-        timer_interval = 1000  # Default fallback
+        # Check if we can veto this close event
+        if not event.CanVeto():
+            # Forced close (can't be vetoed) - exit immediately
+            print("[Frame] Close event cannot be vetoed (forced close)")
+            self.Destroy()
+            return
         
-        if self._timer is not None and self._timer.IsRunning():
-            timer_was_running = True
-            # Retrieve stored interval (set in start_timer)
-            timer_interval = getattr(self, '_timer_interval', 1000)
-            print(f"[Frame] Timer was running with interval: {timer_interval}ms")
-            self.stop_timer()
+        # ALWAYS veto initially (we'll exit programmatically if confirmed)
+        print("[Frame] Vetoing close event - showing confirmation dialog")
+        event.Veto()
         
-        # Call user callback and check return value
-        should_close = True  # Default: allow close
-        
+        # Call on_close callback which shows async confirmation dialog
+        # Dialog callback will call sys.exit(0) if user confirms
+        # If user cancels, veto keeps app running (no action needed)
         if self.on_close is not None:
-            result = self.on_close()
-            
-            # Handle bool return (v1.7.5+) or None (backward compat)
-            if result is False:
-                should_close = False
-                print("[Frame] Close vetoed by callback (user cancelled)")
-            elif result is True or result is None:
-                should_close = True
-                print("[Frame] Close approved by callback")
-        
-        # Handle veto if callback returned False
-        if not should_close:
-            # Check if we can veto (not all close events can be vetoed)
-            if event.CanVeto():
-                print("[Frame] Vetoing close event - restoring state")
-                event.Veto()
-                
-                # Restart timer if it was running
-                if timer_was_running:
-                    print(f"[Frame] Restarting timer with {timer_interval}ms interval")
-                    self.start_timer(timer_interval)
-                
-                return  # Exit without destroying
-            else:
-                # Forced close (can't veto) - proceed anyway
-                print("[Frame] Close event cannot be vetoed (forced)")
-        
-        # Proceed with destruction
-        print("[Frame] Destroying frame")
-        self.Destroy()
+            self.on_close()  # Shows async dialog, returns immediately
+        else:
+            # No callback registered - allow close by calling Destroy directly
+            # This should never happen in normal operation
+            print("[Frame] No on_close callback registered - destroying frame")
+            self.Destroy()
     
     def _on_timer_event(self, event: wx.TimerEvent) -> None:
         """Internal handler for timer events.
