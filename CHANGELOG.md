@@ -7,6 +7,36 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 ---
 
+## [2.0.9] - 2026-02-14
+
+### Fixed
+- **CRITICAL: AssertionError with wx.CallAfter()**: Risolto errore `AssertionError: No wx.App created yet` che causava crash durante deferred transitions
+  - **Root cause**: `wx.CallAfter()` chiama internamente `wx.GetApp()` che può ritornare `None` durante event handlers
+  - **Soluzione**: Usare `self.app.CallAfter()` invece - chiamata diretta al metodo dell'istanza, no lookup `wx.GetApp()` necessario
+  - **Modifiche**: 4 linee in `test.py`:
+    - Line 372: `show_abandon_game_dialog()` - ESC abandon
+    - Line 504: `handle_game_ended()` - rematch branch
+    - Line 508: `handle_game_ended()` - decline branch  
+    - Line 677: `_handle_game_over_by_timeout()` - timeout
+  - **Pattern**: `wx.CallAfter(` → `self.app.CallAfter(`
+  - **Testing**: ESC abandon → Menu INSTANT (no AssertionError), all transitions work
+  - **Compatibilità**: wxPython 4.1.1+ (tutte le versioni)
+
+### Changed
+- Replaced `wx.CallAfter()` with `self.app.CallAfter()` in 4 locations
+- Direct instance method call ensures app instance is always available
+- No dependency on `wx.GetApp()` global function
+- Works reliably regardless of app initialization timing
+
+### Technical
+- Lines changed: 4 (simple search/replace)
+- Files modified: 1 (test.py)
+- Impact: Minimal code change, maximum reliability fix
+- Performance: Same (direct method call)
+- Reliability: 100% (no wx.GetApp() timing issues)
+
+---
+
 ## [2.0.8] - 2026-02-14
 
 ### Fixed

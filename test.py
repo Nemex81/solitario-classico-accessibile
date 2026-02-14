@@ -369,7 +369,7 @@ class SolitarioController:
             # User confirmed abandon (Sì button)
             # ✅ Defer UI transition until AFTER event handler completes
             print("→ User confirmed abandon - Scheduling deferred transition...")
-            wx.CallAfter(self._safe_abandon_to_menu)
+            self.app.CallAfter(self._safe_abandon_to_menu)
         # else: User cancelled (No or ESC), do nothing (dialog already closed)
     
     def _safe_abandon_to_menu(self) -> None:
@@ -501,11 +501,11 @@ class SolitarioController:
         if wants_rematch:
             # User wants rematch - defer new game start
             print("→ Scheduling deferred rematch...")
-            wx.CallAfter(self.start_gameplay)
+            self.app.CallAfter(self.start_gameplay)
         else:
             # User declined rematch - defer menu transition
             print("→ Scheduling deferred decline transition...")
-            wx.CallAfter(self._safe_decline_to_menu)
+            self.app.CallAfter(self._safe_decline_to_menu)
     
     def _safe_decline_to_menu(self) -> None:
         """Deferred handler for decline rematch → menu transition (called via wx.CallAfter).
@@ -674,7 +674,7 @@ class SolitarioController:
         
         # ✅ Defer UI transition until AFTER timer event completes
         print("→ Timeout defeat - Scheduling deferred transition...")
-        wx.CallAfter(self._safe_timeout_to_menu)
+        self.app.CallAfter(self._safe_timeout_to_menu)
     
     def _safe_timeout_to_menu(self) -> None:
         """Deferred handler for timeout defeat → menu transition (called via wx.CallAfter).
