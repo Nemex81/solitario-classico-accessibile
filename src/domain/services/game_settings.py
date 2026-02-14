@@ -690,3 +690,63 @@ class GameSettings:
         Used by OptionsFormatter for option #8 display.
         """
         return "STRICT (auto-stop)" if self.timer_strict_mode else "PERMISSIVE (malus)"
+    
+    # ========================================
+    # PERSISTENCE & VALIDATION (v2.4.0)
+    # ========================================
+    
+    def to_dict(self) -> dict:
+        """Export settings to dictionary for JSON serialization.
+        
+        Returns:
+            Dictionary with all setting values
+        
+        Example:
+            >>> settings = GameSettings()
+            >>> data = settings.to_dict()
+            >>> data['difficulty_level']
+            1
+        
+        Version: v2.4.0
+        """
+        return {
+            "deck_type": self.deck_type,
+            "difficulty_level": self.difficulty_level,
+            "draw_count": self.draw_count,
+            "max_time_game": self.max_time_game,
+            "shuffle_discards": self.shuffle_discards,
+            "command_hints_enabled": self.command_hints_enabled,
+            "scoring_enabled": self.scoring_enabled,
+            "timer_strict_mode": self.timer_strict_mode,
+        }
+    
+    def load_from_dict(self, data: dict) -> None:
+        """Load settings from dictionary and reapply preset (anti-cheat).
+        
+        This method loads settings from JSON and then reapplies the difficulty
+        preset to enforce lock rules. This prevents manual JSON editing to
+        bypass tournament restrictions.
+        
+        Args:
+            data: Dictionary with setting values
+        
+        Example:
+            >>> settings = GameSettings()
+            >>> data = {"difficulty_level": 5, "draw_count": 1}  # Cheating attempt
+            >>> settings.load_from_dict(data)
+            >>> settings.draw_count  # 3 (preset enforced, not 1)
+        
+        Anti-cheat:
+            If user manually edits JSON to set Level 5 with draw_count=1,
+            the preset system will override it back to 3 (locked value).
+        
+        Version: v2.4.0
+        """
+        # Load all values from dictionary
+        for key, value in data.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+        
+        # Reapply difficulty preset to enforce locks (anti-cheat)
+        if hasattr(self, 'difficulty_level'):
+            self.apply_difficulty_preset(self.difficulty_level)
