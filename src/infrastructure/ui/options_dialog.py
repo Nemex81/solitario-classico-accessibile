@@ -141,7 +141,7 @@ class OptionsDialog(wx.Dialog):
         
         Layout (v1.8.0 - native widgets, ALL 8 options + buttons):
         - RadioBox for deck type (Francese/Napoletano)
-        - RadioBox for difficulty (1/2/3 carte)
+        - RadioBox for difficulty (5 levels: Principiante to Maestro)
         - RadioBox for draw count (1/2/3 carte)
         - CheckBox + ComboBox for timer (enable + duration)
         - RadioBox for shuffle mode (Inversione/Mescolata)
@@ -183,9 +183,15 @@ class OptionsDialog(wx.Dialog):
         diff_box = wx.StaticBoxSizer(wx.VERTICAL, self, "Difficoltà")
         self.difficulty_radio = wx.RadioBox(
             self,
-            label="Numero di carte scoperte dal tallone:",
-            choices=["1 carta (facile)", "2 carte (medio)", "3 carte (difficile)"],
-            majorDimension=3,  # Horizontal layout
+            label="Livello di difficoltà:",
+            choices=[
+                "Livello 1 - Principiante",
+                "Livello 2 - Facile",
+                "Livello 3 - Normale",
+                "Livello 4 - Esperto",
+                "Livello 5 - Maestro"
+            ],
+            majorDimension=5,  # Horizontal layout with 5 columns
             style=wx.RA_SPECIFY_COLS
         )
         diff_box.Add(self.difficulty_radio, 0, wx.ALL | wx.EXPAND, 5)
@@ -315,7 +321,7 @@ class OptionsDialog(wx.Dialog):
         
         Maps GameSettings values to wx widget selections:
         - deck_type: "french" -> 0, "neapolitan" -> 1
-        - difficulty_level: 1/2/3 -> RadioBox selection 0/1/2
+        - difficulty_level: 1/2/3/4/5 -> RadioBox selection 0/1/2/3/4
         - draw_count: 1/2/3 -> RadioBox selection 0/1/2
         - max_time_game: seconds -> CheckBox + ComboBox (minutes)
         - shuffle_discards: False -> 0 (Inversione), True -> 1 (Mescolata)
@@ -494,7 +500,7 @@ class OptionsDialog(wx.Dialog):
         
         Mappings:
         - deck_type_radio: 0->"french", 1->"neapolitan"
-        - difficulty_radio: 0/1/2 -> difficulty_level 1/2/3
+        - difficulty_radio: 0/1/2/3/4 -> difficulty_level 1/2/3/4/5
         - draw_count_radio: 0/1/2 -> draw_count 1/2/3
         - timer_check + timer_combo: boolean + minutes -> max_time_game seconds
         - shuffle_radio: 0->False (Inversione), 1->True (Mescolata)
