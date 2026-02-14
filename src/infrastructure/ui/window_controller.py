@@ -22,6 +22,7 @@ from typing import Optional, Dict, List, Any
 
 from src.infrastructure.di.dependency_container import DependencyContainer
 from src.infrastructure.ui.factories import ViewFactory, WindowKey
+from src.infrastructure.logging import game_logger as log
 
 
 class WindowController:
@@ -200,6 +201,11 @@ class WindowController:
                 f"Window {key} not created yet. "
                 f"Call create_window({key}) first."
             )
+        
+        # Log panel transition
+        from_panel = self.current_window.__class__.__name__ if self.current_window else "none"
+        to_panel = key.name if hasattr(key, 'name') else str(key)
+        log.panel_switched(from_panel, to_panel)
         
         # Hide current window and push to parent stack
         if self.current_window:
