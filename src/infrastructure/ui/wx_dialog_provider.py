@@ -193,36 +193,80 @@ class WxDialogProvider(DialogProvider):
         message: str,
         callback: Callable[[bool], None]
     ) -> None:
-        """Show non-blocking yes/no dialog with callback.
+        """Show yes/no dialog (semi-modal) with deferred callback.
+        
+        Pattern: ShowModal() called from wx.CallAfter() prevents nested event loops
+        while ensuring proper dialog lifecycle (YES/NO/ESC all handled correctly).
+        
+        Architecture:
+            1. Method returns immediately (non-blocking for caller)
+            2. wx.CallAfter() schedules show_modal_and_callback() for next idle
+            3. [wxPython processes current event handler to completion]
+            4. [wxPython idle loop picks up deferred call]
+            5. show_modal_and_callback() executes in clean context
+            6. ShowModal() blocks until user responds (safe, no nested loop)
+            7. Dialog destroyed, callback invoked, focus restored
+        
+        Why ShowModal is Safe Here:
+            - Called from wx.CallAfter() = deferred context (not event handler)
+            - No nested event loop because original handler already completed
+            - All dialog buttons (YES/NO/ESC/X) work correctly
+            - Focus returns to parent automatically after Destroy()
         
         Args:
             title: Dialog title
-            message: Dialog message
-            callback: Function called with result (True=Yes, False=No)
+            message: Dialog message  
+            callback: Function called with result (True=Yes, False=No/ESC/X)
         
         Example:
             >>> def on_result(confirmed: bool):
             ...     if confirmed:
             ...         print("User confirmed")
-            >>> provider.show_yes_no_async("Title", "Message?", on_result)
+            ...     else:
+            ...         print("User declined or cancelled")
+            >>> provider.show_yes_no_async("Conferma", "Sei sicuro?", on_result)
+            # Returns immediately, callback invoked after user responds
         
         Version:
             v2.2: Added async API to prevent nested event loops
+            v2.2.1: Fixed to use semi-modal pattern (ShowModal + CallAfter)
         """
-        dialog = wx.MessageDialog(
-            parent=self._get_parent(),
-            message=message,
-            caption=title,
-            style=wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION
-        )
         
-        def on_dialog_close(event):
-            result = dialog.GetReturnCode() == wx.ID_YES
+        def show_modal_and_callback():
+            """Deferred function that shows modal dialog and invokes callback.
+            
+            This function executes in deferred context (wx.CallAfter), ensuring:
+            - No nested event loop (original handler already completed)
+            - ShowModal() blocks safely until user responds
+            - All dialog buttons work correctly (YES/NO/ESC/X)
+            - Dialog always destroyed (no memory leaks)
+            - Callback invoked with correct result
+            - Focus returns to parent automatically
+            """
+            # Create modal dialog
+            dialog = wx.MessageDialog(
+                parent=self._get_parent(),
+                message=message,
+                caption=title,
+                style=wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION
+            )
+            
+            # ShowModal blocks until user clicks YES/NO/ESC/X
+            # Returns: wx.ID_YES, wx.ID_NO, or wx.ID_CANCEL
+            result_code = dialog.ShowModal()
+            
+            # Interpret result (True for YES, False for NO/ESC/X)
+            result = (result_code == wx.ID_YES)
+            
+            # CRITICAL: Always destroy dialog (prevents memory leaks)
             dialog.Destroy()
-            callback(result)  # Invoke callback with result
+            
+            # Invoke callback with result (already in deferred context, safe)
+            callback(result)
         
-        dialog.Bind(wx.EVT_CLOSE, on_dialog_close)
-        dialog.Show()  # NON-BLOCKING (not ShowModal)
+        # Defer entire dialog sequence to next idle cycle
+        # This prevents nested event loops and ensures clean execution
+        wx.CallAfter(show_modal_and_callback)
     
     def show_info_async(
         self,
