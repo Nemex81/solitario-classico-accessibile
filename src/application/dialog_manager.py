@@ -11,7 +11,7 @@ Italian-localized messages and sensible defaults. Provides graceful
 degradation if wxPython is not available.
 """
 
-from typing import Optional
+from typing import Optional, Callable
 
 from src.infrastructure.ui.dialog_provider import DialogProvider
 
@@ -74,7 +74,10 @@ class SolitarioDialogManager:
         return self.dialogs is not None
     
     def show_abandon_game_prompt(self) -> bool:
-        """Show confirmation dialog for abandoning current game.
+        """DEPRECATED: Use show_abandon_game_prompt_async().
+        
+        Synchronous API causes nested event loops.
+        Maintained for backward compatibility, will be removed in v3.0.
         
         Asks user if they want to abandon the game and return to menu.
         
@@ -98,7 +101,10 @@ class SolitarioDialogManager:
         )
     
     def show_new_game_prompt(self) -> bool:
-        """Show confirmation dialog for starting new game over existing one.
+        """DEPRECATED: Use show_new_game_prompt_async().
+        
+        Synchronous API causes nested event loops.
+        Maintained for backward compatibility, will be removed in v3.0.
         
         Asks user if they want to abandon current game and start new one.
         
@@ -146,7 +152,10 @@ class SolitarioDialogManager:
         )
     
     def show_exit_app_prompt(self) -> bool:
-        """Show confirmation dialog for exiting application.
+        """DEPRECATED: Use show_exit_app_prompt_async().
+        
+        Synchronous API causes nested event loops.
+        Maintained for backward compatibility, will be removed in v3.0.
         
         Asks user if they want to exit the application.
         Default is NO for safety (prevent accidental exits).
@@ -228,3 +237,79 @@ class SolitarioDialogManager:
             return
         
         self.dialogs.show_alert(message, title)
+    
+    def show_abandon_game_prompt_async(self, callback: Callable[[bool], None]) -> None:
+        """Show abandon game confirmation dialog (non-blocking).
+        
+        Args:
+            callback: Function called with result (True=abandon, False=continue)
+        
+        Example:
+            >>> def on_result(confirmed):
+            ...     if confirmed:
+            ...         self._safe_abandon_to_menu()
+            >>> dialog_manager.show_abandon_game_prompt_async(on_result)
+        
+        Version:
+            v2.2: Added async API
+        """
+        if not self.is_available:
+            # Fallback TTS (no callback, announce only)
+            # Note: TTS needs to be injected if we want to use it here
+            # For now, just silently fail (no dialogs available)
+            return
+        
+        self.dialogs.show_yes_no_async(
+            title="Abbandono Partita",
+            message="Vuoi abbandonare la partita e tornare al menu di gioco?",
+            callback=callback
+        )
+    
+    def show_new_game_prompt_async(self, callback: Callable[[bool], None]) -> None:
+        """Show new game confirmation dialog (non-blocking).
+        
+        Args:
+            callback: Function called with result (True=new game, False=cancel)
+        
+        Example:
+            >>> def on_result(confirmed):
+            ...     if confirmed:
+            ...         self.engine.reset_game()
+            ...         self.engine.new_game()
+            >>> dialog_manager.show_new_game_prompt_async(on_result)
+        
+        Version:
+            v2.2: Added async API
+        """
+        if not self.is_available:
+            return
+        
+        self.dialogs.show_yes_no_async(
+            title="Nuova Partita",
+            message="Una partita è già in corso. Vuoi abbandonarla e avviarne una nuova?",
+            callback=callback
+        )
+    
+    def show_exit_app_prompt_async(self, callback: Callable[[bool], None]) -> None:
+        """Show exit confirmation dialog (non-blocking).
+        
+        Args:
+            callback: Function called with result (True=exit, False=cancel)
+        
+        Example:
+            >>> def on_result(confirmed):
+            ...     if confirmed:
+            ...         sys.exit(0)
+            >>> dialog_manager.show_exit_app_prompt_async(on_result)
+        
+        Version:
+            v2.2: Added async API
+        """
+        if not self.is_available:
+            return
+        
+        self.dialogs.show_yes_no_async(
+            title="Chiusura Applicazione",
+            message="Vuoi uscire dall'applicazione?",
+            callback=callback
+        )

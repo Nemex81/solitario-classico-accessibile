@@ -15,7 +15,7 @@ Known limitations:
 """
 
 import wx
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Callable
 
 from src.infrastructure.ui.dialog_provider import DialogProvider
 
@@ -48,35 +48,41 @@ class WxDialogProvider(DialogProvider):
         # Dialog is child of invisible frame, won't show in ALT+TAB
     """
     
-    def __init__(self, parent=None):
-        """Initialize with invisible wx.Frame parent (v1.6.3.2).
+    def __init__(self, parent_frame: Optional[wx.Frame] = None):
+        """Initialize with parent frame for proper modal hierarchy (v2.0.1).
         
         Args:
-            parent: IGNORED. Previous attempts used pygame HWND, but
-                    AssociateHandle() doesn't establish modal relationships.
+            parent_frame: Optional wx.Frame to use as parent for all dialogs.
+                         If None, creates invisible frame (legacy behavior).
+                         If provided, dialogs will be modal children of this frame.
         
         Note:
-            Creates invisible wx.Frame (lazy) as parent for all dialogs.
-            Frame has wx.FRAME_NO_TASKBAR to prevent ALT+TAB appearance.
-            Standard pattern for pygame+wxPython integration.
+            hs_deckmanager pattern: Always provide parent_frame for proper
+            modal relationships. Dialogs will appear over parent and won't
+            show as separate windows in ALT+TAB.
         """
         super().__init__()
-        self._parent_frame = None  # Invisible wx.Frame (lazy init)
+        self.parent_frame = parent_frame  # Store parent frame reference
+        self._parent_frame = None  # Invisible wx.Frame (lazy init, fallback)
     
     def _get_parent(self):
-        """Get invisible parent frame (lazy initialization).
+        """Get parent frame for dialogs (v2.0.1 - hs_deckmanager pattern).
         
         Returns:
-            wx.Frame: Invisible frame for dialog parenting
+            wx.Frame: Parent frame for dialog parenting
         
-        Note (v1.6.3.2):
-            Creates invisible wx.Frame with wx.FRAME_NO_TASKBAR flag.
-            This prevents the frame itself from appearing in ALT+TAB.
-            All dialogs are created as children of this frame, which
-            makes them modal and prevents ALT+TAB separation.
+        Note:
+            If parent_frame was provided in __init__, use it (preferred).
+            Otherwise, create invisible frame (legacy fallback).
             
-            Standard pattern for pygame+wxPython integration.
+            hs_deckmanager pattern: Always use explicit parent_frame for
+            proper modal hierarchy and OS focus management.
         """
+        # Use explicit parent frame if provided (hs_deckmanager pattern)
+        if self.parent_frame is not None:
+            return self.parent_frame
+        
+        # Fallback: Create invisible frame (lazy init)
         if self._parent_frame is not None:
             return self._parent_frame
         
@@ -91,7 +97,10 @@ class WxDialogProvider(DialogProvider):
         return self._parent_frame
     
     def show_alert(self, message: str, title: str) -> None:
-        """Show modal alert with OK button.
+        """DEPRECATED: Use show_info_async() to avoid nested event loops.
+        
+        Synchronous API maintained for backward compatibility.
+        Will be removed in v3.0.
         
         Uses wx.MessageDialog with wx.OK | wx.ICON_INFORMATION.
         Screen reader announces title + message when dialog opens.
@@ -112,7 +121,10 @@ class WxDialogProvider(DialogProvider):
         wx.Yield()  # Process pending events (important for screen reader focus)
     
     def show_yes_no(self, question: str, title: str) -> bool:
-        """Show modal Yes/No dialog.
+        """DEPRECATED: Use show_yes_no_async() to avoid nested event loops.
+        
+        Synchronous API maintained for backward compatibility.
+        Will be removed in v3.0.
         
         Uses wx.MessageDialog with wx.YES_NO | wx.NO_DEFAULT.
         NO is default to prevent accidental confirmations.
@@ -142,7 +154,9 @@ class WxDialogProvider(DialogProvider):
         title: str,
         default: str = ""
     ) -> Optional[str]:
-        """Show modal text input dialog.
+        """DEPRECATED: Synchronous API maintained for backward compatibility.
+        
+        Will be removed in v3.0. Consider using async pattern for future features.
         
         Uses wx.TextEntryDialog.
         Returns None if user cancels (ESC or Cancel button).
@@ -172,6 +186,183 @@ class WxDialogProvider(DialogProvider):
             dlg.Destroy()
             wx.Yield()
             return None
+    
+    def show_yes_no_async(
+        self,
+        title: str,
+        message: str,
+        callback: Callable[[bool], None]
+    ) -> None:
+        """Show yes/no dialog (semi-modal) with deferred callback.
+        
+        Pattern: ShowModal() called from wx.CallAfter() prevents nested event loops
+        while ensuring proper dialog lifecycle (YES/NO/ESC all handled correctly).
+        
+        Architecture:
+            1. Method returns immediately (non-blocking for caller)
+            2. wx.CallAfter() schedules show_modal_and_callback() for next idle
+            3. [wxPython processes current event handler to completion]
+            4. [wxPython idle loop picks up deferred call]
+            5. show_modal_and_callback() executes in clean context
+            6. ShowModal() blocks until user responds (safe, no nested loop)
+            7. Dialog destroyed, callback invoked, focus restored
+        
+        Why ShowModal is Safe Here:
+            - Called from wx.CallAfter() = deferred context (not event handler)
+            - No nested event loop because original handler already completed
+            - All dialog buttons (YES/NO/ESC/X) work correctly
+            - Focus returns to parent automatically after Destroy()
+        
+        Args:
+            title: Dialog title
+            message: Dialog message  
+            callback: Function called with result (True=Yes, False=No/ESC/X)
+        
+        Example:
+            >>> def on_result(confirmed: bool):
+            ...     if confirmed:
+            ...         print("User confirmed")
+            ...     else:
+            ...         print("User declined or cancelled")
+            >>> provider.show_yes_no_async("Conferma", "Sei sicuro?", on_result)
+            # Returns immediately, callback invoked after user responds
+        
+        Version:
+            v2.2: Added async API to prevent nested event loops
+            v2.2.1: Fixed to use semi-modal pattern (ShowModal + CallAfter)
+        """
+        
+        def show_modal_and_callback():
+            """Deferred function that shows modal dialog and invokes callback.
+            
+            This function executes in deferred context (wx.CallAfter), ensuring:
+            - No nested event loop (original handler already completed)
+            - ShowModal() blocks safely until user responds
+            - All dialog buttons work correctly (YES/NO/ESC/X)
+            - Dialog always destroyed (no memory leaks)
+            - Callback invoked with correct result
+            - Focus returns to parent automatically
+            """
+            # Create modal dialog
+            dialog = wx.MessageDialog(
+                parent=self._get_parent(),
+                message=message,
+                caption=title,
+                style=wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION
+            )
+            
+            # ShowModal blocks until user clicks YES/NO/ESC/X
+            # Returns: wx.ID_YES, wx.ID_NO, or wx.ID_CANCEL
+            result_code = dialog.ShowModal()
+            
+            # Interpret result (True for YES, False for NO/ESC/X)
+            result = (result_code == wx.ID_YES)
+            
+            # CRITICAL: Always destroy dialog (prevents memory leaks)
+            dialog.Destroy()
+            
+            # Invoke callback with result (already in deferred context, safe)
+            callback(result)
+        
+        # Defer entire dialog sequence to next idle cycle
+        # This prevents nested event loops and ensures clean execution
+        wx.CallAfter(show_modal_and_callback)
+    
+    def show_info_async(
+        self,
+        title: str,
+        message: str,
+        callback: Optional[Callable[[], None]] = None
+    ) -> None:
+        """Show info dialog (semi-modal) with optional callback.
+        
+        Pattern: ShowModal() called from wx.CallAfter() for consistency with
+        show_yes_no_async(). Ensures proper dialog lifecycle.
+        
+        Args:
+            title: Dialog title
+            message: Info message
+            callback: Optional function called after dialog closes
+        
+        Example:
+            >>> def on_closed():
+            ...     print("Info dialog closed")
+            >>> provider.show_info_async("Info", "Partita avviata!", on_closed)
+        
+        Version:
+            v2.2: Added async API
+            v2.2.1: Fixed to use semi-modal pattern (ShowModal + CallAfter)
+        """
+        
+        def show_modal_and_callback():
+            """Deferred function that shows modal info dialog."""
+            dialog = wx.MessageDialog(
+                parent=self._get_parent(),
+                message=message,
+                caption=title,
+                style=wx.OK | wx.ICON_INFORMATION
+            )
+            
+            # ShowModal blocks until user clicks OK or ESC
+            dialog.ShowModal()
+            
+            # Always destroy dialog
+            dialog.Destroy()
+            
+            # Invoke optional callback
+            if callback:
+                callback()
+        
+        # Defer entire dialog sequence
+        wx.CallAfter(show_modal_and_callback)
+    
+    def show_error_async(
+        self,
+        title: str,
+        message: str,
+        callback: Optional[Callable[[], None]] = None
+    ) -> None:
+        """Show error dialog (semi-modal) with optional callback.
+        
+        Pattern: ShowModal() called from wx.CallAfter() for consistency with
+        show_yes_no_async(). Ensures proper dialog lifecycle.
+        
+        Args:
+            title: Dialog title
+            message: Error message
+            callback: Optional function called after dialog closes
+        
+        Example:
+            >>> def on_closed():
+            ...     print("Error acknowledged")
+            >>> provider.show_error_async("Errore", "Mossa non valida!", on_closed)
+        
+        Version:
+            v2.2: Added async API
+            v2.2.1: Fixed to use semi-modal pattern (ShowModal + CallAfter)
+        """
+        
+        def show_modal_and_callback():
+            """Deferred function that shows modal error dialog."""
+            dialog = wx.MessageDialog(
+                parent=self._get_parent(),
+                message=message,
+                caption=title,
+                style=wx.OK | wx.ICON_ERROR
+            )
+            
+            # ShowModal blocks until user clicks OK or ESC
+            dialog.ShowModal()
+            
+            # Always destroy dialog
+            dialog.Destroy()
+            
+            # Invoke optional callback
+            if callback:
+                callback()
+        
+        # Defer entire dialog sequence
+        wx.CallAfter(show_modal_and_callback)
     
     def show_statistics_report(
         self,

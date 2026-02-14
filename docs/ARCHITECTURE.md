@@ -342,3 +342,264 @@ class MoveValidatorProtocol(Protocol):
 ### Dependency Inversion
 - Domain non dipende da Infrastructure
 - Controller dipende da astrazioni (Protocol)
+
+## 🎯 Deferred UI Transitions Pattern (v2.1)
+
+### Overview
+
+A critical architectural pattern for handling UI panel transitions in wxPython
+applications. Ensures safe, crash-free transitions by deferring UI operations
+until after event handlers complete.
+
+### Problem Statement
+
+Direct UI transitions from event handlers can cause:
+- **Nested event loops**: wxPython processes events during UI operations
+- **AssertionError**: `wx.GetApp()` returns None during certain lifecycle states
+- **RuntimeError**: `wxYield called recursively` when SafeYield used improperly
+- **Crashes/hangs**: Unpredictable behavior from synchronous UI manipulation
+
+### Solution: self.app.CallAfter() Pattern
+
+Use the wx.App instance method `CallAfter()` to defer UI transitions:
+
+```python
+# ✅ CORRECT: Deferred UI transition
+def on_esc_pressed(self):
+    """Event handler for ESC key."""
+    result = self.show_dialog()
+    if result:
+        # Schedule UI transition for AFTER handler completes
+        self.app.CallAfter(self._safe_return_to_menu)
+    # Handler returns immediately
+
+def _safe_return_to_menu(self):
+    """Deferred callback - runs AFTER event handler completes."""
+    # Safe context: no nested event loop
+    self.view_manager.show_panel('menu')
+    self.engine.reset_game()
+```
+
+### Pattern Flow
+
+```
+1. User Action → Event Handler
+                    ↓
+2. Event Handler → Dialog (modal, blocking)
+                    ↓
+3. User Confirms → self.app.CallAfter(deferred_method)
+                    ↓
+4. Handler Returns → Event processing completes
+                    ↓
+5. [wxPython Idle Loop]
+                    ↓
+6. Deferred Method → Panel swap, state reset
+                    ↓
+7. UI Updates Complete → Safe, no nested loops
+```
+
+### Why self.app.CallAfter() Works
+
+1. **Direct Instance Method**: No `wx.GetApp()` global lookup needed
+2. **Always Available**: `self.app` assigned before MainLoop starts
+3. **No Timing Issues**: Python object always exists (not C++ dependent)
+4. **Deferred Execution**: Runs in wxPython idle loop, safe context
+5. **No Nested Loops**: Event handler completes before UI operations
+
+### Anti-Patterns to AVOID
+
+#### ❌ Anti-Pattern 1: wx.CallAfter()
+```python
+# WRONG: Global function, depends on wx.GetApp() timing
+wx.CallAfter(self._safe_return_to_menu)
+# May fail with: AssertionError: No wx.App created yet
+```
+
+**Problem**: `wx.CallAfter()` internally calls `wx.GetApp()` which may return
+None during app initialization or certain lifecycle transitions.
+
+#### ❌ Anti-Pattern 2: wx.SafeYield()
+```python
+# WRONG: Creates nested event loop
+def show_panel(self, name):
+    wx.SafeYield()  # Forces event processing
+    panel.Hide()
+    panel.Show()
+# Causes: RuntimeError: wxYield called recursively
+```
+
+**Problem**: When called from deferred callback, creates second nested event
+loop. wxPython detects recursion and raises RuntimeError.
+
+#### ❌ Anti-Pattern 3: Direct Panel Swap from Handler
+```python
+# WRONG: Synchronous UI manipulation in event handler
+def on_esc_pressed(self):
+    result = self.show_dialog()
+    if result:
+        self.view_manager.show_panel('menu')  # Direct call
+        self.engine.reset_game()
+# Risk: Nested loops, timing issues, crashes
+```
+
+**Problem**: UI operations during event handling can trigger nested event
+loops or access UI state at unsafe times.
+
+### Decision Tree: When to Use Pattern
+
+```
+Is this a UI transition? (panel swap, dialog, etc.)
+    ├─ NO → Direct call OK
+    │       Example: Pure logic, calculations, validation
+    │
+    └─ YES → Check calling context
+            ├─ Event handler (keyboard, timer, callback)
+            │   └─ Use self.app.CallAfter(deferred_method)
+            │
+            ├─ Deferred callback (already in CallAfter context)
+            │   └─ Direct call OK (safe context)
+            │
+            └─ Initialization (run(), on_init())
+                └─ Direct call OK (before MainLoop starts)
+```
+
+### Implementation Guidelines
+
+#### 1. Separate Event Handlers from Deferred Callbacks
+
+```python
+# Event Handler: Shows dialog, schedules defer
+def show_abandon_game_dialog(self):
+    """Handle ESC key - show dialog and defer transition."""
+    result = self.dialog_manager.show_abandon_game_prompt()
+    if result:
+        self.app.CallAfter(self._safe_abandon_to_menu)
+
+# Deferred Callback: Performs UI transition
+def _safe_abandon_to_menu(self):
+    """Deferred handler - safe panel transition."""
+    self.view_manager.show_panel('menu')
+    self.engine.reset_game()
+```
+
+#### 2. Name Deferred Callbacks Clearly
+
+Use prefixes to indicate deferred execution:
+- `_safe_*`: Deferred UI transition methods
+- `_deferred_*`: General deferred operations
+- `_on_*`: Event handlers (not deferred)
+
+#### 3. Document Pattern in Docstrings
+
+```python
+def _safe_abandon_to_menu(self):
+    """Deferred handler for abandon → menu transition.
+    
+    Called via self.app.CallAfter() from show_abandon_game_dialog().
+    Executes AFTER event handler completes, preventing nested loops.
+    
+    IMPORTANT: Do NOT call directly from event handlers.
+    Always use self.app.CallAfter(self._safe_abandon_to_menu).
+    
+    Version:
+        v2.0.9: Uses self.app.CallAfter() pattern
+        v2.1: Architectural integration and documentation
+    """
+```
+
+### Version History
+
+| Version | Change | Impact |
+|---------|--------|--------|
+| v2.0.3 | Added wx.SafeYield() | ❌ Caused crashes (nested loops) |
+| v2.0.4 | Introduced wx.CallAfter() | ⚠️ Timing issues (wx.GetApp()) |
+| v2.0.6 | Tried self.frame.CallAfter() | ❌ Version incompatibility |
+| v2.0.7 | Reverted to wx.CallAfter() | ⚠️ Still had timing issues |
+| v2.0.8 | Removed wx.SafeYield() | ✅ Fixed nested loop crash |
+| v2.0.9 | **DEFINITIVE**: self.app.CallAfter() | ✅ Reliable, works always |
+| v2.1 | Systematic integration | ✅ Complete architectural pattern |
+
+### Current Implementation Status (v2.1)
+
+#### ✅ test.py (Presentation Layer)
+- 4/4 UI transitions use `self.app.CallAfter()`
+- Pattern compliance: 100%
+- All deferred methods documented
+
+#### ✅ view_manager.py (Infrastructure Layer)
+- No wx.SafeYield() (removed v2.0.8)
+- Synchronous Hide/Show operations
+- Safe for deferred callback context
+
+#### ✅ Application Layer
+- Zero instances of CallAfter (correct)
+- Clean Architecture separation
+- Business logic framework-independent
+
+### Testing Validation
+
+Manual testing scenarios for pattern verification:
+
+#### Test 1: ESC Abandon Game
+```
+Steps:
+1. Start game (Nuova Partita)
+2. Press ESC during gameplay
+3. Confirm "Sì" to abandon
+
+Expected:
+✅ Menu appears instantly
+✅ No crash or hang
+✅ Console: "Scheduling deferred transition" → "Executing deferred..."
+✅ Game state reset properly
+```
+
+#### Test 2: Victory Decline Rematch
+```
+Steps:
+1. Complete game (win)
+2. Victory dialog appears
+3. Click "No" to decline rematch
+
+Expected:
+✅ Menu appears instantly
+✅ No crash or hang
+✅ Smooth transition without flicker
+```
+
+#### Test 3: Timer STRICT Expiration
+```
+Steps:
+1. Enable timer STRICT mode (if available)
+2. Let timer expire during gameplay
+3. Automatic transition to menu
+
+Expected:
+✅ Menu appears after timeout message
+✅ No crash or hang
+✅ Deferred callback executes correctly
+```
+
+### References
+
+- **wxPython wx.App.CallAfter()**: Instance method, always available
+- **wxPython wx.CallAfter()**: Global function, depends on wx.GetApp()
+- **Pattern Documentation**: `docs/IMPLEMENTATION_TIMER_STRICT_MODE_SYSTEM_v2.1.md`
+- **Audit Reports**: `docs/AUDIT_CALLAFTER_PATTERNS_v2.1.md`
+
+### Summary
+
+The Deferred UI Transitions Pattern is a critical architectural component
+that ensures:
+- ✅ Crash-free panel transitions
+- ✅ No nested event loops
+- ✅ Reliable timing (no wx.GetApp() dependency)
+- ✅ Clean separation of event handling and UI operations
+- ✅ Maintainable, documented codebase
+
+**Always use `self.app.CallAfter()` for UI transitions from event handlers.**
+
+---
+
+*Document Version: 2.1*  
+*Last Updated: 2026-02-14*
