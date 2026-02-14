@@ -2,7 +2,7 @@
 
 Un gioco di carte Solitario (Klondike) in versione accessibile per non vedenti, sviluppato in Python con supporto per screen reader.
 
-**Versione Corrente**: 2.1.0 (Architectural Integration - Timer Strict Mode System)
+**Versione Corrente**: 2.2.0 (Window Management Migration - Async Dialog API)
 
 ## 🎯 Caratteristiche
 

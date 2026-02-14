@@ -7,6 +7,156 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 ---
 
+## [2.2.0] - 2026-02-14
+
+### Window Management Migration - Async Dialog API
+
+Complete migration to non-blocking async dialog API, eliminating nested event loops from ShowModal() and improving application stability and accessibility.
+
+### Added
+
+**Infrastructure Layer - Dependency Injection & Factory Pattern**:
+- **DependencyContainer** (`src/infrastructure/di/dependency_container.py`):
+  - IoC container for dependency injection with thread-safe resolution
+  - Circular dependency detection via resolving_stack
+  - Factory-based pattern (no singleton caching)
+  - API: register(), resolve(), has(), resolve_optional()
+
+- **ViewFactory** (`src/infrastructure/ui/factories/view_factory.py`):
+  - Centralized window creation with dependency injection
+  - WindowKey enum for type-safe window registry
+  - Auto-resolution of controller dependencies from container
+  - Support for custom constructor arguments
+
+- **WidgetFactory** (`src/infrastructure/ui/factories/widget_factory.py`):
+  - Consistent widget creation with accessibility focus
+  - Methods: create_button(), create_sizer(), add_to_sizer()
+  - Screen reader friendly (proper labels and focus)
+  - Future-ready for dark mode and custom styling
+
+- **WindowController** (`src/infrastructure/ui/window_controller.py`):
+  - Hierarchical window lifecycle management
+  - Lazy window creation with caching
+  - Parent stack for back navigation support
+  - Auto EVT_CLOSE binding for cleanup
+
+**Async Dialog API**:
+- **WxDialogProvider async methods** (`src/infrastructure/ui/wx_dialog_provider.py`):
+  - show_yes_no_async(): Non-blocking yes/no with callback
+  - show_info_async(): Non-blocking info with optional callback
+  - show_error_async(): Non-blocking error with optional callback
+  - Uses Show() instead of ShowModal() (no nested event loop)
+  - EVT_CLOSE binding for result capture and callback invocation
+
+- **DialogManager async wrappers** (`src/application/dialog_manager.py`):
+  - show_abandon_game_prompt_async()
+  - show_new_game_prompt_async()
+  - show_exit_app_prompt_async()
+  - Italian-localized messages with callback pattern
+
+### Changed
+
+**Application Integration**:
+- **test.py**: Integrated DependencyContainer (bridge mode)
+  - Created _register_dependencies() method
+  - Registered all components in container
+  - Maintains existing initialization (backward compatible)
+  - Updated version to v2.2.0
+
+- **MenuPanel & GameplayPanel**: Added container parameter
+  - Optional container=None in constructors
+  - Backward compatible (default parameter)
+  - Prepares for future DI-based initialization
+
+**Dialog Migration to Async API**:
+- **show_abandon_game_dialog()**: Migrated to callback pattern
+  - No more ShowModal() blocking
+  - No more CallAfter() deferred handling (callback is already deferred)
+  - Callback invokes _safe_abandon_to_menu() on confirm
+
+- **show_new_game_dialog()**: Migrated to callback pattern
+  - Non-blocking confirmation flow
+  - Game reset and new game start in callback
+
+- **quit_app()**: Migrated to callback pattern
+  - Non-blocking exit confirmation
+  - sys.exit(0) invoked in callback on confirm
+  - Returns False immediately (async pattern)
+
+### Deprecated
+
+**Synchronous Dialog Methods** (will be removed in v3.0):
+- WxDialogProvider.show_yes_no() - Use show_yes_no_async()
+- WxDialogProvider.show_alert() - Use show_info_async()
+- WxDialogProvider.show_input() - Consider async pattern
+- DialogManager.show_abandon_game_prompt() - Use *_async()
+- DialogManager.show_new_game_prompt() - Use *_async()
+- DialogManager.show_exit_app_prompt() - Use *_async()
+
+### Technical Details
+
+**Pattern: Async Dialogs with Callback**:
+```python
+# OLD (blocking - nested event loop):
+result = dialog_manager.show_abandon_game_prompt()
+if result:
+    self.app.CallAfter(self._safe_abandon_to_menu)
+
+# NEW (async - no nested loop):
+def on_result(confirmed: bool):
+    if confirmed:
+        self._safe_abandon_to_menu()  # Already deferred!
+
+dialog_manager.show_abandon_game_prompt_async(on_result)
+```
+
+**Benefits**:
+- ✅ No nested event loops (Show vs ShowModal)
+- ✅ Better focus management (no modal blocking)
+- ✅ Screen reader friendly (natural dialog flow)
+- ✅ Simpler code (no CallAfter in dialog handlers)
+- ✅ Async-ready architecture
+
+**Implementation Strategy**:
+- 11 atomic commits (infrastructure → application → docs)
+- Bridge mode integration (backward compatible)
+- Incremental migration (sync methods deprecated, not removed)
+- Manual testing after each commit
+
+### Backward Compatibility
+
+- **Zero breaking changes**: All existing APIs maintained
+- **Sync methods**: Deprecated but functional (v3.0 removal)
+- **Panel constructors**: Optional container parameter
+- **DI Container**: Bridge mode (coexists with direct init)
+
+### Impact
+
+- **Stability**: Eliminated nested event loop crashes
+- **Accessibility**: Improved screen reader experience
+- **Architecture**: Clean DI and factory patterns
+- **Testability**: Better separation of concerns
+- **Maintainability**: Centralized component creation
+
+### Testing
+
+**Manual Testing Scenarios**:
+- ✅ ESC abandon game → Dialog → Confirm → Menu (no crash)
+- ✅ ESC abandon game → Dialog → Cancel → Gameplay continues
+- ✅ N key → Dialog → Confirm → New game starts
+- ✅ Menu Esci → Dialog → Confirm → App closes
+- ✅ Menu Esci → Dialog → Cancel → Stays in menu
+- ✅ All 60+ keyboard commands functional
+- ✅ Timer STRICT mode triggers timeout correctly
+
+### References
+
+- Complete implementation guide: `docs/IMPLEMENTATION_WINDOW_MANAGEMENT_MIGRATION_v2.2.md`
+- Operational TODO: `docs/TODO_WINDOW_MANAGEMENT_v2.2.md`
+- Pattern source: [hs_deckmanager](https://github.com/Nemex81/hs_deckmanager)
+
+---
+
 ## [2.1.0] - 2026-02-14
 
 ### Architectural Integration - Timer Strict Mode System
