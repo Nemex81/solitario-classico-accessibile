@@ -7,6 +7,60 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 ---
 
+## [2.2.1] - 2026-02-14
+
+### Fixed
+
+- **CRITICO**: Dialog asincroni non si chiudevano quando utente cliccava YES/NO
+  - **Root cause**: `EVT_CLOSE` non triggera per click su bottoni dialog (solo per X button/ALT+F4)
+  - **Soluzione**: Semi-modal pattern (`ShowModal()` + `wx.CallAfter()`)
+  - **Impatto**: ESC, ALT+F4, tasto N ora funzionano correttamente
+  
+- **ESC in menu**: Ora mostra dialog conferma uscita correttamente
+- **ESC in gameplay**: Ora mostra dialog conferma abbandono correttamente
+- **ALT+F4**: Ora mostra dialog conferma uscita con veto support funzionante
+- **Tasto N in gameplay**: Ora mostra dialog conferma nuova partita correttamente
+
+### Changed
+
+- **`WxDialogProvider.show_yes_no_async()`**: Migrato a semi-modal pattern
+  - Usa `ShowModal()` chiamato da `wx.CallAfter()` invece di `Show()` + `EVT_CLOSE`
+  - Previene nested event loops mantenendo comportamento non-bloccante per caller
+  - Gestisce correttamente tutti i bottoni dialog (YES/NO/ESC/X)
+  
+- **`WxDialogProvider.show_info_async()`**: Migrato a semi-modal pattern per consistency
+- **`WxDialogProvider.show_error_async()`**: Migrato a semi-modal pattern per consistency
+
+- **`SolitarioFrame._on_close_event()`**: Migrato a "always veto first" pattern
+  - Applica sempre veto inizialmente, dialog async gestisce `sys.exit(0)` se confermato
+  - Rimosso timer state management (non necessario con pattern async)
+  - Semplificato: veto → show dialog → callback controlla exit
+
+### Technical Details
+
+**Semi-Modal Pattern**:
+- `ShowModal()` chiamato da `wx.CallAfter()` previene nested event loops
+- Caller riceve return immediato (async per chiamante)
+- Dialog mostrato in contesto deferito (no nested loop)
+- ShowModal blocca fino a risposta utente (safe, deferred context)
+- Callback invocato in contesto deferito (safe)
+
+**Always Veto First Pattern**:
+- Veto applicato immediatamente su EVT_CLOSE
+- Dialog async mostrato, ritorna subito
+- Callback dialog gestisce `sys.exit(0)` se confermato
+- Se cancellato, veto mantiene app aperta
+
+**Focus Management**:
+- Dialog modal restituisce focus automaticamente al parent dopo `Destroy()`
+- Timer continua a girare se user cancella (veto preserva stato)
+
+### References
+- Implementation plan: `docs/PLAN_FIX_DIALOG_ASYNC.md`
+- Commits: 5 atomic changes (dialog methods + ALT+F4 veto + docs)
+
+---
+
 ## [2.2.0] - 2026-02-14
 
 ### Window Management Migration - Async Dialog API
