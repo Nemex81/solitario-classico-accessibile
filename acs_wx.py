@@ -602,16 +602,29 @@ class SolitarioController:
             v2.0.6: Changed to wx.CallAfter() (DEFINITIVE FIX)
         """
         print(f"\n→ Game ended callback - Rematch: {wants_rematch}")
+        
+        # Reset timer announcement flag (for next game)
         self._timer_expired_announced = False
         
         if wants_rematch:
-            # User wants rematch - defer new game start
+            # ═══════════════════════════════════════════════════════════
+            # REMATCH: Start New Game
+            # ═══════════════════════════════════════════════════════════
             print("→ Scheduling deferred rematch...")
-            self.app.CallAfter(self.start_gameplay)
+            
+            # ✅ FIX BUG #68.1: Use wx.CallAfter (global function)
+            # NOT self.app.CallAfter (doesn't exist on SolitarioWxApp)
+            wx.CallAfter(self.start_gameplay)
+            
         else:
-            # User declined rematch - defer menu transition
-            print("→ Scheduling deferred decline transition...")
-            self.app.CallAfter(self._safe_decline_to_menu)
+            # ═══════════════════════════════════════════════════════════
+            # DECLINE: Return to Main Menu
+            # ═══════════════════════════════════════════════════════════
+            print("→ Scheduling deferred return to main menu...")
+            
+            # ✅ FIX BUG #68.2: Use wx.CallAfter + new method
+            # Method _safe_return_to_main_menu() created below
+            wx.CallAfter(self._safe_return_to_main_menu)
     
     def _safe_decline_to_menu(self) -> None:
         """Deferred handler for decline rematch → menu transition (called via self.app.CallAfter).
@@ -653,6 +666,60 @@ class SolitarioController:
         self.return_to_menu()
         
         print("→ Decline transition completed\n")
+    
+    def _safe_return_to_main_menu(self) -> None:
+        """Return to main menu after declining rematch.
+        
+        Called via wx.CallAfter() when user declines rematch in end game dialog.
+        
+        Flow:
+        1. Reset game state (service.reset_game())
+        2. Switch to MenuPanel (show main menu)
+        3. Announce return to menu via TTS
+        
+        Version: v2.4.2 (fix for Bug #68 - decline rematch behavior)
+        
+        Note:
+            Called via wx.CallAfter() to ensure dialog is fully closed
+            before panel switching occurs.
+        
+        Why CallAfter?
+            - Modal dialogs block UI thread
+            - Panel switching while dialog open can cause crashes
+            - CallAfter defers execution until after dialog closes
+            - Ensures clean UI state transition
+        
+        Example:
+            >>> # User finishes game
+            >>> # Dialog: "Vuoi giocare ancora?"
+            >>> # User presses NO
+            >>> # → handle_game_ended(wants_rematch=False)
+            >>> # → wx.CallAfter(self._safe_return_to_main_menu)
+            >>> # → Dialog closes
+            >>> # → _safe_return_to_main_menu() executes
+            >>> # → Game reset + switch to menu + TTS announcement
+        """
+        print("→ _safe_return_to_main_menu() called")
+        
+        # 1. Reset game state
+        # Stops timer, resets move count, clears statistics
+        self.engine.service.reset_game()
+        print("  ✓ Game state reset")
+        
+        # 2. Switch to main menu panel
+        # Shows MenuPanel with "Nuova Partita", "Opzioni", etc.
+        self.view_manager.show_panel("menu")
+        print("  ✓ Switched to MenuPanel")
+        
+        # 3. Announce return to menu via TTS
+        # Helps blind users understand they're back at main menu
+        if self.screen_reader and self.screen_reader.tts:
+            self.screen_reader.tts.speak(
+                "Sei tornato al menu principale. Usa le frecce per navigare.",
+                interrupt=True
+            )
+        
+        print("✓ Successfully returned to main menu")
     
     # === OPTIONS HANDLING ===
     
