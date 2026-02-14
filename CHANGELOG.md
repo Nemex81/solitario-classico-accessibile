@@ -7,6 +7,43 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 ---
 
+## [2.4.0] - 2026-02-14
+
+### Added
+- **Sistema Preset Difficoltà**: 5 livelli con blocco opzioni progressive
+  - Livello 1 (Principiante): Timer disattivato, impostazioni base
+  - Livello 2 (Facile): Timer permissivo, personalizzabile
+  - Livello 3 (Normale): Regole Vegas standard (3 carte obbligatorie)
+  - Livello 4 (Esperto): Time Attack 30 minuti, senza suggerimenti
+  - Livello 5 (Maestro): Modalità Tournament strict 15 minuti, tutte opzioni bloccate
+- **DifficultyPreset Domain Model**: Gestione centralizzata regole blocco (6 opzioni bloccabili)
+- **TimerComboBox Widget**: 13 preset timer (0-60 minuti) con ComboBox nativa
+- **RadioBox 5 Livelli Difficoltà**: Esteso da 3 a 5 livelli nell'interfaccia opzioni
+- **Anti-Cheat JSON**: Validazione automatica preset al caricamento salvataggi
+
+### Changed
+- **UI Opzioni Timer**: Semplificata da CheckBox+ComboBox a singolo TimerComboBox (-2 widget)
+- **GameSettings.cycle_difficulty()**: Refactorato con sistema preset (-90 linee logica condizionale)
+- **OptionsController**: Aggiunto enforcement blocco modifiche opzioni locked
+- **OptionsFormatter**: Nuovi metodi TTS per feedback stato locked
+
+### Fixed
+- Livelli 4-5 difficoltà ora accessibili da UI (prima limitati a 1-3 in RadioBox)
+- Nomenclatura difficoltà allineata tra UI e domain (v2.0.0: era "carte scoperte")
+- Sincronizzazione timer CheckBox/ComboBox eliminata (fonte di bug accessibilità)
+
+### Technical Details
+- **Architettura**: Domain-Driven Design con separazione layer pulita
+- **Test Coverage**: 36 test preset model, 30 test GameSettings, 5 scenari integration
+- **Backward Compatibility**: Preset applicati solo a nuove partite, salvataggi esistenti compatibili
+- **Tournament Integrity**: Level 5 blocca 6/7 opzioni (deck_type sempre personalizzabile)
+- **Performance**: Preset application <1ms overhead
+
+---
+
+
+---
+
 ## [2.3.0] - 2026-02-14
 
 ### Added
