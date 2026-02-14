@@ -19,6 +19,7 @@ Migration from pygame (v1.x):
 New in v2.0.0: Complete pygame removal - wxPython-only audiogame
 """
 
+import logging
 import sys
 import time
 import wx
@@ -47,6 +48,10 @@ from src.infrastructure.ui.gameplay_panel import GameplayPanel
 # Infrastructure layer - Accessibility
 from src.infrastructure.accessibility.screen_reader import ScreenReader
 from src.infrastructure.accessibility.tts_provider import create_tts_provider
+
+# Infrastructure layer - Logging (v2.3.0)
+from src.infrastructure.logging import setup_logging
+from src.infrastructure.logging import game_logger as log
 
 
 class SolitarioController:
@@ -952,6 +957,14 @@ class SolitarioController:
 
 def main():
     """Application entry point."""
+    # Setup logging FIRST (before any other init)
+    setup_logging(
+        level=logging.INFO,      # INFO level for production
+        console_output=False     # Log only to file
+    )
+    
+    log.app_started()
+    
     print("\n" + "="*60)
     print("🎴 SOLITARIO ACCESSIBILE - wxPython v2.0.0")
     print("="*60)
@@ -981,7 +994,10 @@ def main():
         print(f"\n\n⚠ ERRORE FATALE: {e}")
         import traceback
         traceback.print_exc()
+        log.error_occurred("Application", "Unhandled exception in main loop", e)
         sys.exit(1)
+    finally:
+        log.app_shutdown()
 
 
 if __name__ == "__main__":

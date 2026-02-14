@@ -158,3 +158,6 @@ vscode
 audiomaker
 projects
 *.db
+
+# Application logs directory (v2.3.0)
+logs/

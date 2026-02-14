@@ -16,6 +16,7 @@ Depends on: Domain (GameSettings), Presentation (OptionsFormatter)
 from typing import Dict, Optional, TYPE_CHECKING
 from src.domain.services.game_settings import GameSettings
 from src.presentation.options_formatter import OptionsFormatter
+from src.infrastructure.logging import game_logger as log
 
 if TYPE_CHECKING:
     from src.application.dialog_manager import SolitarioDialogManager
@@ -260,10 +261,13 @@ class OptionsWindowController:
         if self.settings.game_state.is_running:
             return OptionsFormatter.format_blocked_during_game()
         
+        old_value = self.settings.max_time_game
         success, msg = self.settings.increment_timer_validated()
         
         if success and "impostato" in msg:
             self.state = "OPEN_DIRTY"
+            new_value = self.settings.max_time_game
+            log.settings_changed("max_time_game", old_value, new_value)
         
         return msg
     
@@ -281,10 +285,13 @@ class OptionsWindowController:
         if self.settings.game_state.is_running:
             return OptionsFormatter.format_blocked_during_game()
         
+        old_value = self.settings.max_time_game
         success, msg = self.settings.decrement_timer_validated()
         
         if success and ("impostato" in msg or "disattivato" in msg):
             self.state = "OPEN_DIRTY"
+            new_value = self.settings.max_time_game
+            log.settings_changed("max_time_game", old_value, new_value)
         
         return msg
     
@@ -302,10 +309,13 @@ class OptionsWindowController:
         if self.settings.game_state.is_running:
             return OptionsFormatter.format_blocked_during_game()
         
+        old_value = self.settings.max_time_game
         success, msg = self.settings.toggle_timer()
         
         if success:
             self.state = "OPEN_DIRTY"
+            new_value = self.settings.max_time_game
+            log.settings_changed("max_time_game", old_value, new_value)
         
         return msg
     
@@ -383,7 +393,11 @@ class OptionsWindowController:
     
     def _modify_difficulty(self) -> str:
         """Cycle difficulty (1 -> 2 -> 3 -> 1)."""
+        old_value = self.settings.difficulty_level
         success, msg = self.settings.cycle_difficulty()
+        if success:
+            new_value = self.settings.difficulty_level
+            log.settings_changed("difficulty_level", old_value, new_value)
         return msg
     
     def _cycle_timer_preset(self) -> str:
@@ -402,6 +416,7 @@ class OptionsWindowController:
             TTS confirmation message
         """
         current = self.settings.max_time_game
+        old_value = current
         
         if current <= 0:
             # Timer OFF → Enable at 5 minutes
@@ -416,31 +431,54 @@ class OptionsWindowController:
         self.settings.max_time_game = new_value
         display = self.settings.get_timer_display()
         
+        # Log the change
+        log.settings_changed("max_time_game", old_value, new_value)
+        
         return OptionsFormatter.format_option_changed("Timer", display)
     
     def _modify_shuffle_mode(self) -> str:
         """Toggle shuffle mode (Inversione <-> Mescolata)."""
+        old_value = self.settings.shuffle_discards
         success, msg = self.settings.toggle_shuffle_mode()
+        if success:
+            new_value = self.settings.shuffle_discards
+            log.settings_changed("shuffle_discards", old_value, new_value)
         return msg
     
     def _modify_command_hints(self) -> str:
         """Toggle command hints (Attivi <-> Disattivati) (v1.5.0)."""
+        old_value = self.settings.command_hints_enabled
         success, msg = self.settings.toggle_command_hints()
+        if success:
+            new_value = self.settings.command_hints_enabled
+            log.settings_changed("command_hints_enabled", old_value, new_value)
         return msg
     
     def _modify_draw_count(self) -> str:
         """Cycle draw count (1 -> 2 -> 3 -> 1)."""
+        old_value = self.settings.draw_count
         success, msg = self.settings.cycle_draw_count()
+        if success:
+            new_value = self.settings.draw_count
+            log.settings_changed("draw_count", old_value, new_value)
         return msg
     
     def _modify_scoring(self) -> str:
         """Toggle scoring system (Attivo <-> Disattivato)."""
+        old_value = self.settings.scoring_enabled
         success, msg = self.settings.toggle_scoring()
+        if success:
+            new_value = self.settings.scoring_enabled
+            log.settings_changed("scoring_enabled", old_value, new_value)
         return msg
     
     def _modify_timer_strict_mode(self) -> str:
         """Toggle timer strict mode (STRICT <-> PERMISSIVE) (v1.5.2.2)."""
+        old_value = self.settings.timer_strict_mode
         success, msg = self.settings.toggle_timer_strict_mode()
+        if success:
+            new_value = self.settings.timer_strict_mode
+            log.settings_changed("timer_strict_mode", old_value, new_value)
         return msg
     
     # ========================================

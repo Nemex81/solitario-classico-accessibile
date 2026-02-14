@@ -16,6 +16,7 @@ from typing import Dict, Callable, Optional
 from src.application.game_engine import GameEngine
 from src.application.options_controller import OptionsWindowController
 from src.domain.services.game_settings import GameSettings
+from src.infrastructure.logging import game_logger as log
 
 
 class GamePlayController:
@@ -333,7 +334,30 @@ class GamePlayController:
         """
         # wxPython version: No modifier check needed
         # Modifiers already handled by caller handle_wx_key_event()
-        self.engine.select_card_at_cursor()
+        success, message = self.engine.select_card_at_cursor()
+        
+        # Log card selection for analytics
+        if success and "selezionat" in message.lower():
+            # Extract card and pile info from current state
+            try:
+                pile = self.engine.cursor.get_current_pile()
+                pile_name = self._get_pile_name(pile)
+                # Get the selected card from pile
+                card_name = "unknown"
+                if pile and not pile.is_empty():
+                    card = pile.get_top_card()
+                    if card:
+                        card_name = card.get_name()
+                
+                log.card_moved(
+                    from_pile=pile_name,
+                    to_pile="selected",
+                    card=card_name,
+                    success=True
+                )
+            except:
+                # If extraction fails, skip logging rather than crash
+                pass
     
     def _select_from_waste(self) -> None:
         """CTRL+ENTER: Select card from waste pile directly.
@@ -358,12 +382,65 @@ class GamePlayController:
         Version:
             v1.7.5: New helper method for wxPython keyboard mapping
         """
-        self.engine.select_from_waste()
+        success, message = self.engine.select_from_waste()
+        
+        # Log waste card selection
+        if success and "selezionat" in message.lower():
+            # Extract card name from waste pile
+            try:
+                card_name = "unknown"
+                waste_pile = self.engine.service.table.waste
+                if waste_pile and not waste_pile.is_empty():
+                    card = waste_pile.get_top_card()
+                    if card:
+                        card_name = card.get_name()
+                
+                log.card_moved(
+                    from_pile="waste",
+                    to_pile="selected",
+                    card=card_name,
+                    success=True
+                )
+            except:
+                pass  # Don't crash on logging errors
     
     def _move_cards(self) -> None:
         """SPACE: Move selected cards to target pile."""
         success, message = self.engine.execute_move()
         # Message already vocalized by engine
+        
+        # Log card move for analytics
+        if success:
+            try:
+                dest_pile = self.engine.cursor.get_current_pile()
+                dest_name = self._get_pile_name(dest_pile)
+                origin_pile = self.engine.selection.origin_pile if self.engine.selection.has_selection() else None
+                origin_name = self._get_pile_name(origin_pile) if origin_pile else "unknown"
+                
+                # Get card names from selection
+                card_names = "unknown"
+                if self.engine.selection.has_selection():
+                    cards = self.engine.selection.selected_cards
+                    if cards:
+                        if len(cards) == 1:
+                            card_names = cards[0].get_name()
+                        else:
+                            card_names = f"{len(cards)} cards ({cards[0].get_name()} + {len(cards)-1} more)"
+                
+                log.card_moved(
+                    from_pile=origin_name,
+                    to_pile=dest_name,
+                    card=card_names,
+                    success=True
+                )
+            except:
+                pass  # Don't crash on logging errors
+        elif "Invalid" in message or "Non" in message:
+            # Failed move - log as invalid action
+            log.invalid_action(
+                action="move_cards",
+                reason=message[:100]  # Truncate if too long
+            )
     
     def _cancel_selection(self) -> None:
         """DELETE: Cancel current card selection."""
@@ -373,38 +450,51 @@ class GamePlayController:
         """D or P: Draw cards from stock pile."""
         success, message = self.engine.draw_from_stock()
         # Message already vocalized by engine
+        
+        # Log card draw (DEBUG level - high frequency event)
+        if success:
+            # Determine draw count from settings
+            draw_count = 3 if self.settings.deck_type == "draw_three" else 1
+            log.cards_drawn(count=draw_count)
     
     # === QUERY INFORMAZIONI ===
     
     def _get_focus(self) -> None:
         """F: Get current cursor position."""
+        log.info_query_requested("cursor_position")
         self.engine.get_cursor_info()
     
     def _get_table_info(self) -> None:
         """G: Get complete table state with hint support (v1.5.0)."""
+        log.info_query_requested("table_info")
         msg, hint = self.engine.service.get_table_info()
         self._speak_with_hint(msg, hint)
     
     def _get_game_report(self) -> None:
         """R: Get game report (time, moves, stats) with hint support (v1.5.0)."""
+        log.info_query_requested("game_report")
         msg, hint = self.engine.service.get_game_report()
         self._speak_with_hint(msg, hint)
     
     def _get_card_info(self) -> None:
         """X: Get detailed info about card under cursor."""
+        log.info_query_requested("card_info")
         self.engine.get_card_at_cursor()
     
     def _get_selected_cards(self) -> None:
         """C: Get list of currently selected cards."""
+        log.info_query_requested("selected_cards")
         self.engine.get_selected_info()
     
     def _get_scarto_top(self) -> None:
         """S: Get top card from waste pile with hint support (v1.5.0)."""
+        log.info_query_requested("waste_top")
         msg, hint = self.engine.service.get_waste_info()
         self._speak_with_hint(msg, hint)
     
     def _get_deck_count(self) -> None:
         """M: Get remaining cards in stock pile with hint support (v1.5.0)."""
+        log.info_query_requested("stock_count")
         msg, hint = self.engine.service.get_stock_info()
         self._speak_with_hint(msg, hint)
     
@@ -418,6 +508,7 @@ class GamePlayController:
         
         No hint vocalized during gameplay (v1.5.1 user request).
         """
+        log.info_query_requested("timer_status")
         # Pass max_time from settings to service (v1.5.1)
         msg, hint = self.engine.service.get_timer_info(
             max_time=self.settings.max_time_game
@@ -428,11 +519,13 @@ class GamePlayController:
     
     def _get_settings(self) -> None:
         """I: Get current game settings with hint support (v1.5.0)."""
+        log.info_query_requested("settings_info")
         msg, hint = self.engine.service.get_settings_info()
         self._speak_with_hint(msg, hint)
     
     def _show_help(self) -> None:
         """H: Show available commands help."""
+        log.info_query_requested("help")
         help_text = """COMANDI PRINCIPALI:
 Frecce: navigazione carte e pile.
 1 a 7: vai alla pila base.
@@ -475,6 +568,21 @@ ESC: abbandona partita."""
         # Start new game immediately (no game running OR no callback)
         self.engine.new_game()
         # Message vocalized by engine.new_game()
+        
+        # Log new game started with settings
+        try:
+            deck_type = "draw_three" if self.settings.deck_type == "draw_three" else "draw_one"
+            difficulty = getattr(self.settings, 'difficulty', 'medium')
+            timer_enabled = getattr(self.settings, 'timer_enabled', False)
+            
+            log.game_started(
+                deck_type=deck_type,
+                difficulty=str(difficulty),
+                timer_enabled=timer_enabled
+            )
+        except:
+            # If settings are unavailable, log minimal info
+            log.game_started(deck_type="unknown", difficulty="unknown", timer_enabled=False)
     
     def _handle_o_key(self) -> None:
         """O: Open/close options window.
@@ -942,3 +1050,37 @@ ESC: abbandona partita."""
             # === COMANDI NORMALI ===
             if event.key in self.callback_dict:
                 self.callback_dict[event.key]()
+    
+    def _get_pile_name(self, pile) -> str:
+        """Helper to get human-readable pile name for logging.
+        
+        Args:
+            pile: Pile object from game engine
+        
+        Returns:
+            String name like "tableau_1", "foundation_2", "stock", "waste"
+        """
+        if pile is None:
+            return "unknown"
+        
+        try:
+            # Try to get pile type from the engine's pile structure
+            tableau_piles = self.engine.service.table.tableau
+            for i, tableau_pile in enumerate(tableau_piles, 1):
+                if pile == tableau_pile:
+                    return f"tableau_{i}"
+            
+            foundation_piles = self.engine.service.table.foundations
+            for i, foundation_pile in enumerate(foundation_piles, 1):
+                if pile == foundation_pile:
+                    return f"foundation_{i}"
+            
+            if pile == self.engine.service.table.stock:
+                return "stock"
+            
+            if pile == self.engine.service.table.waste:
+                return "waste"
+        except:
+            pass
+        
+        return "unknown"

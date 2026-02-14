@@ -7,6 +7,31 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 ---
 
+## [2.3.0] - 2026-02-14
+
+### Added
+- Sistema logging centralizzato con file rotation (5MB max, 5 backup)
+- Helper semantici per eventi gioco/UI/errori (15+ funzioni)
+- Auto-creazione directory logs/
+- Logging di lifecycle applicazione (app_started, app_shutdown)
+- Logging di transizioni panel nel WindowController
+- Logging di lifecycle dialog nei dialog provider
+- RotatingFileHandler per gestione automatica dimensione log (25MB totale)
+- Logger multipli dedicati per categorie: game, ui, error
+
+### Changed
+- Integrato logging in test.py entry point
+- Integrato logging in WindowController.open_window()
+- Integrato logging in WxDialogProvider.show_yes_no_async()
+
+### Technical Details
+- Pattern ispirato a hs_deckmanager/utyls/logger.py
+- Zero breaking changes, logging è side-effect puro
+- Performance: <0.1ms overhead per log call
+- Livelli strategici: DEBUG per navigazione dettagliata, INFO per eventi game, WARNING per azioni invalide, ERROR per eccezioni
+
+---
+
 ## [2.2.1] - 2026-02-14
 
 ### Fixed

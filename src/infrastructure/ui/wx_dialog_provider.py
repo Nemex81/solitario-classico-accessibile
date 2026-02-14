@@ -18,6 +18,7 @@ import wx
 from typing import Optional, Dict, Any, Callable
 
 from src.infrastructure.ui.dialog_provider import DialogProvider
+from src.infrastructure.logging import game_logger as log
 
 
 class WxDialogProvider(DialogProvider):
@@ -232,6 +233,9 @@ class WxDialogProvider(DialogProvider):
             v2.2.1: Fixed to use semi-modal pattern (ShowModal + CallAfter)
         """
         
+        # Log dialog shown
+        log.dialog_shown("yes_no", title)
+        
         def show_modal_and_callback():
             """Deferred function that shows modal dialog and invokes callback.
             
@@ -257,6 +261,9 @@ class WxDialogProvider(DialogProvider):
             
             # Interpret result (True for YES, False for NO/ESC/X)
             result = (result_code == wx.ID_YES)
+            
+            # Log dialog closed with result
+            log.dialog_closed("yes_no", "yes" if result else "no")
             
             # CRITICAL: Always destroy dialog (prevents memory leaks)
             dialog.Destroy()
