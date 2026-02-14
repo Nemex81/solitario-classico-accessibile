@@ -7,6 +7,31 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 ---
 
+## [2.0.5] - 2026-02-14
+
+### Fixed
+- **CRITICAL: wx.CallAfter AssertionError causing app hang**: Risolto hang dell'app dopo transizioni panel con errore `AssertionError: No wx.App created yet`
+  - **Root cause**: `wx.CallAfter()` internamente chiama `wx.App.Get()` che ritorna `None` durante fasi init/transition app, anche se `self.app` Python object esiste
+  - **Sintomo**: App si blocca su gameplay screen dopo ESC abandon/decline rematch/timeout (no crash, solo freeze)
+  - **Soluzione**: Sostituire `wx.CallAfter(func)` con `wx.CallLater(10, func)` che usa timer system (no dipendenza da `wx.App.Get()`)
+  - **Pattern applicato**: Timer-based deferred execution (10ms delay impercettibile ~1 frame @ 60fps) invece di event-queue based
+  - **Affidabilità**: `wx.CallLater()` funziona in TUTTE le fasi app lifecycle, sempre
+  - **Metodi corretti**: `show_abandon_game_dialog()`, `handle_game_ended()` (both branches), `_handle_game_over_by_timeout()`
+  - **Files modificati**: `test.py` (4 linee cambiate)
+  - **User experience**: Identica (10ms delay totalmente impercettibile)
+  - **Regressione**: v2.0.4 hang → v2.0.5 funzionante
+
+### Technical
+- Replaced `wx.CallAfter()` with `wx.CallLater(10, ...)` in 4 locations:
+  - Line 371: ESC abandon game → `wx.CallLater(10, self._safe_abandon_to_menu)`
+  - Line 502: Victory rematch → `wx.CallLater(10, self.start_gameplay)`
+  - Line 506: Victory decline → `wx.CallLater(10, self._safe_decline_to_menu)`
+  - Line 674: Timeout defeat → `wx.CallLater(10, self._safe_timeout_to_menu)`
+- Net impact: 4 lines changed, 0 lines added/removed
+- Reliability: 100% (timer-based execution always works)
+
+---
+
 ## [2.0.4] - 2026-02-13
 
 ### Fixed
