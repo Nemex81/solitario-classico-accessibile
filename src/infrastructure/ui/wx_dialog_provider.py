@@ -15,7 +15,7 @@ Known limitations:
 """
 
 import wx
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Callable
 
 from src.infrastructure.ui.dialog_provider import DialogProvider
 
@@ -97,7 +97,10 @@ class WxDialogProvider(DialogProvider):
         return self._parent_frame
     
     def show_alert(self, message: str, title: str) -> None:
-        """Show modal alert with OK button.
+        """DEPRECATED: Use show_info_async() to avoid nested event loops.
+        
+        Synchronous API maintained for backward compatibility.
+        Will be removed in v3.0.
         
         Uses wx.MessageDialog with wx.OK | wx.ICON_INFORMATION.
         Screen reader announces title + message when dialog opens.
@@ -118,7 +121,10 @@ class WxDialogProvider(DialogProvider):
         wx.Yield()  # Process pending events (important for screen reader focus)
     
     def show_yes_no(self, question: str, title: str) -> bool:
-        """Show modal Yes/No dialog.
+        """DEPRECATED: Use show_yes_no_async() to avoid nested event loops.
+        
+        Synchronous API maintained for backward compatibility.
+        Will be removed in v3.0.
         
         Uses wx.MessageDialog with wx.YES_NO | wx.NO_DEFAULT.
         NO is default to prevent accidental confirmations.
@@ -148,7 +154,9 @@ class WxDialogProvider(DialogProvider):
         title: str,
         default: str = ""
     ) -> Optional[str]:
-        """Show modal text input dialog.
+        """DEPRECATED: Synchronous API maintained for backward compatibility.
+        
+        Will be removed in v3.0. Consider using async pattern for future features.
         
         Uses wx.TextEntryDialog.
         Returns None if user cancels (ESC or Cancel button).
@@ -178,6 +186,105 @@ class WxDialogProvider(DialogProvider):
             dlg.Destroy()
             wx.Yield()
             return None
+    
+    def show_yes_no_async(
+        self,
+        title: str,
+        message: str,
+        callback: Callable[[bool], None]
+    ) -> None:
+        """Show non-blocking yes/no dialog with callback.
+        
+        Args:
+            title: Dialog title
+            message: Dialog message
+            callback: Function called with result (True=Yes, False=No)
+        
+        Example:
+            >>> def on_result(confirmed: bool):
+            ...     if confirmed:
+            ...         print("User confirmed")
+            >>> provider.show_yes_no_async("Title", "Message?", on_result)
+        
+        Version:
+            v2.2: Added async API to prevent nested event loops
+        """
+        dialog = wx.MessageDialog(
+            parent=self._get_parent(),
+            message=message,
+            caption=title,
+            style=wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION
+        )
+        
+        def on_dialog_close(event):
+            result = dialog.GetReturnCode() == wx.ID_YES
+            dialog.Destroy()
+            callback(result)  # Invoke callback with result
+        
+        dialog.Bind(wx.EVT_CLOSE, on_dialog_close)
+        dialog.Show()  # NON-BLOCKING (not ShowModal)
+    
+    def show_info_async(
+        self,
+        title: str,
+        message: str,
+        callback: Optional[Callable[[], None]] = None
+    ) -> None:
+        """Show non-blocking info dialog with optional callback.
+        
+        Args:
+            title: Dialog title
+            message: Info message
+            callback: Optional function called when dialog closes
+        
+        Version:
+            v2.2: Added async API
+        """
+        dialog = wx.MessageDialog(
+            parent=self._get_parent(),
+            message=message,
+            caption=title,
+            style=wx.OK | wx.ICON_INFORMATION
+        )
+        
+        def on_dialog_close(event):
+            dialog.Destroy()
+            if callback:
+                callback()
+        
+        dialog.Bind(wx.EVT_CLOSE, on_dialog_close)
+        dialog.Show()
+    
+    def show_error_async(
+        self,
+        title: str,
+        message: str,
+        callback: Optional[Callable[[], None]] = None
+    ) -> None:
+        """Show non-blocking error dialog with optional callback.
+        
+        Args:
+            title: Dialog title
+            message: Error message
+            callback: Optional function called when dialog closes
+        
+        Version:
+            v2.2: Added async API
+        """
+        dialog = wx.MessageDialog(
+            parent=self._get_parent(),
+            message=message,
+            caption=title,
+            style=wx.OK | wx.ICON_ERROR
+        )
+        
+        def on_dialog_close(event):
+            dialog.Destroy()
+            if callback:
+                callback()
+        
+        dialog.Bind(wx.EVT_CLOSE, on_dialog_close)
+        dialog.Show()
     
     def show_statistics_report(
         self,
