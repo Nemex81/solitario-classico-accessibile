@@ -102,10 +102,9 @@ class OptionsDialog(wx.Dialog):
             options_controller: Reference to OptionsWindowController
             screen_reader: Reference to ScreenReader for TTS
             deck_type_radio: RadioBox for deck type (Francese/Napoletano)
-            difficulty_radio: RadioBox for difficulty (1/2/3 carte)
+            difficulty_radio: RadioBox for difficulty (5 levels)
             draw_count_radio: RadioBox for draw count (1/2/3)
-            timer_check: CheckBox to enable/disable timer
-            timer_combo: ComboBox for timer duration (5-60 min)
+            timer_combo: TimerComboBox for timer duration (0=disabled, 5-60 min)
             shuffle_radio: RadioBox for shuffle mode (Inversione/Mescolata)
             command_hints_check: CheckBox for command hints (ON/OFF)
             scoring_check: CheckBox for scoring system (ON/OFF)
@@ -361,13 +360,10 @@ class OptionsDialog(wx.Dialog):
         2. Mark controller as DIRTY (modifications present)
         3. Enable save confirmation on ESC
         
-        Special cases:
-        - timer_check: Also enables/disables timer_combo
-        - All others: Standard change detection
-        
         Note:
             Settings are updated IMMEDIATELY (live mode).
             Original values saved in controller snapshot (for discard).
+            All widgets use standard on_setting_changed() handler.
         """
         # RadioBox widgets
         self.deck_type_radio.Bind(wx.EVT_RADIOBOX, self.on_setting_changed)
@@ -377,11 +373,10 @@ class OptionsDialog(wx.Dialog):
         self.timer_strict_radio.Bind(wx.EVT_RADIOBOX, self.on_setting_changed)
         
         # CheckBox widgets
-        self.timer_check.Bind(wx.EVT_CHECKBOX, self.on_timer_toggled)  # Special handler
         self.command_hints_check.Bind(wx.EVT_CHECKBOX, self.on_setting_changed)
         self.scoring_check.Bind(wx.EVT_CHECKBOX, self.on_setting_changed)
         
-        # ComboBox widget
+        # ComboBox widget (TimerComboBox uses standard handler)
         self.timer_combo.Bind(wx.EVT_COMBOBOX, self.on_setting_changed)
         
         # Buttons
@@ -413,22 +408,6 @@ class OptionsDialog(wx.Dialog):
         
         # Propagate event
         event.Skip()
-    
-    def on_timer_toggled(self, event: wx.CommandEvent) -> None:
-        """Handle timer checkbox toggle.
-        
-        Special handler for timer enable/disable:
-        - Enables/disables timer_combo based on checkbox state
-        - Then calls standard on_setting_changed()
-        
-        Args:
-            event: wx.CommandEvent from timer_check
-        """
-        enabled = self.timer_check.GetValue()
-        self.timer_combo.Enable(enabled)
-        
-        # Call standard change handler
-        self.on_setting_changed(event)
     
     def on_save_click(self, event: wx.CommandEvent) -> None:
         """Handle Save button click.
