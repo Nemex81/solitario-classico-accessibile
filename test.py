@@ -31,6 +31,11 @@ from src.application.dialog_manager import SolitarioDialogManager
 # Domain layer
 from src.domain.services.game_settings import GameSettings
 
+# Infrastructure layer - Dependency Injection (v2.2.0)
+from src.infrastructure.di.dependency_container import DependencyContainer
+from src.infrastructure.ui.window_controller import WindowController
+from src.infrastructure.ui.factories import ViewFactory, WindowKey
+
 # Infrastructure layer - UI components (wxPython)
 from src.infrastructure.ui.wx_app import SolitarioWxApp
 from src.infrastructure.ui.wx_frame import SolitarioFrame
@@ -83,9 +88,13 @@ class SolitarioController:
     def __init__(self):
         """Initialize application with all components."""
         print("\n" + "="*60)
-        print("🎴 SOLITARIO ACCESSIBILE - wxPython v2.0.0")
+        print("🎴 SOLITARIO ACCESSIBILE - wxPython v2.2.0")
         print("="*60)
         print("Inizializzazione componenti...")
+        
+        # v2.2.0: Initialize DependencyContainer (bridge mode)
+        print("Creazione DependencyContainer...")
+        self.container = DependencyContainer()
         
         # Infrastructure: TTS setup
         print("Inizializzazione TTS...")
@@ -148,12 +157,72 @@ class SolitarioController:
         self.frame: SolitarioFrame = None
         self.view_manager: ViewManager = None
         
+        # v2.2.0: Register dependencies in container (bridge mode)
+        self._register_dependencies()
+        
         print("="*60)
         print("✓ Applicazione avviata con successo!")
         print("✓ Architettura Clean completa")
         print("✓ wxPython-only (no pygame)")
+        print("✓ DependencyContainer attivo (v2.2.0)")
         print("Usa i tasti freccia per navigare il menu.")
         print("="*60)
+    
+    def _register_dependencies(self) -> None:
+        """Register application dependencies in DependencyContainer.
+        
+        v2.2.0: Bridge implementation - registers dependencies but existing
+        initialization is maintained for compatibility. Future commits will
+        migrate to full container-based resolution.
+        
+        Registration order:
+            1. Infrastructure: TTS, ScreenReader
+            2. Domain: GameSettings  
+            3. Application: GameEngine, Controllers
+            4. Infrastructure: WindowController
+        
+        Note:
+            This is a preparatory step. Full migration to DI-based initialization
+            will be completed in subsequent commits as async dialog API is integrated.
+        
+        Version:
+            v2.2.0: Initial bridge implementation
+        """
+        print("  → Registrazione dipendenze nel DependencyContainer...")
+        
+        # 1. Infrastructure: TTS/ScreenReader
+        self.container.register(
+            "tts_provider",
+            lambda: create_tts_provider(engine="auto")
+        )
+        self.container.register(
+            "screen_reader",
+            lambda: self.screen_reader  # Use existing instance
+        )
+        
+        # 2. Domain: Settings
+        self.container.register(
+            "settings",
+            lambda: self.settings  # Use existing instance
+        )
+        
+        # 3. Application: Engine and Controllers
+        self.container.register(
+            "engine",
+            lambda: self.engine  # Use existing instance
+        )
+        self.container.register(
+            "gameplay_controller",
+            lambda: self.gameplay_controller  # Use existing instance
+        )
+        
+        # 4. Infrastructure: WindowController (for future async dialog integration)
+        self.container.register(
+            "window_controller",
+            lambda: WindowController(container=self.container)
+        )
+        
+        print("  ✓ DependencyContainer configurato (bridge mode)")
     
     def _create_dummy_sr(self):
         """Create dummy screen reader for silent mode."""
