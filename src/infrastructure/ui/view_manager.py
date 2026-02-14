@@ -146,19 +146,19 @@ class ViewManager:
             Uses Hide/Show/Layout pattern for smooth transitions.
             SetFocus() ensures keyboard input goes to correct panel.
             
-            CRITICAL FIX (v2.0.3): Force wxPython event processing before
-            checking panel visibility to avoid race condition where IsShown()
-            doesn't immediately reflect Hide() state. This prevents crashes
-            when manually hiding panel before calling show_panel().
+            Hide/Show operations are synchronous (C++ immediate state update).
+            No event processing needed - IsShown() reflects state immediately.
+        
+        Version:
+            v2.0.3: Added wx.SafeYield() (mistaken belief of race condition)
+            v2.0.8: Removed wx.SafeYield() (causes nested event loop crash)
         """
         if name not in self.panels:
             logger.error(f"Panel not registered: {name}")
             return None
         
-        # ✅ FIX: Force wxPython to process pending events before checking states
-        # This ensures IsShown() reflects any manual Hide() calls made before
-        wx.SafeYield()
-        logger.debug("Forced wxPython event processing before panel swap")
+        # ✅ NO wx.SafeYield() - Hide/Show are synchronous operations!
+        # Removed v2.0.8: Prevents nested event loop crash during deferred transitions
         
         # Hide all panels (skip target to avoid redundant operations)
         for panel_name, panel in self.panels.items():
