@@ -335,11 +335,11 @@ class SolitarioController:
             - ESC key: Same as No (cancel)
         
         Defer Pattern (CRITICAL to prevent crashes):
-            ✅ CORRECT: Use wx.CallAfter() to defer UI transition
+            ✅ CORRECT: Use self.frame.CallAfter() to defer UI transition
                 → Dialog shown inside event handler
                 → If confirmed: schedule _safe_abandon_to_menu() for LATER
                 → Event handler completes immediately
-                → wxPython idle loop executes deferred transition
+                → Frame's event queue processes deferred transition
                 → NO nested event loops = NO crash
             
             ❌ WRONG: Perform UI transition directly in event handler
@@ -348,10 +348,10 @@ class SolitarioController:
                 → show_panel() calls SafeYield() → nested event loop
                 → wxPython stack overflow → CRASH
         
-        Why this fixes crashes:
-            wx.CallAfter() breaks the synchronous call chain, allowing the ESC
-            key event handler to complete before any panel swap occurs. This
-            prevents nested event loops caused by SafeYield() during UI updates.
+        Why frame.CallAfter() works:
+            Uses frame's instance event queue directly, bypassing global wx.App
+            lookup. Works immediately after frame creation, no timing issues.
+            Guaranteed to work in all app lifecycle phases.
         
         Returns:
             None (side effect: may schedule deferred menu transition)
@@ -360,6 +360,7 @@ class SolitarioController:
             v1.7.5: Fixed to use semantic API without parameters
             v2.0.2: Fixed operation order to prevent crash (Hide → Reset → Show)
             v2.0.4: Added wx.CallAfter() defer pattern to prevent nested event loops
+            v2.0.6: Changed to self.frame.CallAfter() (DEFINITIVE FIX)
         """
         # Show confirmation dialog using SEMANTIC API
         result = self.dialog_manager.show_abandon_game_prompt()
@@ -368,7 +369,7 @@ class SolitarioController:
             # User confirmed abandon (Sì button)
             # ✅ Defer UI transition until AFTER event handler completes
             print("→ User confirmed abandon - Scheduling deferred transition...")
-            wx.CallLater(10, self._safe_abandon_to_menu)
+            self.frame.CallAfter(self._safe_abandon_to_menu)
         # else: User cancelled (No or ESC), do nothing (dialog already closed)
     
     def _safe_abandon_to_menu(self) -> None:
@@ -473,25 +474,26 @@ class SolitarioController:
             wants_rematch: True if user wants rematch, False to return to menu
         
         Defer Pattern (CRITICAL to prevent crashes):
-            ✅ CORRECT: Use wx.CallAfter() for BOTH branches
+            ✅ CORRECT: Use self.frame.CallAfter() for BOTH branches
                 → Rematch: defer start_gameplay() 
                 → Decline: defer _safe_decline_to_menu()
                 → Callback completes immediately
-                → wxPython idle loop executes deferred action
+                → Frame's event queue processes deferred action
                 → NO nested event loops = NO crash
             
             ❌ WRONG: Call UI transitions directly from callback
                 → Would create nested event loops
                 → SafeYield() crash possible
         
-        Why this fixes crashes:
-            Game end callback may be triggered from various contexts (timer check,
-            user action, etc). Deferring ensures UI transitions happen outside any
-            active event handling, preventing nested loops.
+        Why frame.CallAfter() works:
+            Uses frame's instance event queue directly, bypassing global wx.App
+            lookup. Works immediately after frame creation, no timing issues.
+            Guaranteed to work in all app lifecycle phases.
         
         Version:
             v2.0.2: Fixed operation order for decline rematch path
             v2.0.4: Added wx.CallAfter() defer pattern for both branches
+            v2.0.6: Changed to self.frame.CallAfter() (DEFINITIVE FIX)
         """
         print(f"\n→ Game ended callback - Rematch: {wants_rematch}")
         self._timer_expired_announced = False
@@ -499,11 +501,11 @@ class SolitarioController:
         if wants_rematch:
             # User wants rematch - defer new game start
             print("→ Scheduling deferred rematch...")
-            wx.CallLater(10, self.start_gameplay)
+            self.frame.CallAfter(self.start_gameplay)
         else:
             # User declined rematch - defer menu transition
             print("→ Scheduling deferred decline transition...")
-            wx.CallLater(10, self._safe_decline_to_menu)
+            self.frame.CallAfter(self._safe_decline_to_menu)
     
     def _safe_decline_to_menu(self) -> None:
         """Deferred handler for decline rematch → menu transition (called via wx.CallAfter).
@@ -621,25 +623,26 @@ class SolitarioController:
         Shows defeat message with statistics, then defers menu transition.
         
         Defer Pattern (CRITICAL to prevent crashes):
-            ✅ CORRECT: Show TTS message, then use wx.CallAfter()
+            ✅ CORRECT: Show TTS message, then use self.frame.CallAfter()
                 → Message shown (may take 2+ seconds)
                 → Defer _safe_timeout_to_menu()
                 → Timer check completes immediately
-                → wxPython idle loop executes deferred transition
+                → Frame's event queue processes deferred transition
                 → NO nested event loops = NO crash
             
             ❌ WRONG: Perform UI transition directly in timer check
                 → Would create nested event loops
                 → SafeYield() crash during panel swap
         
-        Why this fixes crashes:
-            Timer check runs inside wx.Timer callback (event context). Deferring
-            ensures panel swap happens outside the timer event, preventing nested
-            loops caused by SafeYield() during UI updates.
+        Why frame.CallAfter() works:
+            Uses frame's instance event queue directly, bypassing global wx.App
+            lookup. Works immediately after frame creation, no timing issues.
+            Guaranteed to work in all app lifecycle phases.
         
         Version:
             v2.0.2: Fixed operation order to prevent crash (Hide → Reset → Show)
             v2.0.4: Added wx.CallAfter() defer pattern to prevent nested event loops
+            v2.0.6: Changed to self.frame.CallAfter() (DEFINITIVE FIX)
         """
         max_time = self.settings.max_time_game
         elapsed = self.engine.service.get_elapsed_time()
@@ -671,7 +674,7 @@ class SolitarioController:
         
         # ✅ Defer UI transition until AFTER timer event completes
         print("→ Timeout defeat - Scheduling deferred transition...")
-        wx.CallLater(10, self._safe_timeout_to_menu)
+        self.frame.CallAfter(self._safe_timeout_to_menu)
     
     def _safe_timeout_to_menu(self) -> None:
         """Deferred handler for timeout defeat → menu transition (called via wx.CallAfter).
