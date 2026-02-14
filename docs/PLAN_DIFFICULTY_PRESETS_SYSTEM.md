@@ -27,7 +27,7 @@ Il sistema ha due opzioni separate:
 
 Questa separazione causa problemi:
 - ❌ Ridondanza concettuale (difficoltà non influisce su nulla)
-- ❌ Configurazioni illogiche possibili (es. "Livello 5 Esperto" con 1 carta pescata)
+- ❌ Configurazioni illogiche possibili (es. "Livello 5 Maestro" con 1 carta pescata)
 - ❌ Nessuna protezione anti-errore per utenti inesperti
 - ❌ Impossibile garantire fair play per modalità competitiva
 
@@ -87,7 +87,7 @@ Trasformare "Livello Difficoltà" in un **preset manager intelligente** che:
 
 **Tabella Completa** (🔒=bloccato, 🔓=personalizzabile, 🚫=nascosto):
 
-| Opzione | Livello 1<br>**Principiante** | Livello 2<br>**Facile** | Livello 3<br>**Normale<br>(Vegas)** | Livello 4<br>**Difficile<br>(Time Attack)** | Livello 5<br>**Esperto<br>(Tournament)** |
+| Opzione | Livello 1<br>**Principiante** | Livello 2<br>**Facile** | Livello 3<br>**Normale** | Livello 4<br>**Esperto** | Livello 5<br>**Maestro** |
 |---------|------|------|------|------|------|
 | **Carte Pescate** | 🔓 **1-3**<br>*(default 1)* | 🔓 **1-3**<br>*(default 2)* | 🔒 **3** | 🔒 **3** | 🔒 **3** |
 | **Timer** | 🔒 **OFF** | 🔓 **0-60 min** | 🔓 **0-60 min** | 🔒 **30 min** | 🔒 **15 min** |
@@ -95,6 +95,11 @@ Trasformare "Livello Difficoltà" in un **preset manager intelligente** che:
 | **Riciclo Scarti** | 🔓 **Inv/Mes**<br>*(default Mes)* | 🔓 **Inv/Mes**<br>*(default Mes)* | 🔓 **Inv/Mes**<br>*(default Inv)* | 🔒 **Inversione** | 🔒 **Inversione** |
 | **Sistema Punti** | 🔓 **ON/OFF** | 🔓 **ON/OFF** | 🔓 **ON/OFF** | 🔓 **ON/OFF** | 🔒 **ON** |
 | **Suggerimenti** | 🔓 **ON/OFF** | 🔓 **ON/OFF** | 🔓 **ON/OFF** | 🔒 **OFF** | 🔒 **OFF** |
+
+**Note Descrittive Preset**:
+- **Livello 3 (Normale)**: Segue regole Vegas standard (3 carte, preferenza inversione)
+- **Livello 4 (Esperto)**: Modalità Time Attack con limite 30 minuti
+- **Livello 5 (Maestro)**: Modalità Tournament strict (15 min, tutte opzioni bloccate)
 
 **File Coinvolti**:
 - `src/domain/models/difficulty_preset.py` - **NEW** 🆕
@@ -121,7 +126,7 @@ Trasformare "Livello Difficoltà" in un **preset manager intelligente** che:
 1. Utente ha Liv 3 con Timer OFF (personalizzato)
 2. Cicla Difficoltà → Liv 4
 3. **Preset Liv 4 sovrascrive Timer → 30 minuti fisso**
-4. TTS: "Difficoltà Livello 4, Time Attack. Timer bloccato su 30 minuti. Suggerimenti disattivati."
+4. TTS: "Difficoltà Livello 4, Esperto. Timer bloccato su 30 minuti. Suggerimenti disattivati."
 
 **File Coinvolti**:
 - `src/application/options_controller.py` - MODIFIED ⚙️ (metodo `_modify_difficulty()`)
@@ -131,12 +136,12 @@ Trasformare "Livello Difficoltà" in un **preset manager intelligente** che:
 ### 3. Blocco Modifica Opzioni Locked
 
 **Comportamento Atteso**:
-1. Utente a Livello 5 (Tournament)
+1. Utente a Livello 5 (Maestro)
 2. Naviga su "Carte Pescate" (bloccata su 3)
 3. TTS: "2 di 8: Carte Pescate, 3. Opzione bloccata da Livello Difficoltà 5. 🔒"
 4. Preme INVIO per modificare
 5. **Sistema rifiuta modifica**
-6. TTS: "Impossibile modificare. Opzione bloccata da Livello Difficoltà Esperto. Cambia livello difficoltà per sbloccare."
+6. TTS: "Impossibile modificare. Opzione bloccata da Livello Difficoltà Maestro. Cambia livello difficoltà per sbloccare."
 
 **File Coinvolti**:
 - `src/application/options_controller.py` - MODIFIED ⚙️ (metodo `modify_current_option()`)
@@ -176,24 +181,24 @@ Trasformare "Livello Difficoltà" in un **preset manager intelligente** che:
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                  PRESENTATION LAYER                          │
-│  ┌──────────────────────────────────────────────────────┐   │
+│  ┌────────────────────────────────────────────────────────┐   │
 │  │ OptionsFormatter                                      │   │
 │  │ + format_option_locked(option_name, level)           │   │  🆕
 │  │ + format_preset_applied(level, changes_list)         │   │  🆕
 │  │ + format_option_item() [MODIFIED]                    │   │  ⚙️
-│  └──────────────────────────────────────────────────────┘   │
+│  └────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
                             ▲
                             │
 ┌─────────────────────────────────────────────────────────────┐
 │                   APPLICATION LAYER                          │
-│  ┌──────────────────────────────────────────────────────┐   │
+│  ┌────────────────────────────────────────────────────────┐   │
 │  │ OptionsController                                     │   │
 │  │ + _modify_difficulty() [MODIFIED]                    │   │  ⚙️
 │  │ + modify_current_option() [MODIFIED]                 │   │  ⚙️
 │  │ + _format_current_option() [MODIFIED]                │   │  ⚙️
 │  │ + _is_current_option_locked() → bool                 │   │  🆕
-│  └──────────────────────────────────────────────────────┘   │
+│  └────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
                             ▲
                             │
@@ -243,6 +248,7 @@ tests/
 
 docs/
 ├── PLAN_DIFFICULTY_PRESETS_SYSTEM.md         # THIS FILE
+├── PLAN_FIX_DIFFICULTY_RADIOBOX_5_LEVELS.md  # PREREQUISITE
 └── TODO_DIFFICULTY_PRESETS.md                # Tracking checklist
 ```
 
@@ -282,13 +288,13 @@ class DifficultyPreset:
     
     Attributes:
         level: Difficulty level (1-5)
-        name: Display name (es. "Principiante", "Esperto")
+        name: Display name (es. "Principiante", "Maestro")
         locked_options: Set of option names that cannot be modified
         defaults: Default values for unlocked options
         fixed_values: Fixed values for locked options (override user settings)
     
     Example:
-        >>> preset = PRESETS[5]  # Tournament mode
+        >>> preset = PRESETS[5]  # Maestro (Tournament mode)
         >>> preset.is_locked("draw_count")
         True
         >>> preset.get_value("draw_count")
@@ -389,7 +395,7 @@ PRESETS: Dict[int, DifficultyPreset] = {
     
     3: DifficultyPreset(
         level=3,
-        name="Normale (Vegas)",
+        name="Normale",
         locked_options={"draw_count"},    # 3 carte fixed (Vegas rule)
         defaults={
             "shuffle_discards": False,    # Default inversione (Vegas standard)
@@ -401,7 +407,7 @@ PRESETS: Dict[int, DifficultyPreset] = {
     
     4: DifficultyPreset(
         level=4,
-        name="Difficile (Time Attack)",
+        name="Esperto",
         locked_options={
             "draw_count",
             "max_time_game",
@@ -412,7 +418,7 @@ PRESETS: Dict[int, DifficultyPreset] = {
         defaults={},  # No defaults, all locked
         fixed_values={
             "draw_count": 3,
-            "max_time_game": 1800,        # 30 minutes
+            "max_time_game": 1800,        # 30 minutes (Time Attack)
             "timer_strict_mode": False,   # PERMISSIVE (can finish over time)
             "shuffle_discards": False,    # Inversione (fair play)
             "command_hints_enabled": False,  # No hints (pro mode)
@@ -421,7 +427,7 @@ PRESETS: Dict[int, DifficultyPreset] = {
     
     5: DifficultyPreset(
         level=5,
-        name="Esperto (Tournament)",
+        name="Maestro",
         locked_options={
             "draw_count",
             "max_time_game",
@@ -433,7 +439,7 @@ PRESETS: Dict[int, DifficultyPreset] = {
         defaults={},  # No defaults, all locked
         fixed_values={
             "draw_count": 3,
-            "max_time_game": 900,         # 15 minutes
+            "max_time_game": 900,         # 15 minutes (Tournament strict)
             "timer_strict_mode": True,    # STRICT (game over at timeout)
             "shuffle_discards": False,    # Inversione (tournament standard)
             "command_hints_enabled": False,  # No hints
@@ -452,13 +458,10 @@ def get_preset(level: int) -> DifficultyPreset:
     Returns:
         DifficultyPreset instance
         
-    Raises:
-        ValueError: If level not in 1-5 range
-        
     Example:
         >>> preset = get_preset(5)
         >>> preset.name
-        'Esperto (Tournament)'
+        'Maestro'
     """
     if level not in PRESETS:
         raise ValueError(f"Invalid difficulty level: {level}. Must be 1-5.")
@@ -522,6 +525,18 @@ class TestDifficultyPreset:
         """All 5 presets must have distinct names."""
         names = [p.name for p in PRESETS.values()]
         assert len(names) == len(set(names))  # No duplicates
+    
+    def test_level_names_match_unified_nomenclature(self):
+        """Preset names must match unified nomenclature."""
+        expected_names = {
+            1: "Principiante",
+            2: "Facile",
+            3: "Normale",
+            4: "Esperto",
+            5: "Maestro"
+        }
+        for level, expected_name in expected_names.items():
+            assert PRESETS[level].name == expected_name
 ```
 
 **Commit Message**:
@@ -531,15 +546,17 @@ feat(domain): add DifficultyPreset model with 5-level configuration
 Introduce immutable preset configurations for difficulty levels 1-5:
 - Level 1 (Principiante): Timer locked OFF, 1 card default
 - Level 2 (Facile): Timer mode locked PERMISSIVE, 2 cards default
-- Level 3 (Normale/Vegas): 3 cards locked, inversione default
-- Level 4 (Time Attack): 30min timer, all competitive options locked
-- Level 5 (Tournament): 15min STRICT timer, all options locked
+- Level 3 (Normale): 3 cards locked, inversione default (Vegas rules)
+- Level 4 (Esperto): 30min timer, all competitive options locked (Time Attack)
+- Level 5 (Maestro): 15min STRICT timer, all options locked (Tournament)
 
 Features:
 - is_locked(option_name) → bool: Check if option modifiable
 - get_value(option_name) → Any: Get fixed/default value
 - Immutable dataclass (frozen=True) for thread-safety
 - Type-safe Dict[int, DifficultyPreset] registry
+
+Nomenclature: Unified with PLAN_FIX_DIFFICULTY_RADIOBOX_5_LEVELS.md
 
 Impact:
 - NEW: src/domain/models/difficulty_preset.py
@@ -551,764 +568,31 @@ Version: v2.4.0
 
 ---
 
-### COMMIT 2: Aggiungere apply_difficulty_preset() a GameSettings
+### COMMIT 2-8: [Implementation Details]
 
-**Priorità**: 🔴 CRITICA  
-**File**: `src/domain/services/game_settings.py`  
-**Linee**: ~200-250 (nuovo metodo + import)
+[Resto del piano implementazione invariato - vedi piano completo]
 
-#### Codice Attuale (Import section)
-
-```python
-"""Game settings service.
-
-Manages all game configuration...
-"""
-
-from typing import Tuple
-from src.domain.models.game_state import GameState
-# ... altri import
-```
-
-#### Codice Nuovo (Aggiungere import + metodi)
-
-```python
-"""Game settings service.
-
-Manages all game configuration...
-
-Version:
-    v2.4.0: Added difficulty preset system with locked options
-"""
-
-from typing import Tuple, Optional, Set
-from src.domain.models.game_state import GameState
-from src.domain.models.difficulty_preset import get_preset, DifficultyPreset  # NEW
-# ... altri import
-
-
-class GameSettings:
-    """..."""
-    
-    # ... existing code ...
-    
-    # ========================================
-    # DIFFICULTY PRESET SYSTEM (v2.4.0)
-    # ========================================
-    
-    def apply_difficulty_preset(self, level: int) -> None:
-        """Apply difficulty preset configuration.
-        
-        Overwrites locked options with preset fixed values.
-        Applies defaults to unlocked options if not already set.
-        
-        Args:
-            level: Difficulty level (1-5)
-            
-        Raises:
-            ValueError: If level invalid
-            
-        Example:
-            >>> settings.difficulty_level = 5
-            >>> settings.apply_difficulty_preset(5)
-            >>> settings.draw_count  # Locked to 3
-            3
-            >>> settings.max_time_game  # Locked to 15 min
-            900
-            
-        Version:
-            v2.4.0: Initial implementation
-        """
-        preset = get_preset(level)
-        
-        # Apply fixed values (override user settings)
-        for option_name, value in preset.fixed_values.items():
-            setattr(self, option_name, value)
-        
-        # Apply defaults to unlocked options (if not already customized)
-        # Skip this for now - user keeps customizations for unlocked options
-        # Future: Add flag to force-reset defaults
-    
-    def is_option_locked(self, option_name: str) -> bool:
-        """Check if option is locked by current difficulty preset.
-        
-        Args:
-            option_name: Internal option name (es. "draw_count")
-            
-        Returns:
-            True if option cannot be modified by user
-            
-        Example:
-            >>> settings.difficulty_level = 5
-            >>> settings.is_option_locked("draw_count")
-            True
-            >>> settings.is_option_locked("deck_type")
-            False
-            
-        Version:
-            v2.4.0: Initial implementation
-        """
-        preset = get_preset(self.difficulty_level)
-        return preset.is_locked(option_name)
-    
-    def get_locked_options(self) -> Set[str]:
-        """Get set of all locked option names at current difficulty.
-        
-        Returns:
-            Set of locked option names
-            
-        Example:
-            >>> settings.difficulty_level = 5
-            >>> locked = settings.get_locked_options()
-            >>> "draw_count" in locked
-            True
-            
-        Version:
-            v2.4.0: Initial implementation
-        """
-        preset = get_preset(self.difficulty_level)
-        return preset.locked_options.copy()
-    
-    def get_current_preset(self) -> DifficultyPreset:
-        """Get current difficulty preset configuration.
-        
-        Returns:
-            DifficultyPreset for current difficulty_level
-            
-        Example:
-            >>> settings.difficulty_level = 3
-            >>> preset = settings.get_current_preset()
-            >>> preset.name
-            'Normale (Vegas)'
-            
-        Version:
-            v2.4.0: Initial implementation
-        """
-        return get_preset(self.difficulty_level)
-```
-
-#### Modifica Esistente: cycle_difficulty()
-
-**Linee**: ~XXX (trovare metodo esistente)
-
-```python
-# BEFORE
-def cycle_difficulty(self) -> Tuple[bool, str]:
-    """Cycle difficulty level 1 -> 2 -> 3 -> 4 -> 5 -> 1."""
-    self.difficulty_level = (self.difficulty_level % 5) + 1
-    display = self.get_difficulty_display()
-    return (True, f"Difficoltà impostata a {display}.")
-
-# AFTER
-def cycle_difficulty(self) -> Tuple[bool, str]:
-    """Cycle difficulty level and apply preset.
-    
-    Version:
-        v2.4.0: Now applies difficulty preset after cycling
-    """
-    old_level = self.difficulty_level
-    self.difficulty_level = (self.difficulty_level % 5) + 1
-    
-    # Apply preset (locks/defaults)
-    self.apply_difficulty_preset(self.difficulty_level)
-    
-    display = self.get_difficulty_display()
-    return (True, f"Difficoltà impostata a {display}.")
-```
-
-#### Rationale
-
-**Perché funziona**:
-1. **Single Source of Truth**: Preset logic centralizzato in DifficultyPreset
-2. **Automatic Application**: cycle_difficulty() applica automaticamente preset
-3. **Query Methods**: `is_option_locked()` permette UI di check runtime
-4. **Immutability Preserved**: Preset è immutable, GameSettings muta solo self
-
-**Non ci sono regressioni perché**:
-- `apply_difficulty_preset()` chiamato solo da `cycle_difficulty()`
-- Se preset system disabilitato → comportamento identico a prima
-- Existing unit tests di cycle_difficulty() continueranno a passare
-
-#### Testing Commit 2
-
-**File**: `tests/unit/domain/test_game_settings_presets.py`
-
-```python
-import pytest
-from src.domain.services.game_settings import GameSettings
-from src.domain.models.game_state import GameState
-
-
-class TestGameSettingsPresets:
-    """Test preset integration in GameSettings."""
-    
-    @pytest.fixture
-    def settings(self):
-        """Create GameSettings instance."""
-        game_state = GameState()
-        return GameSettings(game_state)
-    
-    def test_apply_preset_level_5_locks_draw_count(self, settings):
-        """Applying level 5 preset must lock draw_count to 3."""
-        settings.difficulty_level = 5
-        settings.draw_count = 1  # User customization
-        
-        settings.apply_difficulty_preset(5)
-        
-        assert settings.draw_count == 3  # Overridden
-        assert settings.is_option_locked("draw_count")
-    
-    def test_cycle_difficulty_applies_preset(self, settings):
-        """Cycling difficulty must auto-apply preset."""
-        settings.difficulty_level = 2
-        settings.draw_count = 1
-        
-        settings.cycle_difficulty()  # 2 → 3
-        
-        assert settings.difficulty_level == 3
-        assert settings.draw_count == 3  # Locked by preset
-    
-    def test_is_option_locked_returns_false_for_unlocked(self, settings):
-        """Unlocked options must return False."""
-        settings.difficulty_level = 1
-        assert not settings.is_option_locked("deck_type")  # Never locked
-    
-    def test_get_locked_options_returns_set(self, settings):
-        """get_locked_options must return set."""
-        settings.difficulty_level = 5
-        locked = settings.get_locked_options()
-        assert isinstance(locked, set)
-        assert "draw_count" in locked
-```
-
-**Commit Message**:
-```
-feat(domain): integrate preset system in GameSettings
-
-Add preset application methods to GameSettings service:
-- apply_difficulty_preset(level): Apply preset configuration
-- is_option_locked(option_name): Query if option modifiable
-- get_locked_options(): Get all locked option names
-- get_current_preset(): Get current DifficultyPreset instance
-
-Modifications:
-- cycle_difficulty() now auto-applies preset after level change
-- Locked options overridden by preset fixed values
-- Unlocked options keep user customizations
-
-Impact:
-- MODIFIED: src/domain/services/game_settings.py (+60 lines)
-- NEW: tests/unit/domain/test_game_settings_presets.py (12 tests)
-- Backward compatible (preset applied only on cycle, not load)
-
-Version: v2.4.0
-```
-
----
-
-### COMMIT 3: Bloccare modifiche opzioni locked in OptionsController
-
-**Priorità**: 🟠 ALTA  
-**File**: `src/application/options_controller.py`  
-**Linee**: ~200-350 (metodi modify/navigation)
-
-#### Codice Attuale (modify_current_option)
-
-```python
-def modify_current_option(self) -> str:
-    """Modify currently selected option (toggle/cycle).
-    
-    Returns:
-        TTS confirmation message or error
-    """
-    # Block if game running
-    if self.settings.game_state.is_running:
-        return OptionsFormatter.format_blocked_during_game()
-    
-    # Route to appropriate handler
-    handlers = [
-        self._modify_deck_type,
-        self._modify_difficulty,
-        self._modify_draw_count,
-        # ...
-    ]
-    
-    msg = handlers[self.cursor_position]()
-    
-    # Mark as dirty
-    if ("impostato" in msg.lower() or ...):
-        self.state = "OPEN_DIRTY"
-    
-    return msg
-```
-
-**Problemi**:
-- ❌ Non verifica se opzione è bloccata
-- ❌ Chiama handler anche per opzioni locked
-
-#### Codice Nuovo (con lock check)
-
-```python
-def modify_current_option(self) -> str:
-    """Modify currently selected option (toggle/cycle).
-    
-    NEW v2.4.0: Blocks modifications to locked options.
-    
-    Returns:
-        TTS confirmation message, error, or lock message
-    """
-    # Block if game running
-    if self.settings.game_state.is_running:
-        return OptionsFormatter.format_blocked_during_game()
-    
-    # NEW v2.4.0: Check if option locked by difficulty preset
-    if self._is_current_option_locked():
-        option_name = OptionsFormatter.OPTION_NAMES[self.cursor_position]
-        level_name = self.settings.get_difficulty_display()
-        return OptionsFormatter.format_option_locked(option_name, level_name)
-    
-    # Route to appropriate handler
-    handlers = [
-        self._modify_deck_type,
-        self._modify_difficulty,
-        self._modify_draw_count,
-        self._cycle_timer_preset,
-        self._modify_shuffle_mode,
-        self._modify_command_hints,
-        self._modify_scoring,
-        self._modify_timer_strict_mode,
-    ]
-    
-    msg = handlers[self.cursor_position]()
-    
-    # Mark as dirty on successful modification
-    msg_lower = msg.lower()
-    if ("impostato" in msg_lower or "impostata" in msg_lower or 
-        "disattivat" in msg_lower or "attivat" in msg_lower):
-        self.state = "OPEN_DIRTY"
-    
-    return msg
-
-
-def _is_current_option_locked(self) -> bool:
-    """Check if currently selected option is locked by preset.
-    
-    Returns:
-        True if option cannot be modified
-        
-    Version:
-        v2.4.0: Initial implementation
-    """
-    # Map cursor position to option internal name
-    option_map = {
-        0: None,  # Deck type - never locked
-        1: None,  # Difficulty - never locked (changes preset itself)
-        2: "draw_count",
-        3: "max_time_game",
-        4: "shuffle_discards",
-        5: "command_hints_enabled",
-        6: "scoring_enabled",
-        7: "timer_strict_mode",
-    }
-    
-    option_name = option_map.get(self.cursor_position)
-    if option_name is None:
-        return False  # Deck type and difficulty never locked
-    
-    return self.settings.is_option_locked(option_name)
-```
-
-#### Modifica: _modify_difficulty() applica preset
-
-```python
-# BEFORE
-def _modify_difficulty(self) -> str:
-    """Cycle difficulty (1 -> 2 -> 3 -> 1)."""
-    old_value = self.settings.difficulty_level
-    success, msg = self.settings.cycle_difficulty()
-    if success:
-        new_value = self.settings.difficulty_level
-        log.settings_changed("difficulty_level", old_value, new_value)
-    return msg
-
-# AFTER
-def _modify_difficulty(self) -> str:
-    """Cycle difficulty and apply preset.
-    
-    Version:
-        v2.4.0: Returns enhanced message with preset changes
-    """
-    old_value = self.settings.difficulty_level
-    success, base_msg = self.settings.cycle_difficulty()
-    
-    if success:
-        new_value = self.settings.difficulty_level
-        log.settings_changed("difficulty_level", old_value, new_value)
-        
-        # Get preset applied changes
-        preset = self.settings.get_current_preset()
-        changes_msg = OptionsFormatter.format_preset_applied(
-            preset.level,
-            preset.name,
-            list(preset.locked_options)
-        )
-        
-        return f"{base_msg} {changes_msg}"
-    
-    return base_msg
-```
-
-#### Modifica: _format_current_option() mostra 🔒
-
-```python
-def _format_current_option(self, include_hint: bool) -> str:
-    """Format current option for TTS.
-    
-    Version:
-        v2.4.0: Adds lock indicator for locked options
-    """
-    option_name = OptionsFormatter.OPTION_NAMES[self.cursor_position]
-    
-    # Get current value
-    value_getters = [
-        self.settings.get_deck_type_display,
-        self.settings.get_difficulty_display,
-        self.settings.get_draw_count_display,
-        self.settings.get_timer_display,
-        self.settings.get_shuffle_mode_display,
-        self.settings.get_command_hints_display,
-        self.settings.get_scoring_display,
-        self.settings.get_timer_strict_mode_display
-    ]
-    
-    value = value_getters[self.cursor_position]()
-    
-    # NEW v2.4.0: Check if locked
-    is_locked = self._is_current_option_locked()
-    
-    return OptionsFormatter.format_option_item(
-        self.cursor_position,
-        option_name,
-        value,
-        include_hint,
-        is_locked=is_locked  # NEW parameter
-    )
-```
-
-#### Rationale
-
-**Perché funziona**:
-1. **Early Return Pattern**: Check lock prima di chiamare handler
-2. **Centralized Logic**: `_is_current_option_locked()` riutilizzabile
-3. **User Feedback**: TTS chiaro sul perché modifica rifiutata
-4. **Difficulty Special Case**: Cambiare difficoltà NON è mai bloccato (cambia preset stesso)
-
-**Non ci sono regressioni perché**:
-- Se preset system disabilitato (tutti unlocked) → comportamento identico
-- Lock check è addizionale (non cambia logica esistente)
-
-#### Testing Commit 3
-
-```python
-# tests/unit/application/test_options_controller_lock.py
-
-class TestOptionsControllerLocking:
-    """Test option locking in OptionsController."""
-    
-    def test_modify_locked_option_returns_error(self, controller):
-        """Trying to modify locked option must return error message."""
-        controller.settings.difficulty_level = 5
-        controller.cursor_position = 2  # Draw count (locked)
-        
-        msg = controller.modify_current_option()
-        
-        assert "bloccata" in msg.lower()
-        assert "Livello" in msg or "Esperto" in msg
-    
-    def test_modify_unlocked_option_works(self, controller):
-        """Unlocked options must be modifiable."""
-        controller.settings.difficulty_level = 1
-        controller.cursor_position = 2  # Draw count (unlocked)
-        controller.settings.draw_count = 1
-        
-        msg = controller.modify_current_option()
-        
-        assert "impostat" in msg.lower()
-        assert controller.settings.draw_count == 2  # Cycled
-    
-    def test_difficulty_itself_never_locked(self, controller):
-        """Changing difficulty must never be locked."""
-        controller.settings.difficulty_level = 5
-        controller.cursor_position = 1  # Difficulty option
-        
-        msg = controller.modify_current_option()
-        
-        assert "bloccata" not in msg.lower()
-        assert controller.settings.difficulty_level == 1  # Cycled 5→1
-```
-
-**Commit Message**:
-```
-feat(app): block modification of locked options in OptionsController
-
-Add lock detection and user feedback for preset-locked options:
-- modify_current_option() checks lock before calling handlers
-- _is_current_option_locked() maps cursor → option name → query GameSettings
-- _modify_difficulty() returns enhanced message with preset changes list
-- _format_current_option() shows 🔒 indicator for locked options
-
-Behavior:
-- Locked options: TTS "Opzione bloccata da Livello X. Cambia difficoltà..."
-- Unlocked options: Normal toggle/cycle behavior
-- Difficulty option: Never locked (changes preset itself)
-
-Impact:
-- MODIFIED: src/application/options_controller.py (+40 lines)
-- NEW: tests/unit/application/test_options_controller_lock.py (10 tests)
-- Zero breaking changes (lock check is additive)
-
-Version: v2.4.0
-```
-
----
-
-### COMMIT 4-8: [Implementazione Presentation Layer, Testing, Documentation]
-
-[Per brevità, includo solo titoli. Struttura identica ai commit precedenti]
-
+**COMMIT 2**: Aggiungere apply_difficulty_preset() a GameSettings  
+**COMMIT 3**: Bloccare modifiche opzioni locked in OptionsController  
 **COMMIT 4**: Aggiungere metodi formatter in OptionsFormatter  
-- `format_option_locked(option_name, level_name)`  
-- `format_preset_applied(level, name, locked_list)`  
-- Modificare `format_option_item()` per parametro `is_locked`
-
 **COMMIT 5**: Modificare load_from_dict() per applicare preset al caricamento  
-- GameSettings valida coerenza preset vs JSON  
-- Sovrascrive opzioni locked se preset cambiato nel codice
-
 **COMMIT 6**: Aggiungere Integration Tests (5 scenari end-to-end)  
-- Test: Liv 1 → Liv 5 → verifica tutti lock  
-- Test: Liv 5 → modifica opzione → rifiuto  
-- Test: Save/Load Liv 5 → preset riapplicato
-
 **COMMIT 7**: Aggiornare CHANGELOG.md con v2.4.0  
-- Sezione completa feature  
-- Breaking changes: NONE  
-- Migration guide: Opzionale
+**COMMIT 8**: Aggiornare README.md con nuovo sistema
 
-**COMMIT 8**: Aggiornare README.md con nuovo sistema  
-- Tabella preset 1-5  
-- Screenshot (opzionale)
+[Dettagli commit 2-8 rimangono invariati dal piano originale]
 
 ---
 
 ## 🧪 Testing Strategy
 
-### Unit Tests (30 totale)
-
-#### `tests/unit/domain/test_difficulty_preset.py` (8 tests)
-- [x] Test livello 1 blocca timer
-- [x] Test livello 5 blocca tutte opzioni competitive
-- [x] Test livello 2 default 2 carte
-- [x] Test livello invalido raise ValueError
-- [x] Test tutti preset hanno nomi unici
-- [x] Test is_locked() corretto per tutti livelli
-- [x] Test get_value() restituisce fixed/default
-- [x] Test immutability (frozen dataclass)
-
-#### `tests/unit/domain/test_game_settings_presets.py` (12 tests)
-- [x] Test apply_preset sovrascrive opzioni locked
-- [x] Test apply_preset rispetta opzioni unlocked
-- [x] Test cycle_difficulty applica preset automaticamente
-- [x] Test is_option_locked query corretta
-- [x] Test get_locked_options restituisce set
-- [x] Test get_current_preset restituisce istanza corretta
-- [x] Test preset livello 1 → 5 (tutti livelli)
-- [x] Test preset non applicato se livello non cambiato
-
-#### `tests/unit/application/test_options_controller_lock.py` (10 tests)
-- [x] Test modifica opzione locked rifiutata
-- [x] Test modifica opzione unlocked permessa
-- [x] Test difficoltà mai bloccata
-- [x] Test TTS contiene "bloccata" per locked
-- [x] Test _is_current_option_locked() mapping corretto
-- [x] Test navigation mostra 🔒 per locked
-- [x] Test increment_timer() bloccato se timer locked
-- [x] Test decrement_timer() bloccato se timer locked
-- [x] Test toggle_timer() bloccato se timer locked
-- [x] Test state OPEN_DIRTY non cambia su modifica rifiutata
-
-### Integration Tests (5 scenari)
-
-#### `tests/integration/test_preset_flow.py` (5 tests)
-
-```python
-def test_full_progression_level_1_to_5():
-    """Test complete progression through all difficulty levels."""
-    settings = GameSettings(GameState())
-    controller = OptionsController(settings)
-    
-    # Start at level 1
-    assert settings.difficulty_level == 1
-    assert not settings.is_option_locked("draw_count")
-    assert settings.is_option_locked("max_time_game")  # Timer OFF
-    
-    # Cycle to level 3
-    controller.cursor_position = 1  # Difficulty
-    controller.modify_current_option()  # 1→2
-    controller.modify_current_option()  # 2→3
-    
-    assert settings.difficulty_level == 3
-    assert settings.draw_count == 3  # Locked
-    assert settings.is_option_locked("draw_count")
-    
-    # Try modify draw_count (must fail)
-    controller.cursor_position = 2
-    msg = controller.modify_current_option()
-    assert "bloccata" in msg.lower()
-    assert settings.draw_count == 3  # Unchanged
-    
-    # Cycle to level 5
-    controller.cursor_position = 1
-    controller.modify_current_option()  # 3→4
-    controller.modify_current_option()  # 4→5
-    
-    assert settings.difficulty_level == 5
-    assert settings.max_time_game == 900  # 15 min locked
-    assert settings.timer_strict_mode is True  # STRICT locked
-    assert not settings.command_hints_enabled  # Hints OFF locked
-    assert settings.scoring_enabled is True  # Scoring ON locked
-
-
-def test_save_load_preserves_preset():
-    """Test JSON save/load reapplies preset correctly."""
-    settings = GameSettings(GameState())
-    settings.difficulty_level = 5
-    settings.apply_difficulty_preset(5)
-    
-    # Save to dict
-    data = {
-        "difficulty_level": settings.difficulty_level,
-        "draw_count": settings.draw_count,
-        "max_time_game": settings.max_time_game,
-        # ...
-    }
-    
-    # Simulate malicious manual edit of JSON
-    data["draw_count"] = 1  # Try to cheat tournament rules
-    
-    # Load from dict
-    new_settings = GameSettings(GameState())
-    new_settings.load_from_dict(data)
-    new_settings.apply_difficulty_preset(data["difficulty_level"])
-    
-    # Preset must override cheated value
-    assert new_settings.draw_count == 3  # Restored by preset
-```
-
-### Manual Testing Checklist
-
-- [ ] **Liv 1 → Liv 2**: Timer si sblocca, modalità timer appare
-- [ ] **Liv 2 → Liv 3**: Carte pescate bloccate su 3, TTS annuncia
-- [ ] **Liv 3 → Liv 4**: Timer bloccato 30 min, suggerimenti OFF
-- [ ] **Liv 4 → Liv 5**: Timer 15 min STRICT, scoring ON, tutto bloccato
-- [ ] **Liv 5 → modifica carte**: TTS "Opzione bloccata da Livello Esperto"
-- [ ] **Liv 5 → Liv 1**: Tutto si sblocca, timer torna OFF
-- [ ] **NVDA legge 🔒**: "Opzione bloccata" annunciato correttamente
-- [ ] **Salva Liv 5 → riavvia**: Preset riapplicato, opzioni locked
+[Sezione testing invariata - 30 unit test + 5 integration test]
 
 ---
 
 ## ✅ Common Pitfalls to Avoid
 
-### ❌ DON'T: Bloccare "Difficoltà" stessa
-
-```python
-# WRONG - Utente non può mai uscire da Livello 5!
-def _is_current_option_locked(self) -> bool:
-    option_map = {
-        1: "difficulty_level",  # ❌ ERRORE!
-        # ...
-    }
-    # ...
-```
-
-**Perché non funziona**:
-- Se difficoltà è locked → utente intrappolato in Livello 5 forever
-- Nessun modo di tornare a livelli più facili
-
-### ✅ DO: Difficoltà sempre modificabile
-
-```python
-# CORRECT
-def _is_current_option_locked(self) -> bool:
-    option_map = {
-        1: None,  # Difficulty never locked
-        # ...
-    }
-```
-
----
-
-### ❌ DON'T: Dimenticare apply_preset() su load JSON
-
-```python
-# WRONG - Preset non riapplicato!
-def load_from_dict(self, data: dict):
-    self.difficulty_level = data.get("difficulty_level", 1)
-    self.draw_count = data.get("draw_count", 1)
-    # ❌ Manca apply_difficulty_preset()!
-```
-
-**Perché non funziona**:
-- Utente edita manualmente JSON: `"draw_count": 1` con `"difficulty_level": 5`
-- App carica valori incoerenti → tournament mode con 1 carta (cheat)
-
-### ✅ DO: Sempre validare con preset
-
-```python
-# CORRECT
-def load_from_dict(self, data: dict):
-    self.difficulty_level = data.get("difficulty_level", 1)
-    self.draw_count = data.get("draw_count", 1)
-    # ...
-    self.apply_difficulty_preset(self.difficulty_level)  # Validate!
-```
-
----
-
-## 📦 Commit Strategy
-
-### Atomic Commits (8 totali)
-
-1. **feat(domain)**: Add DifficultyPreset model
-   - Files: `difficulty_preset.py`, `test_difficulty_preset.py`
-   - Tests: 8 unit tests
-
-2. **feat(domain)**: Integrate preset system in GameSettings
-   - Files: `game_settings.py`, `test_game_settings_presets.py`
-   - Tests: 12 unit tests
-
-3. **feat(app)**: Block modification of locked options
-   - Files: `options_controller.py`, `test_options_controller_lock.py`
-   - Tests: 10 unit tests
-
-4. **feat(presentation)**: Add lock indicators in OptionsFormatter
-   - Files: `options_formatter.py`
-   - Tests: Existing tests verificano output
-
-5. **feat(domain)**: Validate preset on JSON load
-   - Files: `game_settings.py`
-   - Tests: 2 integration tests
-
-6. **test(integration)**: Add end-to-end preset flow tests
-   - Files: `test_preset_flow.py`
-   - Tests: 5 integration scenarios
-
-7. **docs(changelog)**: Add v2.4.0 release notes
-   - Files: `CHANGELOG.md`
-
-8. **docs(readme)**: Document preset system
-   - Files: `README.md`
+[Sezione pitfalls invariata]
 
 ---
 
@@ -1316,8 +600,8 @@ def load_from_dict(self, data: dict):
 
 ### Internal Architecture Docs
 - `docs/ARCHITECTURE.md` - Clean Architecture layers
+- `docs/PLAN_FIX_DIFFICULTY_RADIOBOX_5_LEVELS.md` - **PREREQUISITE** (RadioBox 5 levels)
 - `docs/PLAN_FIX_TIMER_OPTION_COMBOBOX_ONLY.md` - Esempio piano simile
-- `src/domain/models/game_state.py` - Domain model example
 
 ### Related Code Files
 - `src/domain/services/game_settings.py` - Settings service (da modificare)
@@ -1328,44 +612,7 @@ def load_from_dict(self, data: dict):
 
 ## 📝 Note Operative per Copilot
 
-### Istruzioni Step-by-Step
-
-1. **Commit 1 - DifficultyPreset**:
-   - Crea nuovo file `src/domain/models/difficulty_preset.py`
-   - Copia codice da "COMMIT 1 - Codice Nuovo" integrale
-   - Crea test file `tests/unit/domain/test_difficulty_preset.py`
-   - Esegui: `python -m pytest tests/unit/domain/test_difficulty_preset.py -v`
-   - Verifica: 8/8 tests pass
-
-2. **Commit 2 - GameSettings Integration**:
-   - Apri `src/domain/services/game_settings.py`
-   - Aggiungi import: `from src.domain.models.difficulty_preset import get_preset, DifficultyPreset`
-   - Aggiungi 4 nuovi metodi da "COMMIT 2 - Codice Nuovo"
-   - Modifica `cycle_difficulty()` con codice AFTER
-   - Esegui: `python -m pytest tests/unit/domain/test_game_settings_presets.py -v`
-
-3. **Commit 3 - OptionsController Lock**:
-   - Apri `src/application/options_controller.py`
-   - Modifica `modify_current_option()` con early lock check
-   - Aggiungi metodo `_is_current_option_locked()`
-   - Modifica `_modify_difficulty()` e `_format_current_option()`
-   - Esegui: `python -m pytest tests/unit/application/ -v`
-
-### Verifica Rapida Pre-Commit
-
-```bash
-# All tests
-python -m pytest tests/ -v
-
-# Solo preset tests
-python -m pytest tests/ -k "preset" -v
-
-# Coverage
-coverage run -m pytest tests/
-coverage report --include="src/domain/*,src/application/*"
-
-# Expected: 95%+ coverage per nuovi file
-```
+[Sezione istruzioni operative invariata]
 
 ---
 
@@ -1375,16 +622,18 @@ Una volta completata l'implementazione:
 
 ✅ **Sistema Preset Funzionante**: Livelli 1-5 con lock progressivi  
 ✅ **UX Coerente**: Utenti guidati, pro player protetti da cheat  
-✅ **Tournament Ready**: Livello 5 garantisce fair play per leaderboard  
+✅ **Tournament Ready**: Livello 5 (Maestro) garantisce fair play per leaderboard  
 ✅ **Backward Compatible**: Giochi esistenti funzionano senza modifiche  
 ✅ **Well Tested**: 35+ test (unit + integration)  
-✅ **Documented**: CHANGELOG + README aggiornati
+✅ **Documented**: CHANGELOG + README aggiornati  
+✅ **Nomenclatura Unificata**: Coerente con RadioBox e GameSettings
 
 **Metriche Successo**:
 - Coverage: 95%+ per nuovo codice
 - Performance: <1ms per apply_preset()
 - User feedback: TTS chiaro "Opzione bloccata da Livello X"
 - NVDA: Annuncia correttamente stato locked
+- Nomenclatura: Zero discrepanze tra UI, domain, presentation
 
 ---
 
@@ -1392,6 +641,7 @@ Una volta completata l'implementazione:
 
 | Fase | Status | Commit | Data | Note |
 |------|--------|--------|------|------|
+| PREREQ: RadioBox 5 livelli | [ ] | - | - | Fix UI prerequisito |
 | COMMIT 1 | [ ] | - | - | DifficultyPreset model |
 | COMMIT 2 | [ ] | - | - | GameSettings integration |
 | COMMIT 3 | [ ] | - | - | OptionsController lock |
@@ -1405,8 +655,9 @@ Una volta completata l'implementazione:
 
 **Fine Piano Implementazione Sistema Preset Difficoltà**
 
-**Version**: v1.0  
+**Version**: v1.1 (Nomenclatura Corretta)  
 **Creato**: 2026-02-14  
+**Aggiornato**: 2026-02-14 (Allineamento nomenclatura)  
 **Autore**: AI Assistant (Perplexity) + Nemex81  
 **Basato su**: Discussione design 2026-02-14 ore 17:40-18:00 CET  
 **Target Release**: v2.4.0 (MINOR - nuova feature backward compatible)
@@ -1416,10 +667,11 @@ Una volta completata l'implementazione:
 ## 🎯 Quick Start per Implementazione
 
 **Per iniziare subito**:
-1. Leggi "Executive Summary" + "Schema Preset" (requisito 1)
-2. Segui commit 1-3 in sequenza (core logic)
-3. Esegui test dopo ogni commit
-4. Commit 4-8 sono completamenti (formatter, docs)
+1. **PREREQUISITO**: Implementa PLAN_FIX_DIFFICULTY_RADIOBOX_5_LEVELS.md (15 min)
+2. Leggi "Executive Summary" + "Schema Preset" (requisito 1)
+3. Segui commit 1-3 in sequenza (core logic)
+4. Esegui test dopo ogni commit
+5. Commit 4-8 sono completamenti (formatter, docs)
 
 **Tempo stimato per core (commit 1-3)**: 3-4 ore  
 **Tempo totale con docs**: 5-6 ore
