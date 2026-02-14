@@ -241,17 +241,35 @@ class SolitarioController:
     # === MENU HANDLERS (v2.0.1 - Updated for ViewManager) ===
     
     def start_gameplay(self) -> None:
-        """Start gameplay (called from MenuPanel).
+        """Start gameplay (called from MenuPanel or rematch).
         
         Shows GameplayPanel via ViewManager, initializing new game.
-        MenuPanel is hidden but remains in memory.
+        Previous panel (menu or gameplay) is hidden but remains in memory.
+        
+        Handles two scenarios:
+        1. Menu → Gameplay: Hide menu, show gameplay
+        2. Gameplay → Gameplay (rematch): Hide gameplay, show gameplay
         
         Note:
             Uses show_panel() instead of push_view() (panel-swap pattern).
+            
+        Version:
+            v2.0.1: Initial implementation for menu→gameplay
+            v2.4.2: Added explicit panel hiding for rematch support (Bug #68)
         """
         if self.view_manager:
+            # CRITICAL: Hide current panel before showing gameplay
+            # This handles both menu→gameplay AND rematch (gameplay→gameplay)
+            current_panel_name = self.view_manager.get_current_view()
+            if current_panel_name:
+                current_panel = self.view_manager.get_panel(current_panel_name)
+                if current_panel:
+                    current_panel.Hide()
+            
+            # Show gameplay panel
             self.view_manager.show_panel('gameplay')
             self.is_menu_open = False  # Sync flag: now in gameplay
+            
             # Initialize game
             self.engine.reset_game()
             self.engine.new_game()
