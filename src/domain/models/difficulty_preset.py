@@ -99,6 +99,36 @@ class DifficultyPreset:
         """
         return self.locked_options.copy()
     
+    def apply_to(self, settings: 'GameSettings') -> None:
+        """Apply this preset's configured values to a GameSettings instance.
+        
+        Sets all option values according to preset specification.
+        Applies values from preset_values dict to corresponding GameSettings attributes.
+        
+        Args:
+            settings: GameSettings instance to modify
+        
+        Example:
+            >>> from src.domain.services.game_settings import GameSettings
+            >>> settings = GameSettings()
+            >>> preset = DifficultyPreset.get_preset(5)  # Maestro
+            >>> preset.apply_to(settings)
+            >>> assert settings.max_time_game == 900  # 15 minutes
+            >>> assert settings.draw_count == 3
+            >>> assert settings.timer_strict_mode == True
+        
+        Version:
+            v2.4.1: Created to fix preset value application bug
+        
+        Notes:
+            - Applies ALL values in preset_values dict
+            - Respects GameSettings attribute names
+            - Does not validate if option is locked (caller's responsibility)
+        """
+        for option_name, value in self.preset_values.items():
+            if hasattr(settings, option_name):
+                setattr(settings, option_name, value)
+    
     @staticmethod
     def get_preset(level: int) -> 'DifficultyPreset':
         """Factory method to get preset for a specific difficulty level.

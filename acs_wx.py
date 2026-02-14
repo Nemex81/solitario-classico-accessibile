@@ -312,7 +312,7 @@ class SolitarioController:
         # Announce via TTS
         if self.screen_reader:
             self.screen_reader.tts.speak(
-                "Ritorno al menu di gioco.",
+                "Ritorno al menu principale.",
                 interrupt=True
             )
     

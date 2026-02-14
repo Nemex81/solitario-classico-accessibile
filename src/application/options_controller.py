@@ -473,8 +473,16 @@ class OptionsWindowController:
             new_value = self.settings.difficulty_level
             log.settings_changed("difficulty_level", old_value, new_value)
             
-            # v2.4.0: Announce preset details (locked options count)
+            # v2.4.0: Get preset and apply values
             preset = self.settings.get_current_preset()
+            
+            # v2.4.1: CRITICAL FIX - Apply preset values to settings
+            # This actually changes timer, draw_count, etc. to preset values
+            preset.apply_to(self.settings)
+            
+            # Log preset application
+            log.info(f"Applied preset '{preset.name}' - Set {len(preset.preset_values)} values, locked {len(preset.get_locked_options())} options")
+            
             locked_count = len(preset.get_locked_options())
             
             # Use preset formatter instead of generic message
