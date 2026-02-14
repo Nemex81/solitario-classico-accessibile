@@ -142,23 +142,61 @@ class ViewManager:
             >>> vm.show_panel('menu')      # Show menu, hide others
             >>> vm.show_panel('gameplay')  # Show gameplay, hide menu
         
-        Note:
-            Uses Hide/Show/Layout pattern for smooth transitions.
-            SetFocus() ensures keyboard input goes to correct panel.
+        Panel Swap Architecture (v2.1):
+            This method should ALWAYS be called from deferred context when
+            transitioning during event handlers:
             
-            Hide/Show operations are synchronous (C++ immediate state update).
-            No event processing needed - IsShown() reflects state immediately.
+            ✅ CORRECT: Deferred call from event handler
+                def on_esc_pressed(self):
+                    self.app.CallAfter(self._safe_return_to_menu)
+                
+                def _safe_return_to_menu(self):
+                    self.view_manager.show_panel('menu')  # Safe!
+            
+            ❌ WRONG: Direct call from event handler
+                def on_esc_pressed(self):
+                    self.view_manager.show_panel('menu')  # Risky!
+                    # May cause nested event loops or timing issues
         
-        Version:
+        Hide/Show Synchronous Nature:
+            wxPython Hide() and Show() are synchronous C++ operations that
+            update internal state immediately. No event processing needed:
+            - panel.Hide() → IsShown() immediately returns False
+            - panel.Show() → IsShown() immediately returns True
+            - NO wx.SafeYield() needed (was added in v2.0.3, removed in v2.0.8)
+        
+        Anti-Pattern Avoided:
+            ❌ wx.SafeYield() was added in v2.0.3 based on mistaken belief
+               of race condition with IsShown(). This caused:
+               - RuntimeError: wxYield called recursively
+               - Nested event loop crashes during deferred transitions
+               - Removed in v2.0.8 - unnecessary and harmful
+        
+        Version History:
+            v2.0.1: Initial ViewManager implementation
             v2.0.3: Added wx.SafeYield() (mistaken belief of race condition)
             v2.0.8: Removed wx.SafeYield() (causes nested event loop crash)
+            v2.1: Architectural documentation and pattern validation
         """
         if name not in self.panels:
             logger.error(f"Panel not registered: {name}")
             return None
         
-        # ✅ NO wx.SafeYield() - Hide/Show are synchronous operations!
-        # Removed v2.0.8: Prevents nested event loop crash during deferred transitions
+        # ============================================================================
+        # NO wx.SafeYield() - Hide() and Show() are synchronous C++ operations!
+        # ============================================================================
+        # Rationale:
+        #   - Hide() and Show() update wxWidgets internal state immediately
+        #   - IsShown() reflects state without delay (no event processing needed)
+        #   - SafeYield() creates nested event loop → RuntimeError when called
+        #     from deferred callbacks (self.app.CallAfter context)
+        #   - Removed in v2.0.8 after identifying as crash root cause
+        #
+        # Historical Context:
+        #   v2.0.3: Added SafeYield (thought it prevented race condition)
+        #   v2.0.8: Removed SafeYield (caused nested loop crashes)
+        #   v2.1: Documented architectural pattern for maintainability
+        # ============================================================================
         
         # Hide all panels (skip target to avoid redundant operations)
         for panel_name, panel in self.panels.items():
