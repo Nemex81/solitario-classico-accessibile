@@ -289,3 +289,60 @@ def debug_state(state_name: str, state_data: dict) -> None:
         - Non chiamare in hot paths
     """
     _game_logger.debug(f"State [{state_name}]: {state_data}")
+
+
+# ===== SETTINGS CHANGES =====
+
+def settings_changed(setting_name: str, old_value, new_value) -> None:
+    """
+    Log configuration change.
+    
+    Args:
+        setting_name: Name of setting (e.g. "difficulty", "timer_enabled")
+        old_value: Previous value
+        new_value: New value
+    
+    Example:
+        >>> settings_changed("difficulty", "medium", "hard")
+        2026-02-14 15:00:00 - INFO - game - Setting changed: difficulty = medium → hard
+    """
+    _game_logger.info(
+        f"Setting changed: {setting_name} = {old_value} → {new_value}"
+    )
+
+
+# ===== TIMER LIFECYCLE =====
+
+def timer_started(duration: int) -> None:
+    """Log timer start with max duration.
+    
+    Args:
+        duration: Maximum timer duration in seconds
+    
+    Example:
+        >>> timer_started(600)
+        2026-02-14 15:00:00 - INFO - game - Timer started - Duration: 600s
+    """
+    _game_logger.info(f"Timer started - Duration: {duration}s")
+
+
+def timer_expired() -> None:
+    """Log timer expiration (game over event).
+    
+    Example:
+        >>> timer_expired()
+        2026-02-14 15:10:00 - WARNING - game - Timer EXPIRED - Game auto-abandoned
+    """
+    _game_logger.warning("Timer EXPIRED - Game auto-abandoned")
+
+
+def timer_paused(remaining: int) -> None:
+    """Log timer pause (if pause feature exists).
+    
+    Args:
+        remaining: Remaining time in seconds
+    
+    Note:
+        Optional feature - only log if pause functionality is implemented
+    """
+    _game_logger.debug(f"Timer paused - Remaining: {remaining}s")
