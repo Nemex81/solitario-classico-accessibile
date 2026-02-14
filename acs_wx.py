@@ -631,10 +631,9 @@ class SolitarioController:
             # ═══════════════════════════════════════════════════════════
             print("→ Scheduling deferred rematch...")
             
-            # ✅ CORRECT: Use self.app.CallAfter (instance method)
-            # Pattern documented in architectural guidelines (line ~455)
-            # NOT wx.CallAfter (global function that depends on wx.GetApp())
-            self.app.CallAfter(self.start_gameplay)
+            # ✅ CORRECT: Use wx.CallAfter (global function)
+            # In wxPython 4.1.1, CallAfter is a module-level function
+            wx.CallAfter(self.start_gameplay)
             
         else:
             # ═══════════════════════════════════════════════════════════
@@ -642,10 +641,9 @@ class SolitarioController:
             # ═══════════════════════════════════════════════════════════
             print("→ Scheduling deferred return to main menu...")
             
-            # ✅ CORRECT: Use self.app.CallAfter (instance method)
-            # Pattern documented in architectural guidelines (line ~455)
-            # NOT wx.CallAfter (global function that depends on wx.GetApp())
-            self.app.CallAfter(self._safe_return_to_main_menu)
+            # ✅ CORRECT: Use wx.CallAfter (global function)
+            # In wxPython 4.1.1, CallAfter is a module-level function
+            wx.CallAfter(self._safe_return_to_main_menu)
     
     def _safe_decline_to_menu(self) -> None:
         """Deferred handler for decline rematch → menu transition (called via self.app.CallAfter).
@@ -893,7 +891,7 @@ class SolitarioController:
         
         # ✅ Defer UI transition until AFTER timer event completes
         print("→ Timeout defeat - Scheduling deferred transition...")
-        self.app.CallAfter(self._safe_timeout_to_menu)
+        wx.CallAfter(self._safe_timeout_to_menu)
     
     def _safe_timeout_to_menu(self) -> None:
         """Deferred handler for timeout defeat → menu transition (called via self.app.CallAfter).
