@@ -143,7 +143,7 @@ class OptionsDialog(wx.Dialog):
         - RadioBox for deck type (Francese/Napoletano)
         - RadioBox for difficulty (5 levels: Principiante to Maestro)
         - RadioBox for draw count (1/2/3 carte)
-        - CheckBox + ComboBox for timer (enable + duration)
+        - TimerComboBox for timer duration (0=disabled, 5-60 minutes)
         - RadioBox for shuffle mode (Inversione/Mescolata)
         - CheckBox for command hints (ON/OFF)
         - CheckBox for scoring system (ON/OFF)
@@ -216,25 +216,17 @@ class OptionsDialog(wx.Dialog):
         # ========================================
         timer_box = wx.StaticBoxSizer(wx.VERTICAL, self, "Timer Partita")
         
-        # CheckBox per abilitare/disabilitare timer
-        self.timer_check = wx.CheckBox(self, label="Attiva timer (limite di tempo per partita)")
-        timer_box.Add(self.timer_check, 0, wx.ALL, 5)
-        
-        # ComboBox per selezionare durata (5-60 minuti)
-        timer_duration_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        timer_label = wx.StaticText(self, label="Durata timer:")
-        timer_duration_sizer.Add(timer_label, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
-        
-        # Genera choices 5, 10, 15, ..., 60 minuti
-        timer_choices = [f"{i} minuti" for i in range(5, 65, 5)]
-        self.timer_combo = wx.ComboBox(
+        # Label esplicativa (sostituisce CheckBox)
+        timer_label = wx.StaticText(
             self,
-            choices=timer_choices,
-            style=wx.CB_READONLY,
-            value="10 minuti"  # Default
+            label="Seleziona durata timer (0 = disattivato):"
         )
-        timer_duration_sizer.Add(self.timer_combo, 1, wx.EXPAND)
-        timer_box.Add(timer_duration_sizer, 0, wx.ALL | wx.EXPAND, 5)
+        timer_box.Add(timer_label, 0, wx.ALL, 5)
+        
+        # TimerComboBox SEMPRE ATTIVO con "0 minuti - Timer disattivato" come prima voce
+        from src.presentation.widgets.timer_combobox import TimerComboBox
+        self.timer_combo = TimerComboBox(self)
+        timer_box.Add(self.timer_combo, 0, wx.ALL | wx.EXPAND, 5)
         
         main_sizer.Add(timer_box, 0, wx.ALL | wx.EXPAND, 10)
         
@@ -323,7 +315,7 @@ class OptionsDialog(wx.Dialog):
         - deck_type: "french" -> 0, "neapolitan" -> 1
         - difficulty_level: 1/2/3/4/5 -> RadioBox selection 0/1/2/3/4
         - draw_count: 1/2/3 -> RadioBox selection 0/1/2
-        - max_time_game: seconds -> CheckBox + ComboBox (minutes)
+        - max_time_game: seconds -> TimerComboBox (minutes: 0=disabled, 5-60)
         - shuffle_discards: False -> 0 (Inversione), True -> 1 (Mescolata)
         - command_hints_enabled: boolean -> CheckBox
         - scoring_enabled: boolean -> CheckBox
@@ -341,18 +333,11 @@ class OptionsDialog(wx.Dialog):
         # 3. Carte Pescate (1/2/3 -> 0/1/2)
         self.draw_count_radio.SetSelection(settings.draw_count - 1)
         
-        # 4. Timer
-        timer_enabled = settings.max_time_game > 0
-        self.timer_check.SetValue(timer_enabled)
+        # 4. Timer (usando TimerComboBox con set_minutes())
+        minutes = settings.max_time_game // 60
+        self.timer_combo.set_minutes(minutes)  # 0 = disabled, 5-60 = enabled
         
-        if timer_enabled:
-            minutes = settings.max_time_game // 60
-            self.timer_combo.SetValue(f"{minutes} minuti")
-        else:
-            self.timer_combo.SetValue("10 minuti")  # Default when disabled
-        
-        # Enable/disable combo based on checkbox
-        self.timer_combo.Enable(timer_enabled)
+        # ComboBox SEMPRE abilitata (no Enable() call)
         
         # 5. Riciclo Scarti (False=Inversione, True=Mescolata)
         shuffle_selection = 1 if settings.shuffle_discards else 0
@@ -502,7 +487,7 @@ class OptionsDialog(wx.Dialog):
         - deck_type_radio: 0->"french", 1->"neapolitan"
         - difficulty_radio: 0/1/2/3/4 -> difficulty_level 1/2/3/4/5
         - draw_count_radio: 0/1/2 -> draw_count 1/2/3
-        - timer_check + timer_combo: boolean + minutes -> max_time_game seconds
+        - timer_combo: minutes (0=disabled, 5-60) -> max_time_game seconds
         - shuffle_radio: 0->False (Inversione), 1->True (Mescolata)
         - command_hints_check: boolean -> command_hints_enabled
         - scoring_check: boolean -> scoring_enabled
@@ -523,13 +508,9 @@ class OptionsDialog(wx.Dialog):
         # 3. Carte Pescate (0/1/2 -> 1/2/3)
         settings.draw_count = self.draw_count_radio.GetSelection() + 1
         
-        # 4. Timer
-        if self.timer_check.GetValue():
-            # Extract minutes from "X minuti" string
-            minutes_str = self.timer_combo.GetValue().split()[0]  # "10 minuti" -> "10"
-            settings.max_time_game = int(minutes_str) * 60  # Convert to seconds
-        else:
-            settings.max_time_game = 0  # Disabled
+        # 4. Timer (usando TimerComboBox con get_selected_minutes())
+        minutes = self.timer_combo.get_selected_minutes()  # 0 = disabled, 5-60 = enabled
+        settings.max_time_game = minutes * 60  # Convert to seconds
         
         # 5. Riciclo Scarti (0->False, 1->True)
         settings.shuffle_discards = (self.shuffle_radio.GetSelection() == 1)
