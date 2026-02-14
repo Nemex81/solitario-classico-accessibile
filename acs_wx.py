@@ -598,8 +598,9 @@ class SolitarioController:
         
         Version:
             v2.0.2: Fixed operation order for decline rematch path
-            v2.0.4: Added wx.CallAfter() defer pattern for both branches
-            v2.0.6: Changed to wx.CallAfter() (DEFINITIVE FIX)
+            v2.0.4: Added defer pattern for both branches
+            v2.0.9: DEFINITIVE FIX - self.app.CallAfter() for reliability
+            v2.4.2: Bug #68 final fix - restored correct self.app.CallAfter() pattern
         """
         print(f"\n→ Game ended callback - Rematch: {wants_rematch}")
         
@@ -612,9 +613,10 @@ class SolitarioController:
             # ═══════════════════════════════════════════════════════════
             print("→ Scheduling deferred rematch...")
             
-            # ✅ FIX BUG #68.1: Use wx.CallAfter (global function)
-            # NOT self.app.CallAfter (doesn't exist on SolitarioWxApp)
-            wx.CallAfter(self.start_gameplay)
+            # ✅ CORRECT: Use self.app.CallAfter (instance method)
+            # Pattern documented in architectural guidelines (line ~455)
+            # NOT wx.CallAfter (global function that depends on wx.GetApp())
+            self.app.CallAfter(self.start_gameplay)
             
         else:
             # ═══════════════════════════════════════════════════════════
@@ -622,9 +624,10 @@ class SolitarioController:
             # ═══════════════════════════════════════════════════════════
             print("→ Scheduling deferred return to main menu...")
             
-            # ✅ FIX BUG #68.2: Use wx.CallAfter + new method
-            # Method _safe_return_to_main_menu() created below
-            wx.CallAfter(self._safe_return_to_main_menu)
+            # ✅ CORRECT: Use self.app.CallAfter (instance method)
+            # Pattern documented in architectural guidelines (line ~455)
+            # NOT wx.CallAfter (global function that depends on wx.GetApp())
+            self.app.CallAfter(self._safe_return_to_main_menu)
     
     def _safe_decline_to_menu(self) -> None:
         """Deferred handler for decline rematch → menu transition (called via self.app.CallAfter).
