@@ -51,19 +51,24 @@ class GameplayPanel(BasicPanel):
         GameplayController - this panel is just a keyboard event sink.
     """
     
-    def __init__(self, parent, controller, **kwargs):
+    def __init__(self, parent, controller, container=None, **kwargs):
         """Initialize GameplayPanel with controller.
         
         Args:
             parent: Parent panel container (frame.panel_container)
             controller: Application controller with gameplay_controller attribute
+            container: Optional DependencyContainer for future DI needs (v2.2.0)
             **kwargs: Additional arguments passed to BasicPanel
         
         Note:
             Controller must have:
             - gameplay_controller: GamePlayController instance
             - show_abandon_game_dialog(): Method to show abandon confirmation
+        
+        Version:
+            v2.2.0: Added optional container parameter for DI pattern
         """
+        self.container = container
         super().__init__(
             parent=parent,
             controller=controller,

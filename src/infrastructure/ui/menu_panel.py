@@ -51,18 +51,23 @@ class MenuPanel(BasicPanel):
         show_exit_dialog().
     """
     
-    def __init__(self, parent, controller, **kwargs):
+    def __init__(self, parent, controller, container=None, **kwargs):
         """Initialize MenuPanel with controller.
         
         Args:
             parent: Parent panel container (frame.panel_container)
             controller: Application controller with menu action methods
+            container: Optional DependencyContainer for future DI needs (v2.2.0)
             **kwargs: Additional arguments passed to BasicPanel
         
         Note:
             Automatically announces "Menu principale. 3 opzioni disponibili."
             after initialization.
+        
+        Version:
+            v2.2.0: Added optional container parameter for DI pattern
         """
+        self.container = container
         super().__init__(
             parent=parent,
             controller=controller,
