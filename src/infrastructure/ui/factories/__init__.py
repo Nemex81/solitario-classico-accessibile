@@ -13,9 +13,11 @@ Version:
 """
 
 from src.infrastructure.ui.factories.view_factory import ViewFactory, WindowKey, ALL_WINDOWS
+from src.infrastructure.ui.factories.widget_factory import WidgetFactory
 
 __all__ = [
     'ViewFactory',
     'WindowKey',
     'ALL_WINDOWS',
+    'WidgetFactory',
 ]
