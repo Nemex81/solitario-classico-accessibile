@@ -322,30 +322,47 @@ class WxDialogProvider(DialogProvider):
         message: str,
         callback: Optional[Callable[[], None]] = None
     ) -> None:
-        """Show non-blocking error dialog with optional callback.
+        """Show error dialog (semi-modal) with optional callback.
+        
+        Pattern: ShowModal() called from wx.CallAfter() for consistency with
+        show_yes_no_async(). Ensures proper dialog lifecycle.
         
         Args:
             title: Dialog title
             message: Error message
-            callback: Optional function called when dialog closes
+            callback: Optional function called after dialog closes
+        
+        Example:
+            >>> def on_closed():
+            ...     print("Error acknowledged")
+            >>> provider.show_error_async("Errore", "Mossa non valida!", on_closed)
         
         Version:
             v2.2: Added async API
+            v2.2.1: Fixed to use semi-modal pattern (ShowModal + CallAfter)
         """
-        dialog = wx.MessageDialog(
-            parent=self._get_parent(),
-            message=message,
-            caption=title,
-            style=wx.OK | wx.ICON_ERROR
-        )
         
-        def on_dialog_close(event):
+        def show_modal_and_callback():
+            """Deferred function that shows modal error dialog."""
+            dialog = wx.MessageDialog(
+                parent=self._get_parent(),
+                message=message,
+                caption=title,
+                style=wx.OK | wx.ICON_ERROR
+            )
+            
+            # ShowModal blocks until user clicks OK or ESC
+            dialog.ShowModal()
+            
+            # Always destroy dialog
             dialog.Destroy()
+            
+            # Invoke optional callback
             if callback:
                 callback()
         
-        dialog.Bind(wx.EVT_CLOSE, on_dialog_close)
-        dialog.Show()
+        # Defer entire dialog sequence
+        wx.CallAfter(show_modal_and_callback)
     
     def show_statistics_report(
         self,
