@@ -597,29 +597,33 @@ class SolitarioController:
         Args:
             wants_rematch: True if user wants rematch, False to return to menu
         
-        Defer Pattern (CRITICAL to prevent crashes):
-            ✅ CORRECT: Use wx.CallAfter() for BOTH branches
-                → Rematch: defer start_gameplay() 
-                → Decline: defer _safe_decline_to_menu()
-                → Callback completes immediately
-                → Frame's event queue processes deferred action
-                → NO nested event loops = NO crash
+        Async Dialog Pattern (v2.5.0 - Bug #68 final fix):
+            This method is called from GameEngine.on_rematch_result() callback,
+            which is invoked by wxPython's event loop AFTER the async rematch
+            dialog closes. UI is in stable state, no need for wx.CallAfter().
             
-            ❌ WRONG: Call UI transitions directly from callback
-                → Would create nested event loops
-                → SafeYield() crash possible
+            ✅ CORRECT (v2.5.0): Direct calls (no wx.CallAfter needed)
+                → Callback already deferred by async dialog API
+                → UI state is stable when this executes
+                → Can safely call start_gameplay() or _safe_return_to_main_menu()
+            
+            ❌ OLD PATTERN (v2.4.3): Required wx.CallAfter() workaround
+                → Synchronous dialog (ShowModal) caused unstable UI state
+                → Had to defer with wx.CallAfter()
+                → Now unnecessary with async dialog
         
-        Why frame.CallAfter() works:
-            Uses frame's instance event queue directly, bypassing global wx.App
-            lookup. Works immediately after frame creation, no timing issues.
-            Guaranteed to work in all app lifecycle phases.
+        Why No CallAfter Needed:
+            show_rematch_prompt_async() uses Show() (non-blocking), not ShowModal().
+            Callback is invoked by wx event loop after dialog closes and focus
+            is restored. By the time this method executes, UI is already stable.
         
         Version:
             v2.0.2: Fixed operation order for decline rematch path
             v2.0.4: Added defer pattern for both branches
             v2.0.9: Added CallAfter deferred execution
             v2.4.2: Bug #68 fix - panel hiding + CallAfter
-            v2.4.3: Bug #68 FINAL - corrected to wx.CallAfter (global function)
+            v2.4.3: Bug #68 - corrected to wx.CallAfter (global function)
+            v2.5.0: Bug #68 FINAL - async dialog, no CallAfter needed
         """
         print(f"\n→ Game ended callback - Rematch: {wants_rematch}")
         
@@ -630,20 +634,22 @@ class SolitarioController:
             # ═══════════════════════════════════════════════════════════
             # REMATCH: Start New Game
             # ═══════════════════════════════════════════════════════════
-            print("→ Scheduling deferred rematch...")
+            print("→ Starting rematch...")
             
-            # ✅ CORRECT: Use wx.CallAfter (global function)
-            # In wxPython 4.1.1, CallAfter is a module-level function
+            # ✅ DIRECT CALL: No wx.CallAfter needed (v2.5.0)
+            # Callback already deferred by async dialog API
+            # UI state is stable when this callback executes
             self.start_gameplay()
             
         else:
             # ═══════════════════════════════════════════════════════════
             # DECLINE: Return to Main Menu
             # ═══════════════════════════════════════════════════════════
-            print("→ Scheduling deferred return to main menu...")
+            print("→ Returning to main menu...")
             
-            # ✅ CORRECT: Use wx.CallAfter (global function)
-            # In wxPython 4.1.1, CallAfter is a module-level function
+            # ✅ DIRECT CALL: No wx.CallAfter needed (v2.5.0)
+            # Callback already deferred by async dialog API
+            # UI state is stable when this callback executes
             self._safe_return_to_main_menu()
     
     def _safe_decline_to_menu(self) -> None:
