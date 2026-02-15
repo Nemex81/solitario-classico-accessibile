@@ -262,15 +262,12 @@ class SolitarioController:
             # This handles both menu→gameplay AND rematch (gameplay→gameplay)
             current_panel_name = self.view_manager.get_current_view()
             
-            # Log panel transition
-            log.panel_switched(current_panel_name or "none", "gameplay")
-            
             if current_panel_name:
                 current_panel = self.view_manager.get_panel(current_panel_name)
                 if current_panel:
                     current_panel.Hide()
             
-            # Show gameplay panel
+            # Show gameplay panel (logs transition internally)
             self.view_manager.show_panel('gameplay')
             self.is_menu_open = False  # Sync flag: now in gameplay
             
@@ -325,11 +322,7 @@ class SolitarioController:
             print("⚠ ViewManager not initialized")
             return
         
-        # Log panel transition
-        current_view = self.view_manager.get_current_view()
-        log.panel_switched(current_view or "unknown", "menu")
-        
-        # Show menu panel
+        # Show menu panel (logs transition internally)
         self.view_manager.show_panel('menu')
         
         # Update state
