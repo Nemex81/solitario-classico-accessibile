@@ -64,7 +64,7 @@ COMPLETA ✅
 **File Modificati**: `game_settings.py`, `options_controller.py`, `game_engine.py`
 
 - [x] **2.1** - `game_settings.py`: Log settings persistence (`load_from_file()`, `save_to_file()`)
-- [ ] **2.2** - `options_controller.py`: Log difficulty preset applications (`_apply_difficulty_preset()`)
+- [x] **2.2** - `options_controller.py`: Log difficulty preset applications (`_apply_difficulty_preset()`)
 - [ ] **2.3** - `game_settings.py`: Log individual setting changes (tutti i setter properties)
 - [ ] **2.4** - `game_engine.py`: Log deck type change in `new_game()`
 - [ ] **2.5** - `game_settings.py`: Log settings reset to defaults
@@ -120,9 +120,9 @@ COMPLETA ✅
 | Fase | Commits | Completato |
 |------|---------|------------|
 | FASE 1 | 4 | ✅ 4/4 |
-| FASE 2 | 5 | ⚙️ 1/5 |
+| FASE 2 | 5 | ⚙️ 2/5 |
 | FASE 3 | 6 | ⬜ 0/6 |
-| **TOTALE** | **15** | **⚙️ 5/15** |
+| **TOTALE** | **15** | **⚙️ 6/15** |
 
 ---
 
