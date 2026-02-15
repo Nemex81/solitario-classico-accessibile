@@ -284,6 +284,53 @@ class WxDialogProvider(DialogProvider):
             # Call callback with False (decline) to prevent deadlock
             callback(False)
     
+    def show_rematch_prompt_async(
+        self,
+        callback: Callable[[bool], None]
+    ) -> None:
+        """Show rematch confirmation dialog (non-blocking).
+        
+        Asks user if they want to play another game after completing current one.
+        Wrapper around show_yes_no_async() with Italian rematch message.
+        
+        Args:
+            callback: Function called with result (True=rematch, False=return to menu)
+        
+        Italian message:
+            Title: "Rivincita?"
+            Message: "Vuoi giocare ancora?"
+        
+        Flow:
+            1. Dialog.Show() called (non-blocking)
+            2. User responds YES/NO
+            3. Dialog closes
+            4. [wxPython event loop processes callback]
+            5. callback(wants_rematch) invoked (deferred context)
+            6. Caller handles rematch logic safely
+        
+        Note:
+            This method provides the same async pattern as show_abandon_game_prompt_async(),
+            show_new_game_prompt_async(), and show_exit_app_prompt_async() in DialogManager.
+            Ensures consistent behavior across all game flow dialogs.
+        
+        Example:
+            >>> def on_result(wants_rematch):
+            ...     if wants_rematch:
+            ...         self.start_gameplay()
+            ...     else:
+            ...         self._safe_return_to_main_menu()
+            >>> provider.show_rematch_prompt_async(on_result)
+        
+        Version:
+            v2.5.0: Added for Bug #68 async refactoring (final fix)
+        """
+        # Delegate to show_yes_no_async with rematch-specific message
+        self.show_yes_no_async(
+            title="Rivincita?",
+            message="Vuoi giocare ancora?",
+            callback=callback
+        )
+    
     def show_info_async(
         self,
         title: str,

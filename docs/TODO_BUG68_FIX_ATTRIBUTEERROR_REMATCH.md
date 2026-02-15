@@ -33,10 +33,10 @@ Application / Controller
 • ✅ Nessuna modifica necessaria (GameEngine già corretto)
 
 Infrastructure
-• [ ] Aggiungere show_rematch_prompt_async() in WxDialogProvider
-• [ ] Metodo delega a show_yes_no_async() con messaggio italiano
-• [ ] Docstring completa con Args, Returns, Example, Version
-• [ ] Consistente con altri metodi async (show_info_async, show_error_async)
+• [x] Aggiungere show_rematch_prompt_async() in WxDialogProvider
+• [x] Metodo delega a show_yes_no_async() con messaggio italiano
+• [x] Docstring completa con Args, Returns, Example, Version
+• [x] Consistente con altri metodi async (show_info_async, show_error_async)
 
 Presentation / Accessibilità
 • ✅ Messaggi TTS già corretti ("Rivincita?", "Vuoi giocare ancora?")
@@ -44,7 +44,7 @@ Presentation / Accessibilità
 • ✅ Keyboard shortcuts (YES/NO/ESC)
 
 Testing
-• [ ] Test manuale: CTRL+ALT+W → nessun crash
+• [x] Test manuale: CTRL+ALT+W → nessun crash
 • [ ] Test manuale: Completa partita → dialog rivincita appare
 • [ ] Test manuale: YES → nuova partita inizia
 • [ ] Test manuale: NO → menu visibile immediatamente (Bug #68 verificato)
@@ -53,19 +53,19 @@ Testing
 
 ✅ Criteri di Completamento
 L'implementazione è considerata completa quando:
-• [ ] Metodo show_rematch_prompt_async() aggiunto in WxDialogProvider
-• [ ] Sintassi validata (python -m py_compile)
-• [ ] Nessun crash AttributeError al termine partita
+• [x] Metodo show_rematch_prompt_async() aggiunto in WxDialogProvider
+• [x] Sintassi validata (python -m py_compile)
+• [x] Nessun crash AttributeError al termine partita
 • [ ] Dialog rivincita appare e funziona correttamente
 • [ ] Bug #68 completamente risolto (menu visibile dopo decline)
 • [ ] Nessuna regressione su altri dialog async
 
 📝 Aggiornamenti Obbligatori a Fine Implementazione
-• [ ] Commit con messaggio conventional:
+• [x] Commit con messaggio conventional:
       fix(dialogs): Add show_rematch_prompt_async() to WxDialogProvider
 • [ ] Test manuale completo (5 scenari)
-• [ ] Verifica sintassi: python -m py_compile src/infrastructure/ui/wx_dialog_provider.py
-• [ ] Aggiorna questo TODO con checkmarks
+• [x] Verifica sintassi: python -m py_compile src/infrastructure/ui/wx_dialog_provider.py
+• [x] Aggiorna questo TODO con checkmarks
 • [ ] Marca Bug #68 come COMPLETED in issue tracker
 
 📌 Note Operative
