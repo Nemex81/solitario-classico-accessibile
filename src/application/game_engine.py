@@ -492,12 +492,6 @@ class GameEngine:
         # 🔥 SECOND TAP: Execute automatic card selection
         # ═══════════════════════════════════════════════════════════
         if should_auto_select:
-            # Log auto-selection trigger
-            log.info_query_requested(
-                "auto_selection",
-                f"Double-tap on pile_{pile_idx}"
-            )
-            
             msg_deselect = ""
             
             # ─────────────────────────────────────────────────────
@@ -511,6 +505,13 @@ class GameEngine:
             # Execute automatic selection
             # ─────────────────────────────────────────────────────
             success, msg_select = self.select_card_at_cursor()
+            
+            # Log auto-selection ONLY if successful
+            if success:
+                log.info_query_requested(
+                    "auto_selection",
+                    f"Double-tap on pile_{pile_idx}"
+                )
             
             # Combine messages: deselection (if any) + selection feedback
             msg = msg_deselect + msg_select
