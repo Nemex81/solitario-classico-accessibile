@@ -12,6 +12,9 @@ from dataclasses import dataclass, field
 import json
 from pathlib import Path
 
+# Import game logger for settings tracking
+from src.infrastructure.logging import game_logger as log
+
 
 DeckType = Literal["french", "neapolitan"]
 ShuffleMode = Literal["enabled", "disabled"]
@@ -379,8 +382,16 @@ class GameSettings:
         Args:
             filepath: Path to save settings JSON
         """
-        with open(filepath, 'w', encoding='utf-8') as f:
-            json.dump(self.to_dict(), f, indent=2, ensure_ascii=False)
+        try:
+            with open(filepath, 'w', encoding='utf-8') as f:
+                json.dump(self.to_dict(), f, indent=2, ensure_ascii=False)
+            
+            # Log successful save
+            log.info_query_requested("settings_save", f"Saved to {filepath}")
+        except Exception as e:
+            # Log save error
+            log.error_occurred("Settings", f"Failed to save: {filepath}", e)
+            raise
     
     @classmethod
     def load_from_file(cls, filepath: Path) -> 'GameSettings':
@@ -396,6 +407,29 @@ class GameSettings:
             FileNotFoundError: If file doesn't exist
             json.JSONDecodeError: If file is invalid JSON
         """
-        with open(filepath, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        return cls.from_dict(data)
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            settings = cls.from_dict(data)
+            
+            # Log successful load
+            log.settings_changed("all_settings", "default", "loaded_from_file")
+            log.info_query_requested("settings_load", f"Loaded from {filepath}")
+            
+            return settings
+            
+        except FileNotFoundError:
+            # Log file not found warning
+            log.warning_issued("Settings", f"File not found: {filepath}, using defaults")
+            raise
+            
+        except json.JSONDecodeError as e:
+            # Log corrupted JSON error
+            log.error_occurred("Settings", f"Corrupted JSON: {filepath}", e)
+            raise
+            
+        except Exception as e:
+            # Log unexpected error
+            log.error_occurred("Settings", f"Unexpected error loading {filepath}", e)
+            raise

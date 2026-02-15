@@ -483,6 +483,16 @@ class OptionsWindowController:
             # Log preset application
             log.info(f"Applied preset '{preset.name}' - Set {len(preset.preset_values)} values, locked {len(preset.get_locked_options())} options")
             
+            # Log each locked option with its preset value
+            for option_name in preset.get_locked_options():
+                preset_value = preset.preset_values.get(option_name)
+                log.debug_state("option_locked", {
+                    "option": option_name,
+                    "difficulty": new_value,
+                    "preset_value": preset_value,
+                    "locked": True
+                })
+            
             locked_count = len(preset.get_locked_options())
             
             # Use preset formatter instead of generic message

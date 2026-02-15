@@ -7,6 +7,39 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 ---
 
+## [2.5.1] - 2026-02-15
+
+### Fixed
+- **Logging duplicato transizioni UI**: Rimossi log ridondanti in `acs_wx.py` (già gestiti da ViewManager)
+  - Eliminato doppio log in `start_gameplay()` (menu→gameplay)
+  - Eliminato doppio log in `return_to_menu()` (gameplay→menu)
+  - **Impatto**: Log production puliti, singola entry per transizione invece di 2x
+- **Auto-selection logging prematuro**: Log spostato dopo verifica successo in `game_engine.py`
+  - Log ora emesso solo se selezione carta realmente riuscita
+  - Eliminati false positive quando pila vuota o carta coperta
+  - **Impatto**: Tracciamento eventi accurato, nessun log ingannevole
+- **Help logging incompleto**: Aggiunto messaggio contesto a logging comando help
+  - Migliorata chiarezza log con descrizione "User requested command list"
+  - **Impatto**: Maggiore coerenza con altri log info_query_requested
+
+### Added
+- **Score clamping logging**: Log WARNING quando punteggio finale clampato a minimo (0)
+  - Traccia partite con troppe penalità (overtime, recycle)
+  - Formato: "Score clamped: -150 → 0 (minimum enforced)"
+  - **Impatto**: Visibilità problemi bilanciamento scoring
+- **Recycle penalty logging**: Log WARNING per penalità riciclo eccessivo (4+)
+  - Traccia penalità applicata dopo 3° riciclo waste
+  - Formato: "Recycle penalty: -15 points (recycle #4)"
+  - **Impatto**: Coerenza con altri log penalità, analytics migliorato
+
+### Technical Details
+- 5 commit incrementali con correzioni isolate
+- Zero breaking changes, solo miglioramenti logging
+- Pattern seguiti: log solo eventi reali, evitare duplicazioni, massima chiarezza
+- File modificati: `acs_wx.py`, `game_engine.py`, `scoring_service.py`, `gameplay_controller.py`
+
+---
+
 ## [2.4.0] - 2026-02-14
 
 ### Added

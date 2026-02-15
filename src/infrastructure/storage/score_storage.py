@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import List, Dict, Optional, Any
 
 from src.domain.models.scoring import FinalScore
+from src.infrastructure.logging import game_logger as log
 
 
 class ScoreStorage:
@@ -86,11 +87,21 @@ class ScoreStorage:
             with open(self.storage_path, 'w', encoding='utf-8') as f:
                 json.dump(existing_scores, f, ensure_ascii=False, indent=2)
             
+            # Log successful save
+            log.info_query_requested(
+                "score_save",
+                f"Statistics saved to {self.storage_path}"
+            )
+            
             return True
         
         except Exception as e:
-            # Log error but don't crash
-            print(f"Error saving score: {e}")
+            # Log error
+            log.error_occurred(
+                "ScoreStorage",
+                f"Failed to save: {self.storage_path}",
+                e
+            )
             return False
     
     def load_all_scores(self) -> List[Dict[str, Any]]:
@@ -107,20 +118,40 @@ class ScoreStorage:
         """
         try:
             if not self.storage_path.exists():
+                # Log file not found warning
+                log.warning_issued(
+                    "ScoreStorage",
+                    f"File not found: {self.storage_path}, returning empty list"
+                )
                 return []
             
             with open(self.storage_path, 'r', encoding='utf-8') as f:
                 scores = json.load(f)
-                return scores if isinstance(scores, list) else []
+            
+            # Log successful load
+            log.info_query_requested(
+                "score_load",
+                f"Statistics loaded from {self.storage_path}"
+            )
+            
+            return scores if isinstance(scores, list) else []
         
-        except json.JSONDecodeError:
-            # Corrupt JSON - return empty list
-            print(f"Warning: Corrupt scores file at {self.storage_path}")
+        except json.JSONDecodeError as e:
+            # Corrupt JSON - log error and return empty list
+            log.error_occurred(
+                "ScoreStorage",
+                f"Corrupted file: {self.storage_path}",
+                e
+            )
             return []
         
         except Exception as e:
-            # Other errors - return empty list
-            print(f"Error loading scores: {e}")
+            # Other errors - log and return empty list
+            log.error_occurred(
+                "ScoreStorage",
+                f"Unexpected error loading {self.storage_path}",
+                e
+            )
             return []
     
     def get_best_score(

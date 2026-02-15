@@ -291,6 +291,12 @@ class GameEngine:
             # Deck type mismatch → recreate deck and table
             if current_is_neapolitan != should_be_neapolitan:
                 deck_changed = True
+                
+                # Log deck type change
+                old_deck = "neapolitan" if current_is_neapolitan else "french"
+                new_deck = "neapolitan" if should_be_neapolitan else "french"
+                log.settings_changed("deck_type", old_deck, new_deck)
+                
                 # ⚠️ IMPORTANT: This creates GameTable which already deals cards!
                 self._recreate_deck_and_table(should_be_neapolitan)
         
@@ -500,6 +506,13 @@ class GameEngine:
             # ─────────────────────────────────────────────────────
             success, msg_select = self.select_card_at_cursor()
             
+            # Log auto-selection ONLY if successful
+            if success:
+                log.info_query_requested(
+                    "auto_selection",
+                    f"Double-tap on pile_{pile_idx}"
+                )
+            
             # Combine messages: deselection (if any) + selection feedback
             msg = msg_deselect + msg_select
             hint = None  # No hint after auto-selection
@@ -626,6 +639,18 @@ class GameEngine:
         msg = self.selection.select_card_sequence(pile, card_idx)
         success = self.selection.has_selection()
         
+        # Log successful selection
+        if success:
+            pile_name = f"{pile.type}_{pile_idx}" if hasattr(pile, 'type') else f"pile_{pile_idx}"
+            selected_cards = self.selection.selected_cards
+            card_repr = f"{selected_cards[0].rank}{selected_cards[0].suit}" if selected_cards else "unknown"
+            
+            log.debug_state("card_selected", {
+                "card": card_repr,
+                "pile": pile_name,
+                "count": len(selected_cards)
+            })
+        
         if self.screen_reader:
             self.screen_reader.tts.speak(msg, interrupt=True)
         
@@ -640,6 +665,17 @@ class GameEngine:
         msg = self.selection.select_top_card_from_waste(self.table.pile_scarti)
         success = self.selection.has_selection()
         
+        # Log successful selection from waste
+        if success:
+            selected_cards = self.selection.selected_cards
+            card_repr = f"{selected_cards[0].rank}{selected_cards[0].suit}" if selected_cards else "unknown"
+            
+            log.debug_state("card_selected", {
+                "card": card_repr,
+                "pile": "waste",
+                "count": len(selected_cards)
+            })
+        
         if self.screen_reader:
             self.screen_reader.tts.speak(msg, interrupt=True)
         
@@ -651,6 +687,11 @@ class GameEngine:
         Returns:
             Feedback message
         """
+        # Log deselection before clearing
+        count = len(self.selection.selected_cards)
+        if count > 0:
+            log.debug_state("cards_deselected", {"count": count})
+        
         msg = self.selection.clear_selection()
         
         if self.screen_reader:

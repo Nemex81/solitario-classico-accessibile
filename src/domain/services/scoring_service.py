@@ -19,6 +19,7 @@ from src.domain.models.scoring import (
     ProvisionalScore,
     FinalScore,
 )
+from src.infrastructure.logging import game_logger as log
 
 
 class ScoringService:
@@ -136,6 +137,12 @@ class ScoringService:
             self.recycle_count += 1
             if self.recycle_count <= 3:
                 return 0  # First 3 recycles are free
+            else:
+                # Log recycle penalty
+                log.warning_issued(
+                    "Scoring",
+                    f"Recycle penalty: {points} points (recycle #{self.recycle_count})"
+                )
         
         return points
     
@@ -232,7 +239,15 @@ class ScoringService:
         total_score = total_before_time + time_bonus + victory_bonus
         
         # Clamp to minimum
+        total_before_clamp = total_score
         total_score = max(self.config.min_score, total_score)
+        
+        # Log score clamping if occurred
+        if total_before_clamp < self.config.min_score:
+            log.warning_issued(
+                "Scoring",
+                f"Score clamped: {total_before_clamp} → {total_score} (minimum enforced)"
+            )
         
         return FinalScore(
             base_score=provisional.base_score,
@@ -301,20 +316,37 @@ class ScoringService:
                     overtime_seconds = abs(time_remaining)
                     overtime_minutes = max(1, int(overtime_seconds // 60))  # At least 1 minute
                     malus = -100 * overtime_minutes
+                    
+                    # Log overtime penalty
+                    log.warning_issued(
+                        "Scoring",
+                        f"Penalty applied: overtime = {malus} points ({overtime_minutes} min)"
+                    )
+                    
                     return malus
             
             # Within time limit: percentage-based bonus
             time_used_percentage = elapsed_seconds / self.timer_limit_seconds
             time_remaining_percentage = 1.0 - time_used_percentage
             
+            bonus = 0
             if time_remaining_percentage >= 0.50:
-                return 1000  # ≥50% remaining
+                bonus = 1000  # ≥50% remaining
             elif time_remaining_percentage >= 0.25:
-                return 500   # ≥25% remaining
+                bonus = 500   # ≥25% remaining
             elif time_remaining_percentage > 0:
-                return 200   # >0% remaining
+                bonus = 200   # >0% remaining
             else:
-                return -500  # Timer expired (edge case)
+                bonus = -500  # Timer expired (edge case)
+            
+            # Log time bonus if positive
+            if bonus > 0:
+                log.info_query_requested(
+                    "scoring_bonus",
+                    f"fast_completion = +{bonus} points ({int(time_remaining_percentage * 100)}% time remaining)"
+                )
+            
+            return bonus
     
     # ========================================
     # QUERIES

@@ -525,7 +525,7 @@ class GamePlayController:
     
     def _show_help(self) -> None:
         """H: Show available commands help."""
-        log.info_query_requested("help")
+        log.info_query_requested("help", "User requested command list")
         help_text = """COMANDI PRINCIPALI:
 Frecce: navigazione carte e pile.
 1 a 7: vai alla pila base.

@@ -261,12 +261,13 @@ class SolitarioController:
             # CRITICAL: Hide current panel before showing gameplay
             # This handles both menu→gameplay AND rematch (gameplay→gameplay)
             current_panel_name = self.view_manager.get_current_view()
+            
             if current_panel_name:
                 current_panel = self.view_manager.get_panel(current_panel_name)
                 if current_panel:
                     current_panel.Hide()
             
-            # Show gameplay panel
+            # Show gameplay panel (logs transition internally)
             self.view_manager.show_panel('gameplay')
             self.is_menu_open = False  # Sync flag: now in gameplay
             
@@ -321,7 +322,7 @@ class SolitarioController:
             print("⚠ ViewManager not initialized")
             return
         
-        # Show menu panel
+        # Show menu panel (logs transition internally)
         self.view_manager.show_panel('menu')
         
         # Update state
@@ -377,6 +378,9 @@ class SolitarioController:
             self.screen_reader.tts.speak(open_msg, interrupt=True)
             wx.MilliSleep(500)  # Brief pause before showing dialog
         
+        # Log dialog opening
+        log.dialog_shown("options", "Impostazioni di Gioco")
+        
         # Create and show modal options dialog
         dlg = OptionsDialog(
             parent=self.frame,
@@ -384,6 +388,11 @@ class SolitarioController:
             screen_reader=self.screen_reader
         )
         result = dlg.ShowModal()
+        
+        # Log dialog closing with result
+        result_str = "saved" if result == wx.ID_OK else "cancelled"
+        log.dialog_closed("options", result_str)
+        
         dlg.Destroy()
         
         self.is_options_mode = False
@@ -512,11 +521,20 @@ class SolitarioController:
         """
         print("\n→ Executing deferred abandon transition...")
         
+        # Log abandon transition
+        log.debug_state("abandon_transition", {
+            "trigger": "ESC_confirmed",
+            "from_panel": "gameplay"
+        })
+        
         # Hide gameplay panel
         if self.view_manager:
             gameplay_panel = self.view_manager.get_panel('gameplay')
             if gameplay_panel:
                 gameplay_panel.Hide()
+                
+                # Log panel hidden
+                log.debug_state("panel_hidden", {"panel": "gameplay"})
         
         # Reset game engine
         self.engine.reset_game()
@@ -734,12 +752,21 @@ class SolitarioController:
         """
         print("→ _safe_return_to_main_menu() called")
         
+        # Log decline rematch transition
+        log.debug_state("decline_rematch_transition", {
+            "trigger": "rematch_declined",
+            "from_panel": "gameplay"
+        })
+        
         # 0. Hide gameplay panel (CRITICAL FIX for Bug #68)
         # Without this, gameplay panel remains visible over menu → UI freeze
         if self.view_manager:
             gameplay_panel = self.view_manager.get_panel('gameplay')
             if gameplay_panel:
                 gameplay_panel.Hide()
+                
+                # Log panel hidden
+                log.debug_state("panel_hidden", {"panel": "gameplay"})
         print("  ✓ Gameplay panel hidden")
         
         # 1. Reset game state
@@ -927,11 +954,20 @@ class SolitarioController:
         """
         print("\n→ Executing deferred timeout transition...")
         
+        # Log timeout transition
+        log.debug_state("timeout_transition", {
+            "trigger": "timer_expired",
+            "from_panel": "gameplay"
+        })
+        
         # Hide gameplay panel
         if self.view_manager:
             gameplay_panel = self.view_manager.get_panel('gameplay')
             if gameplay_panel:
                 gameplay_panel.Hide()
+                
+                # Log panel hidden
+                log.debug_state("panel_hidden", {"panel": "gameplay"})
         
         # Reset game engine
         self.engine.reset_game()
