@@ -22,9 +22,12 @@ class ScoreEventType(Enum):
     - TABLEAU_TO_FOUNDATION: +10 points
     - CARD_REVEALED: +5 points
     - FOUNDATION_TO_TABLEAU: -15 points (penalty)
-    - RECYCLE_WASTE: -20 points (penalty, only after 3rd recycle)
-    - UNDO_MOVE: -0 points (reserved for future undo feature)
-    - HINT_USED: -0 points (reserved for future hint penalty)
+    - RECYCLE_WASTE: Progressive penalty (0, 0, -10, -20, -35, -55, -80)
+    - STOCK_DRAW: Progressive penalty (0 for first 20, then -1, then -2)
+    - INVALID_MOVE: 0 points (tracking only, reserved for v2.1+)
+    - AUTO_MOVE: 0 points (tracking only, neutral)
+    - UNDO_MOVE: 0 points (reserved for future undo feature)
+    - HINT_USED: 0 points (reserved for future hint penalty)
     """
     
     WASTE_TO_FOUNDATION = "waste_to_foundation"
@@ -32,64 +35,131 @@ class ScoreEventType(Enum):
     CARD_REVEALED = "card_revealed"
     FOUNDATION_TO_TABLEAU = "foundation_to_tableau"
     RECYCLE_WASTE = "recycle_waste"
+    STOCK_DRAW = "stock_draw"
+    INVALID_MOVE = "invalid_move"
+    AUTO_MOVE = "auto_move"
     UNDO_MOVE = "undo_move"
     HINT_USED = "hint_used"
 
 
 @dataclass(frozen=True)
 class ScoringConfig:
-    """Configuration for scoring system with all bonuses and multipliers.
+    """Configuration for scoring system v2.0 with all bonuses and multipliers.
     
     Defines point values for events, difficulty multipliers, and various
-    bonuses. All values match Microsoft Solitaire scoring standards.
+    bonuses. Version 2.0 introduces composite victory bonus and external config.
     
     Attributes:
+        version: Config version (must start with "2.")
         event_points: Point values for each event type
         difficulty_multipliers: Score multipliers by difficulty level (1-5)
         deck_type_bonuses: Bonus points by deck type
-        draw_count_bonuses: Bonus points by draw count (levels 1-3 only)
-        victory_bonus: Bonus points awarded for winning
+        draw_count_bonuses: Bonus points by draw count (levels 1-3 get full, 4-5 get 50%)
+        victory_bonus_base: Base victory bonus before quality multiplier
+        victory_weights: Weights for quality factors (time, moves, recycles)
+        stock_draw_thresholds: Thresholds for stock draw penalty tiers
+        stock_draw_penalties: Penalties for each stock draw tier
+        recycle_penalties: Penalties for each recycle count (indexed by count-1)
+        time_bonus_max_timer_off: Max time bonus when timer OFF
+        time_bonus_decay_per_minute: Decay per minute when timer OFF
+        time_bonus_max_timer_on: Max time bonus when timer ON
+        overtime_penalty_per_minute: Penalty per overtime minute (PERMISSIVE mode)
         min_score: Minimum possible score (clamp floor)
     """
     
-    # Event point values (Microsoft Solitaire standard)
+    # Version control
+    version: str = "2.0.0"
+    
+    # Event point values (v2.0 standard)
     event_points: Dict[ScoreEventType, int] = field(default_factory=lambda: {
         ScoreEventType.WASTE_TO_FOUNDATION: 10,
         ScoreEventType.TABLEAU_TO_FOUNDATION: 10,
         ScoreEventType.CARD_REVEALED: 5,
         ScoreEventType.FOUNDATION_TO_TABLEAU: -15,
-        ScoreEventType.RECYCLE_WASTE: -20,  # Only after 3rd recycle
+        ScoreEventType.RECYCLE_WASTE: 0,  # Calculated via recycle_penalties
+        ScoreEventType.STOCK_DRAW: 0,  # Calculated via stock_draw_penalties
+        ScoreEventType.INVALID_MOVE: 0,  # Tracking only
+        ScoreEventType.AUTO_MOVE: 0,  # Tracking only
         ScoreEventType.UNDO_MOVE: 0,  # Reserved for future
         ScoreEventType.HINT_USED: 0,  # Reserved for future
     })
     
-    # Difficulty multipliers (progressive scaling)
+    # Difficulty multipliers (v2.0 rebalanced)
     difficulty_multipliers: Dict[int, float] = field(default_factory=lambda: {
-        1: 1.0,   # Facile (Easy)
-        2: 1.25,  # Medio (Medium)
-        3: 1.5,   # Difficile (Hard)
-        4: 2.0,   # Esperto (Expert)
-        5: 2.5,   # Maestro (Master)
+        1: 1.0,   # Principiante
+        2: 1.2,   # Facile
+        3: 1.4,   # Normale
+        4: 1.8,   # Esperto
+        5: 2.2,   # Maestro
     })
     
-    # Deck type bonuses (v1.5.2.5: rebalanced - fewer cards = harder = more bonus)
+    # Deck type bonuses (v2.0 rebalanced)
     deck_type_bonuses: Dict[str, int] = field(default_factory=lambda: {
-        "neapolitan": 50,   # 40 cards (harder = deserves bonus)
-        "french": 75,       # 52 cards (easier = reduced bonus)
+        "neapolitan": 100,  # 40 cards (harder)
+        "french": 50,       # 52 cards (baseline)
     })
     
-    # Draw count bonuses (levels 1-3 only, higher draw = more bonus)
-    draw_count_bonuses: Dict[int, int] = field(default_factory=lambda: {
-        1: 0,      # Draw 1 card (easiest)
-        2: 100,    # Draw 2 cards
-        3: 200,    # Draw 3 cards (hardest)
+    # Draw count bonuses (levels 1-3 get full, 4-5 get 50%)
+    draw_count_bonuses: Dict[int, Dict[str, int]] = field(default_factory=lambda: {
+        1: {"low": 0, "high": 0},      # Draw 1 (easiest)
+        2: {"low": 100, "high": 50},   # Draw 2
+        3: {"low": 200, "high": 100},  # Draw 3 (hardest)
     })
     
-    # Victory bonus (awarded only when game is won)
-    victory_bonus: int = 500
+    # Victory bonus v2.0 (composite)
+    victory_bonus_base: int = 400
+    victory_weights: Dict[str, float] = field(default_factory=lambda: {
+        "time": 0.35,
+        "moves": 0.35,
+        "recycles": 0.30,
+    })
+    
+    # Stock draw progressive penalties
+    stock_draw_thresholds: tuple = field(default_factory=lambda: (20, 40))
+    stock_draw_penalties: tuple = field(default_factory=lambda: (0, -1, -2))
+    
+    # Recycle progressive penalties (indexed by recycle_count-1)
+    recycle_penalties: tuple = field(default_factory=lambda: (0, 0, -10, -20, -35, -55, -80))
+    
+    # Time bonus parameters (v2.0 values)
+    time_bonus_max_timer_off: int = 1200
+    time_bonus_decay_per_minute: int = 40
+    time_bonus_max_timer_on: int = 1000
+    overtime_penalty_per_minute: int = -100
     
     # Minimum score (never go below 0)
     min_score: int = 0
+    
+    def __post_init__(self):
+        """Validate configuration constraints.
+        
+        Raises:
+            ValueError: If configuration is invalid
+        """
+        # Version check
+        if not self.version.startswith("2."):
+            raise ValueError(
+                f"Invalid config version '{self.version}'. "
+                "Expected version 2.x"
+            )
+        
+        # Validate victory weights sum to ~1.0 (allow 0.99-1.01 for float precision)
+        weights_sum = sum(self.victory_weights.values())
+        if not (0.99 <= weights_sum <= 1.01):
+            raise ValueError(
+                f"Victory weights must sum to 1.0, got {weights_sum}. "
+                f"Weights: {self.victory_weights}"
+            )
+        
+        # Validate difficulty levels completeness (must have 1-5)
+        expected_levels = {1, 2, 3, 4, 5}
+        actual_levels = set(self.difficulty_multipliers.keys())
+        if actual_levels != expected_levels:
+            raise ValueError(
+                f"Difficulty multipliers must have levels 1-5. "
+                f"Missing: {expected_levels - actual_levels}, "
+                f"Extra: {actual_levels - expected_levels}"
+            )
 
 
 @dataclass(frozen=True)
@@ -178,6 +248,9 @@ class FinalScore:
         draw_count: Cards drawn per click (1-3)
         recycle_count: Number of times waste was recycled
         move_count: Total moves made
+        victory_quality_multiplier: Quality multiplier for victory bonus (v2.0)
+            Range: 0.0 (abandonment) - 1.34 (perfect)
+            -1.0 = legacy score (sentinel value)
     """
     
     base_score: int
@@ -194,6 +267,7 @@ class FinalScore:
     draw_count: int
     recycle_count: int
     move_count: int
+    victory_quality_multiplier: float = 0.0  # v2.0 NEW field
     
     def get_breakdown(self) -> str:
         """Get Italian TTS-friendly breakdown of score components.
