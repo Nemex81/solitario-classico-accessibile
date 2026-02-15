@@ -67,7 +67,7 @@ COMPLETA ✅
 - [x] **2.2** - `options_controller.py`: Log difficulty preset applications (`_apply_difficulty_preset()`)
 - [x] **2.3** - `game_settings.py`: Log individual setting changes (tutti i setter properties)
 - [x] **2.4** - `game_engine.py`: Log deck type change in `new_game()`
-- [ ] **2.5** - `game_settings.py`: Log settings reset to defaults
+- [x] **2.5** - `game_settings.py`: Log settings reset to defaults - **SKIPPED** (feature not implemented in codebase)
 
 **Criterio Completamento FASE 2**:
 - ✅ Load/save settings loggato con `log.settings_changed()` / `log.warning_issued()`
@@ -120,9 +120,9 @@ COMPLETA ✅
 | Fase | Commits | Completato |
 |------|---------|------------|
 | FASE 1 | 4 | ✅ 4/4 |
-| FASE 2 | 5 | ⚙️ 4/5 |
+| FASE 2 | 4 | ✅ 4/4 (1 skipped) |
 | FASE 3 | 6 | ⬜ 0/6 |
-| **TOTALE** | **15** | **⚙️ 8/15** |
+| **TOTALE** | **14** | **⚙️ 8/14** |
 
 ---
 
