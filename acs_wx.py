@@ -520,11 +520,20 @@ class SolitarioController:
         """
         print("\n→ Executing deferred abandon transition...")
         
+        # Log abandon transition
+        log.debug_state("abandon_transition", {
+            "trigger": "ESC_confirmed",
+            "from_panel": "gameplay"
+        })
+        
         # Hide gameplay panel
         if self.view_manager:
             gameplay_panel = self.view_manager.get_panel('gameplay')
             if gameplay_panel:
                 gameplay_panel.Hide()
+                
+                # Log panel hidden
+                log.debug_state("panel_hidden", {"panel": "gameplay"})
         
         # Reset game engine
         self.engine.reset_game()
@@ -742,12 +751,21 @@ class SolitarioController:
         """
         print("→ _safe_return_to_main_menu() called")
         
+        # Log decline rematch transition
+        log.debug_state("decline_rematch_transition", {
+            "trigger": "rematch_declined",
+            "from_panel": "gameplay"
+        })
+        
         # 0. Hide gameplay panel (CRITICAL FIX for Bug #68)
         # Without this, gameplay panel remains visible over menu → UI freeze
         if self.view_manager:
             gameplay_panel = self.view_manager.get_panel('gameplay')
             if gameplay_panel:
                 gameplay_panel.Hide()
+                
+                # Log panel hidden
+                log.debug_state("panel_hidden", {"panel": "gameplay"})
         print("  ✓ Gameplay panel hidden")
         
         # 1. Reset game state
@@ -935,11 +953,20 @@ class SolitarioController:
         """
         print("\n→ Executing deferred timeout transition...")
         
+        # Log timeout transition
+        log.debug_state("timeout_transition", {
+            "trigger": "timer_expired",
+            "from_panel": "gameplay"
+        })
+        
         # Hide gameplay panel
         if self.view_manager:
             gameplay_panel = self.view_manager.get_panel('gameplay')
             if gameplay_panel:
                 gameplay_panel.Hide()
+                
+                # Log panel hidden
+                log.debug_state("panel_hidden", {"panel": "gameplay"})
         
         # Reset game engine
         self.engine.reset_game()
