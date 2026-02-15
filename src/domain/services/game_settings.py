@@ -26,6 +26,8 @@ v2.4.0 Changes:
 
 from typing import Tuple, Set
 from src.domain.models.difficulty_preset import DifficultyPreset
+# Import game logger for settings change tracking
+from src.infrastructure.logging import game_logger as log
 
 
 class GameState:
@@ -215,13 +217,20 @@ class GameSettings:
         if not self.validate_not_running():
             return (False, "Non puoi modificare il tipo di mazzo durante una partita!")
         
+        # Store old value for logging
+        old_value = self.deck_type
+        
         # Toggle
         if self.deck_type == "french":
             self.deck_type = "neapolitan"
-            return (True, "Tipo mazzo impostato a: Carte Napoletane.")
+            msg = "Tipo mazzo impostato a: Carte Napoletane."
         else:
             self.deck_type = "french"
-            return (True, "Tipo mazzo impostato a: Carte Francesi.")
+            msg = "Tipo mazzo impostato a: Carte Francesi."
+        
+        # Log change
+        log.settings_changed("deck_type", old_value, self.deck_type)
+        return (True, msg)
     
     # ========================================
     # DIFFICULTY
@@ -315,8 +324,14 @@ class GameSettings:
         if not self.validate_not_running():
             return (False, "Non puoi modificare le carte pescate durante una partita!")
         
+        # Store old value for logging
+        old_value = self.draw_count
+        
         # Cycle: 1 -> 2 -> 3 -> 1
         self.draw_count = (self.draw_count % 3) + 1
+        
+        # Log change
+        log.settings_changed("draw_count", old_value, self.draw_count)
         
         # Validate against difficulty constraints
         validation_msg = self._validate_draw_count_for_level()
@@ -503,8 +518,14 @@ class GameSettings:
             self.shuffle_discards = False
             return (False, "Livelli Esperto e Maestro richiedono Inversione Semplice.")
         
+        # Store old value for logging
+        old_value = self.shuffle_discards
+        
         # Toggle
         self.shuffle_discards = not self.shuffle_discards
+        
+        # Log change
+        log.settings_changed("shuffle_discards", old_value, self.shuffle_discards)
         
         if self.shuffle_discards:
             return (True, "Modalità riciclo scarti impostata a: Mescolata Casuale.")
@@ -532,8 +553,14 @@ class GameSettings:
         if not self.validate_not_running():
             return (False, "Non puoi modificare questa opzione durante una partita!")
         
+        # Store old value for logging
+        old_value = self.scoring_enabled
+        
         # Toggle
         self.scoring_enabled = not self.scoring_enabled
+        
+        # Log change
+        log.settings_changed("scoring_enabled", old_value, self.scoring_enabled)
         
         if self.scoring_enabled:
             return (True, "Sistema punti attivo.")
@@ -615,8 +642,14 @@ class GameSettings:
         if not self.validate_not_running():
             return (False, "Non puoi modificare questa opzione durante una partita!")
         
+        # Store old value for logging
+        old_value = self.command_hints_enabled
+        
         # Toggle
         self.command_hints_enabled = not self.command_hints_enabled
+        
+        # Log change
+        log.settings_changed("command_hints_enabled", old_value, self.command_hints_enabled)
         
         if self.command_hints_enabled:
             return (True, "Suggerimenti comandi attivi.")
@@ -670,8 +703,14 @@ class GameSettings:
         if not self.validate_not_running():
             return (False, "Non puoi modificare questa opzione durante una partita!")
         
+        # Store old value for logging
+        old_value = self.timer_strict_mode
+        
         # Toggle
         self.timer_strict_mode = not self.timer_strict_mode
+        
+        # Log change
+        log.settings_changed("timer_strict_mode", old_value, self.timer_strict_mode)
         
         if self.timer_strict_mode:
             return (True, "Modalità timer: STRICT (auto-stop). Il gioco si interrompe alla scadenza del timer.")
