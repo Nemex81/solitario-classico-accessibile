@@ -291,6 +291,12 @@ class GameEngine:
             # Deck type mismatch → recreate deck and table
             if current_is_neapolitan != should_be_neapolitan:
                 deck_changed = True
+                
+                # Log deck type change
+                old_deck = "neapolitan" if current_is_neapolitan else "french"
+                new_deck = "neapolitan" if should_be_neapolitan else "french"
+                log.settings_changed("deck_type", old_deck, new_deck)
+                
                 # ⚠️ IMPORTANT: This creates GameTable which already deals cards!
                 self._recreate_deck_and_table(should_be_neapolitan)
         
