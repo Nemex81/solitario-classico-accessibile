@@ -46,7 +46,7 @@ COMPLETA ✅
 
 - [x] **1.1** - `acs_wx.py`: Log panel transitions in `start_gameplay()`, `return_to_menu()`
 - [x] **1.2** - `acs_wx.py`: Log panel hiding in `_safe_abandon_to_menu()`, `_safe_timeout_to_menu()`, `_safe_return_to_main_menu()`
-- [ ] **1.3** - `view_manager.py`: Log ViewManager panel swaps in `show_panel()`
+- [x] **1.3** - `view_manager.py`: Log ViewManager panel swaps in `show_panel()`
 - [ ] **1.4** - `acs_wx.py`: Log options dialog lifecycle in `show_options()`
 
 **Criterio Completamento FASE 1**:
@@ -119,10 +119,10 @@ COMPLETA ✅
 
 | Fase | Commits | Completato |
 |------|---------|------------|
-| FASE 1 | 4 | ⚙️ 2/4 |
+| FASE 1 | 4 | ⚙️ 3/4 |
 | FASE 2 | 5 | ⬜ 0/5 |
 | FASE 3 | 6 | ⬜ 0/6 |
-| **TOTALE** | **15** | **⚙️ 2/15** |
+| **TOTALE** | **15** | **⚙️ 3/15** |
 
 ---
 

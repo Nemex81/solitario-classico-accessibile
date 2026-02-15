@@ -22,6 +22,9 @@ import wx
 import logging
 from typing import Dict, Optional
 
+# Import game logger for panel transition tracking
+from src.infrastructure.logging import game_logger as log
+
 logger = logging.getLogger(__name__)
 
 
@@ -179,8 +182,13 @@ class ViewManager:
             v2.1: Architectural documentation and pattern validation
         """
         if name not in self.panels:
+            # Log warning for panel not registered
+            log.warning_issued("ViewManager", f"Panel '{name}' not registered")
             logger.error(f"Panel not registered: {name}")
             return None
+        
+        # Store previous view for logging
+        prev_panel = self.current_panel_name
         
         # ============================================================================
         # NO wx.SafeYield() - Hide() and Show() are synchronous C++ operations!
@@ -229,6 +237,9 @@ class ViewManager:
         
         # Set focus to panel
         target_panel.SetFocus()
+        
+        # Log panel transition (BEFORE updating current_panel_name)
+        log.panel_switched(prev_panel or "none", name)
         
         # Update current panel tracking
         self.current_panel_name = name
