@@ -1097,26 +1097,18 @@ class GameEngine:
         # STEP 6: Native Statistics Dialog (Structured, Accessible)
         # ═══════════════════════════════════════════════════════════
         if self.dialogs:
-            # Use dedicated statistics dialog (v1.6.1+)
-            self.dialogs.show_statistics_report(
-                stats=final_stats,
-                final_score=final_score,
-                is_victory=is_victory,
-                deck_type=deck_type
-            )
-            
             # ═══════════════════════════════════════════════════════
             # STEP 7: 🆕 Async Rematch Prompt (v2.5.0 - Bug #68 fix)
             # ═══════════════════════════════════════════════════════
             def on_rematch_result(wants_rematch: bool):
-                """Callback invoked after dialog closes (deferred context).
+                """Callback invoked after rematch dialog closes (deferred context).
                 
                 This callback is invoked by wxPython's event loop AFTER the
                 dialog closes and focus is restored. UI is in stable state,
                 no need for wx.CallAfter() workaround.
                 
                 Flow:
-                    1. User clicks YES/NO in dialog
+                    1. User clicks YES/NO in rematch dialog
                     2. Dialog closes (Show() returns)
                     3. wxPython processes event loop
                     4. [This callback invoked here]
@@ -1137,8 +1129,28 @@ class GameEngine:
                     else:
                         self.service.reset_game()
             
-            # Show async dialog (non-blocking, callback handles result)
-            self.dialogs.show_rematch_prompt_async(on_rematch_result)
+            def on_stats_closed():
+                """Callback invoked after statistics dialog closes.
+                
+                After stats closed, show rematch prompt.
+                This creates the async callback chain: stats → rematch.
+                
+                Version:
+                    v2.5.0: Created for Bug #68.4 regression fix
+                """
+                print("Statistics report closed, showing rematch prompt...")
+                # Show rematch dialog with its own callback
+                self.dialogs.show_rematch_prompt_async(on_rematch_result)
+            
+            # Show statistics dialog (async, non-blocking)
+            print("Showing statistics report (async)...")
+            self.dialogs.show_statistics_report_async(
+                stats=final_stats,
+                final_score=final_score,
+                is_victory=is_victory,
+                deck_type=deck_type,
+                callback=on_stats_closed  # Chain to rematch dialog
+            )
         else:
             # No dialogs available → fallback to old behavior
             if self.on_game_ended:
