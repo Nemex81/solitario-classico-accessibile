@@ -153,6 +153,7 @@ L'implementazione è completa quando:
 1. Apri docs/SCORING_SYSTEM_V2.md → Leggi sezione "Implementation Plan > Commit 1"
 2. Apri TODO_SCORING_V2.md → Leggi checklist "Commit 1: Extend ScoreEventType"
 3. Inizia implementazione modificando src/domain/models/scoring.py
+4. procedi in modo incrementale e implementando le fasi consecutivamente seguendo la codumentazione all'inizio di ogni fase.
 ```
 
 **Buon lavoro!** 💪
