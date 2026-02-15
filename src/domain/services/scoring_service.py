@@ -233,7 +233,15 @@ class ScoringService:
         total_score = total_before_time + time_bonus + victory_bonus
         
         # Clamp to minimum
+        total_before_clamp = total_score
         total_score = max(self.config.min_score, total_score)
+        
+        # Log score clamping if occurred
+        if total_before_clamp < self.config.min_score:
+            log.warning_issued(
+                "Scoring",
+                f"Score clamped: {total_before_clamp} → {total_score} (minimum enforced)"
+            )
         
         return FinalScore(
             base_score=provisional.base_score,
