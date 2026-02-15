@@ -137,6 +137,12 @@ class ScoringService:
             self.recycle_count += 1
             if self.recycle_count <= 3:
                 return 0  # First 3 recycles are free
+            else:
+                # Log recycle penalty
+                log.warning_issued(
+                    "Scoring",
+                    f"Recycle penalty: {points} points (recycle #{self.recycle_count})"
+                )
         
         return points
     
