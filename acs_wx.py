@@ -385,6 +385,9 @@ class SolitarioController:
             self.screen_reader.tts.speak(open_msg, interrupt=True)
             wx.MilliSleep(500)  # Brief pause before showing dialog
         
+        # Log dialog opening
+        log.dialog_shown("options", "Impostazioni di Gioco")
+        
         # Create and show modal options dialog
         dlg = OptionsDialog(
             parent=self.frame,
@@ -392,6 +395,11 @@ class SolitarioController:
             screen_reader=self.screen_reader
         )
         result = dlg.ShowModal()
+        
+        # Log dialog closing with result
+        result_str = "saved" if result == wx.ID_OK else "cancelled"
+        log.dialog_closed("options", result_str)
+        
         dlg.Destroy()
         
         self.is_options_mode = False
