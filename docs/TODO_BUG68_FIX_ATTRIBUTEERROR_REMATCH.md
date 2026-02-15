@@ -31,28 +31,28 @@ Breve descrizione:
 🛠 Checklist Implementazione
 
 🔴 COMMIT 1: Refactor show_statistics_report_async (wx_dialog_provider.py)
-• [ ] Aggiungere parametro `callback: Callable[[], None]` alla firma
-• [ ] Creare wrapper interno `show_modal_and_callback()`
-• [ ] Spostare logica esistente dentro wrapper
-• [ ] Rimuovere `app = wx.App()` (usa parent esistente)
-• [ ] Invocare `callback()` DOPO `dlg.Destroy()`
-• [ ] Chiamare con `wx.CallAfter(show_modal_and_callback)`
-• [ ] Docstring completa (Args, Flow, Example, Version v2.5.0)
-• [ ] Mantenere metodo originale `show_statistics_report()` come DEPRECATED wrapper
+• [x] Aggiungere parametro `callback: Callable[[], None]` alla firma
+• [x] Creare wrapper interno `show_modal_and_callback()`
+• [x] Spostare logica esistente dentro wrapper
+• [x] Rimuovere `app = wx.App()` (usa parent esistente)
+• [x] Invocare `callback()` DOPO `dlg.Destroy()`
+• [x] Chiamare con `wx.CallAfter(show_modal_and_callback)`
+• [x] Docstring completa (Args, Flow, Example, Version v2.5.0)
+• [x] Mantenere metodo originale `show_statistics_report()` come DEPRECATED wrapper
 
 🟡 COMMIT 2: Update end_game() callback chain (game_engine.py)
-• [ ] Creare funzione `on_stats_closed()` (callback primo dialog)
-• [ ] Dentro `on_stats_closed()`, chiamare `show_rematch_prompt_async()`
-• [ ] Cambiare `show_statistics_report()` → `show_statistics_report_async(callback=on_stats_closed)`
-• [ ] Aggiungere log: "Statistics closed, showing rematch prompt..."
-• [ ] Verificare nessuna modifica a `on_rematch_result()` (già corretto)
+• [x] Creare funzione `on_stats_closed()` (callback primo dialog)
+• [x] Dentro `on_stats_closed()`, chiamare `show_rematch_prompt_async()`
+• [x] Cambiare `show_statistics_report()` → `show_statistics_report_async(callback=on_stats_closed)`
+• [x] Aggiungere log: "Statistics closed, showing rematch prompt..."
+• [x] Verificare nessuna modifica a `on_rematch_result()` (già corretto)
 
 🟢 COMMIT 3: Rimuovi IsMainLoopRunning check (wx_dialog_provider.py)
-• [ ] In `show_yes_no_async()`, linea ~267
-• [ ] Rimuovere blocco `if app and app.IsMainLoopRunning():`
-• [ ] Rimuovere blocco `else: callback(False)`
-• [ ] Mantenere solo `wx.CallAfter(show_modal_and_callback)`
-• [ ] Rationale: Con tutti dialog async, wx.App è sempre valido
+• [x] In `show_yes_no_async()`, linea ~267
+• [x] Rimuovere blocco `if app and app.IsMainLoopRunning():`
+• [x] Rimuovere blocco `else: callback(False)`
+• [x] Mantenere solo `wx.CallAfter(show_modal_and_callback)`
+• [x] Rationale: Con tutti dialog async, wx.App è sempre valido
 
 Presentation / Accessibilità
 • ✅ Nessuna modifica UI (messaggi invariati)
@@ -70,15 +70,15 @@ Testing
 
 ✅ Criteri di Completamento
 L'implementazione è considerata completa quando:
-• [ ] COMMIT 1: show_statistics_report_async() implementato
-• [ ] COMMIT 2: end_game() usa callback chain
-• [ ] COMMIT 3: IsMainLoopRunning check rimosso
-• [ ] Sintassi validata (python -m py_compile su entrambi i file)
-• [ ] Nessun crash AttributeError al termine partita
-• [ ] Flusso completo: stats → rematch → scelta → azione
-• [ ] Log completi senza "buchi" (ogni dialog loggato)
-• [ ] Bug #68 completamente risolto (menu visibile dopo decline)
-• [ ] Zero regressioni su altri flussi (ESC, nuova partita, exit)
+• [x] COMMIT 1: show_statistics_report_async() implementato
+• [x] COMMIT 2: end_game() usa callback chain
+• [x] COMMIT 3: IsMainLoopRunning check rimosso
+• [x] Sintassi validata (python -m py_compile su entrambi i file)
+• [ ] Nessun crash AttributeError al termine partita (MANUAL TEST REQUIRED)
+• [ ] Flusso completo: stats → rematch → scelta → azione (MANUAL TEST REQUIRED)
+• [ ] Log completi senza "buchi" (ogni dialog loggato) (MANUAL TEST REQUIRED)
+• [ ] Bug #68 completamente risolto (menu visibile dopo decline) (MANUAL TEST REQUIRED)
+• [ ] Zero regressioni su altri flussi (ESC, nuova partita, exit) (MANUAL TEST REQUIRED)
 
 📝 Aggiornamenti Obbligatori a Fine Implementazione
 • [ ] COMMIT 1 message:
