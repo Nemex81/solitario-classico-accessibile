@@ -83,7 +83,7 @@ COMPLETA ✅
 **Commits**: 6 atomici  
 **File Modificati**: `game_engine.py`, `gameplay_controller.py`, `game_service.py`, `score_storage.py`, `scoring_service.py`
 
-- [ ] **3.1** - `game_engine.py`: Log card selection/deselection
+- [x] **3.1** - `game_engine.py`: Log card selection/deselection
 - [ ] **3.2** - `game_engine.py`: Log auto-selection (double-tap feature)
 - [ ] **3.3** - `gameplay_controller.py`: Log hint requests
 - [ ] **3.4** - `game_service.py`: Log auto-complete & undo operations
@@ -121,8 +121,8 @@ COMPLETA ✅
 |------|---------|------------|
 | FASE 1 | 4 | ✅ 4/4 |
 | FASE 2 | 4 | ✅ 4/4 (1 skipped) |
-| FASE 3 | 6 | ⬜ 0/6 |
-| **TOTALE** | **14** | **⚙️ 8/14** |
+| FASE 3 | 6 | ⚙️ 1/6 |
+| **TOTALE** | **14** | **⚙️ 9/14** |
 
 ---
 
