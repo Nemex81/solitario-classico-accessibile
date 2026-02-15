@@ -276,3 +276,72 @@ class OptionsFormatter:
             "Suggerimenti comandi disattivati."
         """
         return f"Suggerimenti comandi {new_value.lower()}."
+
+    # ========================================
+    # LOCK STATUS MESSAGES (v2.4.0)
+    # ========================================
+    
+    @staticmethod
+    def format_option_locked(option_name: str, preset_name: str) -> str:
+        """Format TTS message for locked option.
+        
+        Args:
+            option_name: Name of the locked option
+            preset_name: Name of the preset locking it (e.g., "Maestro")
+        
+        Returns:
+            "Opzione bloccata da Livello X. Cambia livello difficoltà per sbloccare."
+        
+        Example:
+            >>> format_option_locked("Carte Pescate", "Maestro")
+            "Carte Pescate bloccato da Maestro. Cambia livello difficoltà per sbloccare."
+        
+        Version: v2.4.0
+        """
+        return (f"{option_name} bloccato da {preset_name}. "
+                f"Cambia livello difficoltà per sbloccare questa opzione.")
+    
+    @staticmethod
+    def format_preset_applied(level: int, preset_name: str, locked_count: int) -> str:
+        """Format TTS message announcing preset application.
+        
+        Args:
+            level: Difficulty level (1-5)
+            preset_name: Name of preset (e.g., "Maestro")
+            locked_count: Number of options locked by this preset
+        
+        Returns:
+            "Livello X - Name applicato. Y opzioni bloccate."
+        
+        Example:
+            >>> format_preset_applied(5, "Maestro", 6)
+            "Livello 5 - Maestro applicato. 6 opzioni bloccate."
+        
+        Version: v2.4.0
+        """
+        if locked_count == 0:
+            return f"Livello {level} - {preset_name}. Tutte le opzioni personalizzabili."
+        elif locked_count == 1:
+            return f"Livello {level} - {preset_name}. 1 opzione bloccata."
+        else:
+            return f"Livello {level} - {preset_name}. {locked_count} opzioni bloccate."
+    
+    @staticmethod
+    def format_lock_indicator(is_locked: bool) -> str:
+        """Format lock indicator for option announcement.
+        
+        Args:
+            is_locked: Whether option is locked
+        
+        Returns:
+            " [BLOCCATO]" if locked, "" if unlocked
+        
+        Example:
+            >>> format_lock_indicator(True)
+            " [BLOCCATO]"
+            >>> format_lock_indicator(False)
+            ""
+        
+        Version: v2.4.0
+        """
+        return " [BLOCCATO]" if is_locked else ""

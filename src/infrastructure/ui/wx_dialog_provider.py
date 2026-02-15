@@ -273,7 +273,55 @@ class WxDialogProvider(DialogProvider):
         
         # Defer entire dialog sequence to next idle cycle
         # This prevents nested event loops and ensures clean execution
+        # wxPython handles graceful shutdown automatically - no check needed
         wx.CallAfter(show_modal_and_callback)
+    
+    def show_rematch_prompt_async(
+        self,
+        callback: Callable[[bool], None]
+    ) -> None:
+        """Show rematch confirmation dialog (non-blocking).
+        
+        Asks user if they want to play another game after completing current one.
+        Wrapper around show_yes_no_async() with Italian rematch message.
+        
+        Args:
+            callback: Function called with result (True=rematch, False=return to menu)
+        
+        Italian message:
+            Title: "Rivincita?"
+            Message: "Vuoi giocare ancora?"
+        
+        Flow:
+            1. Dialog.Show() called (non-blocking)
+            2. User responds YES/NO
+            3. Dialog closes
+            4. [wxPython event loop processes callback]
+            5. callback(wants_rematch) invoked (deferred context)
+            6. Caller handles rematch logic safely
+        
+        Note:
+            This method provides the same async pattern as show_abandon_game_prompt_async(),
+            show_new_game_prompt_async(), and show_exit_app_prompt_async() in DialogManager.
+            Ensures consistent behavior across all game flow dialogs.
+        
+        Example:
+            >>> def on_result(wants_rematch):
+            ...     if wants_rematch:
+            ...         self.start_gameplay()
+            ...     else:
+            ...         self._safe_return_to_main_menu()
+            >>> provider.show_rematch_prompt_async(on_result)
+        
+        Version:
+            v2.5.0: Added for Bug #68 async refactoring (final fix)
+        """
+        # Delegate to show_yes_no_async with rematch-specific message
+        self.show_yes_no_async(
+            title="Rivincita?",
+            message="Vuoi giocare ancora?",
+            callback=callback
+        )
     
     def show_info_async(
         self,
@@ -371,6 +419,121 @@ class WxDialogProvider(DialogProvider):
         # Defer entire dialog sequence
         wx.CallAfter(show_modal_and_callback)
     
+    def show_statistics_report_async(
+        self,
+        stats: Dict[str, Any],
+        final_score: Optional[Dict[str, Any]],
+        is_victory: bool,
+        deck_type: str,
+        callback: Callable[[], None]
+    ) -> None:
+        """Show structured statistics report dialog (NON-BLOCKING).
+        
+        Async version that uses wx.CallAfter() to avoid nested event loop issues.
+        
+        Args:
+            stats: Final statistics dictionary
+            final_score: Optional score breakdown
+            is_victory: True if all 4 suits completed
+            deck_type: "french" or "neapolitan" for suit name formatting
+            callback: Function called when dialog closes (no arguments)
+        
+        Flow:
+            1. Method returns immediately (non-blocking)
+            2. wx.CallAfter() schedules show_modal_and_callback()
+            3. [wxPython idle loop picks up deferred call]
+            4. Dialog shown with ShowModal() (safe in deferred context)
+            5. User presses OK or ESC
+            6. Dialog destroyed
+            7. callback() invoked (deferred context)
+            8. Caller continues flow (e.g., show rematch dialog)
+        
+        Why This Works:
+            - No wx.App() creation (uses existing app instance)
+            - ShowModal() in deferred context = no nested event loop
+            - wx.GetApp() always valid after this pattern
+            - Consistent with all other async dialogs
+        
+        Example:
+            >>> def on_stats_closed():
+            ...     print("Stats closed, showing rematch dialog...")
+            ...     self.show_rematch_prompt_async(on_rematch)
+            >>> provider.show_statistics_report_async(
+            ...     stats, score, True, 'french', on_stats_closed
+            ... )
+            # Returns immediately, callback invoked after user closes dialog
+        
+        Version:
+            v2.5.0: Refactored to async for Bug #68 regressione fix
+        """
+        
+        def show_modal_and_callback():
+            """Deferred function: show modal dialog then invoke callback."""
+            # Generate formatted report using ReportFormatter
+            from src.presentation.formatters.report_formatter import ReportFormatter
+            
+            report_text = ReportFormatter.format_final_report(
+                stats=stats,
+                final_score=final_score,
+                is_victory=is_victory,
+                deck_type=deck_type
+            )
+            
+            # Get parent frame (NO wx.App() creation!)
+            parent = self._get_parent()
+            
+            # Create dialog with title
+            title = "Congratulazioni!" if is_victory else "Partita Terminata"
+            
+            dlg = wx.Dialog(
+                parent,
+                title=title,
+                style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER | wx.FRAME_FLOAT_ON_PARENT
+            )
+            
+            # Create vertical sizer for layout
+            sizer = wx.BoxSizer(wx.VERTICAL)
+            
+            # Add multiline TextCtrl (read-only, wordwrap, accessible)
+            text_ctrl = wx.TextCtrl(
+                dlg,
+                value=report_text,
+                style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_WORDWRAP
+            )
+            
+            # Set minimum size for readability
+            text_ctrl.SetMinSize((500, 350))
+            
+            # Add to sizer with expansion
+            sizer.Add(text_ctrl, 1, wx.ALL | wx.EXPAND, 10)
+            
+            # Add OK button (centered)
+            btn_ok = wx.Button(dlg, wx.ID_OK, "OK")
+            sizer.Add(btn_ok, 0, wx.ALL | wx.CENTER, 10)
+            
+            # Apply layout and center on screen
+            dlg.SetSizer(sizer)
+            dlg.Fit()
+            dlg.CenterOnScreen()
+            
+            # CRITICAL: Auto-focus TextCtrl for immediate NVDA announcement
+            text_ctrl.SetFocus()
+            
+            # Show modal (blocks until user clicks OK or presses ESC/ENTER)
+            dlg.ShowModal()
+            
+            # Always destroy
+            dlg.Destroy()
+            
+            # Log closure
+            print("Statistics report closed")
+            
+            # Invoke callback (continue async chain)
+            callback()
+        
+        # Defer entire dialog sequence
+        wx.CallAfter(show_modal_and_callback)
+    
     def show_statistics_report(
         self,
         stats: Dict[str, Any],
@@ -378,89 +541,22 @@ class WxDialogProvider(DialogProvider):
         is_victory: bool,
         deck_type: str
     ) -> None:
-        """Show structured statistics report dialog.
+        """DEPRECATED: Use show_statistics_report_async() instead.
         
-        Creates a modal dialog with:
-        - Title: "Congratulazioni!" (victory) or "Partita Terminata" (defeat)
-        - Multiline TextCtrl displaying formatted report
-        - Read-only, wordwrap, auto-focused for NVDA
-        - OK button to close
+        Synchronous API maintained for backward compatibility.
+        Creates nested event loop - avoid if possible.
         
-        Args:
-            stats: Final statistics dictionary
-            final_score: Optional score breakdown
-            is_victory: True if all 4 suits completed
-            deck_type: "french" or "neapolitan" for suit name formatting
-        
-        Screen reader behavior:
-            - NVDA reads entire report immediately on dialog open (SetFocus)
-            - Report is structured with newlines for natural pauses
-            - OK button accessible via TAB or ENTER
-        
-        Example:
-            >>> provider.show_statistics_report(
-            ...     stats={'elapsed_time': 125.5, 'move_count': 87, ...},
-            ...     final_score={'final_score': 1250, ...},
-            ...     is_victory=True,
-            ...     deck_type="french"
-            ... )
-            # Dialog appears with formatted report
-            # NVDA reads: "Congratulazioni! Hai Vinto! Tempo: 2 minuti..."
+        Will be removed in v3.0.
         """
-        # Generate formatted report using ReportFormatter
-        from src.presentation.formatters.report_formatter import ReportFormatter
-        
-        report_text = ReportFormatter.format_final_report(
-            stats=stats,
-            final_score=final_score,
-            is_victory=is_victory,
-            deck_type=deck_type
+        import warnings
+        warnings.warn(
+            "show_statistics_report() is deprecated, use show_statistics_report_async()",
+            DeprecationWarning,
+            stacklevel=2
         )
         
-        # Create wx.App instance (on-demand pattern)
-        app = wx.App()
-        
-        # Create dialog with title
-        title = "Congratulazioni!" if is_victory else "Partita Terminata"
-        
-        dlg = wx.Dialog(
-            self._get_parent(),  # Lazy handle conversion (prevents ALT+TAB separation)
-            title=title,
-            style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER | wx.FRAME_FLOAT_ON_PARENT  # 🆕 v1.6.3 - Modal!
+        # Fallback: Call async version with empty callback
+        self.show_statistics_report_async(
+            stats, final_score, is_victory, deck_type,
+            callback=lambda: None  # No-op callback
         )
-        
-        # Create vertical sizer for layout
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        
-        # Add multiline TextCtrl (read-only, wordwrap, accessible)
-        text_ctrl = wx.TextCtrl(
-            dlg,
-            value=report_text,
-            style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_WORDWRAP
-        )
-        
-        # Set minimum size for readability
-        text_ctrl.SetMinSize((500, 350))
-        
-        # Add to sizer with expansion
-        sizer.Add(text_ctrl, 1, wx.ALL | wx.EXPAND, 10)
-        
-        # Add OK button (centered)
-        btn_ok = wx.Button(dlg, wx.ID_OK, "OK")
-        sizer.Add(btn_ok, 0, wx.ALL | wx.CENTER, 10)
-        
-        # Apply layout and center on screen
-        dlg.SetSizer(sizer)
-        dlg.Fit()
-        dlg.CenterOnScreen()
-        
-        # CRITICAL: Auto-focus TextCtrl for immediate NVDA announcement
-        # Must be done AFTER layout is complete
-        text_ctrl.SetFocus()
-        
-        # Show modal (blocks until user clicks OK or presses ESC/ENTER)
-        dlg.ShowModal()
-        dlg.Destroy()
-        
-        # Yield to ensure focus returns to pygame window
-        wx.Yield()

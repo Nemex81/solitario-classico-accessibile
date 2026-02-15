@@ -102,10 +102,9 @@ class OptionsDialog(wx.Dialog):
             options_controller: Reference to OptionsWindowController
             screen_reader: Reference to ScreenReader for TTS
             deck_type_radio: RadioBox for deck type (Francese/Napoletano)
-            difficulty_radio: RadioBox for difficulty (1/2/3 carte)
+            difficulty_radio: RadioBox for difficulty (5 levels)
             draw_count_radio: RadioBox for draw count (1/2/3)
-            timer_check: CheckBox to enable/disable timer
-            timer_combo: ComboBox for timer duration (5-60 min)
+            timer_combo: TimerComboBox for timer duration (0=disabled, 5-60 min)
             shuffle_radio: RadioBox for shuffle mode (Inversione/Mescolata)
             command_hints_check: CheckBox for command hints (ON/OFF)
             scoring_check: CheckBox for scoring system (ON/OFF)
@@ -141,9 +140,9 @@ class OptionsDialog(wx.Dialog):
         
         Layout (v1.8.0 - native widgets, ALL 8 options + buttons):
         - RadioBox for deck type (Francese/Napoletano)
-        - RadioBox for difficulty (1/2/3 carte)
+        - RadioBox for difficulty (5 levels: Principiante to Maestro)
         - RadioBox for draw count (1/2/3 carte)
-        - CheckBox + ComboBox for timer (enable + duration)
+        - TimerComboBox for timer duration (0=disabled, 5-60 minutes)
         - RadioBox for shuffle mode (Inversione/Mescolata)
         - CheckBox for command hints (ON/OFF)
         - CheckBox for scoring system (ON/OFF)
@@ -183,9 +182,15 @@ class OptionsDialog(wx.Dialog):
         diff_box = wx.StaticBoxSizer(wx.VERTICAL, self, "Difficoltà")
         self.difficulty_radio = wx.RadioBox(
             self,
-            label="Numero di carte scoperte dal tallone:",
-            choices=["1 carta (facile)", "2 carte (medio)", "3 carte (difficile)"],
-            majorDimension=3,  # Horizontal layout
+            label="Livello di difficoltà:",
+            choices=[
+                "Livello 1 - Principiante",
+                "Livello 2 - Facile",
+                "Livello 3 - Normale",
+                "Livello 4 - Esperto",
+                "Livello 5 - Maestro"
+            ],
+            majorDimension=5,  # Horizontal layout with 5 columns
             style=wx.RA_SPECIFY_COLS
         )
         diff_box.Add(self.difficulty_radio, 0, wx.ALL | wx.EXPAND, 5)
@@ -210,25 +215,17 @@ class OptionsDialog(wx.Dialog):
         # ========================================
         timer_box = wx.StaticBoxSizer(wx.VERTICAL, self, "Timer Partita")
         
-        # CheckBox per abilitare/disabilitare timer
-        self.timer_check = wx.CheckBox(self, label="Attiva timer (limite di tempo per partita)")
-        timer_box.Add(self.timer_check, 0, wx.ALL, 5)
-        
-        # ComboBox per selezionare durata (5-60 minuti)
-        timer_duration_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        timer_label = wx.StaticText(self, label="Durata timer:")
-        timer_duration_sizer.Add(timer_label, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
-        
-        # Genera choices 5, 10, 15, ..., 60 minuti
-        timer_choices = [f"{i} minuti" for i in range(5, 65, 5)]
-        self.timer_combo = wx.ComboBox(
+        # Label esplicativa (sostituisce CheckBox)
+        timer_label = wx.StaticText(
             self,
-            choices=timer_choices,
-            style=wx.CB_READONLY,
-            value="10 minuti"  # Default
+            label="Seleziona durata timer (0 = disattivato):"
         )
-        timer_duration_sizer.Add(self.timer_combo, 1, wx.EXPAND)
-        timer_box.Add(timer_duration_sizer, 0, wx.ALL | wx.EXPAND, 5)
+        timer_box.Add(timer_label, 0, wx.ALL, 5)
+        
+        # TimerComboBox SEMPRE ATTIVO con "0 minuti - Timer disattivato" come prima voce
+        from src.presentation.widgets.timer_combobox import TimerComboBox
+        self.timer_combo = TimerComboBox(self)
+        timer_box.Add(self.timer_combo, 0, wx.ALL | wx.EXPAND, 5)
         
         main_sizer.Add(timer_box, 0, wx.ALL | wx.EXPAND, 10)
         
@@ -313,11 +310,13 @@ class OptionsDialog(wx.Dialog):
         Called after _create_ui() to populate widgets with values from
         GameSettings (via OptionsWindowController).
         
+        Version: v2.4.2 - Added lock state update call
+        
         Maps GameSettings values to wx widget selections:
         - deck_type: "french" -> 0, "neapolitan" -> 1
-        - difficulty_level: 1/2/3 -> RadioBox selection 0/1/2
+        - difficulty_level: 1/2/3/4/5 -> RadioBox selection 0/1/2/3/4
         - draw_count: 1/2/3 -> RadioBox selection 0/1/2
-        - max_time_game: seconds -> CheckBox + ComboBox (minutes)
+        - max_time_game: seconds -> TimerComboBox (minutes: 0=disabled, 5-60)
         - shuffle_discards: False -> 0 (Inversione), True -> 1 (Mescolata)
         - command_hints_enabled: boolean -> CheckBox
         - scoring_enabled: boolean -> CheckBox
@@ -329,24 +328,17 @@ class OptionsDialog(wx.Dialog):
         deck_selection = 0 if settings.deck_type == "french" else 1
         self.deck_type_radio.SetSelection(deck_selection)
         
-        # 2. Difficoltà (1/2/3 -> 0/1/2)
+        # 2. Difficoltà (1/2/3/4/5 -> 0/1/2/3/4)
         self.difficulty_radio.SetSelection(settings.difficulty_level - 1)
         
         # 3. Carte Pescate (1/2/3 -> 0/1/2)
         self.draw_count_radio.SetSelection(settings.draw_count - 1)
         
-        # 4. Timer
-        timer_enabled = settings.max_time_game > 0
-        self.timer_check.SetValue(timer_enabled)
+        # 4. Timer (usando TimerComboBox con set_minutes())
+        minutes = settings.max_time_game // 60
+        self.timer_combo.set_minutes(minutes)  # 0 = disabled, 5-60 = enabled
         
-        if timer_enabled:
-            minutes = settings.max_time_game // 60
-            self.timer_combo.SetValue(f"{minutes} minuti")
-        else:
-            self.timer_combo.SetValue("10 minuti")  # Default when disabled
-        
-        # Enable/disable combo based on checkbox
-        self.timer_combo.Enable(timer_enabled)
+        # ComboBox SEMPRE abilitata (no Enable() call)
         
         # 5. Riciclo Scarti (False=Inversione, True=Mescolata)
         shuffle_selection = 1 if settings.shuffle_discards else 0
@@ -361,6 +353,10 @@ class OptionsDialog(wx.Dialog):
         # 8. Modalità Timer (True=STRICT, False=PERMISSIVE)
         strict_selection = 0 if settings.timer_strict_mode else 1
         self.timer_strict_radio.SetSelection(strict_selection)
+        
+        # ✅ FIX BUG #67: Update widget lock states after loading
+        # This ensures locked widgets are disabled when dialog opens
+        self._update_widget_lock_states()
     
     def _bind_widget_events(self) -> None:
         """Bind widget events to detect changes and update settings.
@@ -370,13 +366,10 @@ class OptionsDialog(wx.Dialog):
         2. Mark controller as DIRTY (modifications present)
         3. Enable save confirmation on ESC
         
-        Special cases:
-        - timer_check: Also enables/disables timer_combo
-        - All others: Standard change detection
-        
         Note:
             Settings are updated IMMEDIATELY (live mode).
             Original values saved in controller snapshot (for discard).
+            All widgets use standard on_setting_changed() handler.
         """
         # RadioBox widgets
         self.deck_type_radio.Bind(wx.EVT_RADIOBOX, self.on_setting_changed)
@@ -386,11 +379,10 @@ class OptionsDialog(wx.Dialog):
         self.timer_strict_radio.Bind(wx.EVT_RADIOBOX, self.on_setting_changed)
         
         # CheckBox widgets
-        self.timer_check.Bind(wx.EVT_CHECKBOX, self.on_timer_toggled)  # Special handler
         self.command_hints_check.Bind(wx.EVT_CHECKBOX, self.on_setting_changed)
         self.scoring_check.Bind(wx.EVT_CHECKBOX, self.on_setting_changed)
         
-        # ComboBox widget
+        # ComboBox widget (TimerComboBox uses standard handler)
         self.timer_combo.Bind(wx.EVT_COMBOBOX, self.on_setting_changed)
         
         # Buttons
@@ -400,21 +392,51 @@ class OptionsDialog(wx.Dialog):
     def on_setting_changed(self, event: wx.Event) -> None:
         """Handle any setting change from widgets.
         
-        Called when user modifies any widget (RadioBox, CheckBox, ComboBox).
+        Special handling for difficulty change:
+        - Apply preset values to settings
+        - Refresh ALL widgets to show new preset values
+        - Update widget lock states (disable/enable based on preset)
         
-        Actions:
-        1. Save current widget values to settings (live update)
-        2. Mark controller as DIRTY (enable save confirmation)
+        Version: v2.4.2 - Fixed preset application on difficulty change (Bug #67)
         
         Args:
             event: wx.Event from widget (EVT_RADIOBOX, EVT_CHECKBOX, EVT_COMBOBOX)
         
-        Note:
-            Settings are updated immediately (GameSettings modified live).
-            Original snapshot saved by controller.open_window() for rollback.
+        Flow:
+            1. Save current widget value to settings
+            2. If difficulty changed:
+               a. Get current preset
+               b. Apply preset values (timer, draw_count, etc.)
+               c. Refresh ALL widgets to show new values
+               d. Update widget lock states (disable locked ones)
+               e. TTS announcement (optional)
+            3. Mark controller as DIRTY
         """
         # Update GameSettings from current widget values
         self._save_widgets_to_settings()
+        
+        # ✅ FIX BUG #67: Special handling for difficulty change
+        if event.GetEventObject() == self.difficulty_radio:
+            # Get current preset for new difficulty level
+            preset = self.options_controller.settings.get_current_preset()
+            
+            # Apply preset values to settings (timer, draw_count, shuffle, etc.)
+            preset.apply_to(self.options_controller.settings)
+            
+            # Refresh ALL widgets to show new preset values
+            # This updates timer_combo, draw_count_radio, shuffle_radio, etc.
+            self._load_settings_to_widgets()
+            
+            # Update widget lock states (disable locked widgets)
+            self._update_widget_lock_states()
+            
+            # TTS announcement (optional - helps blind users understand changes)
+            if self.screen_reader and self.screen_reader.tts:
+                locked_count = len(preset.get_locked_options())
+                self.screen_reader.tts.speak(
+                    f"{preset.name} applicato. {locked_count} opzioni bloccate.",
+                    interrupt=True
+                )
         
         # Mark controller as dirty (modifications present)
         if self.options_controller.state == "OPEN_CLEAN":
@@ -422,22 +444,6 @@ class OptionsDialog(wx.Dialog):
         
         # Propagate event
         event.Skip()
-    
-    def on_timer_toggled(self, event: wx.CommandEvent) -> None:
-        """Handle timer checkbox toggle.
-        
-        Special handler for timer enable/disable:
-        - Enables/disables timer_combo based on checkbox state
-        - Then calls standard on_setting_changed()
-        
-        Args:
-            event: wx.CommandEvent from timer_check
-        """
-        enabled = self.timer_check.GetValue()
-        self.timer_combo.Enable(enabled)
-        
-        # Call standard change handler
-        self.on_setting_changed(event)
     
     def on_save_click(self, event: wx.CommandEvent) -> None:
         """Handle Save button click.
@@ -494,9 +500,9 @@ class OptionsDialog(wx.Dialog):
         
         Mappings:
         - deck_type_radio: 0->"french", 1->"neapolitan"
-        - difficulty_radio: 0/1/2 -> difficulty_level 1/2/3
+        - difficulty_radio: 0/1/2/3/4 -> difficulty_level 1/2/3/4/5
         - draw_count_radio: 0/1/2 -> draw_count 1/2/3
-        - timer_check + timer_combo: boolean + minutes -> max_time_game seconds
+        - timer_combo: minutes (0=disabled, 5-60) -> max_time_game seconds
         - shuffle_radio: 0->False (Inversione), 1->True (Mescolata)
         - command_hints_check: boolean -> command_hints_enabled
         - scoring_check: boolean -> scoring_enabled
@@ -511,19 +517,15 @@ class OptionsDialog(wx.Dialog):
         # 1. Tipo Mazzo
         settings.deck_type = "french" if self.deck_type_radio.GetSelection() == 0 else "neapolitan"
         
-        # 2. Difficoltà (0/1/2 -> 1/2/3)
+        # 2. Difficoltà (0/1/2/3/4 -> 1/2/3/4/5)
         settings.difficulty_level = self.difficulty_radio.GetSelection() + 1
         
         # 3. Carte Pescate (0/1/2 -> 1/2/3)
         settings.draw_count = self.draw_count_radio.GetSelection() + 1
         
-        # 4. Timer
-        if self.timer_check.GetValue():
-            # Extract minutes from "X minuti" string
-            minutes_str = self.timer_combo.GetValue().split()[0]  # "10 minuti" -> "10"
-            settings.max_time_game = int(minutes_str) * 60  # Convert to seconds
-        else:
-            settings.max_time_game = 0  # Disabled
+        # 4. Timer (usando TimerComboBox con get_selected_minutes())
+        minutes = self.timer_combo.get_selected_minutes()  # 0 = disabled, 5-60 = enabled
+        settings.max_time_game = minutes * 60  # Convert to seconds
         
         # 5. Riciclo Scarti (0->False, 1->True)
         settings.shuffle_discards = (self.shuffle_radio.GetSelection() == 1)
@@ -536,6 +538,67 @@ class OptionsDialog(wx.Dialog):
         
         # 8. Modalità Timer (0->True STRICT, 1->False PERMISSIVE)
         settings.timer_strict_mode = (self.timer_strict_radio.GetSelection() == 0)
+    
+    def _update_widget_lock_states(self) -> None:
+        """Update widget enable/disable states based on current preset locks.
+        
+        Disables widgets that are locked by the current difficulty preset.
+        This provides visual feedback that options cannot be modified.
+        
+        Locked widgets are grayed out and cannot be interacted with.
+        
+        Version: v2.4.2 - Added for preset lock enforcement (Bug #67)
+        
+        Mappings (option_name -> widget):
+            draw_count          -> self.draw_count_radio
+            max_time_game       -> self.timer_combo
+            shuffle_discards    -> self.shuffle_radio
+            command_hints_enabled -> self.command_hints_check
+            scoring_enabled     -> self.scoring_check
+            timer_strict_mode   -> self.timer_strict_radio
+        
+        Never locked:
+            deck_type           -> self.deck_type_radio (always enabled)
+            difficulty_level    -> self.difficulty_radio (always enabled)
+        
+        Example:
+            >>> # Level 5 (Maestro) locks most options
+            >>> preset = DifficultyPreset.get_preset(5)
+            >>> self._update_widget_lock_states()
+            >>> # draw_count_radio is now DISABLED (grayed out)
+            >>> # timer_combo is now DISABLED (grayed out)
+            >>> # User cannot modify these options
+        """
+        preset = self.options_controller.settings.get_current_preset()
+        
+        # Draw count (option: draw_count)
+        is_draw_locked = preset.is_locked("draw_count")
+        self.draw_count_radio.Enable(not is_draw_locked)
+        
+        # Timer duration (option: max_time_game)
+        is_timer_locked = preset.is_locked("max_time_game")
+        self.timer_combo.Enable(not is_timer_locked)
+        
+        # Shuffle mode (option: shuffle_discards)
+        is_shuffle_locked = preset.is_locked("shuffle_discards")
+        self.shuffle_radio.Enable(not is_shuffle_locked)
+        
+        # Command hints (option: command_hints_enabled)
+        is_hints_locked = preset.is_locked("command_hints_enabled")
+        self.command_hints_check.Enable(not is_hints_locked)
+        
+        # Scoring system (option: scoring_enabled)
+        is_scoring_locked = preset.is_locked("scoring_enabled")
+        self.scoring_check.Enable(not is_scoring_locked)
+        
+        # Timer strict mode (option: timer_strict_mode)
+        is_strict_locked = preset.is_locked("timer_strict_mode")
+        self.timer_strict_radio.Enable(not is_strict_locked)
+        
+        # Deck type and difficulty are NEVER locked
+        # (always allow user to change these)
+        self.deck_type_radio.Enable(True)
+        self.difficulty_radio.Enable(True)
     
     def on_key_down(self, event: wx.KeyEvent) -> None:
         """Handle keyboard events for ESC key only.

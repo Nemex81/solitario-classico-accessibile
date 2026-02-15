@@ -1096,41 +1096,66 @@ class GameEngine:
         # ═══════════════════════════════════════════════════════════
         # STEP 6: Native Statistics Dialog (Structured, Accessible)
         # ═══════════════════════════════════════════════════════════
-        wants_rematch = False
         if self.dialogs:
-            # Use dedicated statistics dialog (v1.6.1+)
-            # Replaces generic show_alert() with structured wxDialog
-            self.dialogs.show_statistics_report(
+            # ═══════════════════════════════════════════════════════
+            # STEP 7: 🆕 Async Rematch Prompt (v2.5.0 - Bug #68 fix)
+            # ═══════════════════════════════════════════════════════
+            def on_rematch_result(wants_rematch: bool):
+                """Callback invoked after rematch dialog closes (deferred context).
+                
+                This callback is invoked by wxPython's event loop AFTER the
+                dialog closes and focus is restored. UI is in stable state,
+                no need for wx.CallAfter() workaround.
+                
+                Flow:
+                    1. User clicks YES/NO in rematch dialog
+                    2. Dialog closes (Show() returns)
+                    3. wxPython processes event loop
+                    4. [This callback invoked here]
+                    5. UI state is stable, safe to call UI transitions
+                
+                Args:
+                    wants_rematch: True if user wants rematch, False to return to menu
+                """
+                if self.on_game_ended:
+                    # NEW BEHAVIOR (v2.5.0): Pass control to acs_wx.py via callback
+                    # acs_wx.py will handle UI transitions directly (no CallAfter needed)
+                    self.on_game_ended(wants_rematch)
+                else:
+                    # FALLBACK: Old behavior (no callback set)
+                    # Used for backward compatibility or unit tests
+                    if wants_rematch:
+                        self.new_game()
+                    else:
+                        self.service.reset_game()
+            
+            def on_stats_closed():
+                """Callback invoked after statistics dialog closes.
+                
+                After stats closed, show rematch prompt.
+                This creates the async callback chain: stats → rematch.
+                
+                Version:
+                    v2.5.0: Created for Bug #68.4 regression fix
+                """
+                print("Statistics report closed, showing rematch prompt...")
+                # Show rematch dialog with its own callback
+                self.dialogs.show_rematch_prompt_async(on_rematch_result)
+            
+            # Show statistics dialog (async, non-blocking)
+            print("Showing statistics report (async)...")
+            self.dialogs.show_statistics_report_async(
                 stats=final_stats,
                 final_score=final_score,
                 is_victory=is_victory,
-                deck_type=deck_type
+                deck_type=deck_type,
+                callback=on_stats_closed  # Chain to rematch dialog
             )
-            
-            # ═══════════════════════════════════════════════════════
-            # STEP 7: Rematch Prompt
-            # ═══════════════════════════════════════════════════════
-            wants_rematch = self.dialogs.show_yes_no(
-                "Vuoi giocare ancora?", 
-                "Rivincita?"
-            )
-        
-        # ═══════════════════════════════════════════════════════════
-        # STEP 8: 🆕 Delegate to test.py via Callback (v1.6.2)
-        # ═══════════════════════════════════════════════════════════
-        if self.on_game_ended:
-            # NEW BEHAVIOR (v1.6.2): Pass control back to test.py
-            # test.py will handle:
-            # - UI state management (is_menu_open)
-            # - Menu announcements
-            # - Rematch logic (call start_game if wanted)
-            self.on_game_ended(wants_rematch)
         else:
-            # FALLBACK: Old behavior (no callback set)
-            # This path used for backward compatibility or unit tests
-            if wants_rematch:
-                self.new_game()
-                return  # Exit early (new_game() already resets)
+            # No dialogs available → fallback to old behavior
+            if self.on_game_ended:
+                # Default: No rematch (user can't choose without dialog)
+                self.on_game_ended(False)
             else:
                 self.service.reset_game()
     

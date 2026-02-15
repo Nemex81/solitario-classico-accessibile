@@ -241,17 +241,35 @@ class SolitarioController:
     # === MENU HANDLERS (v2.0.1 - Updated for ViewManager) ===
     
     def start_gameplay(self) -> None:
-        """Start gameplay (called from MenuPanel).
+        """Start gameplay (called from MenuPanel or rematch).
         
         Shows GameplayPanel via ViewManager, initializing new game.
-        MenuPanel is hidden but remains in memory.
+        Previous panel (menu or gameplay) is hidden but remains in memory.
+        
+        Handles two scenarios:
+        1. Menu → Gameplay: Hide menu, show gameplay
+        2. Gameplay → Gameplay (rematch): Hide gameplay, show gameplay
         
         Note:
             Uses show_panel() instead of push_view() (panel-swap pattern).
+            
+        Version:
+            v2.0.1: Initial implementation for menu→gameplay
+            v2.4.2: Added explicit panel hiding for rematch support (Bug #68)
         """
         if self.view_manager:
+            # CRITICAL: Hide current panel before showing gameplay
+            # This handles both menu→gameplay AND rematch (gameplay→gameplay)
+            current_panel_name = self.view_manager.get_current_view()
+            if current_panel_name:
+                current_panel = self.view_manager.get_panel(current_panel_name)
+                if current_panel:
+                    current_panel.Hide()
+            
+            # Show gameplay panel
             self.view_manager.show_panel('gameplay')
             self.is_menu_open = False  # Sync flag: now in gameplay
+            
             # Initialize game
             self.engine.reset_game()
             self.engine.new_game()
@@ -312,7 +330,7 @@ class SolitarioController:
         # Announce via TTS
         if self.screen_reader:
             self.screen_reader.tts.speak(
-                "Ritorno al menu di gioco.",
+                "Ritorno al menu principale.",
                 interrupt=True
             )
     
@@ -393,40 +411,40 @@ class SolitarioController:
         self.quit_app()
     
     # ============================================================================
-    # DEFERRED UI TRANSITIONS PATTERN (v2.0.9 → v2.1)
+    # DEFERRED UI TRANSITIONS PATTERN (v2.4.3)
     # ============================================================================
-    # CRITICAL: All UI panel transitions MUST use self.app.CallAfter()
+    # CRITICAL: All UI panel transitions MUST use wx.CallAfter()
     #
     # Rationale:
-    #   - wx.CallAfter() depends on wx.GetApp() which can return None during
-    #     certain app lifecycle states, causing AssertionError/PyNoAppError
-    #   - self.app.CallAfter() is a direct instance method call on the Python
-    #     app object (assigned in run() before MainLoop), always available
-    #   - Ensures deferred execution AFTER event handler completes, preventing
-    #     nested event loops and crashes
+    #   - wxPython 4.1.1: CallAfter is a module-level function, not instance method
+    #   - wx.CallAfter() schedules callback execution after current event completes
+    #   - Prevents nested event loops and modal dialog crashes
+    #   - Ensures safe UI state transitions after dialog dismissal
     #
     # Pattern Flow:
-    #   1. Event handler executes (ESC, timer, callback)
+    #   1. Event handler executes (ESC, timer, game end callback)
     #   2. Shows dialog if needed (modal, blocking)
-    #   3. Calls self.app.CallAfter(deferred_method) to schedule UI transition
+    #   3. Calls wx.CallAfter(deferred_method) to schedule UI transition
     #   4. Returns immediately (event handler completes)
     #   5. [wxPython idle loop processes deferred call]
     #   6. Deferred method executes (safe context, no nested loops)
     #   7. Panel swap, state reset, UI updates happen safely
     #
+    # Correct Usage:
+    #   ✅ wx.CallAfter(self._safe_abandon_to_menu)
+    #   ✅ wx.CallAfter(self.start_gameplay)
+    #   ✅ wx.CallAfter(self._safe_return_to_main_menu)
+    #
     # Anti-Patterns to AVOID:
-    #   ❌ wx.CallAfter() - global function, depends on wx.GetApp() timing
-    #   ❌ wx.SafeYield() - creates nested event loop, causes crashes
-    #   ❌ Direct panel swaps from handlers - synchronous, nested loops
+    #   ❌ self.app.CallAfter() - Not an instance method in wxPython 4.1.1
+    #   ❌ wx.SafeYield() - Creates nested event loop, causes crashes
+    #   ❌ Direct panel swaps from handlers - Synchronous, nested loops
     #
     # Version History:
     #   v2.0.3: Added wx.SafeYield() (mistaken belief, caused crashes)
     #   v2.0.4: Introduced wx.CallAfter() defer pattern
-    #   v2.0.6: Tried self.frame.CallAfter() (version incompatibility)
-    #   v2.0.7: Reverted to wx.CallAfter() (still had timing issues)
-    #   v2.0.8: Removed wx.SafeYield() from ViewManager
-    #   v2.0.9: DEFINITIVE FIX - self.app.CallAfter() for reliability
-    #   v2.1: Systematic integration and architectural documentation
+    #   v2.0.6-v2.0.9: Experimented with self.app.CallAfter() (incorrect API)
+    #   v2.4.3: DEFINITIVE FIX - wx.CallAfter() global function (correct API)
     # ============================================================================
     
     def show_abandon_game_dialog(self) -> None:
@@ -468,7 +486,7 @@ class SolitarioController:
         )
     
     def _safe_abandon_to_menu(self) -> None:
-        """Deferred handler for abandon game → menu transition (called via self.app.CallAfter).
+        """Deferred handler for abandon game → menu transition (called via wx.CallAfter).
         
         This method runs AFTER the ESC event handler completes, preventing nested
         event loops and crashes. Performs safe 3-step transition:
@@ -476,12 +494,12 @@ class SolitarioController:
             2. Reset game engine
             3. Return to menu
         
-        IMPORTANT: This method should ONLY be called via self.app.CallAfter() from
+        IMPORTANT: This method should ONLY be called via wx.CallAfter() from
         show_abandon_game_dialog(). Do NOT call directly from event handlers.
         
         Pattern:
-            ✅ CORRECT: Call via self.app.CallAfter() from deferred handlers
-                self.app.CallAfter(self._safe_abandon_to_menu)
+            ✅ CORRECT: Call via wx.CallAfter() from deferred handlers
+                wx.CallAfter(self._safe_abandon_to_menu)
             
             ❌ WRONG: Direct call from event handler
                 self._safe_abandon_to_menu()  # Causes nested event loop
@@ -489,8 +507,8 @@ class SolitarioController:
         Version History:
             v2.0.3: Initial implementation with panel swap logic
             v2.0.4: Created as deferred handler for abandon game flow
-            v2.0.9: Updated to use self.app.CallAfter() pattern
-            v2.1: Architectural integration and consistency validation
+            v2.0.9: Added CallAfter deferred execution
+            v2.4.3: Corrected to wx.CallAfter (global function)
         """
         print("\n→ Executing deferred abandon transition...")
         
@@ -579,42 +597,63 @@ class SolitarioController:
         Args:
             wants_rematch: True if user wants rematch, False to return to menu
         
-        Defer Pattern (CRITICAL to prevent crashes):
-            ✅ CORRECT: Use wx.CallAfter() for BOTH branches
-                → Rematch: defer start_gameplay() 
-                → Decline: defer _safe_decline_to_menu()
-                → Callback completes immediately
-                → Frame's event queue processes deferred action
-                → NO nested event loops = NO crash
+        Async Dialog Pattern (v2.5.0 - Bug #68 final fix):
+            This method is called from GameEngine.on_rematch_result() callback,
+            which is invoked by wxPython's event loop AFTER the async rematch
+            dialog closes. UI is in stable state, no need for wx.CallAfter().
             
-            ❌ WRONG: Call UI transitions directly from callback
-                → Would create nested event loops
-                → SafeYield() crash possible
+            ✅ CORRECT (v2.5.0): Direct calls (no wx.CallAfter needed)
+                → Callback already deferred by async dialog API
+                → UI state is stable when this executes
+                → Can safely call start_gameplay() or _safe_return_to_main_menu()
+            
+            ❌ OLD PATTERN (v2.4.3): Required wx.CallAfter() workaround
+                → Synchronous dialog (ShowModal) caused unstable UI state
+                → Had to defer with wx.CallAfter()
+                → Now unnecessary with async dialog
         
-        Why frame.CallAfter() works:
-            Uses frame's instance event queue directly, bypassing global wx.App
-            lookup. Works immediately after frame creation, no timing issues.
-            Guaranteed to work in all app lifecycle phases.
+        Why No CallAfter Needed:
+            show_rematch_prompt_async() uses Show() (non-blocking), not ShowModal().
+            Callback is invoked by wx event loop after dialog closes and focus
+            is restored. By the time this method executes, UI is already stable.
         
         Version:
             v2.0.2: Fixed operation order for decline rematch path
-            v2.0.4: Added wx.CallAfter() defer pattern for both branches
-            v2.0.6: Changed to wx.CallAfter() (DEFINITIVE FIX)
+            v2.0.4: Added defer pattern for both branches
+            v2.0.9: Added CallAfter deferred execution
+            v2.4.2: Bug #68 fix - panel hiding + CallAfter
+            v2.4.3: Bug #68 - corrected to wx.CallAfter (global function)
+            v2.5.0: Bug #68 FINAL - async dialog, no CallAfter needed
         """
         print(f"\n→ Game ended callback - Rematch: {wants_rematch}")
+        
+        # Reset timer announcement flag (for next game)
         self._timer_expired_announced = False
         
         if wants_rematch:
-            # User wants rematch - defer new game start
-            print("→ Scheduling deferred rematch...")
-            self.app.CallAfter(self.start_gameplay)
+            # ═══════════════════════════════════════════════════════════
+            # REMATCH: Start New Game
+            # ═══════════════════════════════════════════════════════════
+            print("→ Starting rematch...")
+            
+            # ✅ DIRECT CALL: No wx.CallAfter needed (v2.5.0)
+            # Callback already deferred by async dialog API
+            # UI state is stable when this callback executes
+            self.start_gameplay()
+            
         else:
-            # User declined rematch - defer menu transition
-            print("→ Scheduling deferred decline transition...")
-            self.app.CallAfter(self._safe_decline_to_menu)
+            # ═══════════════════════════════════════════════════════════
+            # DECLINE: Return to Main Menu
+            # ═══════════════════════════════════════════════════════════
+            print("→ Returning to main menu...")
+            
+            # ✅ DIRECT CALL: No wx.CallAfter needed (v2.5.0)
+            # Callback already deferred by async dialog API
+            # UI state is stable when this callback executes
+            self._safe_return_to_main_menu()
     
     def _safe_decline_to_menu(self) -> None:
-        """Deferred handler for decline rematch → menu transition (called via self.app.CallAfter).
+        """Deferred handler for decline rematch → menu transition (called via wx.CallAfter).
         
         This method runs AFTER the game end callback completes, preventing nested
         event loops and crashes. Performs safe 3-step transition:
@@ -622,12 +661,12 @@ class SolitarioController:
             2. Reset game engine
             3. Return to menu
         
-        IMPORTANT: This method should ONLY be called via self.app.CallAfter() from
+        IMPORTANT: This method should ONLY be called via wx.CallAfter() from
         handle_game_ended(). Do NOT call directly from callbacks.
         
         Pattern:
-            ✅ CORRECT: Call via self.app.CallAfter() from game end handlers
-                self.app.CallAfter(self._safe_decline_to_menu)
+            ✅ CORRECT: Call via wx.CallAfter() from game end handlers
+                wx.CallAfter(self._safe_decline_to_menu)
             
             ❌ WRONG: Direct call from callback
                 self._safe_decline_to_menu()  # Causes nested event loop
@@ -635,8 +674,8 @@ class SolitarioController:
         Version History:
             v2.0.3: Initial implementation with panel swap logic
             v2.0.4: Created as deferred handler for decline rematch flow
-            v2.0.9: Updated to use self.app.CallAfter() pattern
-            v2.1: Architectural integration and consistency validation
+            v2.0.9: Added CallAfter deferred execution
+            v2.4.3: Corrected to wx.CallAfter (global function)
         """
         print("\n→ Executing deferred decline transition...")
         
@@ -653,6 +692,75 @@ class SolitarioController:
         self.return_to_menu()
         
         print("→ Decline transition completed\n")
+    
+    def _safe_return_to_main_menu(self) -> None:
+        """Return to main menu after declining rematch.
+        
+        Called via wx.CallAfter() when user declines rematch in end game dialog.
+        
+        Flow:
+        0. Hide gameplay panel (CRITICAL - prevents UI freeze)
+        1. Reset game state (service.reset_game())
+        2. Switch to MenuPanel (show main menu)
+        3. Announce return to menu via TTS
+        
+        Version: v2.4.2 (fix for Bug #68 - decline rematch behavior)
+        
+        Note:
+            Called via wx.CallAfter() to ensure dialog is fully closed
+            before panel switching occurs.
+        
+        Why CallAfter?
+            - Modal dialogs block UI thread
+            - Panel switching while dialog open can cause crashes
+            - CallAfter defers execution until after dialog closes
+            - Ensures clean UI state transition
+        
+        Pattern Consistency:
+            This method follows the same 3-step pattern as:
+            - _safe_abandon_to_menu() (ESC → menu)
+            - _safe_timeout_to_menu() (timeout → menu)
+            All use: Hide panel → Reset game → Show menu
+        
+        Example:
+            >>> # User finishes game
+            >>> # Dialog: "Vuoi giocare ancora?"
+            >>> # User presses NO
+            >>> # → handle_game_ended(wants_rematch=False)
+            >>> # → wx.CallAfter(self._safe_return_to_main_menu)
+            >>> # → Dialog closes
+            >>> # → _safe_return_to_main_menu() executes
+            >>> # → Panel hidden + Game reset + switch to menu + TTS announcement
+        """
+        print("→ _safe_return_to_main_menu() called")
+        
+        # 0. Hide gameplay panel (CRITICAL FIX for Bug #68)
+        # Without this, gameplay panel remains visible over menu → UI freeze
+        if self.view_manager:
+            gameplay_panel = self.view_manager.get_panel('gameplay')
+            if gameplay_panel:
+                gameplay_panel.Hide()
+        print("  ✓ Gameplay panel hidden")
+        
+        # 1. Reset game state
+        # Stops timer, resets move count, clears statistics
+        self.engine.service.reset_game()
+        print("  ✓ Game state reset")
+        
+        # 2. Switch to main menu panel
+        # Shows MenuPanel with "Nuova Partita", "Opzioni", etc.
+        self.view_manager.show_panel("menu")
+        print("  ✓ Switched to MenuPanel")
+        
+        # 3. Announce return to menu via TTS
+        # Helps blind users understand they're back at main menu
+        if self.screen_reader and self.screen_reader.tts:
+            self.screen_reader.tts.speak(
+                "Sei tornato al menu principale. Usa le frecce per navigare.",
+                interrupt=True
+            )
+        
+        print("✓ Successfully returned to main menu")
     
     # === OPTIONS HANDLING ===
     
@@ -790,10 +898,10 @@ class SolitarioController:
         
         # ✅ Defer UI transition until AFTER timer event completes
         print("→ Timeout defeat - Scheduling deferred transition...")
-        self.app.CallAfter(self._safe_timeout_to_menu)
+        wx.CallAfter(self._safe_timeout_to_menu)
     
     def _safe_timeout_to_menu(self) -> None:
-        """Deferred handler for timeout defeat → menu transition (called via self.app.CallAfter).
+        """Deferred handler for timeout defeat → menu transition (called via wx.CallAfter).
         
         This method runs AFTER the timer event completes, preventing nested
         event loops and crashes. Performs safe 3-step transition:
@@ -801,12 +909,12 @@ class SolitarioController:
             2. Reset game engine
             3. Return to menu
         
-        IMPORTANT: This method should ONLY be called via self.app.CallAfter() from
+        IMPORTANT: This method should ONLY be called via wx.CallAfter() from
         _handle_game_over_by_timeout(). Do NOT call directly from timer callbacks.
         
         Pattern:
-            ✅ CORRECT: Call via self.app.CallAfter() from timer handlers
-                self.app.CallAfter(self._safe_timeout_to_menu)
+            ✅ CORRECT: Call via wx.CallAfter() from timer handlers
+                wx.CallAfter(self._safe_timeout_to_menu)
             
             ❌ WRONG: Direct call from timer callback
                 self._safe_timeout_to_menu()  # Causes nested event loop
@@ -814,8 +922,8 @@ class SolitarioController:
         Version History:
             v2.0.3: Initial implementation with panel swap logic
             v2.0.4: Created as deferred handler for timeout defeat flow
-            v2.0.9: Updated to use self.app.CallAfter() pattern
-            v2.1: Architectural integration and consistency validation
+            v2.0.9: Added CallAfter deferred execution
+            v2.4.3: Corrected to wx.CallAfter (global function)
         """
         print("\n→ Executing deferred timeout transition...")
         

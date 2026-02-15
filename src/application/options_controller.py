@@ -8,13 +8,15 @@ Manages all options window logic including:
 - Input routing and validation
 
 NEW v1.6.1: Integrated with SolitarioDialogManager for native wxDialog prompts.
+NEW v2.4.0: Difficulty preset lock enforcement
 
 Architecture: Application Layer (Clean Architecture)
-Depends on: Domain (GameSettings), Presentation (OptionsFormatter)
+Depends on: Domain (GameSettings, DifficultyPreset), Presentation (OptionsFormatter)
 """
 
 from typing import Dict, Optional, TYPE_CHECKING
 from src.domain.services.game_settings import GameSettings
+from src.domain.models.difficulty_preset import DifficultyPreset
 from src.presentation.options_formatter import OptionsFormatter
 from src.infrastructure.logging import game_logger as log
 
@@ -216,14 +218,21 @@ class OptionsWindowController:
     def modify_current_option(self) -> str:
         """Modify currently selected option (toggle/cycle).
         
+        v2.4.0: Checks for difficulty preset locks before modification.
+        
         Returns:
-            TTS confirmation message or error
+            TTS confirmation message, lock message, or error
         
         State transition: OPEN_CLEAN -> OPEN_DIRTY (on first modification)
         """
         # Block if game running
         if self.settings.game_state.is_running:
             return OptionsFormatter.format_blocked_during_game()
+        
+        # Check if option is locked (v2.4.0)
+        # Exception: difficulty_level itself is never locked (cursor_position == 1)
+        if self.cursor_position != 1 and self._is_current_option_locked():
+            return self._get_lock_message()
         
         # Route to appropriate handler
         handlers = [
@@ -386,19 +395,104 @@ class OptionsWindowController:
             include_hint
         )
     
+    # ========================================
+    # LOCK ENFORCEMENT (v2.4.0)
+    # ========================================
+    
+    def _is_current_option_locked(self) -> bool:
+        """Check if current option is locked by difficulty preset.
+        
+        Returns:
+            True if option is locked (cannot be modified), False otherwise
+        
+        Version: v2.4.0
+        """
+        # Map cursor position to option name
+        option_map = {
+            0: "deck_type",  # Never locked
+            1: "difficulty_level",  # Never locked (always can cycle)
+            2: "draw_count",
+            3: "max_time_game",
+            4: "shuffle_discards",
+            5: "command_hints_enabled",
+            6: "scoring_enabled",
+            7: "timer_strict_mode",
+        }
+        
+        option_name = option_map.get(self.cursor_position)
+        if option_name is None:
+            return False
+        
+        # Check if option is locked
+        return self.settings.is_option_locked(option_name)
+    
+    def _get_lock_message(self) -> str:
+        """Get TTS message for locked option attempt.
+        
+        Returns:
+            Formatted message explaining option is locked
+        
+        Version: v2.4.0
+        """
+        # Get current preset info
+        preset = self.settings.get_current_preset()
+        
+        # Map cursor position to option name (for message)
+        option_names = {
+            0: "Tipo Mazzo",
+            1: "Difficoltà",
+            2: "Carte Pescate",
+            3: "Timer",
+            4: "Riciclo Scarti",
+            5: "Suggerimenti Comandi",
+            6: "Sistema Punti",
+            7: "Modalità Timer",
+        }
+        
+        option_name = option_names.get(self.cursor_position, "Opzione")
+        
+        # Format lock message
+        return (f"{option_name} bloccato da {preset.name}. "
+                f"Cambia livello difficoltà per sbloccare questa opzione.")
+    
+    # ========================================
+    # PRIVATE OPTION MODIFICATION HANDLERS
+    # ========================================
+    
     def _modify_deck_type(self) -> str:
         """Toggle deck type (French <-> Neapolitan)."""
         success, msg = self.settings.toggle_deck_type()
         return msg
     
     def _modify_difficulty(self) -> str:
-        """Cycle difficulty (1 -> 2 -> 3 -> 1)."""
+        """Cycle difficulty (1 -> 2 -> 3 -> 4 -> 5 -> 1) with preset application."""
         old_value = self.settings.difficulty_level
         success, msg = self.settings.cycle_difficulty()
+        
         if success:
             new_value = self.settings.difficulty_level
             log.settings_changed("difficulty_level", old_value, new_value)
-        return msg
+            
+            # v2.4.0: Get preset and apply values
+            preset = self.settings.get_current_preset()
+            
+            # v2.4.1: CRITICAL FIX - Apply preset values to settings
+            # This actually changes timer, draw_count, etc. to preset values
+            preset.apply_to(self.settings)
+            
+            # Log preset application
+            log.info(f"Applied preset '{preset.name}' - Set {len(preset.preset_values)} values, locked {len(preset.get_locked_options())} options")
+            
+            locked_count = len(preset.get_locked_options())
+            
+            # Use preset formatter instead of generic message
+            return OptionsFormatter.format_preset_applied(
+                level=new_value,
+                preset_name=preset.name,
+                locked_count=locked_count
+            )
+        
+        return msg  # Fallback for errors
     
     def _cycle_timer_preset(self) -> str:
         """Cycle timer with +5min increments and wrap-around (v1.5.1).
