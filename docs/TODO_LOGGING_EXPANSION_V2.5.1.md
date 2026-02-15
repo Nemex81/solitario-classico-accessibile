@@ -88,7 +88,7 @@ COMPLETA ✅
 - [x] **3.3** - `gameplay_controller.py`: Log hint requests - **ALREADY IMPLEMENTED** (help command logging at line 528)
 - [x] **3.4** - `game_service.py`: Log auto-complete & undo operations - **SKIPPED** (features not implemented with key bindings)
 - [x] **3.5** - `score_storage.py`: Log score storage persistence
-- [ ] **3.6** - `scoring_service.py`: Log scoring penalties/bonuses
+- [x] **3.6** - `scoring_service.py`: Log scoring penalties/bonuses
 
 **Criterio Completamento FASE 3**:
 - ✅ Selezione/deselezione loggata con `log.debug_state()`
@@ -121,8 +121,8 @@ COMPLETA ✅
 |------|---------|------------|
 | FASE 1 | 4 | ✅ 4/4 |
 | FASE 2 | 4 | ✅ 4/4 (1 skipped) |
-| FASE 3 | 6 | ⚙️ 5/6 |
-| **TOTALE** | **14** | **⚙️ 13/14** |
+| FASE 3 | 6 | ✅ 6/6 (1 skipped) |
+| **TOTALE** | **14** | **✅ 14/14** |
 
 ---
 
