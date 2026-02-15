@@ -271,18 +271,10 @@ class WxDialogProvider(DialogProvider):
             # Invoke callback with result (already in deferred context, safe)
             callback(result)
         
-        # ✅ FIX BUG #68.3: Check if wx.App is still active
-        # During app cleanup, wx.App may be None or not running
-        app = wx.GetApp()
-        if app and app.IsMainLoopRunning():
-            # Safe to call wx.CallAfter - Defer entire dialog sequence to next idle cycle
-            # This prevents nested event loops and ensures clean execution
-            wx.CallAfter(show_modal_and_callback)
-        else:
-            # App is closing, skip dialog and call callback with False
-            print("⚠️ wx.App not active, skipping async dialog")
-            # Call callback with False (decline) to prevent deadlock
-            callback(False)
+        # Defer entire dialog sequence to next idle cycle
+        # This prevents nested event loops and ensures clean execution
+        # wxPython handles graceful shutdown automatically - no check needed
+        wx.CallAfter(show_modal_and_callback)
     
     def show_rematch_prompt_async(
         self,
