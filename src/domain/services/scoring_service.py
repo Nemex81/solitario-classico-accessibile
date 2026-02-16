@@ -201,6 +201,41 @@ class ScoringService:
         return penalty
     
     # ========================================
+    # NUMERIC HELPERS (v2.0)
+    # ========================================
+    
+    def _safe_truncate(self, value: float, context: str = "") -> int:
+        """Safe truncation with Rule 5 invariant enforcement (v2.0).
+        
+        Truncates float to int using Python's int() (floor for positive numbers).
+        Enforces non-negativity constraint to guarantee consistent behavior.
+        
+        Args:
+            value: Float value to truncate
+            context: Context string for error message
+            
+        Returns:
+            Truncated integer value
+            
+        Raises:
+            ValueError: If value < 0 (domain invariant violation)
+            
+        Note:
+            Python int() behavior differs for negative numbers:
+            - int(1.9) → 1 (floor)
+            - int(-1.9) → -1 (NOT floor, truncation toward zero)
+            
+            To guarantee floor behavior, we enforce non-negativity.
+        """
+        if value < 0:
+            raise ValueError(
+                f"Truncation safety violated: {value} < 0 "
+                f"(context: {context}). Domain logic bug - values "
+                f"must be clamped to min_score before truncation."
+            )
+        return int(value)
+    
+    # ========================================
     # SCORE CALCULATIONS
     # ========================================
     
@@ -221,16 +256,20 @@ class ScoringService:
             ProvisionalScore with current totals
             
         Note:
-            - Draw bonus only applies at levels 1-3
+            - Draw bonus: levels 1-3 get full (low), levels 4-5 get 50% (high)
             - Score cannot go below min_score (0)
         """
         base_score = self.get_base_score()
         deck_bonus = self.config.deck_type_bonuses[self.deck_type]
         
-        # Draw bonus only for levels 1-3
+        # Draw bonus: v2.0 tier system (low/high)
         draw_bonus = 0
         if self.difficulty_level <= 3:
-            draw_bonus = self.config.draw_count_bonuses[self.draw_count]
+            # Levels 1-3: full bonus (low tier)
+            draw_bonus = self.config.draw_count_bonuses[self.draw_count]["low"]
+        else:
+            # Levels 4-5: 50% bonus (high tier)
+            draw_bonus = self.config.draw_count_bonuses[self.draw_count]["high"]
         
         difficulty_multiplier = self.config.difficulty_multipliers[self.difficulty_level]
         
@@ -321,13 +360,15 @@ class ScoringService:
         )
     
     def _calculate_time_bonus(self, elapsed_seconds: float, timer_strict_mode: bool = True) -> int:
-        """Calculate time bonus based on elapsed time with overtime malus support.
+        """Calculate time bonus based on elapsed time (v2.0 values).
         
         Logic differs based on timer state:
         
         Timer OFF:
-            Progressive decay formula: min(2000, 10000/sqrt(elapsed_seconds))
-            Faster completion = higher bonus
+            Linear decay formula: max(0, 1200 - (elapsed_minutes * 40))
+            - Max bonus: 1200 points (instant win)
+            - Decay: -40 points per minute
+            - Zero bonus: 30 minutes
             
         Timer ON (within limit):
             Percentage-based:
@@ -348,12 +389,15 @@ class ScoringService:
             Time bonus points (can be negative if overtime in PERMISSIVE mode)
         """
         if not self.timer_enabled or self.timer_limit_seconds <= 0:
-            # Timer OFF: Progressive decay formula
-            if elapsed_seconds <= 0:
-                return 2000  # Instant win (theoretical max)
+            # Timer OFF: Linear decay formula (v2.0)
+            elapsed_minutes = elapsed_seconds / 60.0
             
-            bonus = int(10000 / math.sqrt(elapsed_seconds))
-            return min(2000, bonus)  # Cap at 2000
+            # max(0, 1200 - (elapsed_minutes * 40))
+            bonus_float = self.config.time_bonus_max_timer_off - (
+                elapsed_minutes * self.config.time_bonus_decay_per_minute
+            )
+            bonus_clamped = max(0, bonus_float)
+            return self._safe_truncate(bonus_clamped, "time_bonus_timer_off")
         
         else:
             # Timer ON: Percentage-based or overtime malus
@@ -366,10 +410,10 @@ class ScoringService:
                     # But return penalty just in case
                     return -500
                 else:
-                    # 🆕 PERMISSIVE mode (v1.5.2.2): Calculate overtime malus
+                    # PERMISSIVE mode (v1.5.2.2): Calculate overtime malus
                     overtime_seconds = abs(time_remaining)
                     overtime_minutes = max(1, int(overtime_seconds // 60))  # At least 1 minute
-                    malus = -100 * overtime_minutes
+                    malus = self.config.overtime_penalty_per_minute * overtime_minutes
                     
                     # Log overtime penalty
                     log.warning_issued(
@@ -379,17 +423,16 @@ class ScoringService:
                     
                     return malus
             
-            # Within time limit: percentage-based bonus
-            time_used_percentage = elapsed_seconds / self.timer_limit_seconds
-            time_remaining_percentage = 1.0 - time_used_percentage
+            # Within time limit: percentage-based bonus (v2.0)
+            time_remaining_percentage = time_remaining / self.timer_limit_seconds
             
             bonus = 0
             if time_remaining_percentage >= 0.50:
-                bonus = 1000  # ≥50% remaining
+                bonus = self.config.time_bonus_max_timer_on  # ≥50% remaining: 1000pt
             elif time_remaining_percentage >= 0.25:
-                bonus = 500   # ≥25% remaining
+                bonus = self.config.time_bonus_max_timer_on // 2  # ≥25% remaining: 500pt
             elif time_remaining_percentage > 0:
-                bonus = 200   # >0% remaining
+                bonus = self.config.time_bonus_max_timer_on // 5  # >0% remaining: 200pt
             else:
                 bonus = -500  # Timer expired (edge case)
             
