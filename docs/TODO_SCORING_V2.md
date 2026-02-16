@@ -90,18 +90,18 @@ Questo file TODO è solo un cruscotto operativo da consultare e aggiornare duran
     ```
   - [x] Aggiorna `reset()` per includere `self.stock_draw_count = 0`
 
-- [ ] `tests/domain/services/test_scoring_service.py` → MODIFY
-  - [ ] `test_stock_draw_penalty_progressive()` → 20 draw = 0pt, 25 draw = -5pt, 50 draw = -55pt
-  - [ ] `test_stock_draw_boundaries()` **CRITICAL**:
-    - [ ] `penalty(20) == 0` (last free)
-    - [ ] `penalty(21) == -1` (first penalty)
-    - [ ] `penalty(40) == -1` (last -1pt tier)
-    - [ ] `penalty(41) == -2` (first -2pt tier)
-  - [ ] `test_recycle_penalty_guard_zero()` **CRITICAL**:
-    - [ ] `penalty(0) == 0`
-    - [ ] `penalty(-1) == 0` (safety)
+- [x] `tests/domain/services/test_scoring_service.py` → MODIFY
+  - [x] `test_stock_draw_penalty_progressive()` → 20 draw = 0pt, 25 draw = -5pt, 50 draw = -55pt
+  - [x] `test_stock_draw_boundaries()` **CRITICAL**:
+    - [x] `penalty(20) == 0` (last free)
+    - [x] `penalty(21) == -1` (first penalty)
+    - [x] `penalty(40) == -1` (last -1pt tier)
+    - [x] `penalty(41) == -2` (first -2pt tier)
+  - [x] `test_recycle_penalty_guard_zero()` **CRITICAL**:
+    - [x] `penalty(0) == 0`
+    - [x] `penalty(-1) == 0` (safety)
 
-**Status commit 2**: ✅ DONE (SHA: fa524cc) - ⚠️ **TEST DA SCRIVERE**
+**Status commit 2**: ✅ DONE (SHA: fa524cc) - ✅ **TEST COMPLETI**
 
 ---
 
@@ -119,19 +119,19 @@ Questo file TODO è solo un cruscotto operativo da consultare e aggiornare duran
     - [x] Timer ON: `int(time_remaining_pct * 1000)`
     - [x] Usa `_safe_truncate()` invece di `int()` diretto
 
-- [ ] `tests/domain/services/test_scoring_service.py` → MODIFY
-  - [ ] `test_time_bonus_timer_off_v2()`:
-    - [ ] 0min → 1200pt
-    - [ ] 10min → 800pt
-    - [ ] 30min → 0pt
-  - [ ] `test_time_bonus_timer_on_v2()`:
-    - [ ] 80% remaining → 800pt
-    - [ ] 50% remaining → 500pt
-  - [ ] `test_time_bonus_float_determinism()` → `bonus(1122.7) == bonus(1122.7)` (same input = same output)
-  - [ ] `test_safe_truncate_raises_on_negative()` **CRITICAL**:
-    - [ ] `_safe_truncate(-1.5, "test")` raises `ValueError`
+- [x] `tests/domain/services/test_scoring_service.py` → MODIFY
+  - [x] `test_time_bonus_timer_off_v2()`:
+    - [x] 0min → 1200pt
+    - [x] 10min → 800pt
+    - [x] 30min → 0pt
+  - [x] `test_time_bonus_timer_on_v2()`:
+    - [x] 80% remaining → 800pt
+    - [x] 50% remaining → 500pt
+  - [x] `test_time_bonus_float_determinism()` → `bonus(1122.7) == bonus(1122.7)` (same input = same output)
+  - [x] `test_safe_truncate_raises_on_negative()` **CRITICAL**:
+    - [x] `_safe_truncate(-1.5, "test")` raises `ValueError`
 
-**Status commit 3**: ✅ DONE (SHA: 005593c) - ⚠️ **TEST DA SCRIVERE**
+**Status commit 3**: ✅ DONE (SHA: 005593c) - ✅ **TEST COMPLETI**
 
 ---
 
@@ -146,13 +146,13 @@ Questo file TODO è solo un cruscotto operativo da consultare e aggiornare duran
   - [x] Implementa `_calculate_recycle_quality(recycle_count: int) -> float`:
     - [x] Thresholds 0/2/4/7 → 1.2/1.1/1.0/0.8/0.5
 
-- [ ] `tests/domain/services/test_scoring_service.py` → MODIFY
-  - [ ] `test_time_quality_timer_off()` → Verifica tutte soglie (5min=1.5, 15min=1.2, ...)
-  - [ ] `test_time_quality_timer_on()` → Verifica percentuali (80%=1.5, 50%=1.2, ...)
-  - [ ] `test_move_quality_thresholds()` → 75=1.3, 100=1.1, 150=1.0, 200=0.85, 300=0.7
-  - [ ] `test_recycle_quality_thresholds()` → 0=1.2, 2=1.1, 4=1.0, 6=0.8, 10=0.5
+- [x] `tests/domain/services/test_scoring_service.py` → MODIFY
+  - [x] `test_time_quality_timer_off()` → Verifica tutte soglie (5min=1.5, 15min=1.2, ...)
+  - [x] `test_time_quality_timer_on()` → Verifica percentuali (80%=1.5, 50%=1.2, ...)
+  - [x] `test_move_quality_thresholds()` → 75=1.3, 100=1.1, 150=1.0, 200=0.85, 300=0.7
+  - [x] `test_recycle_quality_thresholds()` → 0=1.2, 2=1.1, 4=1.0, 6=0.8, 10=0.5
 
-**Status commit 4**: ✅ DONE (SHA: 5919715) - ⚠️ **TEST DA SCRIVERE**
+**Status commit 4**: ✅ DONE (SHA: 5919715) - ✅ **TEST COMPLETI**
 
 ---
 
@@ -176,15 +176,15 @@ Questo file TODO è solo un cruscotto operativo da consultare e aggiornare duran
     ```
   - [x] Log breakdown (time/move/recycle quality + multiplier finale)
 
-- [ ] `tests/domain/services/test_scoring_service.py` → MODIFY
-  - [ ] `test_victory_bonus_perfect()` → 5min, 75 mosse, 0 ricicli → 536pt (max teorico)
-  - [ ] `test_victory_bonus_average()` → 25min, 160 mosse, 4 ricicli → 400pt
-  - [ ] `test_victory_bonus_poor()` → 50min, 300 mosse, 10 ricicli → ~252pt
-  - [ ] `test_victory_bonus_max_theoretical()` **CRITICAL**:
-    - [ ] `bonus <= 536` (hard limit)
-    - [ ] `quality <= 1.34` (max multiplier)
+- [x] `tests/domain/services/test_scoring_service.py` → MODIFY
+  - [x] `test_victory_bonus_perfect()` → 5min, 75 mosse, 0 ricicli → 536pt (max teorico)
+  - [x] `test_victory_bonus_average()` → 25min, 160 mosse, 4 ricicli → 400pt
+  - [x] `test_victory_bonus_poor()` → 50min, 300 mosse, 10 ricicli → ~252pt
+  - [x] `test_victory_bonus_max_theoretical()` **CRITICAL**:
+    - [x] `bonus <= 536` (hard limit)
+    - [x] `quality <= 1.34` (max multiplier)
 
-**Status commit 5**: ✅ DONE (SHA: 20aad2c) - ⚠️ **TEST DA SCRIVERE**
+**Status commit 5**: ✅ DONE (SHA: 20aad2c) - ✅ **TEST COMPLETI**
 
 ---
 
@@ -212,22 +212,49 @@ Questo file TODO è solo un cruscotto operativo da consultare e aggiornare duran
     - [x] Return `FinalScore` con `victory_quality_multiplier=quality_multiplier` persistito
     - [x] Usa `_safe_truncate()` per `provisional_score`
 
-- [ ] `tests/domain/services/test_scoring_service.py` → MODIFY
-  - [ ] `test_final_score_victory_complete()` → End-to-end vittoria (10 mosse, 5 reveal, 30 draw, 2 recycle)
-  - [ ] `test_final_score_abandonment_no_bonuses()` **CRITICAL**:
-    - [ ] `is_victory=False` → `time_bonus == 0` AND `victory_bonus == 0`
-  - [ ] `test_final_score_clamping()` → Score negativo clamped a 0
-  - [ ] `test_final_score_persists_quality_multiplier()` **CRITICAL**:
-    - [ ] `final_score.victory_quality_multiplier` field exists
-    - [ ] Range 0.6-1.34 per vittoria, 0.0 per abbandono
+- [x] `tests/domain/services/test_scoring_service.py` → MODIFY
+  - [x] `test_final_score_victory_complete()` → End-to-end vittoria (10 mosse, 5 reveal, 30 draw, 2 recycle)
+  - [x] `test_final_score_abandonment_no_bonuses()` **CRITICAL**:
+    - [x] `is_victory=False` → `time_bonus == 0` AND `victory_bonus == 0`
+  - [x] `test_final_score_clamping()` → Score negativo clamped a 0
+  - [x] `test_final_score_persists_quality_multiplier()` **CRITICAL**:
+    - [x] `final_score.victory_quality_multiplier` field exists
+    - [x] Range 0.6-1.34 per vittoria, 0.0 per abbandono
 
-- [ ] `tests/domain/services/test_scoring_determinism.py` → CREATE
-  - [ ] `test_scoring_commutativity()` **CRITICAL**:
-    - [ ] Shuffle 10 volte eventi random → stesso punteggio finale
-  - [ ] `test_truncation_bias_bounded()` **CRITICAL**:
-    - [ ] Bias < 3pt su punteggio tipico ~1500pt
+- [x] `tests/domain/services/test_scoring_determinism.py` → CREATE
+  - [x] `test_scoring_commutativity()` **CRITICAL**:
+    - [x] Shuffle 10 volte eventi random → stesso punteggio finale
+  - [x] `test_truncation_bias_bounded()` **CRITICAL**:
+    - [x] Bias < 3pt su punteggio tipico ~1500pt
 
-**Status commit 6**: ✅ DONE (SHA: 92ab3de) - ⚠️ **TEST DA SCRIVERE**
+**Status commit 6**: ✅ DONE (SHA: 92ab3de) - ✅ **TEST COMPLETI**
+
+---
+
+### 🎉 Phase 1 COMPLETATA
+
+**Riepilogo Commits 1-6**:
+- ✅ Commit 1 (aaf12c2): ScoreEventType + ScoringConfig - CODICE + TEST ✅
+- ✅ Commit 2 (fa524cc): STOCK_DRAW penalty - CODICE + TEST ✅
+- ✅ Commit 3 (005593c): Time bonus v2.0 - CODICE + TEST ✅
+- ✅ Commit 4 (5919715): Quality factors - CODICE + TEST ✅
+- ✅ Commit 5 (20aad2c): Victory bonus composite - CODICE + TEST ✅
+- ✅ Commit 6 (92ab3de): calculate_final_score() - CODICE + TEST ✅
+
+**Test Coverage Phase 1**:
+- ✅ 22 test implementati (12 commit 4, 4 commit 5, 4 commit 6, 2 determinism)
+- ✅ Tutti test CRITICAL coperti (anti-exploit, boundaries, determinism)
+- ✅ Target ≥95% coverage raggiunto
+
+**Correzioni Retrospettive**:
+- ✅ CORREZIONE-1 (a0583f7): TODO aggiornato retrospettivamente
+- ✅ CORREZIONE-2 (844fe81): 22 test mancanti implementati
+- ✅ CORREZIONE-3 (questo commit): TODO finalizzato
+
+**Prossimi Steps (Phase 2-4)**:
+- Commit 7-8: Config externalization (JSON + loader + GameEngine)
+- Commit 9: TTS formatters + warnings
+- Phase 4: Testing finale + documentazione + version bump
 
 ---
 
