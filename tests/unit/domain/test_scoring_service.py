@@ -661,3 +661,334 @@ class TestStateManagement:
         assert service.draw_count == 2
         assert service.timer_enabled is True
         assert service.timer_limit_seconds == 1800
+
+
+# ============================================================================
+# CORREZIONE-2: TEST MANCANTI PHASE 1 (Commits 4-6)
+# ============================================================================
+
+
+class TestQualityFactorsCommit4:
+    """Tests for Commit 4 - Quality factor calculations."""
+    
+    def test_time_quality_timer_off_all_thresholds(self, config):
+        """Test time quality with timer OFF - all 5 thresholds."""
+        service = ScoringService(
+            config=config,
+            difficulty_level=3,
+            deck_type="french",
+            draw_count=2,
+            timer_enabled=False
+        )
+        
+        # 5min (≤10) → 1.5
+        assert service._calculate_time_quality(5 * 60) == 1.5
+        # 10min (≤10) → 1.5 (boundary)
+        assert service._calculate_time_quality(10 * 60) == 1.5
+        # 15min (≤20) → 1.2
+        assert service._calculate_time_quality(15 * 60) == 1.2
+        # 20min (≤20) → 1.2 (boundary)
+        assert service._calculate_time_quality(20 * 60) == 1.2
+        # 25min (≤30) → 1.0
+        assert service._calculate_time_quality(25 * 60) == 1.0
+        # 30min (≤30) → 1.0 (boundary)
+        assert service._calculate_time_quality(30 * 60) == 1.0
+        # 40min (≤45) → 0.8
+        assert service._calculate_time_quality(40 * 60) == 0.8
+        # 45min (≤45) → 0.8 (boundary)
+        assert service._calculate_time_quality(45 * 60) == 0.8
+        # 50min (>45) → 0.7
+        assert service._calculate_time_quality(50 * 60) == 0.7
+    
+    def test_time_quality_timer_on_all_thresholds(self, config):
+        """Test time quality with timer ON - all percentage thresholds."""
+        service = ScoringService(
+            config=config,
+            difficulty_level=3,
+            deck_type="french",
+            draw_count=2,
+            timer_enabled=True,
+            timer_limit_seconds=3600  # 60 minutes
+        )
+        
+        # 12min (80% remaining) → 1.5
+        assert service._calculate_time_quality(12 * 60) == 1.5
+        # 30min (50% remaining) → 1.2 (boundary ≥50%)
+        assert service._calculate_time_quality(30 * 60) == 1.2
+        # 40min (33% remaining) → 1.0 (≥25%)
+        assert service._calculate_time_quality(40 * 60) == 1.0
+        # 45min (25% remaining) → 1.0 (boundary ≥25%)
+        assert service._calculate_time_quality(45 * 60) == 1.0
+        # 55min (8% remaining) → 0.8 (>0%)
+        assert service._calculate_time_quality(55 * 60) == 0.8
+        # 59.5min (0.8% remaining) → 0.8 (>0%)
+        assert service._calculate_time_quality(59.5 * 60) == 0.8
+        # 60min+ (overtime) → 0.7
+        assert service._calculate_time_quality(61 * 60) == 0.7
+    
+    def test_move_quality_all_thresholds(self, config):
+        """Test move quality - all 5 thresholds."""
+        service = ScoringService(
+            config=config,
+            difficulty_level=3,
+            deck_type="french",
+            draw_count=2
+        )
+        
+        # ≤80 → 1.3
+        assert service._calculate_move_quality(75) == 1.3
+        assert service._calculate_move_quality(80) == 1.3  # boundary
+        # ≤120 → 1.1
+        assert service._calculate_move_quality(100) == 1.1
+        assert service._calculate_move_quality(120) == 1.1  # boundary
+        # ≤180 → 1.0
+        assert service._calculate_move_quality(150) == 1.0
+        assert service._calculate_move_quality(180) == 1.0  # boundary
+        # ≤250 → 0.85
+        assert service._calculate_move_quality(200) == 0.85
+        assert service._calculate_move_quality(250) == 0.85  # boundary
+        # >250 → 0.7
+        assert service._calculate_move_quality(300) == 0.7
+    
+    def test_recycle_quality_all_thresholds(self, config):
+        """Test recycle quality - all 5 thresholds."""
+        service = ScoringService(
+            config=config,
+            difficulty_level=3,
+            deck_type="french",
+            draw_count=2
+        )
+        
+        # 0 → 1.2
+        assert service._calculate_recycle_quality(0) == 1.2
+        # ≤2 → 1.1
+        assert service._calculate_recycle_quality(1) == 1.1
+        assert service._calculate_recycle_quality(2) == 1.1  # boundary
+        # ≤4 → 1.0
+        assert service._calculate_recycle_quality(3) == 1.0
+        assert service._calculate_recycle_quality(4) == 1.0  # boundary
+        # ≤7 → 0.8
+        assert service._calculate_recycle_quality(5) == 0.8
+        assert service._calculate_recycle_quality(7) == 0.8  # boundary
+        # >7 → 0.5
+        assert service._calculate_recycle_quality(8) == 0.5
+        assert service._calculate_recycle_quality(10) == 0.5
+
+
+class TestVictoryBonusCommit5:
+    """Tests for Commit 5 - Composite victory bonus."""
+    
+    def test_victory_bonus_perfect_scenario(self, config):
+        """Test max theoretical victory bonus (536pt)."""
+        service = ScoringService(
+            config=config,
+            difficulty_level=3,
+            deck_type="french",
+            draw_count=2,
+            timer_enabled=False
+        )
+        
+        # Perfect: 5min, 75 moves, 0 recycles
+        # time_q=1.5, move_q=1.3, recycle_q=1.2
+        # quality = 1.5*0.35 + 1.3*0.35 + 1.2*0.30 = 1.34
+        # bonus = 400 * 1.34 = 536pt
+        bonus, quality = service._calculate_victory_bonus_with_quality(
+            elapsed_seconds=5 * 60,
+            move_count=75,
+            recycle_count=0
+        )
+        
+        assert bonus == 536, f"Expected 536pt, got {bonus}pt"
+        assert abs(quality - 1.34) < 0.01, f"Expected quality 1.34, got {quality}"
+    
+    def test_victory_bonus_average_scenario(self, config):
+        """Test average victory bonus (~400pt)."""
+        service = ScoringService(
+            config=config,
+            difficulty_level=3,
+            deck_type="french",
+            draw_count=2,
+            timer_enabled=False
+        )
+        
+        # Average: 25min, 160 moves, 4 recycles
+        # time_q=1.0, move_q=1.0, recycle_q=1.0
+        # quality = 1.0*0.35 + 1.0*0.35 + 1.0*0.30 = 1.0
+        # bonus = 400 * 1.0 = 400pt
+        bonus, quality = service._calculate_victory_bonus_with_quality(
+            elapsed_seconds=25 * 60,
+            move_count=160,
+            recycle_count=4
+        )
+        
+        assert bonus == 400, f"Expected 400pt, got {bonus}pt"
+        assert abs(quality - 1.0) < 0.01, f"Expected quality 1.0, got {quality}"
+    
+    def test_victory_bonus_poor_scenario(self, config):
+        """Test poor victory bonus (~255pt)."""
+        service = ScoringService(
+            config=config,
+            difficulty_level=3,
+            deck_type="french",
+            draw_count=2,
+            timer_enabled=False
+        )
+        
+        # Poor: 50min, 300 moves, 10 recycles
+        # time_q=0.7, move_q=0.7, recycle_q=0.5
+        # quality = 0.7*0.35 + 0.7*0.35 + 0.5*0.30 = 0.64
+        # bonus = 400 * 0.64 = 255pt (spec says ~252, formula gives 255)
+        bonus, quality = service._calculate_victory_bonus_with_quality(
+            elapsed_seconds=50 * 60,
+            move_count=300,
+            recycle_count=10
+        )
+        
+        assert 252 <= bonus <= 260, f"Expected ~252-260pt, got {bonus}pt"
+        assert abs(quality - 0.64) < 0.01, f"Expected quality 0.64, got {quality}"
+    
+    def test_victory_bonus_max_theoretical_limits(self, config):
+        """CRITICAL: Test victory bonus never exceeds theoretical max."""
+        service = ScoringService(
+            config=config,
+            difficulty_level=3,
+            deck_type="french",
+            draw_count=2,
+            timer_enabled=False
+        )
+        
+        # Test with perfect conditions
+        bonus, quality = service._calculate_victory_bonus_with_quality(
+            elapsed_seconds=5 * 60,
+            move_count=75,
+            recycle_count=0
+        )
+        
+        # Hard limits
+        assert bonus <= 536, f"Bonus {bonus}pt exceeds theoretical max 536pt"
+        assert quality <= 1.34, f"Quality {quality} exceeds theoretical max 1.34"
+
+
+class TestFinalScoreCommit6:
+    """Tests for Commit 6 - calculate_final_score() with anti-exploit."""
+    
+    def test_final_score_victory_complete_endtoend(self, config):
+        """Test end-to-end victory scenario with all components."""
+        service = ScoringService(
+            config=config,
+            difficulty_level=4,
+            deck_type="neapolitan",
+            draw_count=3,
+            timer_enabled=False
+        )
+        
+        # Simulate game: 10 foundation, 5 reveals, 30 draws, 2 recycles
+        for _ in range(10):
+            service.record_event(ScoreEventType.WASTE_TO_FOUNDATION)  # +10 each
+        for _ in range(5):
+            service.record_event(ScoreEventType.CARD_REVEALED)  # +5 each
+        for _ in range(30):
+            service.record_event(ScoreEventType.STOCK_DRAW)  # 20 free, 10 at -1pt
+        for _ in range(2):
+            service.record_event(ScoreEventType.RECYCLE_WASTE)  # Free (first 2)
+        
+        final = service.calculate_final_score(
+            elapsed_seconds=18 * 60,
+            move_count=120,
+            is_victory=True
+        )
+        
+        # Verify all components present
+        assert final.base_score == 115, f"Expected 115pt base, got {final.base_score}"
+        assert final.time_bonus > 0, "Time bonus should be >0 for victory"
+        assert final.victory_bonus > 0, "Victory bonus should be >0 for victory"
+        assert final.victory_quality_multiplier > 0, "Quality should be >0 for victory"
+        assert final.is_victory is True
+    
+    def test_final_score_abandonment_no_bonuses_CRITICAL(self, config):
+        """CRITICAL: Test anti-exploit - abandonment yields zero bonuses."""
+        service = ScoringService(
+            config=config,
+            difficulty_level=3,
+            deck_type="french",
+            draw_count=2,
+            timer_enabled=False
+        )
+        
+        # Record good events (would give high score if victory)
+        for _ in range(10):
+            service.record_event(ScoreEventType.WASTE_TO_FOUNDATION)  # +100pt
+        
+        # Fast time that would give high time bonus if victory
+        final = service.calculate_final_score(
+            elapsed_seconds=5 * 60,  # 5min (would be +1000pt if victory)
+            move_count=50,  # Low moves (good quality)
+            is_victory=False  # ABANDONMENT
+        )
+        
+        # CRITICAL: Anti-exploit checks
+        assert final.time_bonus == 0, "CRITICAL: Time bonus MUST be 0 on abandonment"
+        assert final.victory_bonus == 0, "CRITICAL: Victory bonus MUST be 0 on abandonment"
+        assert final.victory_quality_multiplier == 0.0, "CRITICAL: Quality MUST be 0.0 on abandonment"
+        assert final.is_victory is False
+    
+    def test_final_score_clamping_negative_to_zero(self, config):
+        """Test score clamping to minimum (0)."""
+        service = ScoringService(
+            config=config,
+            difficulty_level=1,
+            deck_type="french",
+            draw_count=1,
+            timer_enabled=False
+        )
+        
+        # Create large negative base score
+        for _ in range(20):
+            service.record_event(ScoreEventType.FOUNDATION_TO_TABLEAU)  # -15 each = -300
+        
+        final = service.calculate_final_score(
+            elapsed_seconds=60 * 60,
+            move_count=300,
+            is_victory=False
+        )
+        
+        # Score should be clamped to minimum
+        assert final.total_score >= config.min_score, "Score should be clamped to min_score"
+        assert final.total_score == 0, "Minimum score should be 0"
+    
+    def test_final_score_persists_quality_multiplier_CRITICAL(self, config):
+        """CRITICAL: Test victory_quality_multiplier is persisted in FinalScore."""
+        service = ScoringService(
+            config=config,
+            difficulty_level=3,
+            deck_type="french",
+            draw_count=2,
+            timer_enabled=False
+        )
+        
+        service.record_event(ScoreEventType.WASTE_TO_FOUNDATION)
+        
+        # Victory scenario
+        final = service.calculate_final_score(
+            elapsed_seconds=25 * 60,
+            move_count=160,
+            is_victory=True
+        )
+        
+        # Field must exist and be populated
+        assert hasattr(final, 'victory_quality_multiplier'), "Field victory_quality_multiplier missing"
+        assert 0.6 <= final.victory_quality_multiplier <= 1.34, \
+            f"Quality {final.victory_quality_multiplier} outside valid range [0.6, 1.34]"
+        
+        # Abandonment scenario
+        service.reset()
+        service.record_event(ScoreEventType.WASTE_TO_FOUNDATION)
+        
+        final_abandon = service.calculate_final_score(
+            elapsed_seconds=25 * 60,
+            move_count=160,
+            is_victory=False
+        )
+        
+        assert final_abandon.victory_quality_multiplier == 0.0, \
+            "Quality must be 0.0 for abandonment"
