@@ -363,6 +363,85 @@ Rank.KING   # Re (valore 13)
 
 ---
 
+## 🔢 Counter Duality: Statistics vs Scoring
+
+### Draw Counters
+
+Il sistema mantiene **due contatori distinti** per le pescate dal mazzo:
+
+#### `GameService.draw_count` (Legacy - Azioni)
+- **Tipo:** `int` (contatore azioni di pescata)
+- **Scope:** Statistiche finali
+- **Incremento:** `+1` per ogni **azione** di pescata (es. pressione tasto D/P)
+- **Esempio:** Dopo 7 draw-3 → `draw_count = 7`
+- **Uso:** Report finali, logging analytics
+
+#### `ScoringService.stock_draw_count` (v2.0 - Carte)
+- **Tipo:** `int` (contatore carte pescate)
+- **Scope:** Calcolo penalità progressive (soglie 21/41)
+- **Incremento:** `+1` per ogni **carta fisica** pescata (`record_event(STOCK_DRAW)`)
+- **Esempio:** Dopo 7 draw-3 → `stock_draw_count = 21`
+- **Uso:** Calcolo score, threshold warnings
+
+**⚠️ IMPORTANTE:**
+- I warnings TTS leggono `stock_draw_count` (quello per le penalità)
+- Non confondere i due: hanno granularità diversa (azioni vs carte)
+- `stock_draw_count` è accurato perché `record_event()` è chiamato **per ogni carta** dentro `if card:` guard
+
+---
+
+### Recycle Counters
+
+Il sistema mantiene **due contatori distinti** per i ricicli waste→stock:
+
+#### `GameService.recycle_count` (Legacy - Statistics)
+- **Tipo:** `int` (contatore ricicli totali)
+- **Scope:** Statistiche finali, logging
+- **Incremento:** Dopo `rules.can_recycle_waste()` PASS + move carte completato
+- **Uso:** `get_final_statistics()`, log analytics
+- **Attivo:** Sempre (anche con scoring disabilitato)
+
+#### `ScoringService.recycle_count` (v2.0 - Scoring)
+- **Tipo:** `int` (contatore ricicli per scoring)
+- **Scope:** Calcolo penalità progressive (soglie 3/4/5)
+- **Incremento:** Via `record_event(RECYCLE_WASTE)`
+- **Uso:** Calcolo score, threshold warnings
+- **Attivo:** Solo se `settings.scoring_enabled = True`
+
+**⚠️ IMPORTANTE:**
+- I warnings TTS leggono `ScoringService.recycle_count` (quello per le penalità)
+- I due counter sono **sincronizzati** (entrambi incrementati da `GameService.recycle_waste()`)
+- Architettura intenzionale: stats layer vs scoring layer separation
+
+---
+
+### Perché Questa Duality?
+
+**Separazione delle responsabilità:**
+- `GameService` = **Domain layer** (gestisce gioco, anche senza scoring)
+- `ScoringService` = **Scoring layer** (modello matematico opzionale)
+
+**Benefici:**
+- ✅ Scoring può essere disabilitato senza rompere statistiche
+- ✅ Granularità corretta per ogni use case (azioni vs penalità)
+- ✅ Single responsibility principle rispettato
+
+**Esempi pratici:**
+```python
+# Caso 1: Scoring disabilitato
+game_service.recycle_waste()
+# → GameService.recycle_count = 1 ✅
+# → ScoringService.recycle_count = 0 (scoring=None) ✅
+
+# Caso 2: Scoring abilitato
+game_service.recycle_waste()
+# → GameService.recycle_count = 1 ✅ (per stats)
+# → ScoringService.recycle_count = 1 ✅ (per penalty)
+# → Warning TTS al 3° riciclo (legge ScoringService counter)
+```
+
+---
+
 ## 🔒 Type Hints
 
 Tutti i metodi pubblici sono completamente tipizzati. Per verificare:
