@@ -5,7 +5,8 @@
 **Specifica**: `docs/SCORING_SYSTEM_V2.md`  
 **Branch**: `refactoring-engine`  
 **Data Pianificazione**: 16 Febbraio 2026  
-**Versione Target**: v2.6.0
+**Versione Target**: v2.6.0  
+**Revisione**: v2 (con correzioni operative complete)
 
 ---
 
@@ -15,25 +16,38 @@
 Completare l'implementazione del sistema scoring v2.0 con:
 1. **Fix bug critici** nell'integrazione gameplay-scoring
 2. **Sistema warnings graduati** per soglie penalità (accessibilità TTS)
-3. **Retrocompatibilità** con score salvati v1.0
+3. **Persistenza settings** score_warning_level (previene crash riavvio)
+4. **Test robusti** con tag-based detection (no keyword matching fragile)
+5. **Retrocompatibilità** con score salvati v1.0
 
 ### Scope
 - ✅ **Bug Fix CRITICO**: Registrazione eventi `STOCK_DRAW` (sistema penalità rotto)
 - ✅ **Bug Fix OPZIONALE**: Tracking eventi `INVALID_MOVE` (statistiche future)
 - ✅ **Feature Warnings**: 4 livelli graduati (DISABLED/MINIMAL/BALANCED/COMPLETE)
+- ✅ **Settings Persistence**: Salvataggio/caricamento `score_warning_level` (NUOVO)
+- ✅ **Test Robustness**: Tag `[SCORING_WARNING]` per detection affidabile (NUOVO)
+- ✅ **Safe TTS**: Pattern adapter con None-check (NUOVO)
 - ✅ **Retrocompat**: Gestione score legacy senza `victory_quality_multiplier`
 - ✅ **Test Coverage**: Integration test end-to-end + unit test parametrici
 
 ### Effort Totale Stimato
-**4-5 ore** distribuite in 5 fasi:
+**5-6 ore** distribuite in 7 fasi:
 - Fase 0 (CRITICA): 30 minuti
 - Fase 0.5 (OPZIONALE): 20 minuti
-- Fasi 1-4 (FEATURE): 3-4 ore
+- Fase 1 (FEATURE): 1 ora
+- **Fase 1.5 (CRITICA)**: 30 minuti ← NUOVO
+- Fase 2 (FEATURE): 1 ora
+- **Fase 2.5 (IMPORTANTE)**: 20 minuti ← NUOVO
+- Fase 3 (RETROCOMPAT): 15 minuti
+- Fase 4 (TEST): 1.5 ore
 
 ### Priorità
 🔴 **FASE 0** (MASSIMA) → Blocca funzionamento scoring v2.0  
+🔴 **FASE 1.5** (CRITICA) → Previene crash/reset opzioni riavvio ← NUOVO  
 🟡 **FASE 0.5** (MEDIA) → Nice-to-have per completezza  
-⭐ **FASI 1-4** (ALTA) → Enhancement accessibilità
+⭐ **FASI 1-2** (ALTA) → Enhancement accessibilità  
+🟠 **FASE 2.5** (IMPORTANTE) → Test robusti senza flakiness ← NUOVO  
+✅ **FASI 3-4** (ALTA) → Retrocompat + coverage
 
 ---
 
@@ -112,9 +126,7 @@ else:
 
 ### Implementazione
 
-#### Opzione A: Record Per Carta (RACCOMANDATO)
-Coerente con filosofia attuale dove `stock_draw_count` incrementa per ogni carta pescata.
-
+#### Codice Fix (Record Per Carta)
 ```python
 def draw_cards(self, count: int = 1) -> Tuple[bool, str, List[Card]]:
     """Draw cards from stock to waste pile.
@@ -151,7 +163,12 @@ def draw_cards(self, count: int = 1) -> Tuple[bool, str, List[Card]]:
             if self.scoring:
                 self.scoring.record_event(ScoreEventType.STOCK_DRAW)
     
-    self.draw_count += 1  # Counter azioni pescata (statistiche legacy)
+    # INVARIANT: draw_count (actions) vs stock_draw_count (cards)
+    # - self.draw_count = numero AZIONI di pescata (statistiche legacy)
+    # - self.scoring.stock_draw_count = numero CARTE pescate (scoring v2.0)
+    # Esempio draw-3: dopo 7 azioni -> draw_count=7, stock_draw_count=21
+    self.draw_count += 1
+    
     return True, f"Pescate {len(drawn_cards)} carte", drawn_cards
 ```
 
@@ -163,6 +180,8 @@ def draw_cards(self, count: int = 1) -> Tuple[bool, str, List[Card]]:
 2. **Semplicità implementazione**: Loop già itera per carta
    
 3. **Backward compatible**: `self.draw_count` resta "per azione" (statistiche legacy non rompono)
+
+4. **Invariante documentato**: Commento inline chiarisce separazione responsabilità
 
 ### Test Integration (ROBUSTI - AGGIORNATI)
 
@@ -308,7 +327,7 @@ def test_stock_draw_penalties_with_draw3():
 ```
 
 ### Effort: 30 minuti
-- Codice: 5 minuti (1 linea + guard)
+- Codice: 5 minuti (1 linea + guard + commento)
 - Test: 20 minuti (3 test robusti)
 - Review: 5 minuti
 
@@ -365,7 +384,6 @@ def test_invalid_moves_tracked():
     engine.new_game()
     
     # Force invalid move scenario
-    # (Implementation details depend on table setup)
     source = engine.service.table.pile_base[0]
     target = engine.service.table.pile_semi[0]
     
@@ -535,6 +553,173 @@ def get_score_warning_level_display(self) -> str:
 
 ---
 
+## 🔴 FASE 1.5: Settings Persistence score_warning_level
+
+### Priorità: 🔴 CRITICA (PREVIENE CRASH/RESET RIAVVIO)
+
+> **⚠️ CRITICAL: Senza questa fase, `score_warning_level` funziona solo in sessione**  
+> Al riavvio app, l'opzione torna al default o il loader crasha se non riconosce il valore.
+
+### File Modificato
+`src/infrastructure/storage/settings_storage.py` (o equivalente per settings JSON)
+
+### Implementazione
+
+#### Approccio RACCOMANDATO: Serializzazione String
+
+**Vantaggi**:
+- ✅ Human-readable nel JSON (`"BALANCED"` vs `2`)
+- ✅ Forward-compatible (nuovi livelli aggiunti senza rompere vecchi)
+- ✅ Debug più facile (leggi JSON e capisci subito)
+
+**File**: Dove GameSettings viene salvato/caricato (probabilmente JSON)
+
+```python
+# In GameSettings.to_dict() o equivalente
+def to_dict(self) -> Dict[str, Any]:
+    """Serialize settings to dictionary for JSON storage.
+    
+    Returns:
+        Dictionary with all settings, ready for JSON.dump()
+    """
+    return {
+        # ... altri campi esistenti ...
+        "difficulty_level": self.difficulty_level,
+        "draw_count": self.draw_count,
+        # ... 
+        
+        # ✅ NEW v2.6.0: Serialize score_warning_level as string
+        "score_warning_level": self.score_warning_level.name,  # "BALANCED"
+    }
+
+# In GameSettings.from_dict() o __init__ con dict
+@classmethod
+def from_dict(cls, data: Dict[str, Any]) -> 'GameSettings':
+    """Deserialize settings from JSON dictionary.
+    
+    Args:
+        data: Dictionary from JSON.load(), may be legacy format
+        
+    Returns:
+        GameSettings instance with all fields populated
+    """
+    settings = cls()
+    
+    # ... carica altri campi esistenti ...
+    
+    # ✅ NEW v2.6.0: Load score_warning_level con retrocompat
+    if "score_warning_level" in data:
+        try:
+            # Parse string to enum
+            level_name = data["score_warning_level"]
+            settings.score_warning_level = ScoreWarningLevel[level_name]
+        except (KeyError, ValueError) as e:
+            # Invalid value → fallback to default
+            log.warning_issued(
+                "GameSettings",
+                f"Invalid score_warning_level '{level_name}': {e}. Using default BALANCED."
+            )
+            settings.score_warning_level = ScoreWarningLevel.BALANCED
+    else:
+        # Missing field → retrocompat default (legacy JSON v1.0)
+        settings.score_warning_level = ScoreWarningLevel.BALANCED
+    
+    return settings
+```
+
+#### Approccio ALTERNATIVO: Serializzazione Int (Più Semplice)
+
+```python
+def to_dict(self) -> Dict[str, Any]:
+    return {
+        # ...
+        "score_warning_level": int(self.score_warning_level),  # 0-3
+    }
+
+@classmethod
+def from_dict(cls, data: Dict[str, Any]) -> 'GameSettings':
+    settings = cls()
+    
+    # Load with validation
+    level_int = data.get("score_warning_level", 2)  # Default BALANCED=2
+    
+    # Validate range
+    if 0 <= level_int <= 3:
+        settings.score_warning_level = ScoreWarningLevel(level_int)
+    else:
+        log.warning_issued(
+            "GameSettings",
+            f"Invalid score_warning_level {level_int}, using BALANCED"
+        )
+        settings.score_warning_level = ScoreWarningLevel.BALANCED
+    
+    return settings
+```
+
+### Test FASE 1.5
+
+**File**: `tests/infrastructure/test_settings_persistence.py`
+
+```python
+import pytest
+from src.domain.models.scoring import ScoreWarningLevel
+from src.domain.services.game_settings import GameSettings
+
+def test_score_warning_level_persistence():
+    """Verify score_warning_level saved/loaded correctly."""
+    settings = GameSettings()
+    settings.score_warning_level = ScoreWarningLevel.MINIMAL
+    
+    # Serialize
+    data = settings.to_dict()
+    assert data["score_warning_level"] == "MINIMAL"  # String serialization
+    
+    # Deserialize
+    loaded = GameSettings.from_dict(data)
+    assert loaded.score_warning_level == ScoreWarningLevel.MINIMAL
+
+def test_score_warning_level_retrocompat_missing():
+    """Verify default BALANCED if field missing (legacy JSON v1.0)."""
+    legacy_data = {
+        "difficulty_level": 1,
+        "draw_count": 3
+        # No score_warning_level field
+    }
+    
+    settings = GameSettings.from_dict(legacy_data)
+    assert settings.score_warning_level == ScoreWarningLevel.BALANCED, \
+        "Missing field should default to BALANCED"
+
+def test_score_warning_level_invalid_value():
+    """Verify fallback to BALANCED if invalid value in JSON."""
+    bad_data = {
+        "score_warning_level": "INVALID_LEVEL_NAME"
+    }
+    
+    settings = GameSettings.from_dict(bad_data)
+    assert settings.score_warning_level == ScoreWarningLevel.BALANCED, \
+        "Invalid value should fallback to BALANCED"
+
+def test_score_warning_level_int_legacy_support():
+    """Verify support for int values (legacy or alternative format)."""
+    int_data = {
+        "score_warning_level": 1  # MINIMAL as int
+    }
+    
+    # If using int serialization, this should work
+    # If using string serialization, add conversion logic
+    settings = GameSettings.from_dict(int_data)
+    # Should handle gracefully (convert or fallback)
+    assert settings.score_warning_level in ScoreWarningLevel
+```
+
+### Effort: 30 minuti
+- Codice serialization: 15 minuti
+- Test: 10 minuti
+- Review: 5 minuti
+
+---
+
 ## 🎯 FASE 2: Integrate Warnings in GameEngine
 
 ### Priorità: ⭐ ALTA (FEATURE CORE)
@@ -542,9 +727,77 @@ def get_score_warning_level_display(self) -> str:
 ### File Modificato
 `src/application/game_engine.py` - Metodi `draw_from_stock()` e `recycle_waste()`
 
+### Pre-Implementation Checklist
+
+> **⚠️ CRITICAL: Verifica questi dettagli nel codice reale PRIMA di implementare**
+
+#### A. TTS API Path
+Verifica quale API path esiste nel tuo `GameEngine`:
+```python
+# Opzione 1 (più comune)
+self.screen_reader.tts.speak(...)  
+
+# Opzione 2 (se TTS è diretto)
+self.tts.speak(...)  
+
+# Opzione 3 (se adapter diverso)
+self.ui.tts.speak(...)  
+```
+
+#### B. TTS speak() Signature
+Verifica parametri disponibili:
+```python
+# Base (minimo)
+speak(text: str)
+
+# Con interrupt control (preferito)
+speak(text: str, interrupt: bool)
+
+# Con priority queue (avanzato)
+speak(text: str, priority: int)
+```
+
+#### C. Import Circolari ScoreFormatter
+Se import a livello modulo crea circular import, usa import locale:
+```python
+# ❌ Se crea circular import
+from src.presentation.formatters.score_formatter import ScoreFormatter
+
+# ✅ Import locale nei metodi helper
+def _announce_draw_threshold_warning(self):
+    from src.presentation.formatters.score_formatter import ScoreFormatter
+    warning = ScoreFormatter.format_threshold_warning(...)
+```
+
 ### Implementazione
 
-#### A. Warnings in `draw_from_stock()`
+#### A. Safe TTS Helper (PATTERN ROBUSTO)
+
+**Aggiungi metodo helper per TTS access sicuro**:
+
+```python
+def _speak(self, message: str, interrupt: bool = False) -> None:
+    """Safe TTS adapter with None-check.
+    
+    Centralizes TTS access to avoid crashes if screen_reader not initialized.
+    Used by warning announcement helpers.
+    
+    Args:
+        message: Text to speak
+        interrupt: Whether to interrupt current speech
+        
+    Version: v2.6.0
+    """
+    if self.screen_reader and hasattr(self.screen_reader, 'tts'):
+        try:
+            self.screen_reader.tts.speak(message, interrupt=interrupt)
+        except Exception as e:
+            # Fail gracefully in tests or if TTS unavailable
+            log.warning_issued("GameEngine", f"TTS speak failed: {e}")
+    # Else: no-op (test-safe, no crash)
+```
+
+#### B. Warnings in `draw_from_stock()`
 **Posizione**: Dopo `self.service.draw_cards(count)`, prima del `return`
 
 ```python
@@ -604,6 +857,7 @@ def _announce_draw_threshold_warning(self) -> None:
     
     # ALL levels (MINIMAL, BALANCED, COMPLETE): Warning at 21 (first penalty)
     elif draw_count == 21:
+        # Import locale per evitare circular import
         from src.presentation.formatters.score_formatter import ScoreFormatter
         warning = ScoreFormatter.format_threshold_warning(
             "stock_draw", 21, 20, -1
@@ -616,12 +870,12 @@ def _announce_draw_threshold_warning(self) -> None:
             "stock_draw", 41, 40, -2
         )
     
-    # Announce warning if any
-    if warning and self.screen_reader:
-        self.screen_reader.tts.speak(warning, interrupt=False)
+    # Announce warning if any (usa helper safe)
+    if warning:
+        self._speak(warning, interrupt=False)
 ```
 
-#### B. Warnings in `recycle_waste()`
+#### C. Warnings in `recycle_waste()`
 **Posizione**: Dopo `self.service.recycle_waste(shuffle)`, prima dell'auto-draw
 
 ```python
@@ -690,15 +944,143 @@ def _announce_recycle_threshold_warning(self) -> None:
             "Penalità totale -35 punti. Crescita rapida."
         )
     
-    # Announce warning if any
-    if warning and self.screen_reader:
-        self.screen_reader.tts.speak(warning, interrupt=False)
+    # Announce warning if any (usa helper safe)
+    if warning:
+        self._speak(warning, interrupt=False)
 ```
 
 ### Effort: 1 ora
-- Metodi helper: 30 minuti
-- Integration: 20 minuti
+- Safe TTS helper: 10 minuti
+- Metodi warning: 30 minuti
+- Integration: 10 minuti
 - Testing: 10 minuti
+
+---
+
+## 🟠 FASE 2.5: Tag-Based Warning Detection (TEST ROBUSTNESS)
+
+### Priorità: 🟠 IMPORTANTE (PREVIENE TEST FLAKY)
+
+> **⚠️ PROBLEMA: Keyword matching è fragile**  
+> Test che cercano `"soglia"` o `"penalità"` rompono se cambi una parola.
+> **SOLUZIONE**: Tag costante `[SCORING_WARNING]` per detection affidabile.
+
+### File Modificato
+`src/presentation/formatters/score_formatter.py`
+
+### Implementazione
+
+#### Aggiungi Tag Costante
+
+```python
+# In src/presentation/formatters/score_formatter.py
+
+class ScoreFormatter:
+    """Formatter for scoring system messages and warnings.
+    
+    Version: v2.6.0
+    """
+    
+    # ✅ NEW v2.6.0: Tag costante per test detection robusto
+    SCORING_WARNING_TAG = "[SCORING_WARNING]"
+    
+    @staticmethod
+    def format_threshold_warning(
+        event_type: str,
+        threshold: int,
+        previous: int,
+        penalty: int
+    ) -> str:
+        """Format threshold warning with tag for robust test detection.
+        
+        Args:
+            event_type: "stock_draw" or "recycle"
+            threshold: Threshold value crossed
+            previous: Previous threshold
+            penalty: Penalty amount (negative)
+            
+        Returns:
+            Tagged warning message for TTS
+            
+        Examples:
+            >>> ScoreFormatter.format_threshold_warning("stock_draw", 21, 20, -1)
+            "[SCORING_WARNING] Attenzione: superata soglia 20 pescate..."
+        
+        Version: v2.6.0
+        """
+        if event_type == "stock_draw":
+            msg = (
+                f"Attenzione: superata soglia {previous} pescate. "
+                f"Penalità {penalty} punto per pescata."
+            )
+        elif event_type == "recycle":
+            msg = (
+                f"Attenzione: {threshold}° riciclo. "
+                f"Penalità {abs(penalty)} punti."
+            )
+        else:
+            msg = f"Soglia {threshold} superata."
+        
+        # ✅ Prepend tag costante per test detection
+        return f"{ScoreFormatter.SCORING_WARNING_TAG} {msg}"
+```
+
+### Update FASE 2: Usa Formatter per Tutti i Warnings
+
+**In `_announce_draw_threshold_warning()`**:
+```python
+# COMPLETE level: Pre-warning at 20 (usa formatter)
+if level == ScoreWarningLevel.COMPLETE and draw_count == 20:
+    from src.presentation.formatters.score_formatter import ScoreFormatter
+    # ✅ Anche pre-warning usa formatter per consistency
+    warning = (
+        f"{ScoreFormatter.SCORING_WARNING_TAG} "
+        f"Ultima pescata gratuita. Dal prossimo draw penalità -1 punto."
+    )
+```
+
+**In `_announce_recycle_threshold_warning()`**:
+```python
+# COMPLETE level: Recycle 4 e 5 (usa formatter)
+elif level == ScoreWarningLevel.COMPLETE and recycle_count == 4:
+    from src.presentation.formatters.score_formatter import ScoreFormatter
+    warning = (
+        f"{ScoreFormatter.SCORING_WARNING_TAG} "
+        f"Attenzione: quarto riciclo. Penalità totale -20 punti."
+    )
+```
+
+### Test Update (usa Tag)
+
+**File**: `tests/application/test_scoring_warnings_levels.py`
+
+```python
+from src.presentation.formatters.score_formatter import ScoreFormatter
+
+def test_stock_draw_warnings_per_level_robust(scoring_engine_draw1, level, expected_warnings):
+    """Verify warnings using TAG detection (robust, non-fragile)."""
+    engine = scoring_engine_draw1
+    engine.settings.score_warning_level = level
+    
+    # Draw 45 times
+    for _ in range(45):
+        engine.draw_from_stock()
+    
+    # ✅ Count warnings by TAG (non fragile a cambi testo)
+    warning_calls = [
+        call for call in engine.screen_reader.tts.speak.call_args_list
+        if ScoreFormatter.SCORING_WARNING_TAG in call[0][0]
+    ]
+    
+    assert len(warning_calls) == expected_warnings, \
+        f"Level {level.name}: expected {expected_warnings} warnings, " \
+        f"got {len(warning_calls)}"
+```
+
+### Effort: 20 minuti
+- Tag formatter: 10 minuti
+- Update FASE 2: 5 minuti
+- Test update: 5 minuti
 
 ---
 
@@ -768,26 +1150,94 @@ def load_all_scores(self) -> List[Dict[str, Any]]:
 
 ---
 
-## 🧪 FASE 4: Test Coverage Completo
+## 🧪 FASE 4: Test Coverage Completo (DI Controllata)
 
 ### Priorità: ✅ ALTA
 
 ### File Modificato
-`tests/application/test_game_engine.py`
+`tests/application/test_game_engine_scoring_warnings.py` (nuovo file)
+
+### Fixture DI Controllata (STRATEGIA UNIFORME)
+
+> **⚠️ CRITICAL: Usa questa fixture per TUTTI i test warnings**  
+> Evita incoerenze tra `GameEngine.create()` e `mock_engine` fixture diverse.
+
+**File**: `tests/application/conftest.py` o nel test file
+
+```python
+import pytest
+from unittest.mock import Mock
+from src.domain.models.table import GameTable
+from src.domain.rules.solitaire_rules import SolitaireRules
+from src.domain.services.scoring_service import ScoringService
+from src.domain.services.game_service import GameService
+from src.domain.services.game_settings import GameSettings
+from src.application.game_engine import GameEngine
+from src.domain.models.scoring import ScoreWarningLevel
+
+@pytest.fixture
+def scoring_engine_draw1(mocker):
+    """GameEngine fixture with scoring enabled and draw_count=1 forced.
+    
+    Provides deterministic setup for threshold warning tests.
+    - TTS is mocked for call inspection
+    - draw_count=1 ensures predictable threshold crossing
+    - Scoring enabled with difficulty level 1
+    - Full deck (52 cards) for adequate test range
+    
+    Usage:
+        def test_warnings(scoring_engine_draw1):
+            engine = scoring_engine_draw1
+            engine.settings.score_warning_level = ScoreWarningLevel.BALANCED
+            # ... test logic ...
+    
+    Version: v2.6.0
+    """
+    # Create components con DI controllata
+    table = GameTable.create(deck_type="french")
+    rules = SolitaireRules()
+    scoring = ScoringService(
+        deck_type="french",
+        difficulty_level=1,
+        draw_count=1  # Force determinism: 1 action = 1 card
+    )
+    service = GameService(table, rules, scoring)
+    
+    # Mock TTS per call inspection
+    mock_tts = mocker.Mock()
+    mock_screen_reader = mocker.Mock()
+    mock_screen_reader.tts = mock_tts
+    
+    # Create settings
+    settings = GameSettings()
+    settings.scoring_enabled = True
+    settings.draw_count = 1  # Sync con scoring service
+    settings.score_warning_level = ScoreWarningLevel.BALANCED  # Default
+    
+    # Create engine with controlled dependencies
+    engine = GameEngine(
+        service=service,
+        settings=settings,
+        screen_reader=mock_screen_reader
+    )
+    
+    # Initialize game state
+    engine.new_game()
+    
+    return engine
+```
 
 ### Test Suite
 
 > **⚠️ CRITICAL: Deterministic Test Setup**  
-> I seguenti test parametrici **devono forzare `draw_count=1`** nel setup per garantire
-> threshold crossing prevedibile. Con draw-3, le soglie si raggiungono a conteggi azione
-> non deterministici (es: 7 azioni = 21 carte, ma warnings potrebbero emettere a momenti diversi).
-> 
-> **Best Practice**: Usa sempre `draw_count=1` nei test warnings per reprodicibilità.
+> Tutti i test usano fixture `scoring_engine_draw1` con draw_count=1 FORZATO.
+> Con draw-3, le soglie si raggiungono a conteggi azione non deterministici.
 
-#### Test 1: Warnings per Livello (Parametrico, DETERMINISTICO)
+#### Test 1: Warnings per Livello - Stock Draw (PARAMETRICO, TAG-BASED)
 ```python
 import pytest
 from src.domain.models.scoring import ScoreWarningLevel
+from src.presentation.formatters.score_formatter import ScoreFormatter
 
 @pytest.mark.parametrize("level,expected_warnings", [
     (ScoreWarningLevel.DISABLED, 0),
@@ -795,29 +1245,25 @@ from src.domain.models.scoring import ScoreWarningLevel
     (ScoreWarningLevel.BALANCED, 2),   # Draw 21 + 41
     (ScoreWarningLevel.COMPLETE, 3),   # Draw 20 + 21 + 41
 ])
-def test_stock_draw_warnings_per_level(level, expected_warnings):
-    """Verify correct warnings per level (deterministic setup).
+def test_stock_draw_warnings_per_level(scoring_engine_draw1, level, expected_warnings):
+    """Verify correct warnings per level (deterministic setup, tag-based).
     
-    CRITICAL: Uses draw_count=1 to ensure predictable threshold crossing.
-    With draw-3, thresholds occur at unpredictable action counts.
+    Uses scoring_engine_draw1 fixture with draw_count=1 for predictable
+    threshold crossing at exactly cards 20, 21, 41.
+    
+    Detection via SCORING_WARNING_TAG (robust, non-fragile).
     """
-    # Setup con draw_count=1 FORZATO per determinismo
-    engine = GameEngine.create(
-        scoring_enabled=True,
-        draw_count=1  # 👈 CRITICO: 1 azione = 1 carta = soglie prevedibili
-    )
-    engine.new_game()
+    engine = scoring_engine_draw1
     engine.settings.score_warning_level = level
     
     # Draw esattamente 45 volte (azioni = carte con draw-1)
     for _ in range(45):
         engine.draw_from_stock()
     
-    # Count warnings (robust filtering)
+    # ✅ Count warnings by TAG (robust, non fragile)
     warning_calls = [
         call for call in engine.screen_reader.tts.speak.call_args_list
-        if any(kw in call[0][0].lower() 
-               for kw in ["soglia", "penalità", "ultima pescata", "gratuita"])
+        if ScoreFormatter.SCORING_WARNING_TAG in call[0][0]
     ]
     
     assert len(warning_calls) == expected_warnings, \
@@ -825,7 +1271,7 @@ def test_stock_draw_warnings_per_level(level, expected_warnings):
         f"got {len(warning_calls)}"
 ```
 
-#### Test 2: Recycle Warnings per Livello
+#### Test 2: Warnings per Livello - Recycle (PARAMETRICO, TAG-BASED)
 ```python
 @pytest.mark.parametrize("level,expected_warnings", [
     (ScoreWarningLevel.DISABLED, 0),
@@ -833,20 +1279,22 @@ def test_stock_draw_warnings_per_level(level, expected_warnings):
     (ScoreWarningLevel.BALANCED, 1),   # Solo recycle 3
     (ScoreWarningLevel.COMPLETE, 3),   # Recycle 3 + 4 + 5
 ])
-def test_recycle_warnings_per_level(mock_engine, level, expected_warnings):
-    """Verify correct number of warnings per level during 6 recycles."""
-    # Setup
-    mock_engine.settings.score_warning_level = level
-    mock_engine.settings.scoring_enabled = True
+def test_recycle_warnings_per_level(scoring_engine_draw1, level, expected_warnings):
+    """Verify correct number of warnings per level during 6 recycles.
+    
+    Detection via SCORING_WARNING_TAG for robustness.
+    """
+    engine = scoring_engine_draw1
+    engine.settings.score_warning_level = level
     
     # Simula 6 ricicli
     for _ in range(6):
-        mock_engine.recycle_waste()
+        engine.recycle_waste()
     
-    # Count warnings
+    # ✅ Count warnings by TAG
     warning_calls = [
-        call for call in mock_engine.screen_reader.tts.speak.call_args_list
-        if "riciclo" in call[0][0].lower()
+        call for call in engine.screen_reader.tts.speak.call_args_list
+        if ScoreFormatter.SCORING_WARNING_TAG in call[0][0]
     ]
     
     assert len(warning_calls) == expected_warnings, \
@@ -856,20 +1304,20 @@ def test_recycle_warnings_per_level(mock_engine, level, expected_warnings):
 
 #### Test 3: Warning Disabilitati Quando Scoring OFF
 ```python
-def test_no_warnings_when_scoring_disabled(mock_engine):
+def test_no_warnings_when_scoring_disabled(scoring_engine_draw1):
     """Verify no warnings announced when scoring system is disabled."""
-    # Setup
-    mock_engine.settings.score_warning_level = ScoreWarningLevel.COMPLETE
-    mock_engine.settings.scoring_enabled = False  # 👈 Scoring OFF
+    engine = scoring_engine_draw1
+    engine.settings.score_warning_level = ScoreWarningLevel.COMPLETE
+    engine.settings.scoring_enabled = False  # 👈 Scoring OFF
     
     # Simula 45 draw (supererebbe soglie se scoring attivo)
     for _ in range(45):
-        mock_engine.draw_from_stock()
+        engine.draw_from_stock()
     
     # Verify NESSUN warning
     warning_calls = [
-        call for call in mock_engine.screen_reader.tts.speak.call_args_list
-        if "soglia" in call[0][0].lower()
+        call for call in engine.screen_reader.tts.speak.call_args_list
+        if ScoreFormatter.SCORING_WARNING_TAG in call[0][0]
     ]
     
     assert len(warning_calls) == 0, \
@@ -908,13 +1356,17 @@ def test_cycle_score_warning_level():
     assert settings.score_warning_level == ScoreWarningLevel.BALANCED
 ```
 
-### Effort: 1 ora
+### Effort: 1.5 ore
+- Fixture DI: 30 minuti
+- Test parametrici: 40 minuti
+- Test cycle: 10 minuti
+- Review: 10 minuti
 
 ---
 
 ## 📚 Test Strategy Best Practices
 
-### Rationale: Direct GameService Setup
+### Rationale: Direct GameService Setup (FASE 0)
 
 **Problema**: Test su `GameEngine.create()` possono avere:
 - Dipendenze da configurazioni esterne (settings globali)
@@ -923,7 +1375,7 @@ def test_cycle_score_warning_level():
 
 **Soluzione**: Setup diretto su `GameService`:
 ```python
-# ✅ ROBUSTO
+# ✅ ROBUSTO: Zero dipendenze esterne
 table = GameTable.create(deck_type="french")
 rules = SolitaireRules()
 scoring = ScoringService(deck_type="french", difficulty_level=1, draw_count=1)
@@ -933,11 +1385,11 @@ service = GameService(table, rules, scoring)
 **Benefici**:
 - ✅ Controllo totale su `draw_count`
 - ✅ Zero dipendenze esterne
-- ✅ Reprodicibilità 100%
+- ✅ Reproducibilità 100%
 
 ---
 
-### Rationale: Event Filtering per Assertions
+### Rationale: Event Filtering per Assertions (FASE 0)
 
 **Problema**: `provisional.base_score` include TUTTI gli eventi:
 ```python
@@ -960,7 +1412,7 @@ assert draw_penalty == -5
 
 ---
 
-### Rationale: Forzare draw_count=1 nei Test Warnings
+### Rationale: Forzare draw_count=1 nei Test Warnings (FASE 4)
 
 **Problema**: Con draw-3, le soglie si raggiungono a conteggi azione variabili:
 ```python
@@ -972,7 +1424,7 @@ for _ in range(7):  # 7 azioni × 3 carte = 21 carte
 **Soluzione**: Forzare draw-1 nei test:
 ```python
 # ✅ DETERMINISTICO
-engine = GameEngine.create(draw_count=1)  # 1 azione = 1 carta
+engine = scoring_engine_draw1  # Fixture con draw_count=1
 for _ in range(45):  # Soglia 21 esattamente a iterazione 21
     engine.draw_from_stock()
 ```
@@ -980,21 +1432,43 @@ for _ in range(45):  # Soglia 21 esattamente a iterazione 21
 **Benefici**:
 - ✅ Threshold crossing prevedibile
 - ✅ Warning count esatto
-- ✅ Reprodicibilità garantita
+- ✅ Reproducibilità garantita
+
+---
+
+### Rationale: Tag-Based Detection (FASE 2.5)
+
+**Problema**: Keyword matching fragile:
+```python
+# ⚠️ FRAGILE: cambi "penalità" → "pena" e test rompe
+if "penalità" in call[0][0].lower()
+```
+
+**Soluzione**: Tag costante:
+```python
+# ✅ ROBUSTO: tag non cambia mai
+if ScoreFormatter.SCORING_WARNING_TAG in call[0][0]
+```
+
+**Benefici**:
+- ✅ Test non rompono per refactoring testi
+- ✅ Semantica esplicita (è un warning scoring)
+- ✅ Grep-friendly per debug
 
 ---
 
 ## ✅ Success Criteria
 
-### Acceptance Criteria
+### Acceptance Criteria (Checklist Operativa)
 
 #### Bug Fixes (Fase 0 + 0.5)
 - [ ] `STOCK_DRAW` eventi registrati correttamente durante gameplay
 - [ ] Penalità progressive 21/41 si applicano come da spec
 - [ ] Test integration end-to-end passano al 100%
 - [ ] `INVALID_MOVE` eventi tracciati in tutti i punti validazione
+- [ ] Invariante `draw_count` vs `stock_draw_count` documentato inline
 
-#### Feature Warnings (Fasi 1-4)
+#### Feature Warnings (Fasi 1-2)
 - [ ] Enum `ScoreWarningLevel` implementato con 4 livelli
 - [ ] `cycle_score_warning_level()` metodo funzionante
 - [ ] Warnings annunciati correttamente per ogni livello:
@@ -1002,8 +1476,27 @@ for _ in range(45):  # Soglia 21 esattamente a iterazione 21
   - MINIMAL: Draw 21, Recycle 3
   - BALANCED: Draw 21/41, Recycle 3
   - COMPLETE: Draw 20/21/41, Recycle 3/4/5
+- [ ] Safe TTS adapter `_speak()` con None-check
+- [ ] Import circolari risolti (locale imports)
+
+#### Settings Persistence (Fase 1.5) - CRITICA
+- [ ] `score_warning_level` serializzato in JSON settings
+- [ ] Deserializzazione con retrocompat (campo mancante → BALANCED)
+- [ ] Gestione valori invalidi (fallback → BALANCED)
+- [ ] Test persistence passano al 100%
+
+#### Test Robustness (Fase 2.5 + 4) - IMPORTANTE
+- [ ] Tag `[SCORING_WARNING]` aggiunto a tutti i warning messages
+- [ ] Test usano tag-based detection (non keyword matching)
+- [ ] Fixture DI `scoring_engine_draw1` implementata
+- [ ] Tutti i test warnings usano fixture uniforme
 - [ ] Test parametrici coprono tutti i livelli
-- [ ] Retrocompatibilità score legacy verificata
+- [ ] Test deterministici (draw_count=1 forzato)
+
+#### Retrocompat (Fase 3)
+- [ ] Score legacy caricano senza crash
+- [ ] Sentinel `-1.0` per `victory_quality_multiplier` mancante
+- [ ] Retrocompatibilità score verificata
 
 ### Non-Functional Requirements
 - [ ] Nessun breaking change in API esistenti
@@ -1011,6 +1504,41 @@ for _ in range(45):  # Soglia 21 esattamente a iterazione 21
 - [ ] Performance: warnings NON impattano framerate (async TTS)
 - [ ] Accessibilità: TTS chiaro e non interrompibile
 - [ ] Code coverage: >90% su nuovo codice
+- [ ] Nessun import circolare
+- [ ] Nessun crash se TTS non disponibile
+
+### Quick Checklist (Rapida)
+
+**FASE 0**:
+- [ ] STOCK_DRAW registrato per carta
+- [ ] Invariante commentato inline
+- [ ] Test event-filtered passano
+
+**FASE 0.5**:
+- [ ] INVALID_MOVE tracciato
+
+**FASE 1**:
+- [ ] ScoreWarningLevel enum ok
+- [ ] GameSettings cycle ok
+
+**FASE 1.5** (CRITICA):
+- [ ] Settings persistence ok
+- [ ] Retrocompat default BALANCED
+
+**FASE 2**:
+- [ ] Warnings level-aware
+- [ ] Safe TTS adapter ok
+
+**FASE 2.5** (IMPORTANTE):
+- [ ] Tag [SCORING_WARNING] presente
+- [ ] Test tag-based
+
+**FASE 3**:
+- [ ] ScoreStorage retrocompat ok
+
+**FASE 4**:
+- [ ] Fixture DI ok
+- [ ] Test parametrici passano
 
 ### Validation Tests
 ```bash
@@ -1019,10 +1547,16 @@ pytest tests/ -v
 
 # Run only scoring tests
 pytest tests/domain/test_scoring_service.py -v
-pytest tests/application/test_game_engine.py::test_stock_draw -v
+pytest tests/application/test_game_engine_scoring_warnings.py -v
 
 # Run with coverage
 pytest tests/ --cov=src --cov-report=html
+
+# Run only FASE 0 critical tests
+pytest tests/domain/services/test_game_service_scoring_integration.py -v
+
+# Run only warnings tests (FASE 4)
+pytest tests/application/test_game_engine_scoring_warnings.py -v
 ```
 
 ---
@@ -1034,10 +1568,14 @@ pytest tests/ --cov=src --cov-report=html
 | Rischio | Probabilità | Impact | Mitigazione |
 |---------|-------------|--------|-------------|
 | Test integration complessi | MEDIA | ALTA | Setup diretto GameService (FASE 0) |
+| Settings non persistono | ALTA | CRITICA | FASE 1.5 obbligatoria |
 | TTS annunci ripetitivi | BASSA | MEDIA | Default BALANCED (3 warnings max) |
+| Test flaky keyword matching | ALTA | ALTA | Tag [SCORING_WARNING] (FASE 2.5) |
 | Retrocompat score legacy | BASSA | ALTA | Sentinel `-1.0` + `.setdefault()` |
 | Performance warnings | MOLTO BASSA | BASSA | TTS async, no blocking |
-| Draw-3 test non deterministici | MEDIA | ALTA | Forzare draw_count=1 (FASE 4) |
+| Draw-3 test non deterministici | MEDIA | ALTA | Forzare draw_count=1 (Fixture) |
+| Import circolari | MEDIA | MEDIA | Import locale nei helper |
+| TTS crash se None | MEDIA | ALTA | Safe adapter `_speak()` con None-check |
 
 ### Rollback Plan
 Se Fase 0 (STOCK_DRAW fix) introduce regression:
@@ -1045,57 +1583,96 @@ Se Fase 0 (STOCK_DRAW fix) introduce regression:
 2. Mantieni Fasi 1-4 (warnings indipendenti)
 3. Fix bug in feature branch separato
 
+Se FASE 1.5 (persistence) introduce regression:
+1. Revert solo FASE 1.5
+2. `score_warning_level` funziona in sessione (degrada gracefully)
+3. Fix persistence in hotfix branch
+
 ---
 
-## 📝 Commit Strategy
+## 📝 Commit Strategy (10 Atomic Steps)
 
 ### Commit Structure (Conventional Commits)
 
 ```
-FASE 0:
+1. FASE 0 (CRITICA):
 fix(scoring): register STOCK_DRAW events in draw_cards gameplay
-- Add scoring.record_event() in draw loop
+- Add scoring.record_event() in draw loop per carta
+- Add inline comment documenting draw_count invariant
 - Fix progressive penalties 21/41 not applying
 - Add robust integration tests with direct GameService setup
 - Use event filtering for test isolation
 BREAKING: None
 Closes: #BUG-STOCK-DRAW
 
-FASE 0.5:
+2. FASE 0.5 (OPZIONALE):
 feat(scoring): track INVALID_MOVE events for statistics
-- Add event tracking in move validation failures
+- Add event tracking in move validation failures (3 points)
 - Enable future analytics on move efficiency
 - Add test for invalid move tracking
 Closes: #FEATURE-INVALID-TRACKING
 
-FASE 1:
-feat(settings): add graduated score warning levels system
-- Add ScoreWarningLevel enum (DISABLED/MINIMAL/BALANCED/COMPLETE)
-- Add cycle_score_warning_level() method
-- Update GameSettings with new field
-Closes: #FEATURE-WARNING-LEVELS
+3. FASE 1.1 (Enum):
+feat(scoring): add ScoreWarningLevel enum
+- Add enum with 4 levels (DISABLED/MINIMAL/BALANCED/COMPLETE)
+- Document level semantics and threshold mapping
+Closes: #FEATURE-WARNING-ENUM
 
-FASE 2:
+4. FASE 1.2 (GameSettings):
+feat(settings): add score_warning_level field and cycle method
+- Add score_warning_level field (default BALANCED)
+- Add cycle_score_warning_level() method
+- Add get_score_warning_level_display() helper
+- Add test for cycle through all levels
+Closes: #FEATURE-WARNING-SETTINGS
+
+5. FASE 1.5 (CRITICA - Persistence):
+fix(settings): add score_warning_level persistence with retrocompat
+- Serialize/deserialize score_warning_level to JSON
+- Add retrocompat for missing field (default BALANCED)
+- Add fallback for invalid values
+- Add persistence tests (save/load/retrocompat)
+BREAKING: None (graceful degradation)
+Closes: #FIX-WARNING-PERSISTENCE
+
+6. FASE 2.1 (Safe TTS):
+feat(engine): add safe TTS adapter pattern
+- Add _speak() helper with None-check
+- Centralize TTS access for warnings
+- Fail gracefully if TTS unavailable
+Closes: #FEATURE-SAFE-TTS
+
+7. FASE 2.2 (Warnings Integration):
 feat(engine): integrate TTS threshold warnings with levels
 - Add _announce_draw_threshold_warning() helper
 - Add _announce_recycle_threshold_warning() helper
 - Implement level-aware warning logic
+- Use local imports to avoid circular deps
 Closes: #FEATURE-WARNING-INTEGRATION
 
-FASE 3:
+8. FASE 2.5 (IMPORTANTE - Tag):
+feat(formatter): add [SCORING_WARNING] tag for robust test detection
+- Add SCORING_WARNING_TAG constant in ScoreFormatter
+- Prepend tag to all threshold warning messages
+- Update format_threshold_warning() method
+- Enable robust test detection without keyword matching
+Closes: #FEATURE-WARNING-TAG
+
+9. FASE 3 (Retrocompat):
 fix(storage): add backward compatibility for v1.0 scores
 - Handle missing victory_quality_multiplier field
 - Add sentinel -1.0 for legacy scores
 - Prevent KeyError on load_all_scores()
-Closes: #FIX-RETROCOMPAT
+Closes: #FIX-RETROCOMPAT-SCORES
 
-FASE 4:
+10. FASE 4 (Test):
 test(scoring): add comprehensive test coverage for warnings
-- Add parametric tests for all warning levels
+- Add scoring_engine_draw1 fixture with DI control
+- Add parametric tests for all warning levels (tag-based)
 - Force draw_count=1 for deterministic threshold crossing
 - Add integration tests for bug fixes with event filtering
 - Achieve >90% coverage on new code
-Closes: #TEST-COVERAGE
+Closes: #TEST-COVERAGE-WARNINGS
 ```
 
 ---
@@ -1104,17 +1681,25 @@ Closes: #TEST-COVERAGE
 
 ### Immediate Actions
 1. ✅ Review piano con team/stakeholder
-2. ✅ Conferma priorità Fase 0 (CRITICA)
-3. ✅ Setup branch: `feature/scoring-warnings-complete`
-4. ✅ Implementa Fase 0 (30 min)
-5. ✅ Run test suite completo
-6. ✅ Procedi con Fasi 1-4 se Fase 0 passa
+2. ✅ Conferma priorità FASE 0 (CRITICA) e FASE 1.5 (CRITICA)
+3. ✅ Setup branch: `feature/scoring-warnings-complete-v2`
+4. ✅ Implementa FASE 0 (30 min) - **PRIORITÀ MASSIMA**
+5. ✅ Implementa FASE 1.5 (30 min) - **CRITICA per persistenza**
+6. ✅ Run test suite completo
+7. ✅ Procedi con Fasi 1-4 se Fase 0/1.5 passano
+
+### Pre-Implementation Verifications
+- [ ] Verificare TTS API path nel codice reale (`self.screen_reader.tts`?)
+- [ ] Verificare signature `speak()` (parametro `interrupt`?)
+- [ ] Verificare dove GameSettings viene salvato/caricato (JSON path?)
+- [ ] Verificare import circolari ScoreFormatter ↔ GameEngine
 
 ### Post-Implementation
 - [ ] Update CHANGELOG.md con v2.6.0 features
 - [ ] Update user documentation (warnings levels)
 - [ ] Add migration guide per vecchi score
 - [ ] Performance profiling (TTS overhead)
+- [ ] Update ARCHITECTURE.md con nuove componenti
 
 ---
 
@@ -1127,16 +1712,39 @@ Closes: #TEST-COVERAGE
 
 ### Pull Request Correlate
 - PR #64 - Scoring System v2.0 (PARTE 1)
-- PR #XX - Questo piano (PARTE 2 - FINALE)
+- PR #XX - Questo piano (PARTE 2 - FINALE COMPLETA)
 
 ### Issues Risolte
-- Bug: STOCK_DRAW events not registered
-- Bug: INVALID_MOVE events not tracked
-- Feature: Graduated warning levels system
+- Bug: STOCK_DRAW events not registered (FASE 0)
+- Bug: INVALID_MOVE events not tracked (FASE 0.5)
+- Bug: Settings not persisted on restart (FASE 1.5)
+- Feature: Graduated warning levels system (FASE 1)
+- Feature: Safe TTS adapter pattern (FASE 2)
+- Feature: Tag-based test detection (FASE 2.5)
 
 ---
 
 **Piano approvato da**: [TBD]  
 **Data approvazione**: 16 Febbraio 2026  
+**Revisione**: v2 (con correzioni operative complete)  
 **Implementazione start**: [TBD]  
 **Target completion**: [TBD]
+
+---
+
+## 🎯 Definition of Done (Operativa)
+
+Questo piano è considerato **completamente implementato** quando:
+
+1. ✅ Tutti i test della suite passano al 100%
+2. ✅ Code coverage >90% su codice nuovo
+3. ✅ STOCK_DRAW eventi registrati e penalità attive
+4. ✅ Settings persistence funzionante (salva/ricarica correttamente)
+5. ✅ Warnings annunciati per tutti i livelli come da spec
+6. ✅ Test usano tag-based detection (robusti)
+7. ✅ Nessun import circolare
+8. ✅ Nessun crash TTS
+9. ✅ Retrocompat score legacy verificata
+10. ✅ Documentazione aggiornata (CHANGELOG, user docs)
+
+**Piano pronto per implementazione "senza sorprese"** 🚀
