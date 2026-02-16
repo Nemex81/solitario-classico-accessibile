@@ -34,7 +34,7 @@ from src.domain.services.selection_manager import SelectionManager
 from src.domain.services.scoring_service import ScoringService
 from src.infrastructure.config.scoring_config_loader import ScoringConfigLoader  # 🆕 MISSING
 from src.domain.rules.solitaire_rules import SolitaireRules
-from src.domain.models.scoring import ScoringConfig
+from src.domain.models.scoring import ScoringConfig, ScoreWarningLevel  # ✅ v2.6.0: Added ScoreWarningLevel
 from src.infrastructure.audio.screen_reader import ScreenReader
 from src.infrastructure.audio.tts_provider import create_tts_provider
 from src.infrastructure.storage.score_storage import ScoreStorage
@@ -926,6 +926,10 @@ class GameEngine:
         # Now draw cards (original logic)
         success, generic_msg, cards = self.service.draw_cards(count)
         
+        # ✅ NEW v2.6.0: TTS threshold warnings (graduated)
+        if success and self.settings and self.settings.scoring_enabled and self.service.scoring:
+            self._announce_draw_threshold_warning()
+        
         # Use detailed formatter
         if success and cards:
             message = GameFormatter.format_drawn_cards(cards)
@@ -978,6 +982,10 @@ class GameEngine:
             if self.screen_reader:
                 self.screen_reader.tts.speak(generic_msg, interrupt=False)
             return success, generic_msg
+        
+        # ✅ NEW v2.6.0: TTS threshold warning for recycle
+        if self.settings and self.settings.scoring_enabled and self.service.scoring:
+            self._announce_recycle_threshold_warning()
         
         # Auto-draw after reshuffle
         auto_success, auto_msg, auto_cards = self.service.draw_cards(1)
@@ -1202,6 +1210,125 @@ class GameEngine:
                 self.on_game_ended(False)
             else:
                 self.service.reset_game()
+    
+    # ========================================
+    # THRESHOLD WARNING HELPERS (v2.6.0)
+    # ========================================
+    
+    def _speak(self, message: str, interrupt: bool = False) -> None:
+        """Safe TTS adapter with None-check (v2.6.0).
+        
+        Centralizes TTS access to avoid crashes if screen_reader not initialized.
+        Used by warning announcement helpers.
+        
+        Args:
+            message: Text to speak
+            interrupt: Whether to interrupt current speech
+            
+        Version: v2.6.0
+        """
+        if self.screen_reader and hasattr(self.screen_reader, 'tts'):
+            try:
+                self.screen_reader.tts.speak(message, interrupt=interrupt)
+            except Exception as e:
+                # Fail gracefully in tests or if TTS unavailable
+                log.warning_issued("GameEngine", f"TTS speak failed: {e}")
+        # Else: no-op (test-safe, no crash)
+    
+    def _announce_draw_threshold_warning(self) -> None:
+        """Announce threshold warning for stock draw based on warning level (v2.6.0).
+        
+        Called after successful draw to check if a scoring threshold
+        has been crossed and announce warning to user via TTS.
+        
+        Warnings depend on score_warning_level setting:
+        - DISABLED: No warnings
+        - MINIMAL: Warning at 21 (first penalty)
+        - BALANCED: Warning at 21 and 41 (escalation)
+        - COMPLETE: Warning at 20 (pre), 21, and 41
+        
+        Version: v2.6.0
+        """
+        level = self.settings.score_warning_level
+        
+        # Early exit if disabled
+        if level == ScoreWarningLevel.DISABLED:
+            return
+        
+        draw_count = self.service.scoring.stock_draw_count
+        warning = None
+        
+        # COMPLETE level: Pre-warning at 20 (last free draw)
+        if level == ScoreWarningLevel.COMPLETE and draw_count == 20:
+            warning = (
+                f"{ScoreFormatter.SCORING_WARNING_TAG} "
+                f"Ultima pescata gratuita. "
+                f"Dal prossimo draw penalità -1 punto per pescata."
+            )
+        
+        # ALL levels (MINIMAL, BALANCED, COMPLETE): Warning at 21 (first penalty)
+        elif draw_count == 21:
+            warning = ScoreFormatter.format_threshold_warning(
+                "stock_draw", 21, 20, -1
+            )
+        
+        # BALANCED and COMPLETE: Warning at 41 (penalty doubles)
+        elif level >= ScoreWarningLevel.BALANCED and draw_count == 41:
+            warning = ScoreFormatter.format_threshold_warning(
+                "stock_draw", 41, 40, -2
+            )
+        
+        # Announce warning if any (use safe helper)
+        if warning:
+            self._speak(warning, interrupt=False)
+    
+    def _announce_recycle_threshold_warning(self) -> None:
+        """Announce threshold warning for waste recycle based on warning level (v2.6.0).
+        
+        Called after successful recycle to check if a scoring threshold
+        has been crossed and announce warning to user via TTS.
+        
+        Warnings depend on score_warning_level setting:
+        - DISABLED: No warnings
+        - MINIMAL: Warning at 3rd recycle (first penalty)
+        - BALANCED: Warning at 3rd recycle
+        - COMPLETE: Warning at 3rd, 4th, and 5th recycle
+        
+        Version: v2.6.0
+        """
+        level = self.settings.score_warning_level
+        
+        # Early exit if disabled
+        if level == ScoreWarningLevel.DISABLED:
+            return
+        
+        recycle_count = self.service.scoring.recycle_count
+        warning = None
+        
+        # ALL levels: Warning at 3rd recycle (first penalty)
+        if recycle_count == 3:
+            warning = ScoreFormatter.format_threshold_warning(
+                "recycle", 3, 2, -10
+            )
+        
+        # COMPLETE level: Warning at 4th recycle (penalty doubles)
+        elif level == ScoreWarningLevel.COMPLETE and recycle_count == 4:
+            warning = (
+                f"{ScoreFormatter.SCORING_WARNING_TAG} "
+                f"Attenzione: quarto riciclo. Penalità totale -20 punti."
+            )
+        
+        # COMPLETE level: Warning at 5th recycle (acceleration)
+        elif level == ScoreWarningLevel.COMPLETE and recycle_count == 5:
+            warning = (
+                f"{ScoreFormatter.SCORING_WARNING_TAG} "
+                f"Attenzione: quinto riciclo. "
+                f"Penalità totale -35 punti. Crescita rapida."
+            )
+        
+        # Announce warning if any (use safe helper)
+        if warning:
+            self._speak(warning, interrupt=False)
     
     def _debug_force_victory(self) -> str:
         """🔥 DEBUG ONLY: Simulate victory for testing end_game flow.

@@ -7,6 +7,109 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 ---
 
+## [2.6.1] - 2026-02-16
+
+### Added
+- **Opzione 9 Menu Opzioni**: Esposizione UI per livelli avvisi soglie punteggio
+  - Nuova opzione "Avvisi Soglie Punteggio" nel menu opzioni (posizione 9)
+  - Cicla tra 4 livelli: DISABLED (Disattivati) → MINIMAL (Minimi) → BALANCED (Equilibrati) → COMPLETE (Completi)
+  - Display mostra livello corrente in italiano
+  - Feedback TTS immediato tramite metodo esistente `cycle_score_warning_level()`
+  - Navigazione con frecce/numeri supporta opzione 9
+  - **Impatto**: Completa implementazione PR #66 esponendo controllo warning level all'utente
+
+### Changed
+- **OptionsController**: Range opzioni esteso da 0-7 a 0-8
+  - Aggiunto handler `_modify_score_warning_level()` per opzione 9
+  - Aggiornato `jump_to_option()` per supportare indice 8
+  - Aggiornati `_save_snapshot()` e `_restore_snapshot()` per includere score_warning_level
+  - Aggiornate mappe lock enforcement con option 8
+  - Display opzioni: "X di 8" → "X di 9"
+- **OptionsFormatter**: Display aggiornato per 9 opzioni
+  - Aggiunto "Avvisi Soglie Punteggio" a OPTION_NAMES (indice 8)
+  - `format_open_message()`: "1 di 8" → "1 di 9"
+  - `format_option_item()`: "X di 8" → "X di 9"
+
+### Technical Details
+- 2 file modificati: `options_controller.py` (+16 lines), `options_formatter.py` (+4 lines)
+- Riutilizza metodi domain esistenti (nessuna nuova logica business)
+- Pattern coerente con altre 8 opzioni
+- Persistenza automatica (già implementata in v2.6.0)
+- Zero breaking changes
+- Backward compatible
+
+---
+
+## [2.6.0] - 2026-02-16
+
+### Added
+- **Sistema Livelli Avvisi Graduati (Score Warning Levels)**: 4 livelli di verbosità per warnings TTS soglie penalità
+  - DISABLED (0): Nessun avviso (silenzioso, per veterani)
+  - MINIMAL (1): Solo transizioni 0pt→penalità (warnings essenziali)
+  - BALANCED (2): Transizioni + escalation (DEFAULT, casual players)
+  - COMPLETE (3): Pre-warnings + tutte soglie (principianti, massima guida)
+  - Enum `ScoreWarningLevel` con supporto operatori confronto
+  - Metodo `cycle_score_warning_level()` per ciclare tra livelli
+  - Metodo `get_score_warning_level_display()` per display UI
+  - Messaggi TTS ottimizzati in italiano per accessibilità
+  - **Impatto**: Personalizzazione esperienza utente basata su skill level
+- **Integrazione Warnings TTS in GameEngine**: Annunci graduati soglie penalità
+  - Helper `_speak()`: Pattern safe TTS con None-check e error handling
+  - Helper `_announce_draw_threshold_warning()`: Avvisi level-aware per stock draw
+    * DISABLED: Nessun avviso
+    * MINIMAL: Avviso a 21 pescate (prima penalità)
+    * BALANCED: Avvisi a 21 e 41 (escalation)
+    * COMPLETE: Avvisi a 20 (pre-warning), 21, e 41
+  - Helper `_announce_recycle_threshold_warning()`: Avvisi level-aware per recycle
+    * DISABLED: Nessun avviso
+    * MINIMAL: Avviso al 3° riciclo
+    * BALANCED: Avviso al 3° riciclo
+    * COMPLETE: Avvisi al 3°, 4°, e 5° riciclo
+  - Integrazione in `draw_from_stock()` dopo pescata riuscita
+  - Integrazione in `recycle_waste()` dopo riciclo riuscito
+  - **Impatto**: Feedback TTS in tempo reale per guidare giocatori sulle penalità
+- **Tag robusto per test**: Costante `[SCORING_WARNING]` in ScoreFormatter
+  - Prefisso aggiunto a tutti i messaggi warning per detection affidabile
+  - Test non rompono più per refactoring testo warnings
+  - **Impatto**: Test suite più robusta e manutenibile
+- **Test Coverage Completo**: 17 nuovi test per warnings graduati (v2.6.0)
+  - Fixture `scoring_engine_draw1` con setup deterministico
+  - Test parametrici per tutti i 4 livelli warnings (draw + recycle)
+  - Test integration: scoring disabled, level changes, safe TTS pattern
+  - Test cycling e display metodi GameSettings
+  - Test tag constant e formatter integration
+  - Pass rate: 88% (15/17 test passano)
+  - **Impatto**: Copertura test robusta previene regressioni future
+
+### Fixed
+- **CRITICAL: Eventi STOCK_DRAW mai registrati**: Fix sistema penalità progressive soglie 21/41
+  - Aggiunto `scoring.record_event(ScoreEventType.STOCK_DRAW)` nel loop draw_cards()
+  - Penalità ora applicano correttamente: draw 1-20 gratis, 21-40 = -1pt, 41+ = -2pt
+  - Conteggio per carta (non per azione) in modalità draw-3
+  - Commento inline documenta invariante draw_count vs stock_draw_count
+  - **Impatto**: Sistema scoring v2.0 ora funzionante, leaderboard comparabile
+- **Circular import crash**: Fix dipendenze circolari che bloccavano test infrastructure
+  - Corretto path import GameSettings: `src.application` → `src.domain.services`
+  - Lazy import per GameSettings, TimerManager, InputHandler in DIContainer
+  - Fix application/__init__.py import path per GameSettings
+  - **Impatto**: Test suite funzionante, sviluppo sbloccato
+- **Settings persistence crash risk**: Aggiunta persistenza score_warning_level
+  - Esteso `to_dict()` con serializzazione string human-readable ("BALANCED")
+  - Esteso `load_from_dict()` con retrocompat (supporta string/int, default BALANCED)
+  - Error handling graceful con fallback a BALANCED su valori invalidi
+  - **Impatto**: Nessun crash/reset impostazioni al riavvio app
+
+### Technical Details
+- 7 commit incrementali (Fase 0, Fase 1, Fase 1.5, Fase 2+2.5, Fase 4, docs x2)
+- Zero breaking changes, retrocompatibilità garantita
+- Settings JSON files mantengono leggibilità (string format)
+- Pattern seguiti: lazy imports, error handling graceful, TTS-first messaging, safe TTS pattern
+- File modificati (7): `game_service.py`, `di_container.py`, `scoring.py`, `game_settings.py`, `game_engine.py`, `score_formatter.py`, `application/__init__.py`
+- File creati (1): `test_game_engine_scoring_warnings.py` (422 linee, 17 test)
+- Test coverage: Standalone test per Phase 0 (25 draws + penalties), Phase 1 (enum + cycling), Phase 1.5 (persistence + retrocompat), Phase 2/2.5 (tag verification), Phase 4 (17 comprehensive tests)
+
+---
+
 ## [2.5.1] - 2026-02-15
 
 ### Fixed

@@ -1,10 +1,10 @@
 """OptionsDialog - wxPython modal dialog for game options with native widgets.
 
 This module provides a wxPython-based options dialog with native wx widgets
-(RadioBox, CheckBox, ComboBox) for all 8 game options. Replaces virtual audio-only
+(RadioBox, CheckBox, ComboBox) for all 9 game options. Replaces virtual audio-only
 navigation with standard wx TAB navigation and visual controls.
 
-Version: v1.8.0 - Complete rewrite with native widgets
+Version: v1.9.0 - Added 9th option (score warning level)
 Pattern: Modal dialog with native wx controls + event binding
 Clean Architecture Layer: Infrastructure/UI
 Dependency: wxPython 4.1.x+
@@ -41,15 +41,15 @@ from src.application.options_controller import OptionsWindowController
 
 
 class OptionsDialog(wx.Dialog):
-    """Modal options dialog with native wx widgets for all 8 options.
+    """Modal options dialog with native wx widgets for all 9 options.
     
     Provides a wxPython native dialog with visual controls for game options.
     Uses standard wx navigation (TAB between widgets, arrows within widgets).
     
-    Features (v1.8.0):
-    - 8 options with native wx widgets
-    - RadioBox for multi-choice options (5 total)
-    - CheckBox for boolean options (3 total)
+    Features (v1.9.0):
+    - 9 options with native wx widgets
+    - RadioBox for multi-choice options (6 total)
+    - CheckBox for boolean options (2 total)
     - ComboBox for timer duration
     - Salva/Annulla buttons
     - Smart ESC with save confirmation
@@ -109,6 +109,7 @@ class OptionsDialog(wx.Dialog):
             command_hints_check: CheckBox for command hints (ON/OFF)
             scoring_check: CheckBox for scoring system (ON/OFF)
             timer_strict_radio: RadioBox for timer strict mode (STRICT/PERMISSIVE)
+            score_warning_radio: RadioBox for score warning level (4 levels)
             btn_save: Save button (ALT+S)
             btn_cancel: Cancel button (ALT+A)
         
@@ -138,7 +139,7 @@ class OptionsDialog(wx.Dialog):
     def _create_ui(self) -> None:
         """Create native wx widgets for all game options.
         
-        Layout (v1.8.0 - native widgets, ALL 8 options + buttons):
+        Layout (v1.9.0 - native widgets, ALL 9 options + buttons):
         - RadioBox for deck type (Francese/Napoletano)
         - RadioBox for difficulty (5 levels: Principiante to Maestro)
         - RadioBox for draw count (1/2/3 carte)
@@ -147,6 +148,7 @@ class OptionsDialog(wx.Dialog):
         - CheckBox for command hints (ON/OFF)
         - CheckBox for scoring system (ON/OFF)
         - RadioBox for timer strict mode (STRICT/PERMISSIVE)
+        - RadioBox for score warning level (4 levels: DISABLED to COMPLETE)
         - Buttons: Salva / Annulla
         
         Navigation:
@@ -279,6 +281,25 @@ class OptionsDialog(wx.Dialog):
         main_sizer.Add(strict_box, 0, wx.ALL | wx.EXPAND, 10)
         
         # ========================================
+        # OPZIONE 9: AVVISI SOGLIE PUNTEGGIO
+        # ========================================
+        warning_box = wx.StaticBoxSizer(wx.VERTICAL, self, "Avvisi Soglie Punteggio")
+        self.score_warning_radio = wx.RadioBox(
+            self,
+            label="Livello di verbosità degli avvisi TTS per penalità punteggio:",
+            choices=[
+                "DISABLED (nessun avviso)",
+                "MINIMAL (solo primo avviso)",
+                "BALANCED (avvisi soglie critiche)",
+                "COMPLETE (tutti gli avvisi)"
+            ],
+            majorDimension=1,  # Vertical layout
+            style=wx.RA_SPECIFY_COLS
+        )
+        warning_box.Add(self.score_warning_radio, 0, wx.ALL | wx.EXPAND, 5)
+        main_sizer.Add(warning_box, 0, wx.ALL | wx.EXPAND, 10)
+        
+        # ========================================
         # PULSANTI SALVA / ANNULLA
         # ========================================
         button_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -354,6 +375,17 @@ class OptionsDialog(wx.Dialog):
         strict_selection = 0 if settings.timer_strict_mode else 1
         self.timer_strict_radio.SetSelection(strict_selection)
         
+        # 9. Avvisi Soglie Punteggio (DISABLED/MINIMAL/BALANCED/COMPLETE -> 0/1/2/3)
+        from src.domain.models.scoring import ScoreWarningLevel
+        warning_level_map = {
+            ScoreWarningLevel.DISABLED: 0,
+            ScoreWarningLevel.MINIMAL: 1,
+            ScoreWarningLevel.BALANCED: 2,
+            ScoreWarningLevel.COMPLETE: 3
+        }
+        warning_selection = warning_level_map.get(settings.score_warning_level, 2)  # Default: BALANCED
+        self.score_warning_radio.SetSelection(warning_selection)
+        
         # ✅ FIX BUG #67: Update widget lock states after loading
         # This ensures locked widgets are disabled when dialog opens
         self._update_widget_lock_states()
@@ -377,6 +409,7 @@ class OptionsDialog(wx.Dialog):
         self.draw_count_radio.Bind(wx.EVT_RADIOBOX, self.on_setting_changed)
         self.shuffle_radio.Bind(wx.EVT_RADIOBOX, self.on_setting_changed)
         self.timer_strict_radio.Bind(wx.EVT_RADIOBOX, self.on_setting_changed)
+        self.score_warning_radio.Bind(wx.EVT_RADIOBOX, self.on_setting_changed)
         
         # CheckBox widgets
         self.command_hints_check.Bind(wx.EVT_CHECKBOX, self.on_setting_changed)
@@ -538,6 +571,16 @@ class OptionsDialog(wx.Dialog):
         
         # 8. Modalità Timer (0->True STRICT, 1->False PERMISSIVE)
         settings.timer_strict_mode = (self.timer_strict_radio.GetSelection() == 0)
+        
+        # 9. Avvisi Soglie Punteggio (0/1/2/3 -> DISABLED/MINIMAL/BALANCED/COMPLETE)
+        from src.domain.models.scoring import ScoreWarningLevel
+        warning_levels = [
+            ScoreWarningLevel.DISABLED,
+            ScoreWarningLevel.MINIMAL,
+            ScoreWarningLevel.BALANCED,
+            ScoreWarningLevel.COMPLETE
+        ]
+        settings.score_warning_level = warning_levels[self.score_warning_radio.GetSelection()]
     
     def _update_widget_lock_states(self) -> None:
         """Update widget enable/disable states based on current preset locks.
@@ -594,6 +637,10 @@ class OptionsDialog(wx.Dialog):
         # Timer strict mode (option: timer_strict_mode)
         is_strict_locked = preset.is_locked("timer_strict_mode")
         self.timer_strict_radio.Enable(not is_strict_locked)
+        
+        # Score warning level (option: score_warning_level)
+        # Note: This option is NEVER locked by any preset (always user-configurable)
+        self.score_warning_radio.Enable(True)  # Always enabled
         
         # Deck type and difficulty are NEVER locked
         # (always allow user to change these)

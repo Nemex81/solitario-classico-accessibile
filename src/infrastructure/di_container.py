@@ -12,10 +12,8 @@ from typing import Any, Dict, Optional, cast
 # Domain imports
 from src.domain.models.deck import ProtoDeck, FrenchDeck, NeapolitanDeck
 
-# Application imports
-from src.application.game_settings import GameSettings, DeckType
-from src.application.timer_manager import TimerManager
-from src.application.input_handler import InputHandler
+# Application imports - lazy loaded to avoid circular imports
+# GameSettings, TimerManager, InputHandler imported in methods
 
 # Infrastructure imports (forward references to avoid circular imports)
 # ScreenReader imported conditionally in methods
@@ -48,13 +46,13 @@ class DIContainer:
     def __init__(self) -> None:
         """Initialize empty container."""
         self._instances: Dict[str, Any] = {}
-        self._settings: Optional[GameSettings] = None
+        self._settings: Optional[Any] = None  # GameSettings, lazy loaded
     
     # ========================================================================
     # APPLICATION LAYER
     # ========================================================================
     
-    def get_settings(self) -> GameSettings:
+    def get_settings(self):
         """Get or create GameSettings singleton.
         
         Settings persist across games for consistent configuration.
@@ -63,10 +61,11 @@ class DIContainer:
             GameSettings singleton instance
         """
         if self._settings is None:
+            from src.domain.services.game_settings import GameSettings
             self._settings = GameSettings()
         return self._settings
     
-    def set_settings(self, settings: GameSettings) -> None:
+    def set_settings(self, settings) -> None:
         """Override settings (useful for testing or loading from file).
         
         Args:
@@ -74,7 +73,7 @@ class DIContainer:
         """
         self._settings = settings
     
-    def get_timer_manager(self, settings: Optional[GameSettings] = None) -> TimerManager:
+    def get_timer_manager(self, settings=None):
         """Create new TimerManager instance.
         
         TimerManager is per-game (not singleton) to allow proper
@@ -86,6 +85,8 @@ class DIContainer:
         Returns:
             New TimerManager instance
         """
+        from src.application.timer_manager import TimerManager
+        
         if settings is None:
             settings = self.get_settings()
         
@@ -94,7 +95,7 @@ class DIContainer:
             warning_callback=None  # Set by caller if needed
         )
     
-    def get_input_handler(self) -> InputHandler:
+    def get_input_handler(self):
         """Get or create InputHandler singleton.
         
         InputHandler is stateless and can be shared across games.
@@ -102,6 +103,8 @@ class DIContainer:
         Returns:
             InputHandler singleton
         """
+        from src.application.input_handler import InputHandler
+        
         if "input_handler" not in self._instances:
             self._instances["input_handler"] = InputHandler()
         return cast(InputHandler, self._instances["input_handler"])

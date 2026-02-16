@@ -91,6 +91,10 @@ class GameSettings:
         #   True  = STRICT: Partita interrotta alla scadenza (comportamento legacy)
         #   False = PERMISSIVE: Continua con malus punti (-100/min oltre limite)
         
+        # Feature v2.6.0: Score warning level (graduated TTS warnings)
+        from src.domain.models.scoring import ScoreWarningLevel
+        self.score_warning_level = ScoreWarningLevel.BALANCED  # Default: balanced warnings
+        
         # Game state reference for validation
         self.game_state = game_state or GameState()
     
@@ -731,6 +735,85 @@ class GameSettings:
         return "STRICT (auto-stop)" if self.timer_strict_mode else "PERMISSIVE (malus)"
     
     # ========================================
+    # SCORE WARNING LEVEL (v2.6.0)
+    # ========================================
+    
+    def cycle_score_warning_level(self) -> Tuple[bool, str]:
+        """Cycle through score warning levels.
+        
+        Sequence: DISABLED → MINIMAL → BALANCED → COMPLETE → DISABLED
+        
+        Levels:
+        - DISABLED: Nessun warning (silenzioso, veterani)
+        - MINIMAL: Solo transizioni 0pt→penalità (warnings essenziali)
+        - BALANCED: Transizioni + escalation (default, casual players)
+        - COMPLETE: Pre-warnings + tutte soglie (principianti, massima guida)
+        
+        Cannot be changed during active game for consistency.
+        
+        Returns:
+            Tuple[bool, str]: (success, message with level description)
+        
+        Examples:
+            >>> settings.score_warning_level = ScoreWarningLevel.BALANCED
+            >>> settings.cycle_score_warning_level()
+            (True, "Avvisi soglie punteggio: Completi (principianti).")
+        
+        Version: v2.6.0
+        """
+        if not self.validate_not_running():
+            return (False, "Non puoi modificare questa opzione durante una partita!")
+        
+        from src.domain.models.scoring import ScoreWarningLevel
+        
+        # Store old value for logging
+        old_value = self.score_warning_level
+        
+        # Cycle: 0 → 1 → 2 → 3 → 0
+        self.score_warning_level = ScoreWarningLevel((self.score_warning_level + 1) % 4)
+        
+        # Log change
+        log.settings_changed(
+            "score_warning_level",
+            old_value.name,
+            self.score_warning_level.name
+        )
+        
+        # Human-readable message for TTS
+        level_names = {
+            ScoreWarningLevel.DISABLED: "Disattivati",
+            ScoreWarningLevel.MINIMAL: "Minimi (veterani)",
+            ScoreWarningLevel.BALANCED: "Equilibrati (default)",
+            ScoreWarningLevel.COMPLETE: "Completi (principianti)"
+        }
+        
+        level_name = level_names[self.score_warning_level]
+        return (True, f"Avvisi soglie punteggio: {level_name}.")
+    
+    def get_score_warning_level_display(self) -> str:
+        """Get human-readable warning level for options display.
+        
+        Returns:
+            Short description of current level
+        
+        Examples:
+            >>> settings.score_warning_level = ScoreWarningLevel.BALANCED
+            >>> settings.get_score_warning_level_display()
+            "Equilibrati"
+        
+        Version: v2.6.0
+        """
+        from src.domain.models.scoring import ScoreWarningLevel
+        
+        level_names = {
+            ScoreWarningLevel.DISABLED: "Disattivati",
+            ScoreWarningLevel.MINIMAL: "Minimi",
+            ScoreWarningLevel.BALANCED: "Equilibrati",
+            ScoreWarningLevel.COMPLETE: "Completi"
+        }
+        return level_names.get(self.score_warning_level, "Sconosciuto")
+    
+    # ========================================
     # PERSISTENCE & VALIDATION (v2.4.0)
     # ========================================
     
@@ -746,7 +829,7 @@ class GameSettings:
             >>> data['difficulty_level']
             1
         
-        Version: v2.4.0
+        Version: v2.4.0, v2.6.0 (added score_warning_level)
         """
         return {
             "deck_type": self.deck_type,
@@ -757,6 +840,9 @@ class GameSettings:
             "command_hints_enabled": self.command_hints_enabled,
             "scoring_enabled": self.scoring_enabled,
             "timer_strict_mode": self.timer_strict_mode,
+            
+            # v2.6.0: Serialize score_warning_level as string for readability
+            "score_warning_level": self.score_warning_level.name,  # e.g., "BALANCED"
         }
     
     def load_from_dict(self, data: dict) -> None:
@@ -779,12 +865,42 @@ class GameSettings:
             If user manually edits JSON to set Level 5 with draw_count=1,
             the preset system will override it back to 3 (locked value).
         
-        Version: v2.4.0
+        Version: v2.4.0, v2.6.0 (added score_warning_level retrocompat)
         """
-        # Load all values from dictionary
+        # Load all values from dictionary (except score_warning_level, handled separately)
         for key, value in data.items():
-            if hasattr(self, key):
+            if key != "score_warning_level" and hasattr(self, key):
                 setattr(self, key, value)
+        
+        # v2.6.0: Load score_warning_level with retrocompat and error handling
+        if "score_warning_level" in data:
+            try:
+                from src.domain.models.scoring import ScoreWarningLevel
+                
+                # Parse string or int to enum
+                level_value = data["score_warning_level"]
+                
+                if isinstance(level_value, str):
+                    # String serialization (v2.6.0 format): "BALANCED"
+                    self.score_warning_level = ScoreWarningLevel[level_value]
+                elif isinstance(level_value, int):
+                    # Int serialization (alternative/legacy format): 2
+                    self.score_warning_level = ScoreWarningLevel(level_value)
+                else:
+                    raise ValueError(f"Invalid type: {type(level_value)}")
+                    
+            except (KeyError, ValueError) as e:
+                # Invalid value → fallback to default
+                log.warning_issued(
+                    "GameSettings",
+                    f"Invalid score_warning_level '{level_value}': {e}. Using default BALANCED."
+                )
+                from src.domain.models.scoring import ScoreWarningLevel
+                self.score_warning_level = ScoreWarningLevel.BALANCED
+        else:
+            # Missing field → retrocompat default (legacy JSON v1.0)
+            from src.domain.models.scoring import ScoreWarningLevel
+            self.score_warning_level = ScoreWarningLevel.BALANCED
         
         # Reapply difficulty preset to enforce locks (anti-cheat)
         if hasattr(self, 'difficulty_level'):

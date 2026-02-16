@@ -180,7 +180,7 @@ class OptionsWindowController:
         Returns:
             TTS message with option name, value, and hint
         """
-        self.cursor_position = (self.cursor_position - 1) % 8
+        self.cursor_position = (self.cursor_position - 1) % 9
         return self._format_current_option(include_hint=True)
     
     def navigate_down(self) -> str:
@@ -189,7 +189,7 @@ class OptionsWindowController:
         Returns:
             TTS message with option name, value, and hint
         """
-        self.cursor_position = (self.cursor_position + 1) % 8
+        self.cursor_position = (self.cursor_position + 1) % 9
         return self._format_current_option(include_hint=True)
     
     def jump_to_option(self, index: int) -> str:
@@ -203,9 +203,9 @@ class OptionsWindowController:
         
         Example:
             >>> controller.jump_to_option(2)
-            "3 di 8: Carte Pescate, 1 Carta."
+            "3 di 9: Carte Pescate, 1 Carta."
         """
-        if 0 <= index <= 7:
+        if 0 <= index <= 8:
             self.cursor_position = index
             return self._format_current_option(include_hint=False)
         else:
@@ -244,6 +244,7 @@ class OptionsWindowController:
             self._modify_command_hints,  # 5: Suggerimenti Comandi (v1.5.0)
             self._modify_scoring,        # 6: Sistema Punti (NEW)
             self._modify_timer_strict_mode,  # 7: Modalità Timer (v1.5.2.2)
+            self._modify_score_warning_level,  # 8: Avvisi Soglie Punteggio (v2.6.1)
         ]
         
         msg = handlers[self.cursor_position]()
@@ -346,7 +347,8 @@ class OptionsWindowController:
             "Modalità riciclo scarti": self.settings.get_shuffle_mode_display(),
             "Suggerimenti comandi": self.settings.get_command_hints_display(),
             "Sistema Punti": self.settings.get_scoring_display(),
-            "Modalità Timer": self.settings.get_timer_strict_mode_display()
+            "Modalità Timer": self.settings.get_timer_strict_mode_display(),
+            "Avvisi Soglie Punteggio": self.settings.get_score_warning_level_display()
         }
         
         return OptionsFormatter.format_all_settings(settings_dict)
@@ -383,7 +385,8 @@ class OptionsWindowController:
             self.settings.get_shuffle_mode_display,
             self.settings.get_command_hints_display,    # v1.5.0
             self.settings.get_scoring_display,          # NEW
-            self.settings.get_timer_strict_mode_display # v1.5.2.2
+            self.settings.get_timer_strict_mode_display, # v1.5.2.2
+            self.settings.get_score_warning_level_display # v2.6.1
         ]
         
         value = value_getters[self.cursor_position]()
@@ -417,6 +420,7 @@ class OptionsWindowController:
             5: "command_hints_enabled",
             6: "scoring_enabled",
             7: "timer_strict_mode",
+            8: "score_warning_level",  # v2.6.1 - Never locked
         }
         
         option_name = option_map.get(self.cursor_position)
@@ -447,6 +451,7 @@ class OptionsWindowController:
             5: "Suggerimenti Comandi",
             6: "Sistema Punti",
             7: "Modalità Timer",
+            8: "Avvisi Soglie Punteggio",
         }
         
         option_name = option_names.get(self.cursor_position, "Opzione")
@@ -585,6 +590,15 @@ class OptionsWindowController:
             log.settings_changed("timer_strict_mode", old_value, new_value)
         return msg
     
+    def _modify_score_warning_level(self) -> str:
+        """Cycle score warning level (DISABLED → MINIMAL → BALANCED → COMPLETE) (v2.6.1)."""
+        old_value = self.settings.score_warning_level
+        success, msg = self.settings.cycle_score_warning_level()
+        if success:
+            new_value = self.settings.score_warning_level
+            log.settings_changed("score_warning_level", old_value.name, new_value.name)
+        return msg
+    
     # ========================================
     # STATE MANAGEMENT
     # ========================================
@@ -597,7 +611,8 @@ class OptionsWindowController:
             "timer": self.settings.max_time_game,
             "shuffle": self.settings.shuffle_discards,
             "command_hints": self.settings.command_hints_enabled,  # v1.5.0
-            "timer_strict_mode": self.settings.timer_strict_mode  # v1.5.2.2
+            "timer_strict_mode": self.settings.timer_strict_mode,  # v1.5.2.2
+            "score_warning_level": self.settings.score_warning_level  # v2.6.1
         }
     
     def _restore_snapshot(self) -> None:
@@ -608,6 +623,7 @@ class OptionsWindowController:
         self.settings.shuffle_discards = self.original_settings["shuffle"]
         self.settings.command_hints_enabled = self.original_settings["command_hints"]  # v1.5.0
         self.settings.timer_strict_mode = self.original_settings["timer_strict_mode"]  # v1.5.2.2
+        self.settings.score_warning_level = self.original_settings["score_warning_level"]  # v2.6.1
     
     def _reset_state(self) -> None:
         """Reset controller state (close window)."""
