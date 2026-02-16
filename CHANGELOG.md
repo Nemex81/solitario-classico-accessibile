@@ -7,6 +7,47 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 ---
 
+## [2.6.0] - 2026-02-16
+
+### Added
+- **Sistema Livelli Avvisi Graduati (Score Warning Levels)**: 4 livelli di verbosità per warnings TTS soglie penalità
+  - DISABLED (0): Nessun avviso (silenzioso, per veterani)
+  - MINIMAL (1): Solo transizioni 0pt→penalità (warnings essenziali)
+  - BALANCED (2): Transizioni + escalation (DEFAULT, casual players)
+  - COMPLETE (3): Pre-warnings + tutte soglie (principianti, massima guida)
+  - Enum `ScoreWarningLevel` con supporto operatori confronto
+  - Metodo `cycle_score_warning_level()` per ciclare tra livelli
+  - Metodo `get_score_warning_level_display()` per display UI
+  - Messaggi TTS ottimizzati in italiano per accessibilità
+  - **Impatto**: Personalizzazione esperienza utente basata su skill level
+
+### Fixed
+- **CRITICAL: Eventi STOCK_DRAW mai registrati**: Fix sistema penalità progressive soglie 21/41
+  - Aggiunto `scoring.record_event(ScoreEventType.STOCK_DRAW)` nel loop draw_cards()
+  - Penalità ora applicano correttamente: draw 1-20 gratis, 21-40 = -1pt, 41+ = -2pt
+  - Conteggio per carta (non per azione) in modalità draw-3
+  - Commento inline documenta invariante draw_count vs stock_draw_count
+  - **Impatto**: Sistema scoring v2.0 ora funzionante, leaderboard comparabile
+- **Circular import crash**: Fix dipendenze circolari che bloccavano test infrastructure
+  - Corretto path import GameSettings: `src.application` → `src.domain.services`
+  - Lazy import per GameSettings, TimerManager, InputHandler in DIContainer
+  - **Impatto**: Test suite funzionante, sviluppo sbloccato
+- **Settings persistence crash risk**: Aggiunta persistenza score_warning_level
+  - Esteso `to_dict()` con serializzazione string human-readable ("BALANCED")
+  - Esteso `load_from_dict()` con retrocompat (supporta string/int, default BALANCED)
+  - Error handling graceful con fallback a BALANCED su valori invalidi
+  - **Impatto**: Nessun crash/reset impostazioni al riavvio app
+
+### Technical Details
+- 3 commit incrementali (Fase 0, Fase 1, Fase 1.5)
+- Zero breaking changes, retrocompatibilità garantita
+- Settings JSON files mantengono leggibilità (string format)
+- Pattern seguiti: lazy imports, error handling graceful, TTS-first messaging
+- File modificati: `game_service.py`, `di_container.py`, `scoring.py`, `game_settings.py`
+- Test coverage: Standalone test per Phase 0 (25 draws + penalties), Phase 1 (enum + cycling), Phase 1.5 (persistence + retrocompat)
+
+---
+
 ## [2.5.1] - 2026-02-15
 
 ### Fixed
