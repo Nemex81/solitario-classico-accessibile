@@ -38,57 +38,57 @@ Questo file TODO è solo un cruscotto operativo da consultare e aggiornare duran
 
 ### Phase 1: Core Scoring Logic (6 commits)
 
-#### Commit 1: Extend ScoreEventType + ScoringConfig ✅ / ❌
+#### Commit 1: Extend ScoreEventType + ScoringConfig ✅
 **File coinvolti**:
-- [ ] `src/domain/models/scoring.py` → MODIFY
-  - [ ] Aggiungi `STOCK_DRAW`, `INVALID_MOVE`, `AUTO_MOVE` a `ScoreEventType` enum
-  - [ ] Aggiorna `ScoringConfig` dataclass con campi v2.0:
-    - [ ] `victory_bonus_base: int = 400` (era 500)
-    - [ ] `victory_weights: dict = {"time": 0.35, "moves": 0.35, "recycles": 0.30}`
-    - [ ] `stock_draw_thresholds: tuple = (20, 40)`
-    - [ ] `stock_draw_penalties: tuple = (0, -1, -2)`
-    - [ ] `recycle_penalties: tuple = (0, 0, -10, -20, -35, -55, -80)`
-    - [ ] `time_bonus_max_timer_off: int = 1200` (era 2000)
-    - [ ] `time_bonus_decay_per_minute: int = 40` (era 50)
-    - [ ] `time_bonus_max_timer_on: int = 1000` (era 1500)
-    - [ ] `difficulty_multipliers: dict = {1: 1.0, 2: 1.2, 3: 1.4, 4: 1.8, 5: 2.2}`
-    - [ ] `deck_type_bonuses: dict = {"neapolitan": 100, "french": 50}`
-  - [ ] Aggiungi `__post_init__` validation:
-    - [ ] Version check (`startswith("2.")`)
-    - [ ] Weights sum validation (0.99 ≤ sum ≤ 1.01)
-    - [ ] Difficulty levels completeness ({1,2,3,4,5})
-  - [ ] Rendi dataclass `frozen=True` (immutability)
+- [x] `src/domain/models/scoring.py` → MODIFY
+  - [x] Aggiungi `STOCK_DRAW`, `INVALID_MOVE`, `AUTO_MOVE` a `ScoreEventType` enum
+  - [x] Aggiorna `ScoringConfig` dataclass con campi v2.0:
+    - [x] `victory_bonus_base: int = 400` (era 500)
+    - [x] `victory_weights: dict = {"time": 0.35, "moves": 0.35, "recycles": 0.30}`
+    - [x] `stock_draw_thresholds: tuple = (20, 40)`
+    - [x] `stock_draw_penalties: tuple = (0, -1, -2)`
+    - [x] `recycle_penalties: tuple = (0, 0, -10, -20, -35, -55, -80)`
+    - [x] `time_bonus_max_timer_off: int = 1200` (era 2000)
+    - [x] `time_bonus_decay_per_minute: int = 40` (era 50)
+    - [x] `time_bonus_max_timer_on: int = 1000` (era 1500)
+    - [x] `difficulty_multipliers: dict = {1: 1.0, 2: 1.2, 3: 1.4, 4: 1.8, 5: 2.2}`
+    - [x] `deck_type_bonuses: dict = {"neapolitan": 100, "french": 50}`
+  - [x] Aggiungi `__post_init__` validation:
+    - [x] Version check (`startswith("2.")`)
+    - [x] Weights sum validation (0.99 ≤ sum ≤ 1.01)
+    - [x] Difficulty levels completeness ({1,2,3,4,5})
+  - [x] Rendi dataclass `frozen=True` (immutability)
 
-- [ ] `tests/domain/models/test_scoring.py` → CREATE/MODIFY
-  - [ ] `test_score_event_type_new_events()` → STOCK_DRAW, INVALID_MOVE, AUTO_MOVE esistono
-  - [ ] `test_scoring_config_v2_defaults()` → Defaults corretti (victory_base=400, time_max=1200)
-  - [ ] `test_scoring_config_validation()` → ValueError su weights invalidi
+- [x] `tests/domain/models/test_scoring_models.py` → MODIFY
+  - [x] `test_score_event_type_new_events()` → STOCK_DRAW, INVALID_MOVE, AUTO_MOVE esistono
+  - [x] `test_scoring_config_v2_defaults()` → Defaults corretti (victory_base=400, time_max=1200)
+  - [x] `test_scoring_config_validation()` → ValueError su weights invalidi
 
-**Status commit 1**: ❌ NOT STARTED
+**Status commit 1**: ✅ DONE (SHA: aaf12c2) - ⚠️ **TEST ESISTENTI DA INTEGRARE**
 
 ---
 
-#### Commit 2: Implement STOCK_DRAW penalty ✅ / ❌
+#### Commit 2: Implement STOCK_DRAW penalty ✅
 **File coinvolti**:
-- [ ] `src/domain/services/scoring_service.py` → MODIFY
-  - [ ] Aggiungi `self.stock_draw_count = 0` in `__init__()`
-  - [ ] Implementa `_calculate_stock_draw_penalty()` progressive:
+- [x] `src/domain/services/scoring_service.py` → MODIFY
+  - [x] Aggiungi `self.stock_draw_count = 0` in `__init__()`
+  - [x] Implementa `_calculate_stock_draw_penalty()` progressive:
     ```python
     if self.stock_draw_count <= 20: return 0
     elif self.stock_draw_count <= 40: return -1
     else: return -2
     ```
-  - [ ] Aggiorna `_calculate_event_points()` per gestire `STOCK_DRAW`:
+  - [x] Aggiorna `_calculate_event_points()` per gestire `STOCK_DRAW`:
     ```python
     if event_type == ScoreEventType.STOCK_DRAW:
         self.stock_draw_count += 1
         return self._calculate_stock_draw_penalty()
     ```
-  - [ ] Aggiungi guard in `_calculate_recycle_penalty()`:
+  - [x] Aggiungi guard in `_calculate_recycle_penalty()`:
     ```python
     if recycle_count <= 0: return 0
     ```
-  - [ ] Aggiorna `reset()` per includere `self.stock_draw_count = 0`
+  - [x] Aggiorna `reset()` per includere `self.stock_draw_count = 0`
 
 - [ ] `tests/domain/services/test_scoring_service.py` → MODIFY
   - [ ] `test_stock_draw_penalty_progressive()` → 20 draw = 0pt, 25 draw = -5pt, 50 draw = -55pt
@@ -101,23 +101,23 @@ Questo file TODO è solo un cruscotto operativo da consultare e aggiornare duran
     - [ ] `penalty(0) == 0`
     - [ ] `penalty(-1) == 0` (safety)
 
-**Status commit 2**: ❌ NOT STARTED
+**Status commit 2**: ✅ DONE (SHA: fa524cc) - ⚠️ **TEST DA SCRIVERE**
 
 ---
 
-#### Commit 3: Update time bonus (v2.0 values) ✅ / ❌
+#### Commit 3: Update time bonus (v2.0 values) ✅
 **File coinvolti**:
-- [ ] `src/domain/services/scoring_service.py` → MODIFY
-  - [ ] Implementa `_safe_truncate(value: float, context: str) -> int`:
+- [x] `src/domain/services/scoring_service.py` → MODIFY
+  - [x] Implementa `_safe_truncate(value: float, context: str) -> int`:
     ```python
     if value < 0:
         raise ValueError(f"Truncation safety violated: {value} < 0 (context: {context})")
     return int(value)
     ```
-  - [ ] Aggiorna `_calculate_time_bonus()` con v2.0 values:
-    - [ ] Timer OFF: `max(0, 1200 - (elapsed_minutes * 40))`
-    - [ ] Timer ON: `int(time_remaining_pct * 1000)`
-    - [ ] Usa `_safe_truncate()` invece di `int()` diretto
+  - [x] Aggiorna `_calculate_time_bonus()` con v2.0 values:
+    - [x] Timer OFF: `max(0, 1200 - (elapsed_minutes * 40))`
+    - [x] Timer ON: `int(time_remaining_pct * 1000)`
+    - [x] Usa `_safe_truncate()` invece di `int()` diretto
 
 - [ ] `tests/domain/services/test_scoring_service.py` → MODIFY
   - [ ] `test_time_bonus_timer_off_v2()`:
@@ -131,20 +131,20 @@ Questo file TODO è solo un cruscotto operativo da consultare e aggiornare duran
   - [ ] `test_safe_truncate_raises_on_negative()` **CRITICAL**:
     - [ ] `_safe_truncate(-1.5, "test")` raises `ValueError`
 
-**Status commit 3**: ❌ NOT STARTED
+**Status commit 3**: ✅ DONE (SHA: 005593c) - ⚠️ **TEST DA SCRIVERE**
 
 ---
 
-#### Commit 4: Implement quality factors ✅ / ❌
+#### Commit 4: Implement quality factors ✅
 **File coinvolti**:
-- [ ] `src/domain/services/scoring_service.py` → MODIFY
-  - [ ] Implementa `_calculate_time_quality(elapsed_seconds: float) -> float`:
-    - [ ] Timer OFF: thresholds 10/20/30/45 min → 1.5/1.2/1.0/0.8/0.7
-    - [ ] Timer ON: thresholds 80%/50%/25%/0% remaining → 1.5/1.2/1.0/0.8/0.7
-  - [ ] Implementa `_calculate_move_quality(move_count: int) -> float`:
-    - [ ] Thresholds 80/120/180/250 → 1.3/1.1/1.0/0.85/0.7
-  - [ ] Implementa `_calculate_recycle_quality(recycle_count: int) -> float`:
-    - [ ] Thresholds 0/2/4/7 → 1.2/1.1/1.0/0.8/0.5
+- [x] `src/domain/services/scoring_service.py` → MODIFY
+  - [x] Implementa `_calculate_time_quality(elapsed_seconds: float) -> float`:
+    - [x] Timer OFF: thresholds 10/20/30/45 min → 1.5/1.2/1.0/0.8/0.7
+    - [x] Timer ON: thresholds 80%/50%/25%/0% remaining → 1.5/1.2/1.0/0.8/0.7
+  - [x] Implementa `_calculate_move_quality(move_count: int) -> float`:
+    - [x] Thresholds 80/120/180/250 → 1.3/1.1/1.0/0.85/0.7
+  - [x] Implementa `_calculate_recycle_quality(recycle_count: int) -> float`:
+    - [x] Thresholds 0/2/4/7 → 1.2/1.1/1.0/0.8/0.5
 
 - [ ] `tests/domain/services/test_scoring_service.py` → MODIFY
   - [ ] `test_time_quality_timer_off()` → Verifica tutte soglie (5min=1.5, 15min=1.2, ...)
@@ -152,16 +152,16 @@ Questo file TODO è solo un cruscotto operativo da consultare e aggiornare duran
   - [ ] `test_move_quality_thresholds()` → 75=1.3, 100=1.1, 150=1.0, 200=0.85, 300=0.7
   - [ ] `test_recycle_quality_thresholds()` → 0=1.2, 2=1.1, 4=1.0, 6=0.8, 10=0.5
 
-**Status commit 4**: ❌ NOT STARTED
+**Status commit 4**: ✅ DONE (SHA: 5919715) - ⚠️ **TEST DA SCRIVERE**
 
 ---
 
-#### Commit 5: Implement composite victory bonus ✅ / ❌
+#### Commit 5: Implement composite victory bonus ✅
 **File coinvolti**:
-- [ ] `src/domain/services/scoring_service.py` → MODIFY
-  - [ ] Rinomina `_calculate_victory_bonus()` → `_calculate_victory_bonus_with_quality()`
-  - [ ] Return type: `tuple[int, float]` (bonus, quality_multiplier)
-  - [ ] Formula:
+- [x] `src/domain/services/scoring_service.py` → MODIFY
+  - [x] Rinomina `_calculate_victory_bonus()` → `_calculate_victory_bonus_with_quality()`
+  - [x] Return type: `tuple[int, float]` (bonus, quality_multiplier)
+  - [x] Formula:
     ```python
     quality_multiplier = (
         time_quality * 0.35 +
@@ -174,7 +174,7 @@ Questo file TODO è solo un cruscotto operativo da consultare e aggiornare duran
     )
     return victory_bonus, quality_multiplier
     ```
-  - [ ] Log breakdown (time/move/recycle quality + multiplier finale)
+  - [x] Log breakdown (time/move/recycle quality + multiplier finale)
 
 - [ ] `tests/domain/services/test_scoring_service.py` → MODIFY
   - [ ] `test_victory_bonus_perfect()` → 5min, 75 mosse, 0 ricicli → 536pt (max teorico)
@@ -184,33 +184,33 @@ Questo file TODO è solo un cruscotto operativo da consultare e aggiornare duran
     - [ ] `bonus <= 536` (hard limit)
     - [ ] `quality <= 1.34` (max multiplier)
 
-**Status commit 5**: ❌ NOT STARTED
+**Status commit 5**: ✅ DONE (SHA: 20aad2c) - ⚠️ **TEST DA SCRIVERE**
 
 ---
 
-#### Commit 6: Update calculate_final_score() ✅ / ❌
+#### Commit 6: Update calculate_final_score() ✅
 **File coinvolti**:
-- [ ] `src/domain/models/scoring.py` → MODIFY
-  - [ ] Aggiungi campo a `FinalScore` dataclass:
+- [x] `src/domain/models/scoring.py` → MODIFY
+  - [x] Aggiungi campo a `FinalScore` dataclass:
     ```python
     victory_quality_multiplier: float  # NEW v2.0
     ```
 
-- [ ] `src/domain/services/scoring_service.py` → MODIFY
-  - [ ] Aggiorna `calculate_final_score()`:
-    - [ ] Se `is_victory == False`:
+- [x] `src/domain/services/scoring_service.py` → MODIFY
+  - [x] Aggiorna `calculate_final_score()`:
+    - [x] Se `is_victory == False`:
       ```python
       time_bonus = 0
       victory_bonus = 0
       quality_multiplier = 0.0  # Explicit zero
       ```
-    - [ ] Se `is_victory == True`:
+    - [x] Se `is_victory == True`:
       ```python
       time_bonus = self._calculate_time_bonus(...)
       victory_bonus, quality_multiplier = self._calculate_victory_bonus_with_quality(...)
       ```
-    - [ ] Return `FinalScore` con `victory_quality_multiplier=quality_multiplier` persistito
-    - [ ] Usa `_safe_truncate()` per `provisional_score`
+    - [x] Return `FinalScore` con `victory_quality_multiplier=quality_multiplier` persistito
+    - [x] Usa `_safe_truncate()` per `provisional_score`
 
 - [ ] `tests/domain/services/test_scoring_service.py` → MODIFY
   - [ ] `test_final_score_victory_complete()` → End-to-end vittoria (10 mosse, 5 reveal, 30 draw, 2 recycle)
@@ -227,7 +227,7 @@ Questo file TODO è solo un cruscotto operativo da consultare e aggiornare duran
   - [ ] `test_truncation_bias_bounded()` **CRITICAL**:
     - [ ] Bias < 3pt su punteggio tipico ~1500pt
 
-**Status commit 6**: ❌ NOT STARTED
+**Status commit 6**: ✅ DONE (SHA: 92ab3de) - ⚠️ **TEST DA SCRIVERE**
 
 ---
 
