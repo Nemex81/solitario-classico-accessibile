@@ -20,6 +20,25 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
   - Metodo `get_score_warning_level_display()` per display UI
   - Messaggi TTS ottimizzati in italiano per accessibilità
   - **Impatto**: Personalizzazione esperienza utente basata su skill level
+- **Integrazione Warnings TTS in GameEngine**: Annunci graduati soglie penalità
+  - Helper `_speak()`: Pattern safe TTS con None-check e error handling
+  - Helper `_announce_draw_threshold_warning()`: Avvisi level-aware per stock draw
+    * DISABLED: Nessun avviso
+    * MINIMAL: Avviso a 21 pescate (prima penalità)
+    * BALANCED: Avvisi a 21 e 41 (escalation)
+    * COMPLETE: Avvisi a 20 (pre-warning), 21, e 41
+  - Helper `_announce_recycle_threshold_warning()`: Avvisi level-aware per recycle
+    * DISABLED: Nessun avviso
+    * MINIMAL: Avviso al 3° riciclo
+    * BALANCED: Avviso al 3° riciclo
+    * COMPLETE: Avvisi al 3°, 4°, e 5° riciclo
+  - Integrazione in `draw_from_stock()` dopo pescata riuscita
+  - Integrazione in `recycle_waste()` dopo riciclo riuscito
+  - **Impatto**: Feedback TTS in tempo reale per guidare giocatori sulle penalità
+- **Tag robusto per test**: Costante `[SCORING_WARNING]` in ScoreFormatter
+  - Prefisso aggiunto a tutti i messaggi warning per detection affidabile
+  - Test non rompono più per refactoring testo warnings
+  - **Impatto**: Test suite più robusta e manutenibile
 
 ### Fixed
 - **CRITICAL: Eventi STOCK_DRAW mai registrati**: Fix sistema penalità progressive soglie 21/41
@@ -39,12 +58,12 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
   - **Impatto**: Nessun crash/reset impostazioni al riavvio app
 
 ### Technical Details
-- 3 commit incrementali (Fase 0, Fase 1, Fase 1.5)
+- 5 commit incrementali (Fase 0, Fase 1, Fase 1.5, Fase 2+2.5, docs)
 - Zero breaking changes, retrocompatibilità garantita
 - Settings JSON files mantengono leggibilità (string format)
-- Pattern seguiti: lazy imports, error handling graceful, TTS-first messaging
-- File modificati: `game_service.py`, `di_container.py`, `scoring.py`, `game_settings.py`
-- Test coverage: Standalone test per Phase 0 (25 draws + penalties), Phase 1 (enum + cycling), Phase 1.5 (persistence + retrocompat)
+- Pattern seguiti: lazy imports, error handling graceful, TTS-first messaging, safe TTS pattern
+- File modificati: `game_service.py`, `di_container.py`, `scoring.py`, `game_settings.py`, `game_engine.py`, `score_formatter.py`
+- Test coverage: Standalone test per Phase 0 (25 draws + penalties), Phase 1 (enum + cycling), Phase 1.5 (persistence + retrocompat), Phase 2/2.5 (tag verification)
 
 ---
 
