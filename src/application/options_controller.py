@@ -180,7 +180,7 @@ class OptionsWindowController:
         Returns:
             TTS message with option name, value, and hint
         """
-        self.cursor_position = (self.cursor_position - 1) % 8
+        self.cursor_position = (self.cursor_position - 1) % 9
         return self._format_current_option(include_hint=True)
     
     def navigate_down(self) -> str:
@@ -189,7 +189,7 @@ class OptionsWindowController:
         Returns:
             TTS message with option name, value, and hint
         """
-        self.cursor_position = (self.cursor_position + 1) % 8
+        self.cursor_position = (self.cursor_position + 1) % 9
         return self._format_current_option(include_hint=True)
     
     def jump_to_option(self, index: int) -> str:
