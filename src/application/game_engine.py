@@ -205,7 +205,9 @@ class GameEngine:
                     # Enforce 5-60 minute range for level 4
                     settings.max_time_game = max(300, min(3600, settings.max_time_game))
             
-            scoring_config = ScoringConfig()
+            # Create scoring service if enabled (v2.0.0)
+            # 🆕 v2.0: Load config from external JSON with fallback
+            scoring_config = ScoringConfigLoader.load()
             scoring = ScoringService(
                 config=scoring_config,
                 difficulty_level=settings.difficulty_level,

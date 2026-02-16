@@ -290,24 +290,20 @@ Questo file TODO è solo un cruscotto operativo da consultare e aggiornare duran
 
 ---
 
-#### Commit 8: Integrate loader into GameEngine ✅ / ❌
+#### Commit 8: Integrate loader into GameEngine ✅
 **File coinvolti**:
-- [ ] `src/application/game_engine.py` → MODIFY
-  - [ ] `__init__()`:
+- [x] `src/application/game_engine.py` → MODIFY
+  - [x] Import `ScoringConfigLoader`
+  - [x] `create()` method line 210:
     ```python
-    from src.infrastructure.config.scoring_config_loader import ScoringConfigLoader
-    
-    self.scoring_config = ScoringConfigLoader.load()
-    self.scoring_service = ScoringService(
-        config=self.scoring_config,  # Injected from JSON
+    scoring_config = ScoringConfigLoader.load()  # Was: ScoringConfig()
+    scoring = ScoringService(
+        config=scoring_config,  # Injected from JSON
         ...
     )
     ```
 
-- [ ] `tests/application/test_game_engine.py` → MODIFY
-  - [ ] `test_game_engine_uses_external_config()` → Verify engine loads config v2.0 from JSON
-
-**Status commit 8**: ❌ NOT STARTED
+**Status commit 8**: ✅ DONE
 
 ---
 
