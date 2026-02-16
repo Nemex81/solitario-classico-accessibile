@@ -365,7 +365,16 @@ class GameService:
                 card.set_uncover()
                 waste.aggiungi_carta(card)
                 drawn_cards.append(card)
+                
+                # ✅ FIX v2.6.0: Record scoring event per ogni carta pescata
+                # This enables progressive penalties at thresholds 21/41
+                if self.scoring:
+                    self.scoring.record_event(ScoreEventType.STOCK_DRAW)
         
+        # INVARIANT: draw_count (actions) vs stock_draw_count (cards)
+        # - self.draw_count = numero AZIONI di pescata (statistiche legacy)
+        # - self.scoring.stock_draw_count = numero CARTE pescate (scoring v2.0)
+        # Esempio draw-3: dopo 7 azioni -> draw_count=7, stock_draw_count=21
         self.draw_count += 1
         return True, f"Pescate {len(drawn_cards)} carte", drawn_cards
     
