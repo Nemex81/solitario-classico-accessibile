@@ -91,6 +91,10 @@ class GameSettings:
         #   True  = STRICT: Partita interrotta alla scadenza (comportamento legacy)
         #   False = PERMISSIVE: Continua con malus punti (-100/min oltre limite)
         
+        # Feature v2.6.0: Score warning level (graduated TTS warnings)
+        from src.domain.models.scoring import ScoreWarningLevel
+        self.score_warning_level = ScoreWarningLevel.BALANCED  # Default: balanced warnings
+        
         # Game state reference for validation
         self.game_state = game_state or GameState()
     
@@ -729,6 +733,85 @@ class GameSettings:
         Used by OptionsFormatter for option #8 display.
         """
         return "STRICT (auto-stop)" if self.timer_strict_mode else "PERMISSIVE (malus)"
+    
+    # ========================================
+    # SCORE WARNING LEVEL (v2.6.0)
+    # ========================================
+    
+    def cycle_score_warning_level(self) -> Tuple[bool, str]:
+        """Cycle through score warning levels.
+        
+        Sequence: DISABLED → MINIMAL → BALANCED → COMPLETE → DISABLED
+        
+        Levels:
+        - DISABLED: Nessun warning (silenzioso, veterani)
+        - MINIMAL: Solo transizioni 0pt→penalità (warnings essenziali)
+        - BALANCED: Transizioni + escalation (default, casual players)
+        - COMPLETE: Pre-warnings + tutte soglie (principianti, massima guida)
+        
+        Cannot be changed during active game for consistency.
+        
+        Returns:
+            Tuple[bool, str]: (success, message with level description)
+        
+        Examples:
+            >>> settings.score_warning_level = ScoreWarningLevel.BALANCED
+            >>> settings.cycle_score_warning_level()
+            (True, "Avvisi soglie punteggio: Completi (principianti).")
+        
+        Version: v2.6.0
+        """
+        if not self.validate_not_running():
+            return (False, "Non puoi modificare questa opzione durante una partita!")
+        
+        from src.domain.models.scoring import ScoreWarningLevel
+        
+        # Store old value for logging
+        old_value = self.score_warning_level
+        
+        # Cycle: 0 → 1 → 2 → 3 → 0
+        self.score_warning_level = ScoreWarningLevel((self.score_warning_level + 1) % 4)
+        
+        # Log change
+        log.settings_changed(
+            "score_warning_level",
+            old_value.name,
+            self.score_warning_level.name
+        )
+        
+        # Human-readable message for TTS
+        level_names = {
+            ScoreWarningLevel.DISABLED: "Disattivati",
+            ScoreWarningLevel.MINIMAL: "Minimi (veterani)",
+            ScoreWarningLevel.BALANCED: "Equilibrati (default)",
+            ScoreWarningLevel.COMPLETE: "Completi (principianti)"
+        }
+        
+        level_name = level_names[self.score_warning_level]
+        return (True, f"Avvisi soglie punteggio: {level_name}.")
+    
+    def get_score_warning_level_display(self) -> str:
+        """Get human-readable warning level for options display.
+        
+        Returns:
+            Short description of current level
+        
+        Examples:
+            >>> settings.score_warning_level = ScoreWarningLevel.BALANCED
+            >>> settings.get_score_warning_level_display()
+            "Equilibrati"
+        
+        Version: v2.6.0
+        """
+        from src.domain.models.scoring import ScoreWarningLevel
+        
+        level_names = {
+            ScoreWarningLevel.DISABLED: "Disattivati",
+            ScoreWarningLevel.MINIMAL: "Minimi",
+            ScoreWarningLevel.BALANCED: "Equilibrati",
+            ScoreWarningLevel.COMPLETE: "Completi"
+        }
+        return level_names.get(self.score_warning_level, "Sconosciuto")
     
     # ========================================
     # PERSISTENCE & VALIDATION (v2.4.0)

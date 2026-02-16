@@ -298,3 +298,45 @@ class FinalScore:
         
         # Join with periods and spaces for TTS clarity
         return ". ".join(parts) + "."
+
+
+# ============================================================================
+# WARNING LEVELS (v2.6.0)
+# ============================================================================
+
+from enum import IntEnum
+
+
+class ScoreWarningLevel(IntEnum):
+    """Livelli di verbosità warnings soglie scoring (v2.6.0).
+    
+    Controlla quanti avvisi TTS vengono emessi quando il giocatore
+    supera soglie di penalità (stock draw, recycle).
+    
+    I livelli progressivi permettono a principianti di ricevere
+    guida completa e a veterani di minimizzare interruzioni.
+    
+    Attributes:
+        DISABLED: Nessun warning (0) - per veterani che non vogliono interruzioni
+        MINIMAL: Solo transizioni 0pt → penalità (1) - warnings essenziali
+        BALANCED: Transizioni + escalation significative (2) - default consigliato
+        COMPLETE: Pre-warnings + tutte le transizioni (3) - per principianti
+    
+    Usage:
+        >>> settings.score_warning_level = ScoreWarningLevel.BALANCED
+        >>> if settings.score_warning_level >= ScoreWarningLevel.MINIMAL:
+        ...     announce_warning("Attenzione: soglia penalità superata")
+    
+    Mapping Soglie per Livello:
+        - DISABLED: Nessun warning attivo
+        - MINIMAL: Draw 21 (prima penalità), Recycle 4 (prima penalità)
+        - BALANCED: Draw 21, Draw 41, Recycle 4
+        - COMPLETE: Draw 20 (pre-warning), Draw 21, Draw 41, Recycle 3, Recycle 4, Recycle 5
+    
+    Version: v2.6.0
+    """
+    
+    DISABLED = 0   # Nessun warning (silenzioso, veterani)
+    MINIMAL = 1    # Solo transizioni 0pt → penalità (warnings essenziali)
+    BALANCED = 2   # Transizioni + escalation (DEFAULT, casual players)
+    COMPLETE = 3   # Pre-warnings + tutte soglie (principianti, massima guida)
