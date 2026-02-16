@@ -143,11 +143,179 @@ class TestRecyclePenalty:
         assert service.get_base_score() == 0
     
     def test_fourth_recycle_penalty(self, service_level1_neapolitan_timer_off):
-        """Test fourth recycle deducts 20 points."""
+        """Test fourth recycle deducts penalty (v2.0: -20 points)."""
         service = service_level1_neapolitan_timer_off
         
         service.record_event(ScoreEventType.RECYCLE_WASTE)  # 1st: free
         service.record_event(ScoreEventType.RECYCLE_WASTE)  # 2nd: free
+        service.record_event(ScoreEventType.RECYCLE_WASTE)  # 3rd: -10
+        event = service.record_event(ScoreEventType.RECYCLE_WASTE)  # 4th: -20
+        
+        assert event.points == -20
+        assert service.recycle_count == 4
+        assert service.get_base_score() == -30  # 0 + 0 + (-10) + (-20)
+    
+    def test_recycle_penalty_guard_zero(self, service_level1_neapolitan_timer_off):
+        """Test v2.0 CRITICAL: recycle penalty guard against count <= 0."""
+        service = service_level1_neapolitan_timer_off
+        
+        # Direct call with invalid count (shouldn't happen in practice)
+        penalty_zero = service._calculate_recycle_penalty(0)
+        penalty_negative = service._calculate_recycle_penalty(-1)
+        
+        assert penalty_zero == 0
+        assert penalty_negative == 0
+    
+    def test_recycle_penalties_v2_progressive(self, service_level1_neapolitan_timer_off):
+        """Test v2.0 progressive recycle penalties: 0, 0, -10, -20, -35, -55, -80."""
+        service = service_level1_neapolitan_timer_off
+        expected_penalties = [0, 0, -10, -20, -35, -55, -80]
+        
+        for i, expected_penalty in enumerate(expected_penalties, start=1):
+            event = service.record_event(ScoreEventType.RECYCLE_WASTE)
+            assert event.points == expected_penalty, f"Recycle {i} should be {expected_penalty}, got {event.points}"
+        
+        # 8th and beyond should clamp to -80
+        event8 = service.record_event(ScoreEventType.RECYCLE_WASTE)
+        assert event8.points == -80
+
+
+class TestStockDrawPenalty:
+    """Tests for v2.0 STOCK_DRAW progressive penalty."""
+    
+    def test_stock_draw_first_20_free(self, service_level1_neapolitan_timer_off):
+        """Test first 20 stock draws are free (0 points)."""
+        service = service_level1_neapolitan_timer_off
+        
+        for i in range(20):
+            event = service.record_event(ScoreEventType.STOCK_DRAW)
+            assert event.points == 0, f"Draw {i+1} should be 0, got {event.points}"
+        
+        assert service.stock_draw_count == 20
+        assert service.get_base_score() == 0
+    
+    def test_stock_draw_boundary_20_last_free(self, service_level1_neapolitan_timer_off):
+        """Test v2.0 CRITICAL: draw 20 is last free draw (boundary)."""
+        service = service_level1_neapolitan_timer_off
+        
+        # Draw exactly 20 times
+        for _ in range(20):
+            service.record_event(ScoreEventType.STOCK_DRAW)
+        
+        # 20th draw should be free
+        assert service.stock_draw_count == 20
+        assert service.get_base_score() == 0
+    
+    def test_stock_draw_boundary_21_first_penalty(self, service_level1_neapolitan_timer_off):
+        """Test v2.0 CRITICAL: draw 21 is first penalty (boundary)."""
+        service = service_level1_neapolitan_timer_off
+        
+        # Draw 20 times (free)
+        for _ in range(20):
+            service.record_event(ScoreEventType.STOCK_DRAW)
+        
+        # 21st draw should be -1pt
+        event21 = service.record_event(ScoreEventType.STOCK_DRAW)
+        assert event21.points == -1
+        assert service.stock_draw_count == 21
+    
+    def test_stock_draw_tier_21_40_penalty(self, service_level1_neapolitan_timer_off):
+        """Test draws 21-40 have -1pt penalty each."""
+        service = service_level1_neapolitan_timer_off
+        
+        # Draw 20 times (free)
+        for _ in range(20):
+            service.record_event(ScoreEventType.STOCK_DRAW)
+        
+        # Draws 21-40 should be -1pt each
+        for i in range(21, 41):
+            event = service.record_event(ScoreEventType.STOCK_DRAW)
+            assert event.points == -1, f"Draw {i} should be -1, got {event.points}"
+        
+        assert service.stock_draw_count == 40
+        assert service.get_base_score() == -20  # 20 draws at -1pt each
+    
+    def test_stock_draw_boundary_40_last_minus_one(self, service_level1_neapolitan_timer_off):
+        """Test v2.0 CRITICAL: draw 40 is last -1pt tier (boundary)."""
+        service = service_level1_neapolitan_timer_off
+        
+        # Draw 40 times
+        for _ in range(40):
+            service.record_event(ScoreEventType.STOCK_DRAW)
+        
+        # 40th draw should be -1pt
+        assert service.stock_draw_count == 40
+        # Score: 0 (first 20) + (-20) (draws 21-40)
+        assert service.get_base_score() == -20
+    
+    def test_stock_draw_boundary_41_first_minus_two(self, service_level1_neapolitan_timer_off):
+        """Test v2.0 CRITICAL: draw 41 is first -2pt tier (boundary)."""
+        service = service_level1_neapolitan_timer_off
+        
+        # Draw 40 times
+        for _ in range(40):
+            service.record_event(ScoreEventType.STOCK_DRAW)
+        
+        # 41st draw should be -2pt
+        event41 = service.record_event(ScoreEventType.STOCK_DRAW)
+        assert event41.points == -2
+        assert service.stock_draw_count == 41
+    
+    def test_stock_draw_tier_41_plus_penalty(self, service_level1_neapolitan_timer_off):
+        """Test draws 41+ have -2pt penalty each."""
+        service = service_level1_neapolitan_timer_off
+        
+        # Draw 40 times
+        for _ in range(40):
+            service.record_event(ScoreEventType.STOCK_DRAW)
+        
+        # Draws 41-50 should be -2pt each
+        for i in range(41, 51):
+            event = service.record_event(ScoreEventType.STOCK_DRAW)
+            assert event.points == -2, f"Draw {i} should be -2, got {event.points}"
+        
+        assert service.stock_draw_count == 50
+        # Score: 0 (first 20) + (-20) (21-40) + (-20) (41-50)
+        assert service.get_base_score() == -40
+    
+    def test_stock_draw_examples_from_spec(self, service_level1_neapolitan_timer_off):
+        """Test examples from v2.0 specification."""
+        service = service_level1_neapolitan_timer_off
+        
+        # Example 1: 15 draws → 0pt total
+        service_15 = ScoringService(
+            config=service.config,
+            difficulty_level=1,
+            deck_type="neapolitan",
+            draw_count=1
+        )
+        for _ in range(15):
+            service_15.record_event(ScoreEventType.STOCK_DRAW)
+        assert service_15.get_base_score() == 0
+        
+        # Example 2: 35 draws → -15pt total
+        service_35 = ScoringService(
+            config=service.config,
+            difficulty_level=1,
+            deck_type="neapolitan",
+            draw_count=1
+        )
+        for _ in range(35):
+            service_35.record_event(ScoreEventType.STOCK_DRAW)
+        # 0 (first 20) + (-15) (draws 21-35 at -1pt each)
+        assert service_35.get_base_score() == -15
+        
+        # Example 3: 60 draws → -55pt total
+        service_60 = ScoringService(
+            config=service.config,
+            difficulty_level=1,
+            deck_type="neapolitan",
+            draw_count=1
+        )
+        for _ in range(60):
+            service_60.record_event(ScoreEventType.STOCK_DRAW)
+        # 0 (first 20) + (-20) (draws 21-40) + (-40) (draws 41-60 at -2pt each)
+        assert service_60.get_base_score() == -55
         service.record_event(ScoreEventType.RECYCLE_WASTE)  # 3rd: free
         event = service.record_event(ScoreEventType.RECYCLE_WASTE)  # 4th: penalty
         

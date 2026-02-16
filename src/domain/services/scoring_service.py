@@ -77,6 +77,7 @@ class ScoringService:
         self.config = config
         self.events: List[ScoreEvent] = []
         self.recycle_count = 0
+        self.stock_draw_count = 0  # v2.0 NEW: Cumulative stock draw counter
         self.difficulty_level = difficulty_level
         self.deck_type = deck_type
         self.draw_count = draw_count
@@ -121,8 +122,9 @@ class ScoringService:
     def _calculate_event_points(self, event_type: ScoreEventType) -> int:
         """Calculate points for an event.
         
-        Special handling for RECYCLE_WASTE: only applies penalty
-        after 3rd recycle (first 3 recycles are free).
+        Special handling for:
+        - RECYCLE_WASTE: Progressive penalty (0, 0, -10, -20, -35, -55, -80)
+        - STOCK_DRAW: Progressive penalty (0 for first 20, then -1, then -2)
         
         Args:
             event_type: Type of event
@@ -130,21 +132,73 @@ class ScoringService:
         Returns:
             Points to award/deduct
         """
-        points = self.config.event_points[event_type]
+        # Special case: STOCK_DRAW progressive penalty (v2.0)
+        if event_type == ScoreEventType.STOCK_DRAW:
+            self.stock_draw_count += 1
+            return self._calculate_stock_draw_penalty()
         
-        # Special case: Recycle penalty only after 3rd recycle
+        # Special case: RECYCLE_WASTE progressive penalty (v2.0)
         if event_type == ScoreEventType.RECYCLE_WASTE:
             self.recycle_count += 1
-            if self.recycle_count <= 3:
-                return 0  # First 3 recycles are free
-            else:
-                # Log recycle penalty
-                log.warning_issued(
-                    "Scoring",
-                    f"Recycle penalty: {points} points (recycle #{self.recycle_count})"
-                )
+            return self._calculate_recycle_penalty(self.recycle_count)
         
+        # All other events: use base points from config
+        points = self.config.event_points[event_type]
         return points
+    
+    def _calculate_stock_draw_penalty(self) -> int:
+        """Calculate progressive penalty for stock draws (v2.0).
+        
+        Penalty tiers:
+        - Draws 1-20: 0 points (free)
+        - Draws 21-40: -1 point per draw
+        - Draws 41+: -2 points per draw
+        
+        Returns:
+            Penalty points for current stock_draw_count
+        """
+        if self.stock_draw_count <= self.config.stock_draw_thresholds[0]:
+            return 0  # First 20 draws are free
+        elif self.stock_draw_count <= self.config.stock_draw_thresholds[1]:
+            return self.config.stock_draw_penalties[1]  # -1pt
+        else:
+            return self.config.stock_draw_penalties[2]  # -2pt
+    
+    def _calculate_recycle_penalty(self, recycle_count: int) -> int:
+        """Calculate progressive penalty for waste recycling (v2.0).
+        
+        Guard against invalid recycle_count <= 0.
+        
+        Penalty schedule:
+        - Recycle 1-2: 0 points (free)
+        - Recycle 3: -10 points
+        - Recycle 4: -20 points
+        - Recycle 5: -35 points
+        - Recycle 6: -55 points
+        - Recycle 7+: -80 points (clamped)
+        
+        Args:
+            recycle_count: Number of recycles (1-indexed)
+            
+        Returns:
+            Penalty points for this recycle
+        """
+        # Guard: Invalid recycle count
+        if recycle_count <= 0:
+            return 0
+        
+        # Index into penalty array (recycle_count-1), clamped to max index
+        index = min(recycle_count - 1, len(self.config.recycle_penalties) - 1)
+        penalty = self.config.recycle_penalties[index]
+        
+        # Log recycle penalty if non-zero
+        if penalty != 0:
+            log.warning_issued(
+                "Scoring",
+                f"Recycle penalty: {penalty} points (recycle #{recycle_count})"
+            )
+        
+        return penalty
     
     # ========================================
     # SCORE CALCULATIONS
@@ -383,8 +437,9 @@ class ScoringService:
     def reset(self) -> None:
         """Reset scoring state for new game.
         
-        Clears all events and recycle count.
+        Clears all events, recycle count, and stock draw count.
         Does not reset configuration.
         """
         self.events = []
         self.recycle_count = 0
+        self.stock_draw_count = 0  # v2.0 NEW
