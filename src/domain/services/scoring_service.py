@@ -558,6 +558,67 @@ class ScoringService:
         else:
             return 0.5  # Tantissimi
     
+    def _calculate_victory_bonus_with_quality(
+        self,
+        elapsed_seconds: float,
+        move_count: int,
+        recycle_count: int
+    ) -> tuple[int, float]:
+        """Calculate composite victory bonus with quality multiplier (v2.0).
+        
+        Combines three quality factors with weighted average:
+        - Time quality: 35% weight
+        - Move quality: 35% weight
+        - Recycle quality: 30% weight
+        
+        Formula:
+            quality_multiplier = (
+                time_quality * 0.35 +
+                move_quality * 0.35 +
+                recycle_quality * 0.30
+            )
+            victory_bonus = BASE_VICTORY * quality_multiplier
+        
+        Args:
+            elapsed_seconds: Time taken to complete game
+            move_count: Total moves made
+            recycle_count: Number of times waste was recycled
+            
+        Returns:
+            Tuple of (victory_bonus, quality_multiplier)
+            - victory_bonus: Integer points in range [252, 536]
+            - quality_multiplier: Float in range [0.63, 1.34]
+        
+        Note:
+            Theoretical max: 1.5*0.35 + 1.3*0.35 + 1.2*0.30 = 1.34 → 536pt
+            Theoretical min: 0.7*0.35 + 0.7*0.35 + 0.5*0.30 = 0.63 → 252pt
+        """
+        # Calculate individual quality factors
+        time_quality = self._calculate_time_quality(elapsed_seconds)
+        move_quality = self._calculate_move_quality(move_count)
+        recycle_quality = self._calculate_recycle_quality(recycle_count)
+        
+        # Weighted average using config weights
+        quality_multiplier = (
+            time_quality * self.config.victory_weights["time"] +
+            move_quality * self.config.victory_weights["moves"] +
+            recycle_quality * self.config.victory_weights["recycles"]
+        )
+        
+        # Calculate victory bonus with safe truncation
+        victory_bonus_float = self.config.victory_bonus_base * quality_multiplier
+        victory_bonus = self._safe_truncate(victory_bonus_float, "victory_bonus")
+        
+        # Log breakdown for debugging
+        log.info_query_requested(
+            "scoring_victory_bonus",
+            f"Victory bonus breakdown: time_q={time_quality:.2f} "
+            f"move_q={move_quality:.2f} recycle_q={recycle_quality:.2f} "
+            f"→ quality={quality_multiplier:.3f} → bonus={victory_bonus}pt"
+        )
+        
+        return victory_bonus, quality_multiplier
+    
     # ========================================
     # QUERIES
     # ========================================
