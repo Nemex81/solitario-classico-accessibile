@@ -7,14 +7,14 @@ Components:
 - GameEngine: Main game facade
 - GamePlayController: Gameplay command orchestration
 - InputHandler: Keyboard event to command mapping
-- GameSettings: Configuration management
+- GameSettings: Configuration management (in domain.services)
 - TimerManager: Timer functionality
 """
 
 from src.application.game_engine import GameEngine
 from src.application.gameplay_controller import GamePlayController
 from src.application.input_handler import InputHandler, GameCommand
-from src.application.game_settings import GameSettings
+from src.domain.services.game_settings import GameSettings  # ✅ Fixed: GameSettings is in domain.services
 from src.application.timer_manager import TimerManager, TimerState
 
 __all__ = [
