@@ -17,7 +17,14 @@ class ScoreFormatter:
     
     All methods are static - no internal state.
     Messages in Italian for accessibility.
+    
+    Version: v2.6.0 - Added SCORING_WARNING_TAG for robust test detection
     """
+    
+    # ✅ NEW v2.6.0: Tag costante per test detection robusto
+    # Prepended to all warning messages to enable tag-based test assertions
+    # that don't break when warning text is refactored
+    SCORING_WARNING_TAG = "[SCORING_WARNING]"
     
     # Event type translations (Italian TTS-friendly)
     EVENT_NAMES = {
@@ -330,9 +337,10 @@ class ScoreFormatter:
         threshold: int,
         penalty: int
     ) -> str:
-        """Format threshold warning for TTS (v2.0).
+        """Format threshold warning for TTS with tag for test detection (v2.6.0).
         
         Warns player when crossing scoring thresholds.
+        Includes SCORING_WARNING_TAG prefix for robust test assertions.
         
         Args:
             event_type: Type of event ("stock_draw" or "recycle")
@@ -341,27 +349,32 @@ class ScoreFormatter:
             penalty: Penalty per event after threshold
             
         Returns:
-            TTS warning message
+            Tagged TTS warning message
             
         Examples:
-            "Attenzione: superata soglia 20 pescate. Penalità -1 punto per pescata."
-            "Attenzione: terzo riciclo. Dal prossimo riciclo penalità -10 punti."
+            "[SCORING_WARNING] Attenzione: superata soglia 20 pescate. Penalità -1 punto per pescata."
+            "[SCORING_WARNING] Attenzione: terzo riciclo. Dal prossimo riciclo penalità -10 punti."
+        
+        Version: v2.6.0 - Added tag prefix
         """
         if event_type == "stock_draw":
-            return (
+            msg = (
                 f"Attenzione: superata soglia {threshold} pescate. "
                 f"Penalità {penalty} punto per pescata."
             )
         elif event_type == "recycle":
             if current == 3:
-                return (
+                msg = (
                     f"Attenzione: terzo riciclo. "
                     f"Dal prossimo riciclo penalità {penalty} punti."
                 )
             else:
-                return (
+                msg = (
                     f"Attenzione: {current} ricicli. "
                     f"Penalità in aumento."
                 )
         else:
-            return f"Attenzione: soglia {threshold} superata."
+            msg = f"Attenzione: soglia {threshold} superata."
+        
+        # ✅ v2.6.0: Prepend tag for robust test detection
+        return f"{ScoreFormatter.SCORING_WARNING_TAG} {msg}"
