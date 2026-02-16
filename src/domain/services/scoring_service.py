@@ -446,6 +446,119 @@ class ScoringService:
             return bonus
     
     # ========================================
+    # QUALITY FACTORS (v2.0)
+    # ========================================
+    
+    def _calculate_time_quality(self, elapsed_seconds: float) -> float:
+        """Calculate time quality factor for victory bonus (v2.0).
+        
+        Quality depends on timer state:
+        
+        Timer OFF (absolute minutes):
+            - ≤10 min: 1.5 (velocissimo)
+            - ≤20 min: 1.2 (veloce)
+            - ≤30 min: 1.0 (medio)
+            - ≤45 min: 0.8 (lento)
+            - >45 min: 0.7 (molto lento)
+        
+        Timer ON (percentage remaining):
+            - ≥80%: 1.5 (ottimo)
+            - ≥50%: 1.2 (buono)
+            - ≥25%: 1.0 (medio)
+            - >0%:  0.8 (appena entro limite)
+            - ≤0%:  0.7 (overtime)
+        
+        Args:
+            elapsed_seconds: Time taken to complete game
+            
+        Returns:
+            Quality factor in range [0.7, 1.5]
+        """
+        if not self.timer_enabled or self.timer_limit_seconds <= 0:
+            # Timer OFF: absolute time thresholds
+            elapsed_minutes = elapsed_seconds / 60.0
+            
+            if elapsed_minutes <= 10:
+                return 1.5  # Velocissimo
+            elif elapsed_minutes <= 20:
+                return 1.2  # Veloce
+            elif elapsed_minutes <= 30:
+                return 1.0  # Medio
+            elif elapsed_minutes <= 45:
+                return 0.8  # Lento
+            else:
+                return 0.7  # Molto lento
+        else:
+            # Timer ON: percentage-based thresholds
+            time_remaining = self.timer_limit_seconds - elapsed_seconds
+            time_remaining_pct = time_remaining / self.timer_limit_seconds
+            
+            if time_remaining_pct >= 0.80:
+                return 1.5  # 80%+ remaining
+            elif time_remaining_pct >= 0.50:
+                return 1.2  # 50%+ remaining
+            elif time_remaining_pct >= 0.25:
+                return 1.0  # 25%+ remaining
+            elif time_remaining_pct > 0:
+                return 0.8  # Entro limite
+            else:
+                return 0.7  # Overtime
+    
+    def _calculate_move_quality(self, move_count: int) -> float:
+        """Calculate move quality factor for victory bonus (v2.0).
+        
+        Quality thresholds based on move efficiency:
+        - ≤80 moves:  1.3 (ottimale)
+        - ≤120 moves: 1.1 (buono)
+        - ≤180 moves: 1.0 (medio)
+        - ≤250 moves: 0.85 (basso)
+        - >250 moves: 0.7 (brute force)
+        
+        Args:
+            move_count: Total moves made
+            
+        Returns:
+            Quality factor in range [0.7, 1.3]
+        """
+        if move_count <= 80:
+            return 1.3  # Ottimale
+        elif move_count <= 120:
+            return 1.1  # Buono
+        elif move_count <= 180:
+            return 1.0  # Medio
+        elif move_count <= 250:
+            return 0.85  # Basso
+        else:
+            return 0.7  # Brute force
+    
+    def _calculate_recycle_quality(self, recycle_count: int) -> float:
+        """Calculate recycle quality factor for victory bonus (v2.0).
+        
+        Quality thresholds based on waste recycling:
+        - 0 recycles:  1.2 (perfetto - zero ricicli)
+        - ≤2 recycles: 1.1 (ottimo)
+        - ≤4 recycles: 1.0 (medio)
+        - ≤7 recycles: 0.8 (molti)
+        - >7 recycles: 0.5 (tantissimi)
+        
+        Args:
+            recycle_count: Number of times waste was recycled
+            
+        Returns:
+            Quality factor in range [0.5, 1.2]
+        """
+        if recycle_count == 0:
+            return 1.2  # Perfetto (zero ricicli)
+        elif recycle_count <= 2:
+            return 1.1  # Ottimo
+        elif recycle_count <= 4:
+            return 1.0  # Medio
+        elif recycle_count <= 7:
+            return 0.8  # Molti
+        else:
+            return 0.5  # Tantissimi
+    
+    # ========================================
     # QUERIES
     # ========================================
     
