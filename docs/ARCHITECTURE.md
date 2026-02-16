@@ -53,6 +53,105 @@ Il Solitario Classico Accessibile utilizza una **Clean Architecture** (architett
 └─────────────────────────────────────────────────────────────┘
 ```
 
+## 🔊 Side-Effects Isolation: TTS Announcements
+
+### Principio Architetturale
+
+**TTS è un side-effect opzionale gestito SOLO a livello Application Layer.**
+
+```
+┌─────────────────────────────────────────────────┐
+│ Application Layer (GameEngine)                  │
+│ ├─ TTS warnings (_speak() helper)               │ ← UNICO punto di emissione
+│ ├─ _announce_draw_threshold_warning()           │
+│ └─ _announce_recycle_threshold_warning()        │
+└─────────────────────────────────────────────────┘
+                    ▼ calls
+┌─────────────────────────────────────────────────┐
+│ Domain Layer (GameService, ScoringService)      │
+│ ├─ draw_cards() → NO TTS                        │ ← Domain puro
+│ ├─ recycle_waste() → NO TTS                     │
+│ └─ record_event() → NO TTS                      │
+└─────────────────────────────────────────────────┘
+```
+
+### Garanzie
+
+**✅ Domain Layer Purity:**
+- `GameService` e `ScoringService` **MAI** chiamano TTS direttamente
+- Ritornano solo `(success, message, data)` tuples
+- Testabili senza mock TTS invasivi
+
+**✅ Engine Layer Orchestration:**
+- `GameEngine` decide **quando** e **cosa** annunciare
+- Guard condizionale: `if success and scoring_enabled and scoring:`
+- Helper `_speak()` con triple-guard (safe per test headless)
+
+**✅ Test Isolation:**
+```python
+# Domain tests (NO TTS dependency)
+def test_draw_cards_penalty():
+    service = GameService(table, rules, scoring)
+    success, msg, cards = service.draw_cards(3)
+    assert scoring.stock_draw_count == 3  # ✅ No TTS needed
+
+# Engine tests (TTS optional)
+def test_draw_warning_announcement():
+    engine = GameEngine.create(audio_enabled=False)  # ← TTS disabled
+    success, msg = engine.draw_from_stock()
+    # _speak() diventa no-op, test passa ✅
+```
+
+### Implementazione: `_speak()` Safe Guard
+
+```python
+def _speak(self, message: str, interrupt: bool = False) -> None:
+    """Safe TTS adapter con None-check (v2.6.0).
+    
+    Triple guard per test headless e fail-safe runtime:
+    1. screen_reader not None
+    2. hasattr(screen_reader, 'tts')
+    3. try/except per runtime errors
+    """
+    if self.screen_reader and hasattr(self.screen_reader, 'tts'):
+        try:
+            self.screen_reader.tts.speak(message, interrupt=interrupt)
+        except Exception as e:
+            log.warning_issued("GameEngine", f"TTS speak failed: {e}")
+    # Else: no-op (test-safe, no crash)
+```
+
+**Perché è importante:**
+- ❌ **ANTI-PATTERN:** Domain chiama TTS → test diventano complessi, mock ovunque
+- ✅ **PATTERN:** Engine orchestrazione TTS → domain testabile in isolamento
+
+### Flusso Completo: Draw con Warning
+
+```python
+# 1. User preme D (21esima carta totale)
+GamePlayController._draw_cards()
+
+# 2. Engine chiama domain
+success, msg, cards = engine.service.draw_cards(count=1)
+# → service.scoring.stock_draw_count = 21 (domain puro)
+
+# 3. Engine decide annuncio (application logic)
+if success and self.settings.scoring_enabled:
+    engine._announce_draw_threshold_warning()
+    # → Legge stock_draw_count da scoring
+    # → Genera warning se threshold (21/41)
+    # → Chiama _speak() (safe side-effect)
+
+# 4. TTS emissione (opt-in)
+if screen_reader:  # ← Guard in _speak()
+    tts.speak("AVVISO PUNTEGGIO: Superata soglia 21 pescate...")
+```
+
+**Vantaggi:**
+- Domain layer testabile senza NVDA/SAPI
+- Engine layer può disabilitare TTS senza toccare domain
+- Warnings configurabili (`ScoreWarningLevel`) senza refactor domain
+
 ## 📁 Struttura delle Directory
 
 ```
