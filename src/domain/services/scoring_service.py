@@ -298,38 +298,45 @@ class ScoringService:
         elapsed_seconds: float,
         move_count: int,
         is_victory: bool,
-        timer_strict_mode: bool = True  # 🆕 NEW PARAMETER v1.5.2.2
+        timer_strict_mode: bool = True
     ) -> FinalScore:
-        """Calculate final score at game end with overtime malus support.
+        """Calculate final score at game end (v2.0).
         
         Args:
             elapsed_seconds: Time taken to complete game
             move_count: Total moves made
             is_victory: Whether game was won
-            timer_strict_mode: Timer expiration behavior (v1.5.2.2)
-                - True: STRICT mode (game stops at timeout, no overtime possible)
+            timer_strict_mode: Timer expiration behavior
+                - True: STRICT mode (game stops at timeout)
                 - False: PERMISSIVE mode (overtime allowed with penalty)
             
         Returns:
-            FinalScore with complete breakdown including overtime malus
+            FinalScore with complete breakdown
             
         Note:
-            Time bonus calculation differs based on timer state:
-            - Timer OFF: Progressive decay (10000/sqrt(seconds))
-            - Timer ON within limit: Percentage-based (≥50%: +1000, ≥25%: +500, etc.)
-            - Timer ON in overtime (PERMISSIVE only): -100 points per minute
+            v2.0 Anti-exploit rules:
+            - time_bonus = 0 if is_victory == False (abbandoni non premiano)
+            - victory_bonus = 0 if is_victory == False (abbandoni non premiano)
+            - quality_multiplier = 0.0 if is_victory == False (explicit zero)
         """
         provisional = self.calculate_provisional_score()
         
-        # Calculate time bonus (handles overtime in PERMISSIVE mode)
-        time_bonus = self._calculate_time_bonus(elapsed_seconds, timer_strict_mode)
+        # v2.0: Time and victory bonuses ONLY on victory (anti-exploit)
+        if is_victory:
+            time_bonus = self._calculate_time_bonus(elapsed_seconds, timer_strict_mode)
+            victory_bonus, quality_multiplier = self._calculate_victory_bonus_with_quality(
+                elapsed_seconds=elapsed_seconds,
+                move_count=move_count,
+                recycle_count=self.recycle_count
+            )
+        else:
+            # Abandonment: zero bonuses (anti-exploit)
+            time_bonus = 0
+            victory_bonus = 0
+            quality_multiplier = 0.0  # Explicit zero for abandonment
         
-        # Victory bonus (only if won)
-        victory_bonus = self.config.victory_bonus if is_victory else 0
-        
-        # Calculate total (formula from specification)
-        total_before_time = provisional.total_score
-        total_score = total_before_time + time_bonus + victory_bonus
+        # Calculate total score
+        total_score = provisional.total_score + time_bonus + victory_bonus
         
         # Clamp to minimum
         total_before_clamp = total_score
@@ -342,6 +349,7 @@ class ScoringService:
                 f"Score clamped: {total_before_clamp} → {total_score} (minimum enforced)"
             )
         
+        # v2.0: Persist quality_multiplier (not reconstructed in UI)
         return FinalScore(
             base_score=provisional.base_score,
             deck_bonus=provisional.deck_bonus,
@@ -356,7 +364,8 @@ class ScoringService:
             deck_type=self.deck_type,
             draw_count=self.draw_count,
             recycle_count=self.recycle_count,
-            move_count=move_count
+            move_count=move_count,
+            victory_quality_multiplier=quality_multiplier  # v2.0 NEW: persisted
         )
     
     def _calculate_time_bonus(self, elapsed_seconds: float, timer_strict_mode: bool = True) -> int:
