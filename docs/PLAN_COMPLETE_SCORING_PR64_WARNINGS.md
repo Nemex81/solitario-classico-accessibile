@@ -164,87 +164,152 @@ def draw_cards(self, count: int = 1) -> Tuple[bool, str, List[Card]]:
    
 3. **Backward compatible**: `self.draw_count` resta "per azione" (statistiche legacy non rompono)
 
-### Test Integration (NUOVO)
+### Test Integration (ROBUSTI - AGGIORNATI)
 
-#### Test 1: Eventi Registrati Correttamente
+> **⚠️ TEST STRATEGY IMPROVEMENT**  
+> I seguenti test usano **setup diretto su `GameService`** anziché `GameEngine.create()`
+> per garantire **determinismo completo** ed evitare dipendenze da configurazioni esterne.
+> 
+> **Benefici**:
+> - ✅ Controllo totale su `draw_count` parameter
+> - ✅ Nessuna dipendenza da settings globali
+> - ✅ Event filtering per test isolation perfetto
+
+#### Test 1: Eventi Registrati Correttamente (DETERMINISTICO)
 ```python
 def test_stock_draw_events_recorded_in_gameplay():
-    """CRITICAL: Verify STOCK_DRAW events actually registered during gameplay.
+    """CRITICAL: Verify STOCK_DRAW events registered (deterministic setup).
+    
+    Uses GameService directly to avoid dependency on GameEngine config
+    and ensure predictable draw behavior (1 card per call).
     
     This test catches the bug where draw_cards() increments draw_count
     but never calls scoring.record_event(ScoreEventType.STOCK_DRAW).
     """
-    # Setup
-    engine = GameEngine.create(
-        scoring_enabled=True,
-        draw_count=1  # Draw 1 per azione
+    # Setup DIRETTO (no engine overhead)
+    table = GameTable.create(deck_type="french")
+    rules = SolitaireRules()
+    scoring = ScoringService(
+        deck_type="french",
+        difficulty_level=1,
+        draw_count=1  # Force 1-card draw for determinism
     )
-    engine.new_game()
+    service = GameService(table, rules, scoring)
+    service.start_game()
     
-    # Draw 25 cards (triggers penalties at 21)
-    for _ in range(25):
-        success, msg = engine.draw_from_stock()
-        assert success, f"Draw failed: {msg}"
+    # Verify stock has enough cards
+    assert service.table.pile_mazzo.get_card_count() >= 25, \
+        "Stock must have at least 25 cards for test"
     
-    # VERIFY: Events registered in ScoringService
-    assert engine.service.scoring.stock_draw_count == 25, \
-        "Expected 25 STOCK_DRAW events recorded"
+    # Draw exactly 25 cards (1 per call)
+    for i in range(25):
+        success, msg, cards = service.draw_cards(count=1)
+        assert success, f"Draw {i+1} failed: {msg}"
+        assert len(cards) == 1, f"Expected 1 card, got {len(cards)}"
     
-    # VERIFY: Penalties actually applied
-    # Draw 1-20: 0pt
-    # Draw 21-25: 5 × -1pt = -5pt
-    provisional = engine.service.scoring.calculate_provisional_score()
-    assert provisional.base_score == -5, \
-        f"Expected -5pt penalty, got {provisional.base_score}pt"
+    # VERIFY: Exactly 25 events registered
+    assert scoring.stock_draw_count == 25, \
+        f"Expected 25 STOCK_DRAW events, got {scoring.stock_draw_count}"
+    
+    # VERIFY: Correct penalty via EVENT FILTERING (isolation)
+    # This approach isolates STOCK_DRAW events from other events
+    # like CARD_REVEALED that might affect base_score
+    draw_events = [
+        e for e in scoring.score_events 
+        if e.event_type == ScoreEventType.STOCK_DRAW
+    ]
+    assert len(draw_events) == 25, "Event count mismatch"
+    
+    # Draw 1-20: 0pt, Draw 21-25: 5 × -1pt = -5pt
+    draw_penalty = sum(e.points for e in draw_events)
+    assert draw_penalty == -5, \
+        f"Expected -5pt penalty (draw 21-25), got {draw_penalty}pt"
 ```
 
-#### Test 2: Penalità Progressive
+#### Test 2: Penalità Progressive (CON EVENT FILTERING)
 ```python
 def test_stock_draw_penalties_progression():
-    """Verify progressive penalties: 1-20 free, 21-40 = -1pt, 41+ = -2pt."""
-    # Setup
-    engine = GameEngine.create(scoring_enabled=True, draw_count=1)
-    engine.new_game()
+    """Verify progressive penalties: 1-20 free, 21-40 = -1pt, 41+ = -2pt.
     
-    # Draw 45 cards
+    Uses event filtering for robust assertion that doesn't depend
+    on other scoring events that might occur during gameplay.
+    """
+    # Setup diretto
+    table = GameTable.create(deck_type="french")
+    rules = SolitaireRules()
+    scoring = ScoringService(
+        deck_type="french",
+        difficulty_level=1,
+        draw_count=1  # Deterministic: 1 card per call
+    )
+    service = GameService(table, rules, scoring)
+    service.start_game()
+    
+    # Verify stock has enough cards
+    assert service.table.pile_mazzo.get_card_count() >= 45
+    
+    # Draw 45 cards (1 per call)
     for i in range(45):
-        success, msg = engine.draw_from_stock()
+        success, msg, cards = service.draw_cards(count=1)
         assert success, f"Draw {i+1} failed: {msg}"
+        assert len(cards) == 1
+    
+    # VERIFY: Event filtering (robust, isolated from other events)
+    draw_events = [
+        e for e in scoring.score_events
+        if e.event_type == ScoreEventType.STOCK_DRAW
+    ]
+    assert len(draw_events) == 45, \
+        f"Expected 45 STOCK_DRAW events, got {len(draw_events)}"
     
     # Expected penalties:
     # - Draw 1-20: 0pt (20 cards)
     # - Draw 21-40: -1pt × 20 = -20pt
     # - Draw 41-45: -2pt × 5 = -10pt
     # Total: -30pt
-    
-    provisional = engine.service.scoring.calculate_provisional_score()
-    assert provisional.base_score == -30, \
-        f"Expected -30pt total penalty, got {provisional.base_score}pt"
+    total_penalty = sum(e.points for e in draw_events)
+    assert total_penalty == -30, \
+        f"Expected -30pt total penalty, got {total_penalty}pt"
 ```
 
-#### Test 3: Draw-3 Coerenza
+#### Test 3: Draw-3 Coerenza (Conteggio Per Carta)
 ```python
 def test_stock_draw_penalties_with_draw3():
     """Verify penalties count per-card, not per-action with draw-3."""
-    # Setup
-    engine = GameEngine.create(scoring_enabled=True, draw_count=3)
-    engine.new_game()
+    # Setup con draw-3
+    table = GameTable.create(deck_type="french")
+    rules = SolitaireRules()
+    scoring = ScoringService(
+        deck_type="french",
+        difficulty_level=1,
+        draw_count=3  # Draw-3 mode
+    )
+    service = GameService(table, rules, scoring)
+    service.start_game()
     
     # Draw 7 actions × 3 cards = 21 cards total
     for _ in range(7):
-        engine.draw_from_stock()
+        service.draw_cards(count=3)
     
-    # VERIFY: Exactly 21 events (not 7)
-    assert engine.service.scoring.stock_draw_count == 21
+    # VERIFY: Exactly 21 events (not 7 actions)
+    assert scoring.stock_draw_count == 21, \
+        f"Expected 21 events (per-card), got {scoring.stock_draw_count}"
     
     # VERIFY: Penalties start at card 21 (not action 21)
-    provisional = engine.service.scoring.calculate_provisional_score()
-    assert provisional.base_score == -1  # Solo 21a carta = -1pt
+    draw_events = [
+        e for e in scoring.score_events
+        if e.event_type == ScoreEventType.STOCK_DRAW
+    ]
+    
+    # Only 21st card has penalty (not cards 1-20)
+    penalties = [e.points for e in draw_events]
+    assert penalties[:20] == [0] * 20, "First 20 draws should be free"
+    assert penalties[20] == -1, "21st draw should have -1pt penalty"
 ```
 
 ### Effort: 30 minuti
 - Codice: 5 minuti (1 linea + guard)
-- Test: 20 minuti (3 test integration)
+- Test: 20 minuti (3 test robusti)
 - Review: 5 minuti
 
 ---
@@ -712,7 +777,14 @@ def load_all_scores(self) -> List[Dict[str, Any]]:
 
 ### Test Suite
 
-#### Test 1: Warnings per Livello (Parametrico)
+> **⚠️ CRITICAL: Deterministic Test Setup**  
+> I seguenti test parametrici **devono forzare `draw_count=1`** nel setup per garantire
+> threshold crossing prevedibile. Con draw-3, le soglie si raggiungono a conteggi azione
+> non deterministici (es: 7 azioni = 21 carte, ma warnings potrebbero emettere a momenti diversi).
+> 
+> **Best Practice**: Usa sempre `draw_count=1` nei test warnings per reprodicibilità.
+
+#### Test 1: Warnings per Livello (Parametrico, DETERMINISTICO)
 ```python
 import pytest
 from src.domain.models.scoring import ScoreWarningLevel
@@ -723,25 +795,34 @@ from src.domain.models.scoring import ScoreWarningLevel
     (ScoreWarningLevel.BALANCED, 2),   # Draw 21 + 41
     (ScoreWarningLevel.COMPLETE, 3),   # Draw 20 + 21 + 41
 ])
-def test_stock_draw_warnings_per_level(mock_engine, level, expected_warnings):
-    """Verify correct number of warnings per level during 45 draws."""
-    # Setup
-    mock_engine.settings.score_warning_level = level
-    mock_engine.settings.scoring_enabled = True
+def test_stock_draw_warnings_per_level(level, expected_warnings):
+    """Verify correct warnings per level (deterministic setup).
     
-    # Simula 45 draw (supera entrambe soglie 21 e 41)
+    CRITICAL: Uses draw_count=1 to ensure predictable threshold crossing.
+    With draw-3, thresholds occur at unpredictable action counts.
+    """
+    # Setup con draw_count=1 FORZATO per determinismo
+    engine = GameEngine.create(
+        scoring_enabled=True,
+        draw_count=1  # 👈 CRITICO: 1 azione = 1 carta = soglie prevedibili
+    )
+    engine.new_game()
+    engine.settings.score_warning_level = level
+    
+    # Draw esattamente 45 volte (azioni = carte con draw-1)
     for _ in range(45):
-        mock_engine.draw_from_stock()
+        engine.draw_from_stock()
     
-    # Count warnings in TTS calls
+    # Count warnings (robust filtering)
     warning_calls = [
-        call for call in mock_engine.screen_reader.tts.speak.call_args_list
-        if any(keyword in call[0][0].lower() 
-               for keyword in ["soglia", "penalità", "ultima pescata"])
+        call for call in engine.screen_reader.tts.speak.call_args_list
+        if any(kw in call[0][0].lower() 
+               for kw in ["soglia", "penalità", "ultima pescata", "gratuita"])
     ]
     
     assert len(warning_calls) == expected_warnings, \
-        f"Level {level.name}: expected {expected_warnings} warnings, got {len(warning_calls)}"
+        f"Level {level.name}: expected {expected_warnings} warnings, " \
+        f"got {len(warning_calls)}"
 ```
 
 #### Test 2: Recycle Warnings per Livello
@@ -769,7 +850,8 @@ def test_recycle_warnings_per_level(mock_engine, level, expected_warnings):
     ]
     
     assert len(warning_calls) == expected_warnings, \
-        f"Level {level.name}: expected {expected_warnings} warnings, got {len(warning_calls)}"
+        f"Level {level.name}: expected {expected_warnings} warnings, " \
+        f"got {len(warning_calls)}"
 ```
 
 #### Test 3: Warning Disabilitati Quando Scoring OFF
@@ -830,6 +912,78 @@ def test_cycle_score_warning_level():
 
 ---
 
+## 📚 Test Strategy Best Practices
+
+### Rationale: Direct GameService Setup
+
+**Problema**: Test su `GameEngine.create()` possono avere:
+- Dipendenze da configurazioni esterne (settings globali)
+- Comportamento draw-3 non deterministico
+- Side-effects da componenti non coinvolte
+
+**Soluzione**: Setup diretto su `GameService`:
+```python
+# ✅ ROBUSTO
+table = GameTable.create(deck_type="french")
+rules = SolitaireRules()
+scoring = ScoringService(deck_type="french", difficulty_level=1, draw_count=1)
+service = GameService(table, rules, scoring)
+```
+
+**Benefici**:
+- ✅ Controllo totale su `draw_count`
+- ✅ Zero dipendenze esterne
+- ✅ Reprodicibilità 100%
+
+---
+
+### Rationale: Event Filtering per Assertions
+
+**Problema**: `provisional.base_score` include TUTTI gli eventi:
+```python
+# ⚠️ FRAGILE: altri eventi contaminano assertion
+assert provisional.base_score == -5  # Cosa se CARD_REVEALED aggiunge punti?
+```
+
+**Soluzione**: Filtra eventi specifici:
+```python
+# ✅ ROBUSTO: isolation completo
+draw_events = [e for e in scoring.score_events if e.event_type == ScoreEventType.STOCK_DRAW]
+draw_penalty = sum(e.points for e in draw_events)
+assert draw_penalty == -5
+```
+
+**Benefici**:
+- ✅ Test isolation perfetto
+- ✅ No false positives/negatives
+- ✅ Verifica doppia (count + sum)
+
+---
+
+### Rationale: Forzare draw_count=1 nei Test Warnings
+
+**Problema**: Con draw-3, le soglie si raggiungono a conteggi azione variabili:
+```python
+# ⚠️ NON DETERMINISTICO con draw-3
+for _ in range(7):  # 7 azioni × 3 carte = 21 carte
+    engine.draw_from_stock()  # Warning potrebbe emettere a iterazione 7 o prima
+```
+
+**Soluzione**: Forzare draw-1 nei test:
+```python
+# ✅ DETERMINISTICO
+engine = GameEngine.create(draw_count=1)  # 1 azione = 1 carta
+for _ in range(45):  # Soglia 21 esattamente a iterazione 21
+    engine.draw_from_stock()
+```
+
+**Benefici**:
+- ✅ Threshold crossing prevedibile
+- ✅ Warning count esatto
+- ✅ Reprodicibilità garantita
+
+---
+
 ## ✅ Success Criteria
 
 ### Acceptance Criteria
@@ -879,10 +1033,11 @@ pytest tests/ --cov=src --cov-report=html
 
 | Rischio | Probabilità | Impact | Mitigazione |
 |---------|-------------|--------|-------------|
-| Test integration complessi | MEDIA | ALTA | Mock completi di GameEngine |
+| Test integration complessi | MEDIA | ALTA | Setup diretto GameService (FASE 0) |
 | TTS annunci ripetitivi | BASSA | MEDIA | Default BALANCED (3 warnings max) |
 | Retrocompat score legacy | BASSA | ALTA | Sentinel `-1.0` + `.setdefault()` |
 | Performance warnings | MOLTO BASSA | BASSA | TTS async, no blocking |
+| Draw-3 test non deterministici | MEDIA | ALTA | Forzare draw_count=1 (FASE 4) |
 
 ### Rollback Plan
 Se Fase 0 (STOCK_DRAW fix) introduce regression:
@@ -901,7 +1056,8 @@ FASE 0:
 fix(scoring): register STOCK_DRAW events in draw_cards gameplay
 - Add scoring.record_event() in draw loop
 - Fix progressive penalties 21/41 not applying
-- Add integration tests for event registration
+- Add robust integration tests with direct GameService setup
+- Use event filtering for test isolation
 BREAKING: None
 Closes: #BUG-STOCK-DRAW
 
@@ -936,7 +1092,8 @@ Closes: #FIX-RETROCOMPAT
 FASE 4:
 test(scoring): add comprehensive test coverage for warnings
 - Add parametric tests for all warning levels
-- Add integration tests for bug fixes
+- Force draw_count=1 for deterministic threshold crossing
+- Add integration tests for bug fixes with event filtering
 - Achieve >90% coverage on new code
 Closes: #TEST-COVERAGE
 ```
