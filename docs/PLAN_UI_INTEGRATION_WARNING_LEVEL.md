@@ -343,18 +343,7 @@ Closes: #ISSUE-WARNING-UI
 
 ---
 
-## Effort Totale Stimato
 
-| Fase | Descrizione | Tempo |
-|------|-------------|-------|
-| 1 | Identificare entry point | 10 min |
-| 2 | Aggiungere handler F9 | 15 min |
-| 3 | Aggiornare display opzioni | 20 min |
-| 4 | Verificare persistenza | 5 min |
-| 5 | Test accessibilità + funzionali | 15 min |
-| **Totale** | | **65 min (~1 ora)** |
-
----
 
 ## Acceptance Criteria
 
