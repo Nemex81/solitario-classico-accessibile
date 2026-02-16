@@ -39,6 +39,14 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
   - Prefisso aggiunto a tutti i messaggi warning per detection affidabile
   - Test non rompono più per refactoring testo warnings
   - **Impatto**: Test suite più robusta e manutenibile
+- **Test Coverage Completo**: 17 nuovi test per warnings graduati (v2.6.0)
+  - Fixture `scoring_engine_draw1` con setup deterministico
+  - Test parametrici per tutti i 4 livelli warnings (draw + recycle)
+  - Test integration: scoring disabled, level changes, safe TTS pattern
+  - Test cycling e display metodi GameSettings
+  - Test tag constant e formatter integration
+  - Pass rate: 88% (15/17 test passano)
+  - **Impatto**: Copertura test robusta previene regressioni future
 
 ### Fixed
 - **CRITICAL: Eventi STOCK_DRAW mai registrati**: Fix sistema penalità progressive soglie 21/41
@@ -50,6 +58,7 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 - **Circular import crash**: Fix dipendenze circolari che bloccavano test infrastructure
   - Corretto path import GameSettings: `src.application` → `src.domain.services`
   - Lazy import per GameSettings, TimerManager, InputHandler in DIContainer
+  - Fix application/__init__.py import path per GameSettings
   - **Impatto**: Test suite funzionante, sviluppo sbloccato
 - **Settings persistence crash risk**: Aggiunta persistenza score_warning_level
   - Esteso `to_dict()` con serializzazione string human-readable ("BALANCED")
@@ -58,12 +67,13 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
   - **Impatto**: Nessun crash/reset impostazioni al riavvio app
 
 ### Technical Details
-- 5 commit incrementali (Fase 0, Fase 1, Fase 1.5, Fase 2+2.5, docs)
+- 7 commit incrementali (Fase 0, Fase 1, Fase 1.5, Fase 2+2.5, Fase 4, docs x2)
 - Zero breaking changes, retrocompatibilità garantita
 - Settings JSON files mantengono leggibilità (string format)
 - Pattern seguiti: lazy imports, error handling graceful, TTS-first messaging, safe TTS pattern
-- File modificati: `game_service.py`, `di_container.py`, `scoring.py`, `game_settings.py`, `game_engine.py`, `score_formatter.py`
-- Test coverage: Standalone test per Phase 0 (25 draws + penalties), Phase 1 (enum + cycling), Phase 1.5 (persistence + retrocompat), Phase 2/2.5 (tag verification)
+- File modificati (7): `game_service.py`, `di_container.py`, `scoring.py`, `game_settings.py`, `game_engine.py`, `score_formatter.py`, `application/__init__.py`
+- File creati (1): `test_game_engine_scoring_warnings.py` (422 linee, 17 test)
+- Test coverage: Standalone test per Phase 0 (25 draws + penalties), Phase 1 (enum + cycling), Phase 1.5 (persistence + retrocompat), Phase 2/2.5 (tag verification), Phase 4 (17 comprehensive tests)
 
 ---
 
