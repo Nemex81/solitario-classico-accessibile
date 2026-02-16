@@ -260,33 +260,33 @@ Questo file TODO è solo un cruscotto operativo da consultare e aggiornare duran
 
 ### Phase 2: Config Externalization (2 commits)
 
-#### Commit 7: Create config JSON + loader ✅ / ❌
+#### Commit 7: Create config JSON + loader ✅
 **File coinvolti**:
-- [ ] `config/scoring_config.json` → CREATE
-  - [ ] Struttura completa JSON con tutti parametri v2.0 (vedi spec)
-  - [ ] `"version": "2.0.0"`
-  - [ ] Event points, stock_draw thresholds, recycle penalties
-  - [ ] Deck bonuses, draw bonuses, difficulty multipliers
-  - [ ] Time bonus params, victory bonus params
+- [x] `config/scoring_config.json` → CREATE
+  - [x] Struttura completa JSON con tutti parametri v2.0 (vedi spec)
+  - [x] `"version": "2.0.0"`
+  - [x] Event points, stock_draw thresholds, recycle penalties
+  - [x] Deck bonuses, draw bonuses, difficulty multipliers
+  - [x] Time bonus params, victory bonus params
 
-- [ ] `src/infrastructure/config/scoring_config_loader.py` → CREATE
-  - [ ] `ScoringConfigLoader.load(path: Path = None) -> ScoringConfig`
-    - [ ] Carica JSON, parse, valida schema
-    - [ ] Fallback a `fallback_default()` se file missing
-    - [ ] Raise `ValueError` se JSON malformed
-  - [ ] `ScoringConfigLoader.fallback_default() -> ScoringConfig`
-    - [ ] Return hardcoded v2.0 defaults
-  - [ ] `ScoringConfigLoader._parse_and_validate(data: dict) -> ScoringConfig`
-    - [ ] Version check
-    - [ ] Convert difficulty_multipliers keys (JSON string → int)
-    - [ ] Validation via `ScoringConfig.__post_init__`
+- [x] `src/infrastructure/config/scoring_config_loader.py` → CREATE
+  - [x] `ScoringConfigLoader.load(path: Path = None) -> ScoringConfig`
+    - [x] Carica JSON, parse, valida schema
+    - [x] Fallback a `fallback_default()` se file missing
+    - [x] Raise `ValueError` se JSON malformed
+  - [x] `ScoringConfigLoader.fallback_default() -> ScoringConfig`
+    - [x] Return hardcoded v2.0 defaults
+  - [x] `ScoringConfigLoader._parse_and_validate(data: dict) -> ScoringConfig`
+    - [x] Version check
+    - [x] Convert difficulty_multipliers keys (JSON string → int)
+    - [x] Validation via `ScoringConfig.__post_init__`
 
-- [ ] `tests/infrastructure/config/test_scoring_config_loader.py` → CREATE
-  - [ ] `test_config_loader_valid_json()` → Load config, verify version=2.0.0
-  - [ ] `test_config_loader_missing_file()` → Fallback to defaults
-  - [ ] `test_config_loader_malformed_json()` → Raise ValueError
+- [x] `tests/infrastructure/config/test_scoring_config_loader.py` → CREATE
+  - [x] `test_config_loader_valid_json()` → Load config, verify version=2.0.0
+  - [x] `test_config_loader_missing_file()` → Fallback to defaults
+  - [x] `test_config_loader_malformed_json()` → Raise ValueError
 
-**Status commit 7**: ❌ NOT STARTED
+**Status commit 7**: ✅ DONE
 
 ---
 

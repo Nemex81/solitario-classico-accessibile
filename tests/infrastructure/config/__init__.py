@@ -1,0 +1,1 @@
+"""Infrastructure config tests package."""
