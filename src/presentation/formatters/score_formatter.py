@@ -214,3 +214,154 @@ class ScoreFormatter:
             f"Vittoria: {victory}. "
             f"Difficoltà: {difficulty_name}."
         )
+    
+    # ========================================
+    # V2.0 NEW FORMATTERS
+    # ========================================
+    
+    @staticmethod
+    def format_summary(final_score: FinalScore) -> str:
+        """Format concise summary for TTS (v2.0).
+        
+        Optimized for screen readers - minimal, essential info only.
+        
+        Args:
+            final_score: Complete score with all components
+            
+        Returns:
+            Concise TTS message with status, time, moves, and total score
+            
+        Example:
+            "Vittoria in 18 minuti con 142 mosse. Punteggio totale: 1523 punti."
+            "Partita abbandonata in 10 minuti con 85 mosse. Punteggio totale: 244 punti."
+        """
+        # Status
+        status = "Vittoria" if final_score.is_victory else "Partita abbandonata"
+        
+        # Time
+        minutes = int(final_score.elapsed_seconds // 60)
+        
+        # Score
+        return (
+            f"{status} in {minutes} minuti con {final_score.move_count} mosse. "
+            f"Punteggio totale: {final_score.total_score} punti."
+        )
+    
+    @staticmethod
+    def format_detailed(final_score: FinalScore) -> str:
+        """Format detailed breakdown for TTS (v2.0).
+        
+        Complete score breakdown with all components.
+        Handles legacy scores (victory_quality_multiplier < 0).
+        
+        Args:
+            final_score: Complete score with all components
+            
+        Returns:
+            Detailed TTS message with full breakdown
+            
+        Example:
+            "Dettaglio punteggio: Punteggio base dalle mosse: 95 punti.
+             Bonus mazzo napoletano: 100 punti. Bonus pescata 3 carte: 100 punti.
+             Moltiplicatore difficoltà livello 4: 1 punto 8.
+             Punteggio provvisorio: 531 punti.
+             Bonus tempo: 480 punti.
+             Bonus vittoria: 454 punti, qualità 1 punto 14.
+             Punteggio finale: 1465 punti."
+        """
+        parts = ["Dettaglio punteggio:"]
+        
+        # Base score
+        parts.append(f"Punteggio base dalle mosse: {final_score.base_score} punti.")
+        
+        # Deck bonus
+        deck_name = "napoletano" if final_score.deck_type == "neapolitan" else "francese"
+        parts.append(f"Bonus mazzo {deck_name}: {final_score.deck_bonus} punti.")
+        
+        # Draw bonus (if any)
+        if final_score.draw_bonus > 0:
+            parts.append(
+                f"Bonus pescata {final_score.draw_count} carte: "
+                f"{final_score.draw_bonus} punti."
+            )
+        
+        # Difficulty multiplier (format for TTS: "1.8" → "1 punto 8")
+        mult_str = str(final_score.difficulty_multiplier).replace('.', ' punto ')
+        parts.append(
+            f"Moltiplicatore difficoltà livello {final_score.difficulty_level}: "
+            f"{mult_str}."
+        )
+        
+        # Provisional score calculation
+        provisional = int(
+            (final_score.base_score + final_score.deck_bonus + final_score.draw_bonus) *
+            final_score.difficulty_multiplier
+        )
+        parts.append(f"Punteggio provvisorio: {provisional} punti.")
+        
+        # Time bonus (if any)
+        if final_score.time_bonus != 0:
+            parts.append(f"Bonus tempo: {final_score.time_bonus} punti.")
+        
+        # Victory bonus with quality (v2.0 feature)
+        if final_score.victory_bonus > 0:
+            # Check if quality is available (v2.0) or legacy (v1.0)
+            if hasattr(final_score, 'victory_quality_multiplier') and \
+               final_score.victory_quality_multiplier > 0:
+                # v2.0: Show quality multiplier
+                quality_str = str(final_score.victory_quality_multiplier).replace('.', ' punto ')
+                parts.append(
+                    f"Bonus vittoria: {final_score.victory_bonus} punti, "
+                    f"qualità {quality_str}."
+                )
+            else:
+                # v1.0 legacy: No quality info
+                parts.append(f"Bonus vittoria: {final_score.victory_bonus} punti (legacy).")
+        
+        # Final score
+        parts.append(f"Punteggio finale: {final_score.total_score} punti.")
+        
+        return " ".join(parts)
+    
+    @staticmethod
+    def format_threshold_warning(
+        event_type: str,
+        current: int,
+        threshold: int,
+        penalty: int
+    ) -> str:
+        """Format threshold warning for TTS (v2.0).
+        
+        Warns player when crossing scoring thresholds.
+        
+        Args:
+            event_type: Type of event ("stock_draw" or "recycle")
+            current: Current count
+            threshold: Threshold just crossed
+            penalty: Penalty per event after threshold
+            
+        Returns:
+            TTS warning message
+            
+        Examples:
+            "Attenzione: superata soglia 20 pescate. Penalità -1 punto per pescata."
+            "Attenzione: terzo riciclo. Dal prossimo riciclo penalità -10 punti."
+        """
+        if event_type == "stock_draw":
+            return (
+                f"Attenzione: superata soglia {threshold} pescate. "
+                f"Penalità {penalty} punto per pescata."
+            )
+        elif event_type == "recycle":
+            if current == 3:
+                return (
+                    f"Attenzione: terzo riciclo. "
+                    f"Dal prossimo riciclo penalità {penalty} punti."
+                )
+            else:
+                return (
+                    f"Attenzione: {current} ricicli. "
+                    f"Penalità in aumento."
+                )
+        else:
+            return f"Attenzione: soglia {threshold} superata."

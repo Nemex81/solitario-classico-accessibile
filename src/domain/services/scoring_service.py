@@ -77,6 +77,7 @@ class ScoringService:
         self.config = config
         self.events: List[ScoreEvent] = []
         self.recycle_count = 0
+        self.stock_draw_count = 0  # v2.0 NEW: Cumulative stock draw counter
         self.difficulty_level = difficulty_level
         self.deck_type = deck_type
         self.draw_count = draw_count
@@ -121,8 +122,9 @@ class ScoringService:
     def _calculate_event_points(self, event_type: ScoreEventType) -> int:
         """Calculate points for an event.
         
-        Special handling for RECYCLE_WASTE: only applies penalty
-        after 3rd recycle (first 3 recycles are free).
+        Special handling for:
+        - RECYCLE_WASTE: Progressive penalty (0, 0, -10, -20, -35, -55, -80)
+        - STOCK_DRAW: Progressive penalty (0 for first 20, then -1, then -2)
         
         Args:
             event_type: Type of event
@@ -130,21 +132,108 @@ class ScoringService:
         Returns:
             Points to award/deduct
         """
-        points = self.config.event_points[event_type]
+        # Special case: STOCK_DRAW progressive penalty (v2.0)
+        if event_type == ScoreEventType.STOCK_DRAW:
+            self.stock_draw_count += 1
+            return self._calculate_stock_draw_penalty()
         
-        # Special case: Recycle penalty only after 3rd recycle
+        # Special case: RECYCLE_WASTE progressive penalty (v2.0)
         if event_type == ScoreEventType.RECYCLE_WASTE:
             self.recycle_count += 1
-            if self.recycle_count <= 3:
-                return 0  # First 3 recycles are free
-            else:
-                # Log recycle penalty
-                log.warning_issued(
-                    "Scoring",
-                    f"Recycle penalty: {points} points (recycle #{self.recycle_count})"
-                )
+            return self._calculate_recycle_penalty(self.recycle_count)
         
+        # All other events: use base points from config
+        points = self.config.event_points[event_type]
         return points
+    
+    def _calculate_stock_draw_penalty(self) -> int:
+        """Calculate progressive penalty for stock draws (v2.0).
+        
+        Penalty tiers:
+        - Draws 1-20: 0 points (free)
+        - Draws 21-40: -1 point per draw
+        - Draws 41+: -2 points per draw
+        
+        Returns:
+            Penalty points for current stock_draw_count
+        """
+        if self.stock_draw_count <= self.config.stock_draw_thresholds[0]:
+            return 0  # First 20 draws are free
+        elif self.stock_draw_count <= self.config.stock_draw_thresholds[1]:
+            return self.config.stock_draw_penalties[1]  # -1pt
+        else:
+            return self.config.stock_draw_penalties[2]  # -2pt
+    
+    def _calculate_recycle_penalty(self, recycle_count: int) -> int:
+        """Calculate progressive penalty for waste recycling (v2.0).
+        
+        Guard against invalid recycle_count <= 0.
+        
+        Penalty schedule:
+        - Recycle 1-2: 0 points (free)
+        - Recycle 3: -10 points
+        - Recycle 4: -20 points
+        - Recycle 5: -35 points
+        - Recycle 6: -55 points
+        - Recycle 7+: -80 points (clamped)
+        
+        Args:
+            recycle_count: Number of recycles (1-indexed)
+            
+        Returns:
+            Penalty points for this recycle
+        """
+        # Guard: Invalid recycle count
+        if recycle_count <= 0:
+            return 0
+        
+        # Index into penalty array (recycle_count-1), clamped to max index
+        index = min(recycle_count - 1, len(self.config.recycle_penalties) - 1)
+        penalty = self.config.recycle_penalties[index]
+        
+        # Log recycle penalty if non-zero
+        if penalty != 0:
+            log.warning_issued(
+                "Scoring",
+                f"Recycle penalty: {penalty} points (recycle #{recycle_count})"
+            )
+        
+        return penalty
+    
+    # ========================================
+    # NUMERIC HELPERS (v2.0)
+    # ========================================
+    
+    def _safe_truncate(self, value: float, context: str = "") -> int:
+        """Safe truncation with Rule 5 invariant enforcement (v2.0).
+        
+        Truncates float to int using Python's int() (floor for positive numbers).
+        Enforces non-negativity constraint to guarantee consistent behavior.
+        
+        Args:
+            value: Float value to truncate
+            context: Context string for error message
+            
+        Returns:
+            Truncated integer value
+            
+        Raises:
+            ValueError: If value < 0 (domain invariant violation)
+            
+        Note:
+            Python int() behavior differs for negative numbers:
+            - int(1.9) → 1 (floor)
+            - int(-1.9) → -1 (NOT floor, truncation toward zero)
+            
+            To guarantee floor behavior, we enforce non-negativity.
+        """
+        if value < 0:
+            raise ValueError(
+                f"Truncation safety violated: {value} < 0 "
+                f"(context: {context}). Domain logic bug - values "
+                f"must be clamped to min_score before truncation."
+            )
+        return int(value)
     
     # ========================================
     # SCORE CALCULATIONS
@@ -167,16 +256,20 @@ class ScoringService:
             ProvisionalScore with current totals
             
         Note:
-            - Draw bonus only applies at levels 1-3
+            - Draw bonus: levels 1-3 get full (low), levels 4-5 get 50% (high)
             - Score cannot go below min_score (0)
         """
         base_score = self.get_base_score()
         deck_bonus = self.config.deck_type_bonuses[self.deck_type]
         
-        # Draw bonus only for levels 1-3
+        # Draw bonus: v2.0 tier system (low/high)
         draw_bonus = 0
         if self.difficulty_level <= 3:
-            draw_bonus = self.config.draw_count_bonuses[self.draw_count]
+            # Levels 1-3: full bonus (low tier)
+            draw_bonus = self.config.draw_count_bonuses[self.draw_count]["low"]
+        else:
+            # Levels 4-5: 50% bonus (high tier)
+            draw_bonus = self.config.draw_count_bonuses[self.draw_count]["high"]
         
         difficulty_multiplier = self.config.difficulty_multipliers[self.difficulty_level]
         
@@ -205,38 +298,45 @@ class ScoringService:
         elapsed_seconds: float,
         move_count: int,
         is_victory: bool,
-        timer_strict_mode: bool = True  # 🆕 NEW PARAMETER v1.5.2.2
+        timer_strict_mode: bool = True
     ) -> FinalScore:
-        """Calculate final score at game end with overtime malus support.
+        """Calculate final score at game end (v2.0).
         
         Args:
             elapsed_seconds: Time taken to complete game
             move_count: Total moves made
             is_victory: Whether game was won
-            timer_strict_mode: Timer expiration behavior (v1.5.2.2)
-                - True: STRICT mode (game stops at timeout, no overtime possible)
+            timer_strict_mode: Timer expiration behavior
+                - True: STRICT mode (game stops at timeout)
                 - False: PERMISSIVE mode (overtime allowed with penalty)
             
         Returns:
-            FinalScore with complete breakdown including overtime malus
+            FinalScore with complete breakdown
             
         Note:
-            Time bonus calculation differs based on timer state:
-            - Timer OFF: Progressive decay (10000/sqrt(seconds))
-            - Timer ON within limit: Percentage-based (≥50%: +1000, ≥25%: +500, etc.)
-            - Timer ON in overtime (PERMISSIVE only): -100 points per minute
+            v2.0 Anti-exploit rules:
+            - time_bonus = 0 if is_victory == False (abbandoni non premiano)
+            - victory_bonus = 0 if is_victory == False (abbandoni non premiano)
+            - quality_multiplier = 0.0 if is_victory == False (explicit zero)
         """
         provisional = self.calculate_provisional_score()
         
-        # Calculate time bonus (handles overtime in PERMISSIVE mode)
-        time_bonus = self._calculate_time_bonus(elapsed_seconds, timer_strict_mode)
+        # v2.0: Time and victory bonuses ONLY on victory (anti-exploit)
+        if is_victory:
+            time_bonus = self._calculate_time_bonus(elapsed_seconds, timer_strict_mode)
+            victory_bonus, quality_multiplier = self._calculate_victory_bonus_with_quality(
+                elapsed_seconds=elapsed_seconds,
+                move_count=move_count,
+                recycle_count=self.recycle_count
+            )
+        else:
+            # Abandonment: zero bonuses (anti-exploit)
+            time_bonus = 0
+            victory_bonus = 0
+            quality_multiplier = 0.0  # Explicit zero for abandonment
         
-        # Victory bonus (only if won)
-        victory_bonus = self.config.victory_bonus if is_victory else 0
-        
-        # Calculate total (formula from specification)
-        total_before_time = provisional.total_score
-        total_score = total_before_time + time_bonus + victory_bonus
+        # Calculate total score
+        total_score = provisional.total_score + time_bonus + victory_bonus
         
         # Clamp to minimum
         total_before_clamp = total_score
@@ -249,6 +349,7 @@ class ScoringService:
                 f"Score clamped: {total_before_clamp} → {total_score} (minimum enforced)"
             )
         
+        # v2.0: Persist quality_multiplier (not reconstructed in UI)
         return FinalScore(
             base_score=provisional.base_score,
             deck_bonus=provisional.deck_bonus,
@@ -263,17 +364,20 @@ class ScoringService:
             deck_type=self.deck_type,
             draw_count=self.draw_count,
             recycle_count=self.recycle_count,
-            move_count=move_count
+            move_count=move_count,
+            victory_quality_multiplier=quality_multiplier  # v2.0 NEW: persisted
         )
     
     def _calculate_time_bonus(self, elapsed_seconds: float, timer_strict_mode: bool = True) -> int:
-        """Calculate time bonus based on elapsed time with overtime malus support.
+        """Calculate time bonus based on elapsed time (v2.0 values).
         
         Logic differs based on timer state:
         
         Timer OFF:
-            Progressive decay formula: min(2000, 10000/sqrt(elapsed_seconds))
-            Faster completion = higher bonus
+            Linear decay formula: max(0, 1200 - (elapsed_minutes * 40))
+            - Max bonus: 1200 points (instant win)
+            - Decay: -40 points per minute
+            - Zero bonus: 30 minutes
             
         Timer ON (within limit):
             Percentage-based:
@@ -294,12 +398,15 @@ class ScoringService:
             Time bonus points (can be negative if overtime in PERMISSIVE mode)
         """
         if not self.timer_enabled or self.timer_limit_seconds <= 0:
-            # Timer OFF: Progressive decay formula
-            if elapsed_seconds <= 0:
-                return 2000  # Instant win (theoretical max)
+            # Timer OFF: Linear decay formula (v2.0)
+            elapsed_minutes = elapsed_seconds / 60.0
             
-            bonus = int(10000 / math.sqrt(elapsed_seconds))
-            return min(2000, bonus)  # Cap at 2000
+            # max(0, 1200 - (elapsed_minutes * 40))
+            bonus_float = self.config.time_bonus_max_timer_off - (
+                elapsed_minutes * self.config.time_bonus_decay_per_minute
+            )
+            bonus_clamped = max(0, bonus_float)
+            return self._safe_truncate(bonus_clamped, "time_bonus_timer_off")
         
         else:
             # Timer ON: Percentage-based or overtime malus
@@ -312,10 +419,10 @@ class ScoringService:
                     # But return penalty just in case
                     return -500
                 else:
-                    # 🆕 PERMISSIVE mode (v1.5.2.2): Calculate overtime malus
+                    # PERMISSIVE mode (v1.5.2.2): Calculate overtime malus
                     overtime_seconds = abs(time_remaining)
                     overtime_minutes = max(1, int(overtime_seconds // 60))  # At least 1 minute
-                    malus = -100 * overtime_minutes
+                    malus = self.config.overtime_penalty_per_minute * overtime_minutes
                     
                     # Log overtime penalty
                     log.warning_issued(
@@ -325,17 +432,16 @@ class ScoringService:
                     
                     return malus
             
-            # Within time limit: percentage-based bonus
-            time_used_percentage = elapsed_seconds / self.timer_limit_seconds
-            time_remaining_percentage = 1.0 - time_used_percentage
+            # Within time limit: percentage-based bonus (v2.0)
+            time_remaining_percentage = time_remaining / self.timer_limit_seconds
             
             bonus = 0
             if time_remaining_percentage >= 0.50:
-                bonus = 1000  # ≥50% remaining
+                bonus = self.config.time_bonus_max_timer_on  # ≥50% remaining: 1000pt
             elif time_remaining_percentage >= 0.25:
-                bonus = 500   # ≥25% remaining
+                bonus = self.config.time_bonus_max_timer_on // 2  # ≥25% remaining: 500pt
             elif time_remaining_percentage > 0:
-                bonus = 200   # >0% remaining
+                bonus = self.config.time_bonus_max_timer_on // 5  # >0% remaining: 200pt
             else:
                 bonus = -500  # Timer expired (edge case)
             
@@ -347,6 +453,180 @@ class ScoringService:
                 )
             
             return bonus
+    
+    # ========================================
+    # QUALITY FACTORS (v2.0)
+    # ========================================
+    
+    def _calculate_time_quality(self, elapsed_seconds: float) -> float:
+        """Calculate time quality factor for victory bonus (v2.0).
+        
+        Quality depends on timer state:
+        
+        Timer OFF (absolute minutes):
+            - ≤10 min: 1.5 (velocissimo)
+            - ≤20 min: 1.2 (veloce)
+            - ≤30 min: 1.0 (medio)
+            - ≤45 min: 0.8 (lento)
+            - >45 min: 0.7 (molto lento)
+        
+        Timer ON (percentage remaining):
+            - ≥80%: 1.5 (ottimo)
+            - ≥50%: 1.2 (buono)
+            - ≥25%: 1.0 (medio)
+            - >0%:  0.8 (appena entro limite)
+            - ≤0%:  0.7 (overtime)
+        
+        Args:
+            elapsed_seconds: Time taken to complete game
+            
+        Returns:
+            Quality factor in range [0.7, 1.5]
+        """
+        if not self.timer_enabled or self.timer_limit_seconds <= 0:
+            # Timer OFF: absolute time thresholds
+            elapsed_minutes = elapsed_seconds / 60.0
+            
+            if elapsed_minutes <= 10:
+                return 1.5  # Velocissimo
+            elif elapsed_minutes <= 20:
+                return 1.2  # Veloce
+            elif elapsed_minutes <= 30:
+                return 1.0  # Medio
+            elif elapsed_minutes <= 45:
+                return 0.8  # Lento
+            else:
+                return 0.7  # Molto lento
+        else:
+            # Timer ON: percentage-based thresholds
+            time_remaining = self.timer_limit_seconds - elapsed_seconds
+            time_remaining_pct = time_remaining / self.timer_limit_seconds
+            
+            if time_remaining_pct >= 0.80:
+                return 1.5  # 80%+ remaining
+            elif time_remaining_pct >= 0.50:
+                return 1.2  # 50%+ remaining
+            elif time_remaining_pct >= 0.25:
+                return 1.0  # 25%+ remaining
+            elif time_remaining_pct > 0:
+                return 0.8  # Entro limite
+            else:
+                return 0.7  # Overtime
+    
+    def _calculate_move_quality(self, move_count: int) -> float:
+        """Calculate move quality factor for victory bonus (v2.0).
+        
+        Quality thresholds based on move efficiency:
+        - ≤80 moves:  1.3 (ottimale)
+        - ≤120 moves: 1.1 (buono)
+        - ≤180 moves: 1.0 (medio)
+        - ≤250 moves: 0.85 (basso)
+        - >250 moves: 0.7 (brute force)
+        
+        Args:
+            move_count: Total moves made
+            
+        Returns:
+            Quality factor in range [0.7, 1.3]
+        """
+        if move_count <= 80:
+            return 1.3  # Ottimale
+        elif move_count <= 120:
+            return 1.1  # Buono
+        elif move_count <= 180:
+            return 1.0  # Medio
+        elif move_count <= 250:
+            return 0.85  # Basso
+        else:
+            return 0.7  # Brute force
+    
+    def _calculate_recycle_quality(self, recycle_count: int) -> float:
+        """Calculate recycle quality factor for victory bonus (v2.0).
+        
+        Quality thresholds based on waste recycling:
+        - 0 recycles:  1.2 (perfetto - zero ricicli)
+        - ≤2 recycles: 1.1 (ottimo)
+        - ≤4 recycles: 1.0 (medio)
+        - ≤7 recycles: 0.8 (molti)
+        - >7 recycles: 0.5 (tantissimi)
+        
+        Args:
+            recycle_count: Number of times waste was recycled
+            
+        Returns:
+            Quality factor in range [0.5, 1.2]
+        """
+        if recycle_count == 0:
+            return 1.2  # Perfetto (zero ricicli)
+        elif recycle_count <= 2:
+            return 1.1  # Ottimo
+        elif recycle_count <= 4:
+            return 1.0  # Medio
+        elif recycle_count <= 7:
+            return 0.8  # Molti
+        else:
+            return 0.5  # Tantissimi
+    
+    def _calculate_victory_bonus_with_quality(
+        self,
+        elapsed_seconds: float,
+        move_count: int,
+        recycle_count: int
+    ) -> tuple[int, float]:
+        """Calculate composite victory bonus with quality multiplier (v2.0).
+        
+        Combines three quality factors with weighted average:
+        - Time quality: 35% weight
+        - Move quality: 35% weight
+        - Recycle quality: 30% weight
+        
+        Formula:
+            quality_multiplier = (
+                time_quality * 0.35 +
+                move_quality * 0.35 +
+                recycle_quality * 0.30
+            )
+            victory_bonus = BASE_VICTORY * quality_multiplier
+        
+        Args:
+            elapsed_seconds: Time taken to complete game
+            move_count: Total moves made
+            recycle_count: Number of times waste was recycled
+            
+        Returns:
+            Tuple of (victory_bonus, quality_multiplier)
+            - victory_bonus: Integer points in range [252, 536]
+            - quality_multiplier: Float in range [0.63, 1.34]
+        
+        Note:
+            Theoretical max: 1.5*0.35 + 1.3*0.35 + 1.2*0.30 = 1.34 → 536pt
+            Theoretical min: 0.7*0.35 + 0.7*0.35 + 0.5*0.30 = 0.63 → 252pt
+        """
+        # Calculate individual quality factors
+        time_quality = self._calculate_time_quality(elapsed_seconds)
+        move_quality = self._calculate_move_quality(move_count)
+        recycle_quality = self._calculate_recycle_quality(recycle_count)
+        
+        # Weighted average using config weights
+        quality_multiplier = (
+            time_quality * self.config.victory_weights["time"] +
+            move_quality * self.config.victory_weights["moves"] +
+            recycle_quality * self.config.victory_weights["recycles"]
+        )
+        
+        # Calculate victory bonus with safe truncation
+        victory_bonus_float = self.config.victory_bonus_base * quality_multiplier
+        victory_bonus = self._safe_truncate(victory_bonus_float, "victory_bonus")
+        
+        # Log breakdown for debugging
+        log.info_query_requested(
+            "scoring_victory_bonus",
+            f"Victory bonus breakdown: time_q={time_quality:.2f} "
+            f"move_q={move_quality:.2f} recycle_q={recycle_quality:.2f} "
+            f"→ quality={quality_multiplier:.3f} → bonus={victory_bonus}pt"
+        )
+        
+        return victory_bonus, quality_multiplier
     
     # ========================================
     # QUERIES
@@ -383,8 +663,9 @@ class ScoringService:
     def reset(self) -> None:
         """Reset scoring state for new game.
         
-        Clears all events and recycle count.
+        Clears all events, recycle count, and stock draw count.
         Does not reset configuration.
         """
         self.events = []
         self.recycle_count = 0
+        self.stock_draw_count = 0  # v2.0 NEW

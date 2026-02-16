@@ -1,0 +1,58 @@
+{
+  "_comment": "Scoring System v2.0 Configuration - Solitario Accessibile",
+  "_description": "External configuration for deterministic, tunable scoring system",
+  
+  "version": "2.0.0",
+  
+  "event_points": {
+    "waste_to_foundation": 10,
+    "tableau_to_foundation": 10,
+    "card_revealed": 5,
+    "foundation_to_tableau": -15,
+    "recycle_waste": 0,
+    "stock_draw": 0,
+    "invalid_move": 0,
+    "auto_move": 0,
+    "undo_move": 0,
+    "hint_used": 0
+  },
+  
+  "difficulty_multipliers": {
+    "1": 1.0,
+    "2": 1.2,
+    "3": 1.4,
+    "4": 1.8,
+    "5": 2.2
+  },
+  
+  "deck_type_bonuses": {
+    "neapolitan": 100,
+    "french": 50
+  },
+  
+  "draw_count_bonuses": {
+    "1": {"low": 0, "high": 0},
+    "2": {"low": 100, "high": 50},
+    "3": {"low": 200, "high": 100}
+  },
+  
+  "victory_bonus_base": 400,
+  
+  "victory_weights": {
+    "time": 0.35,
+    "moves": 0.35,
+    "recycles": 0.30
+  },
+  
+  "stock_draw_thresholds": [20, 40],
+  "stock_draw_penalties": [0, -1, -2],
+  
+  "recycle_penalties": [0, 0, -10, -20, -35, -55, -80],
+  
+  "time_bonus_max_timer_off": 1200,
+  "time_bonus_decay_per_minute": 40,
+  "time_bonus_max_timer_on": 1000,
+  "overtime_penalty_per_minute": -100,
+  
+  "min_score": 0
+}

@@ -32,6 +32,7 @@ from src.domain.services.game_settings import GameSettings
 from src.domain.services.cursor_manager import CursorManager
 from src.domain.services.selection_manager import SelectionManager
 from src.domain.services.scoring_service import ScoringService
+from src.infrastructure.config.scoring_config_loader import ScoringConfigLoader  # 🆕 MISSING
 from src.domain.rules.solitaire_rules import SolitaireRules
 from src.domain.models.scoring import ScoringConfig
 from src.infrastructure.audio.screen_reader import ScreenReader
@@ -205,7 +206,9 @@ class GameEngine:
                     # Enforce 5-60 minute range for level 4
                     settings.max_time_game = max(300, min(3600, settings.max_time_game))
             
-            scoring_config = ScoringConfig()
+            # Create scoring service if enabled (v2.0.0)
+            # 🆕 v2.0: Load config from external JSON with fallback
+            scoring_config = ScoringConfigLoader.load()
             scoring = ScoringService(
                 config=scoring_config,
                 difficulty_level=settings.difficulty_level,
