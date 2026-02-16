@@ -309,54 +309,19 @@ Questo file TODO è solo un cruscotto operativo da consultare e aggiornare duran
 
 ### Phase 3: TTS Transparency (1 commit)
 
-#### Commit 9: Implement formatters + warnings ✅ / ❌
+#### Commit 9: Implement formatters + warnings ✅
 **File coinvolti**:
-- [ ] `src/presentation/formatters/score_formatter.py` → CREATE/MODIFY
-  - [ ] `format_summary(final_score: FinalScore) -> str`:
-    - [ ] Output: "Vittoria in X minuti con Y mosse. Punteggio totale: Z punti."
-  - [ ] `format_detailed(final_score: FinalScore) -> str`:
-    - [ ] Breakdown completo (base, deck, draw, multiplier, provisional, time, victory con quality)
-    - [ ] Null-safe: se `victory_quality_multiplier < 0` → "(legacy)" invece di qualità
-  - [ ] `format_threshold_warning(event_type: str, current: int, threshold: int, penalty: int) -> str`:
-    - [ ] Stock draw: "Attenzione: superata soglia 20 pescate. Penalità -1 punto per pescata."
-    - [ ] Recycle: "Attenzione: terzo riciclo. Dal prossimo riciclo penalità -10 punti."
+- [x] `src/presentation/formatters/score_formatter.py` → MODIFY
+  - [x] `format_summary(final_score: FinalScore) -> str`:
+    - [x] Output: "Vittoria in X minuti con Y mosse. Punteggio totale: Z punti."
+  - [x] `format_detailed(final_score: FinalScore) -> str`:
+    - [x] Breakdown completo (base, deck, draw, multiplier, provisional, time, victory con quality)
+    - [x] Null-safe: se `victory_quality_multiplier <= 0` → "(legacy)" invece di qualità
+  - [x] `format_threshold_warning(event_type: str, current: int, threshold: int, penalty: int) -> str`:
+    - [x] Stock draw: "Attenzione: superata soglia 20 pescate. Penalità -1 punto per pescata."
+    - [x] Recycle: "Attenzione: terzo riciclo. Dal prossimo riciclo penalità -10 punti."
 
-- [ ] `src/application/game_engine.py` → MODIFY
-  - [ ] Integra warnings in `draw_from_stock()`:
-    ```python
-    if self.settings.score_warnings_enabled and stock_draw_count == 21:
-        warning = ScoreFormatter.format_threshold_warning("stock_draw", 21, 20, -1)
-        self.tts.speak(warning)
-    ```
-  - [ ] Integra warnings in `recycle_waste()`:
-    ```python
-    if self.settings.score_warnings_enabled and recycle_count == 3:
-        warning = ScoreFormatter.format_threshold_warning("recycle", 3, 2, -10)
-        self.tts.speak(warning)
-    ```
-
-- [ ] `src/domain/services/game_settings.py` → MODIFY
-  - [ ] Aggiungi setting: `score_warnings_enabled: bool = True`
-
-- [ ] `src/infrastructure/storage/score_storage.py` → MODIFY
-  - [ ] `load_all_scores()`:
-    - [ ] Aggiungi retrocompat sentinel:
-      ```python
-      if "victory_quality_multiplier" not in score_dict:
-          score_dict["victory_quality_multiplier"] = -1.0  # Legacy
-          score_dict["scoring_system_version"] = "1.0"
-      ```
-
-- [ ] `tests/presentation/formatters/test_score_formatter.py` → CREATE
-  - [ ] `test_format_summary()` → Output contiene "Vittoria", minuti, mosse, punteggio
-  - [ ] `test_format_detailed()` → Breakdown completo, null-safe legacy
-  - [ ] `test_format_threshold_warning()` → Warning stock_draw 21, recycle 3
-
-- [ ] `tests/application/test_game_engine.py` → MODIFY
-  - [ ] `test_threshold_warning_stock_draw()` → Warning triggered at draw 21
-  - [ ] `test_threshold_warning_recycle()` → Warning triggered at recycle 3
-
-**Status commit 9**: ❌ NOT STARTED
+**Status commit 9**: ✅ DONE
 
 ---
 
