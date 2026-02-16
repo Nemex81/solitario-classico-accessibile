@@ -7,6 +7,39 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 ---
 
+## [2.6.1] - 2026-02-16
+
+### Added
+- **Opzione 9 Menu Opzioni**: Esposizione UI per livelli avvisi soglie punteggio
+  - Nuova opzione "Avvisi Soglie Punteggio" nel menu opzioni (posizione 9)
+  - Cicla tra 4 livelli: DISABLED (Disattivati) → MINIMAL (Minimi) → BALANCED (Equilibrati) → COMPLETE (Completi)
+  - Display mostra livello corrente in italiano
+  - Feedback TTS immediato tramite metodo esistente `cycle_score_warning_level()`
+  - Navigazione con frecce/numeri supporta opzione 9
+  - **Impatto**: Completa implementazione PR #66 esponendo controllo warning level all'utente
+
+### Changed
+- **OptionsController**: Range opzioni esteso da 0-7 a 0-8
+  - Aggiunto handler `_modify_score_warning_level()` per opzione 9
+  - Aggiornato `jump_to_option()` per supportare indice 8
+  - Aggiornati `_save_snapshot()` e `_restore_snapshot()` per includere score_warning_level
+  - Aggiornate mappe lock enforcement con option 8
+  - Display opzioni: "X di 8" → "X di 9"
+- **OptionsFormatter**: Display aggiornato per 9 opzioni
+  - Aggiunto "Avvisi Soglie Punteggio" a OPTION_NAMES (indice 8)
+  - `format_open_message()`: "1 di 8" → "1 di 9"
+  - `format_option_item()`: "X di 8" → "X di 9"
+
+### Technical Details
+- 2 file modificati: `options_controller.py` (+16 lines), `options_formatter.py` (+4 lines)
+- Riutilizza metodi domain esistenti (nessuna nuova logica business)
+- Pattern coerente con altre 8 opzioni
+- Persistenza automatica (già implementata in v2.6.0)
+- Zero breaking changes
+- Backward compatible
+
+---
+
 ## [2.6.0] - 2026-02-16
 
 ### Added
