@@ -32,6 +32,7 @@ from src.domain.services.game_settings import GameSettings
 from src.domain.services.cursor_manager import CursorManager
 from src.domain.services.selection_manager import SelectionManager
 from src.domain.services.scoring_service import ScoringService
+from src.infrastructure.config.scoring_config_loader import ScoringConfigLoader  # 🆕 MISSING
 from src.domain.rules.solitaire_rules import SolitaireRules
 from src.domain.models.scoring import ScoringConfig
 from src.infrastructure.audio.screen_reader import ScreenReader
