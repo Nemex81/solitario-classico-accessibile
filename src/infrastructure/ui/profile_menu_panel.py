@@ -409,14 +409,250 @@ class ProfileMenuPanel(wx.Dialog):
             self._announce("Errore creazione profilo.", interrupt=True)
     
     def _on_rename_profile(self, event: wx.CommandEvent) -> None:
-        """Handle \"Rinomina Profilo\" button (Commit 10.3)."""
-        self._announce("Opzione non ancora implementata.", interrupt=True)
-        # PLACEHOLDER - Implementato in Commit 10.3
+        """Handle \"Rinomina Profilo Corrente\" button.
+        
+        Flow:
+        1. Check if active profile exists
+        2. Show wx.TextEntryDialog with current name as default
+        3. Validate new name (same rules as create)
+        4. Call profile_service.rename_profile(new_name)
+        5. Refresh active profile label
+        6. Announce: "Profilo rinominato in: [nome]"
+        
+        Restrictions:
+        - Guest profile cannot be renamed → Show error message
+        - Same validation as create (non-empty, max 30, no duplicates)
+        
+        Note: Only renames active profile, not others.
+        
+        Version: v3.1.0 Phase 10.3
+        """
+        self._announce("Rinomina profilo corrente.", interrupt=True)
+        
+        # Check if active profile exists
+        if not self.profile_service.active_profile:
+            wx.MessageBox(
+                "Nessun profilo attivo.",
+                "Errore",
+                wx.OK | wx.ICON_ERROR
+            )
+            self._announce("Nessun profilo attivo.", interrupt=True)
+            return
+        
+        # Check guest profile
+        if self.profile_service.active_profile.is_guest:
+            wx.MessageBox(
+                "Il profilo Ospite non può essere rinominato.",
+                "Errore",
+                wx.OK | wx.ICON_ERROR
+            )
+            self._announce("Profilo ospite non rinominabile.", interrupt=True)
+            return
+        
+        current_name = self.profile_service.active_profile.profile_name
+        
+        # Show text entry dialog
+        dlg = wx.TextEntryDialog(
+            self,
+            f"Inserisci nuovo nome per profilo '{current_name}':",
+            "Rinomina Profilo",
+            value=current_name,
+            style=wx.OK | wx.CANCEL | wx.CENTRE
+        )
+        
+        if dlg.ShowModal() != wx.ID_OK:
+            dlg.Destroy()
+            self._announce("Rinomina annullata.", interrupt=True)
+            return
+        
+        new_name = dlg.GetValue().strip()
+        dlg.Destroy()
+        
+        # Skip if same name
+        if new_name == current_name:
+            self._announce("Nome identico, nessuna modifica.", interrupt=True)
+            return
+        
+        # Validate name (same as create)
+        if not new_name:
+            wx.MessageBox(
+                "Nome profilo non può essere vuoto.",
+                "Errore",
+                wx.OK | wx.ICON_ERROR
+            )
+            self._announce("Nome vuoto, riprova.", interrupt=True)
+            return
+        
+        if len(new_name) > 30:
+            wx.MessageBox(
+                "Nome profilo troppo lungo (massimo 30 caratteri).",
+                "Errore",
+                wx.OK | wx.ICON_ERROR
+            )
+            self._announce("Nome troppo lungo, riprova.", interrupt=True)
+            return
+        
+        # Check duplicates
+        all_profiles = self.profile_service.list_profiles()
+        existing_names = [p['profile_name'] for p in all_profiles]
+        if new_name in existing_names:
+            wx.MessageBox(
+                f"Un profilo con nome '{new_name}' esiste già.",
+                "Errore",
+                wx.OK | wx.ICON_ERROR
+            )
+            self._announce("Nome già esistente, riprova.", interrupt=True)
+            return
+        
+        # Rename profile
+        try:
+            success = self.profile_service.rename_profile(new_name)
+            
+            if success:
+                log.info(f"Profile renamed: {current_name} → {new_name}")
+                
+                # Refresh UI
+                self._update_active_label()
+                
+                # Announce
+                self._announce(f"Profilo rinominato in: {new_name}.", interrupt=True)
+            else:
+                wx.MessageBox(
+                    "Impossibile rinominare profilo.",
+                    "Errore",
+                    wx.OK | wx.ICON_ERROR
+                )
+                self._announce("Errore rinomina profilo.", interrupt=True)
+        
+        except Exception as e:
+            log.error_occurred("ProfileMenuPanel", f"Failed to rename profile: {e}", e)
+            wx.MessageBox(
+                f"Errore durante rinomina: {e}",
+                "Errore",
+                wx.OK | wx.ICON_ERROR
+            )
+            self._announce("Errore rinomina profilo.", interrupt=True)
     
     def _on_delete_profile(self, event: wx.CommandEvent) -> None:
-        """Handle \"Elimina Profilo\" button (Commit 10.3)."""
-        self._announce("Opzione non ancora implementata.", interrupt=True)
-        # PLACEHOLDER - Implementato in Commit 10.3
+        """Handle \"Elimina Profilo\" button.
+        
+        Flow:
+        1. Check if active profile can be deleted
+        2. Show wx.MessageDialog confirmation (YES/NO)
+        3. On YES: call profile_service.delete_profile(profile_id)
+        4. Auto-switch to default profile (or first available)
+        5. Refresh active profile label
+        6. Announce: "Profilo eliminato. Attivo: [nome nuovo]"
+        
+        Restrictions:
+        - Guest profile cannot be deleted → Show error
+        - Last remaining profile cannot be deleted → Show error
+        - Requires confirmation dialog (destructive action)
+        
+        Confirmation message:
+        "Sei sicuro di voler eliminare il profilo '[nome]'?
+        Tutte le statistiche e partite salvate saranno perse.
+        
+        Questa operazione non può essere annullata."
+        
+        Version: v3.1.0 Phase 10.3
+        """
+        self._announce("Elimina profilo.", interrupt=True)
+        
+        # Check if active profile exists
+        if not self.profile_service.active_profile:
+            wx.MessageBox(
+                "Nessun profilo attivo.",
+                "Errore",
+                wx.OK | wx.ICON_ERROR
+            )
+            self._announce("Nessun profilo attivo.", interrupt=True)
+            return
+        
+        # Check guest profile
+        if self.profile_service.active_profile.is_guest:
+            wx.MessageBox(
+                "Il profilo Ospite non può essere eliminato.",
+                "Errore",
+                wx.OK | wx.ICON_ERROR
+            )
+            self._announce("Profilo ospite non eliminabile.", interrupt=True)
+            return
+        
+        # Check if last profile
+        all_profiles = self.profile_service.list_profiles()
+        non_guest_profiles = [p for p in all_profiles if not p.get('is_guest', False)]
+        
+        if len(non_guest_profiles) <= 1:
+            wx.MessageBox(
+                "Non puoi eliminare l'ultimo profilo rimanente.\n"
+                "Crea un nuovo profilo prima di eliminare questo.",
+                "Errore",
+                wx.OK | wx.ICON_ERROR
+            )
+            self._announce("Impossibile eliminare ultimo profilo.", interrupt=True)
+            return
+        
+        current_name = self.profile_service.active_profile.profile_name
+        current_id = self.profile_service.active_profile.profile_id
+        
+        # Show confirmation dialog
+        dlg = wx.MessageDialog(
+            self,
+            f"Sei sicuro di voler eliminare il profilo '{current_name}'?\n\n"
+            f"Tutte le statistiche e partite salvate saranno perse.\n\n"
+            f"Questa operazione non può essere annullata.",
+            "Conferma Eliminazione",
+            wx.YES_NO | wx.NO_DEFAULT | wx.ICON_WARNING
+        )
+        
+        result = dlg.ShowModal()
+        dlg.Destroy()
+        
+        if result != wx.ID_YES:
+            self._announce("Eliminazione annullata.", interrupt=True)
+            return
+        
+        # Delete profile
+        try:
+            success = self.profile_service.delete_profile(current_id)
+            
+            if success:
+                log.info(f"Profile deleted: {current_id} ({current_name})")
+                
+                # Auto-switch to first available non-guest profile
+                remaining = self.profile_service.list_profiles()
+                next_profile = None
+                for p in remaining:
+                    if not p.get('is_guest', False):
+                        next_profile = p
+                        break
+                
+                if next_profile:
+                    self.profile_service.switch_profile(next_profile['profile_id'])
+                
+                # Refresh UI
+                self._update_active_label()
+                
+                # Announce
+                new_name = self.profile_service.active_profile.profile_name if self.profile_service.active_profile else "Sconosciuto"
+                self._announce(f"Profilo {current_name} eliminato. Attivo: {new_name}.", interrupt=True)
+            else:
+                wx.MessageBox(
+                    "Impossibile eliminare profilo.",
+                    "Errore",
+                    wx.OK | wx.ICON_ERROR
+                )
+                self._announce("Errore eliminazione profilo.", interrupt=True)
+        
+        except Exception as e:
+            log.error_occurred("ProfileMenuPanel", f"Failed to delete profile: {e}", e)
+            wx.MessageBox(
+                f"Errore durante eliminazione: {e}",
+                "Errore",
+                wx.OK | wx.ICON_ERROR
+            )
+            self._announce("Errore eliminazione profilo.", interrupt=True)
     
     def _on_show_stats(self, event: wx.CommandEvent) -> None:
         """Handle \"Statistiche Dettagliate\" button (Commit 10.4 - Phase 9.3!)."""
