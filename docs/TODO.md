@@ -257,12 +257,14 @@ Sostituzione sistema punteggi limitato con:
   - **Funzionalità**: Mostra leaderboard globale (5 classifiche) ✓
   - **Piano**: [PHASE_9_MENU_INTEGRATION_UPDATED.md](3%20-%20coding%20plans/PHASE_9_MENU_INTEGRATION_UPDATED.md) Commit 9.2
 
-- [ ] **Phase 9.3**: Detailed stats in profile menu (10-15 min)
-  - **File MODIFICA**: `acs_wx.py` (profile menu handler)
-  - **Target**: Profile management menu (opzione "5. Statistiche Dettagliate")
+- [ ] **Phase 9.3**: Detailed stats in profile menu (10-15 min) ⏸️ **DEFERRED**
+  - **Status**: Profile management menu not yet implemented in codebase
+  - **File TARGET**: `acs_wx.py` (profile menu handler) - NOT FOUND
+  - **Alternative**: DetailedStatsDialog can be called programmatically when profile menu exists
   - **Handler**: Wire existing option → `DetailedStatsDialog` (già creato in Phase 5)
   - **Funzionalità**: 3-page stats navigation da profile menu
   - **Piano**: [PHASE_9_MENU_INTEGRATION_UPDATED.md](3%20-%20coding%20plans/PHASE_9_MENU_INTEGRATION_UPDATED.md) Commit 9.3
+  - **Note**: Can be implemented when profile management UI is added to the application
 
 ### 📊 Riepilogo Implementazione Feature 3
 
@@ -358,7 +360,7 @@ Sostituzione sistema punteggi limitato con:
 - [x] Session recovery funzionante
 - [x] ProfileService integrato in DI container
 
-### Feature 3 (Stats Presentation) 🔄 90% COMPLETATA
+### Feature 3 (Stats Presentation) ✅ 95% COMPLETATA
 
 **✅ Core Completato (Phase 1-8):**
 - [x] StatsFormatter completo e testato (15 tests)
@@ -369,18 +371,19 @@ Sostituzione sistema punteggi limitato con:
 - [x] GameEngine ProfileService ATTIVATO
 - [x] NVDA accessibility implementata
 
-**⏸️ Mancante (Phase 7.5 - Fix Opzionali):**
+**✅ Menu Integration (Phase 9.1-9.2):**
+- [x] LastGameDialog creato
+- [x] Menu "Ultima Partita" implementato (button su main menu)
+- [x] Menu "Leaderboard Globale" implementato (button su main menu)
+- [x] Logging integration completo
+
+**⏸️ Deferred (Non-Blocking):**
+- [ ] Phase 9.3: Profile menu "5" → stats (profile menu UI not yet implemented)
 - [ ] Fix 7.5.2: Typo ABANDON_CRASH (2 min - raccomandato)
 - [ ] Fix 7.5.3: Timer expiry verification (10 min - CRITICO)
 - [ ] Fix 7.5.1: Semantic logging (15 min - nice-to-have)
 - [ ] Fix 7.5.4: Startup recovery dialog (5 min - nice-to-have)
-
-**⏸️ Mancante (Phase 9 - Menu Integration):**
-- [ ] LastGameDialog creato
-- [ ] Menu "U - Ultima Partita" implementato
-- [ ] Menu "L - Leaderboard" implementato
-- [ ] Profile menu "5" wired a stats
-- [ ] NVDA checklist 100% testata manualmente
+- [ ] NVDA checklist 100% testata manualmente (requires manual testing)
 
 ### Stack Completo
 
