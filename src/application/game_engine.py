@@ -135,6 +135,9 @@ class GameEngine:
         # 🆕 NEW v3.1.0: Profile service integration
         self.profile_service = profile_service
         
+        # 🆕 NEW v3.1.0: Last session storage for "Ultima Partita" menu
+        self.last_session_outcome: Optional['SessionOutcome'] = None
+        
         # Configurable attributes with defaults (Phase 1/7)
         # These will be updated from settings in new_game()
         self.draw_count: int = 1  # Default: 1 carta
@@ -1283,6 +1286,9 @@ class GameEngine:
                 move_count=final_stats['move_count']
             )
             
+            # Store for "Ultima Partita" menu (v3.1.0 Phase 9.1)
+            self.last_session_outcome = session_outcome
+            
             # Record session (auto-saves profile)
             self.profile_service.record_session(session_outcome)
             
@@ -1457,6 +1463,34 @@ class GameEngine:
         
         # Check if current time beats previous record
         return outcome.elapsed_time < prev_fastest
+    
+    def show_last_game_summary(self) -> None:
+        """Show last game summary dialog (menu option 'U').
+        
+        Displays LastGameDialog with summary of most recently completed game.
+        Shows message box if no recent game available.
+        
+        Version: v3.1.0 Phase 9.1
+        """
+        import wx
+        from src.presentation.dialogs.last_game_dialog import LastGameDialog
+        
+        log.debug("Last game summary requested")
+        
+        if self.last_session_outcome is None:
+            log.info("No recent game available for summary")
+            wx.MessageBox(
+                "Nessuna partita recente disponibile.\n"
+                "Gioca una partita per vedere il riepilogo.",
+                "Ultima Partita",
+                wx.OK | wx.ICON_INFORMATION
+            )
+            return
+        
+        log.info(f"Showing last game summary: outcome={self.last_session_outcome.end_reason.value}")
+        dialog = LastGameDialog(None, self.last_session_outcome)
+        dialog.ShowModal()
+        dialog.Destroy()
     
     # ========================================
     # THRESHOLD WARNING HELPERS (v2.6.0)

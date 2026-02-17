@@ -239,13 +239,14 @@ Sostituzione sistema punteggi limitato con:
 
 **⚠️ NOTA**: Copilot ha saltato Phase 9, considerandola "opzionale". Richiesta implementazione.
 
-- [ ] **Phase 9.1**: "Ultima Partita" menu option (15-22 min)
-  - **File NUOVO**: `src/presentation/dialogs/last_game_dialog.py`
-  - **File MODIFICA**: `src/application/game_engine.py` (add `last_session_outcome` storage)
-  - **File MODIFICA**: `acs_wx.py` (add "U - Ultima Partita" menu item)
-  - **Target**: Main menu handler in `acs_wx.py`
-  - **Handler**: Bind "U" key → `game_engine.show_last_game_summary()`
-  - **Funzionalità**: Dialog read-only con riassunto ultima partita giocata
+- [x] **Phase 9.1**: "Ultima Partita" menu option (15-22 min) ✅
+  - **File NUOVO**: `src/presentation/dialogs/last_game_dialog.py` ✓
+  - **File MODIFICA**: `src/application/game_engine.py` (add `last_session_outcome` storage) ✓
+  - **File MODIFICA**: `src/infrastructure/ui/menu_panel.py` (add "Ultima Partita" button) ✓
+  - **File MODIFICA**: `acs_wx.py` (add show_last_game_summary method) ✓
+  - **Target**: Main menu (MenuPanel) - button added
+  - **Handler**: Button click → `controller.show_last_game_summary()` → `engine.show_last_game_summary()`
+  - **Funzionalità**: Dialog read-only con riassunto ultima partita giocata ✓
   - **Piano**: [PHASE_9_MENU_INTEGRATION_UPDATED.md](3%20-%20coding%20plans/PHASE_9_MENU_INTEGRATION_UPDATED.md) Commit 9.1
 
 - [ ] **Phase 9.2**: Leaderboard menu option (8-12 min)

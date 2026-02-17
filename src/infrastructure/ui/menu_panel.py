@@ -80,6 +80,8 @@ class MenuPanel(BasicPanel):
         Creates:
         - Title label (bold, 16pt)
         - Play button → controller.start_gameplay()
+        - Last Game button → controller.show_last_game_summary() (v3.1.0)
+        - Leaderboard button → controller.show_leaderboard() (v3.1.0)
         - Options button → controller.show_options()
         - Exit button → controller.show_exit_dialog()
         
@@ -96,6 +98,9 @@ class MenuPanel(BasicPanel):
             Buttons are expanded horizontally with wx.EXPAND flag.
             Focus announcements use self.announce() for TTS.
             Parent is self (not self.panel) in single-frame pattern.
+            
+        Version:
+            v3.1.0: Added Last Game and Leaderboard buttons
         """
         # Title label (bold, 16pt)
         title = wx.StaticText(self, label="Menu Principale")
@@ -107,6 +112,16 @@ class MenuPanel(BasicPanel):
         btn_play.Bind(wx.EVT_BUTTON, self.on_play_click)
         btn_play.Bind(wx.EVT_SET_FOCUS, self.on_button_focus)
         
+        # NEW v3.1.0: Last game summary button
+        btn_last_game = wx.Button(self, label="Ultima Partita (risultati)")
+        btn_last_game.Bind(wx.EVT_BUTTON, self.on_last_game_click)
+        btn_last_game.Bind(wx.EVT_SET_FOCUS, self.on_button_focus)
+        
+        # NEW v3.1.0: Leaderboard button
+        btn_leaderboard = wx.Button(self, label="Leaderboard Globale")
+        btn_leaderboard.Bind(wx.EVT_BUTTON, self.on_leaderboard_click)
+        btn_leaderboard.Bind(wx.EVT_SET_FOCUS, self.on_button_focus)
+        
         btn_options = wx.Button(self, label="Opzioni di gioco")
         btn_options.Bind(wx.EVT_BUTTON, self.on_options_click)
         btn_options.Bind(wx.EVT_SET_FOCUS, self.on_button_focus)
@@ -117,14 +132,14 @@ class MenuPanel(BasicPanel):
         
         # Add buttons to vertical sizer
         btn_sizer = wx.BoxSizer(wx.VERTICAL)
-        for btn in [btn_play, btn_options, btn_exit]:
+        for btn in [btn_play, btn_last_game, btn_leaderboard, btn_options, btn_exit]:
             btn_sizer.Add(btn, 0, wx.ALL | wx.EXPAND, 20)
         
         self.sizer.Add(btn_sizer, 1, wx.ALIGN_CENTER)
         
         # Set initial focus and announce menu opened
         btn_play.SetFocus()
-        self.announce("Menu principale. 3 opzioni disponibili.", interrupt=True)
+        self.announce("Menu principale. 5 opzioni disponibili.", interrupt=True)
     
     def on_button_focus(self, event: wx.FocusEvent) -> None:
         """Announce button label when focused (accessibility).
@@ -165,6 +180,36 @@ class MenuPanel(BasicPanel):
         """
         if self.controller:
             self.controller.start_gameplay()
+    
+    def on_last_game_click(self, event: wx.CommandEvent) -> None:
+        """Handle "Ultima Partita" button click (v3.1.0).
+        
+        Delegates to controller.show_last_game_summary() which displays
+        the LastGameDialog with summary of most recent game.
+        
+        Args:
+            event: wx.CommandEvent from button click or ENTER key
+        
+        Version:
+            v3.1.0 Phase 9.1
+        """
+        if self.controller and hasattr(self.controller, 'show_last_game_summary'):
+            self.controller.show_last_game_summary()
+    
+    def on_leaderboard_click(self, event: wx.CommandEvent) -> None:
+        """Handle "Leaderboard Globale" button click (v3.1.0).
+        
+        Delegates to controller.show_leaderboard() which displays
+        the LeaderboardDialog with global rankings.
+        
+        Args:
+            event: wx.CommandEvent from button click or ENTER key
+        
+        Version:
+            v3.1.0 Phase 9.2
+        """
+        if self.controller and hasattr(self.controller, 'show_leaderboard'):
+            self.controller.show_leaderboard()
     
     def on_options_click(self, event: wx.CommandEvent) -> None:
         """Handle "Opzioni di gioco" button click.

@@ -419,6 +419,55 @@ class SolitarioController:
         # Delegate to quit_app() which now shows dialog
         self.quit_app()
     
+    def show_last_game_summary(self) -> None:
+        """Show last game summary dialog (called from MenuPanel).
+        
+        Displays LastGameDialog with summary of most recent game.
+        
+        Version:
+            v3.1.0 Phase 9.1
+        """
+        if self.engine and hasattr(self.engine, 'show_last_game_summary'):
+            self.engine.show_last_game_summary()
+    
+    def show_leaderboard(self) -> None:
+        """Show global leaderboard dialog (called from MenuPanel).
+        
+        Displays LeaderboardDialog with rankings across all profiles.
+        
+        Version:
+            v3.1.0 Phase 9.2
+        """
+        import wx
+        from src.presentation.dialogs.leaderboard_dialog import LeaderboardDialog
+        
+        # Check if ProfileService is available
+        if not self.engine or not hasattr(self.engine, 'profile_service'):
+            wx.MessageBox(
+                "Servizio profili non disponibile.",
+                "Errore",
+                wx.OK | wx.ICON_ERROR
+            )
+            return
+        
+        profile_service = self.engine.profile_service
+        if profile_service is None:
+            wx.MessageBox(
+                "Servizio profili non inizializzato.",
+                "Errore",
+                wx.OK | wx.ICON_ERROR
+            )
+            return
+        
+        # Get all profiles for leaderboard
+        # For now, we'll use a simple approach - LeaderboardDialog will handle it
+        all_profiles = []  # LeaderboardDialog will load from ProfileService
+        current_profile_id = profile_service.active_profile.profile_id if profile_service.active_profile else "guest"
+        
+        dialog = LeaderboardDialog(None, all_profiles, current_profile_id, metric="victories")
+        dialog.ShowModal()
+        dialog.Destroy()
+    
     # ============================================================================
     # DEFERRED UI TRANSITIONS PATTERN (v2.4.3)
     # ============================================================================
