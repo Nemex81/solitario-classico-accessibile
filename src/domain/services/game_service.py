@@ -75,6 +75,15 @@ class GameService:
         
         # Recycle count tracking (for statistics)
         self.recycle_count: int = 0
+        
+        # ========================================
+        # TIMER STATE (NEW v2.7.0)
+        # ========================================
+        self.timer_expired: bool = False
+        """Flag: timer has expired (single-fire event)."""
+        
+        self.overtime_start: Optional[float] = None
+        """Timestamp when overtime started (PERMISSIVE mode only)."""
     
     # ========================================
     # GAME LIFECYCLE
@@ -107,6 +116,11 @@ class GameService:
         self.semi_completati = 0  # Reset live
         # final_carte_per_seme NOT reset (preserved)
         # final_semi_completati NOT reset (preserved)
+        
+        # Reset timer state (v2.7.0)
+        self.timer_expired = False
+        self.overtime_start = None
+        
         if self.scoring:
             self.scoring.reset()
     
@@ -119,6 +133,16 @@ class GameService:
         if self.start_time is None:
             return 0.0
         return time.time() - self.start_time
+    
+    def get_overtime_duration(self) -> float:
+        """Get current overtime duration in seconds.
+        
+        Returns:
+            0.0 if no overtime, else seconds since overtime_start.
+        """
+        if self.overtime_start is None:
+            return 0.0
+        return time.time() - self.overtime_start
     
     # ========================================
     # CARD MOVEMENT
