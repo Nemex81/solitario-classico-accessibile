@@ -499,6 +499,46 @@ class SolitarioController:
         dialog.ShowModal()
         dialog.Destroy()
     
+    def show_profile_menu(self) -> None:
+        """Show profile management menu (called from MenuPanel).
+        
+        Displays ProfileMenuPanel modal dialog with 6 profile management options.
+        
+        Version:
+            v3.1.0 Phase 10.4
+        """
+        import wx
+        from src.infrastructure.ui.profile_menu_panel import ProfileMenuPanel
+        
+        log.info("Profile menu requested from main menu")
+        
+        # Check if ProfileService and engine available
+        if not self.engine or not hasattr(self.engine, 'profile_service'):
+            log.warning_issued("SolitarioController", "ProfileService not available for profile menu")
+            wx.MessageBox(
+                "Servizio profili non disponibile.",
+                "Errore",
+                wx.OK | wx.ICON_ERROR
+            )
+            return
+        
+        profile_service = self.engine.profile_service
+        if profile_service is None:
+            log.warning_issued("SolitarioController", "ProfileService not initialized")
+            wx.MessageBox(
+                "Servizio profili non inizializzato.",
+                "Errore",
+                wx.OK | wx.ICON_ERROR
+            )
+            return
+        
+        # Show profile menu panel
+        panel = ProfileMenuPanel(None, profile_service, self.screen_reader)
+        panel.ShowModal()
+        panel.Destroy()
+        
+        log.info("Profile menu closed")
+    
     # ============================================================================
     # DEFERRED UI TRANSITIONS PATTERN (v2.4.3)
     # ============================================================================

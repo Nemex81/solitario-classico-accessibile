@@ -122,6 +122,11 @@ class MenuPanel(BasicPanel):
         btn_leaderboard.Bind(wx.EVT_BUTTON, self.on_leaderboard_click)
         btn_leaderboard.Bind(wx.EVT_SET_FOCUS, self.on_button_focus)
         
+        # NEW v3.1.0 Phase 10: Profile Menu button
+        btn_profile_menu = wx.Button(self, label="Gestione Profili")
+        btn_profile_menu.Bind(wx.EVT_BUTTON, self.on_profile_menu_click)
+        btn_profile_menu.Bind(wx.EVT_SET_FOCUS, self.on_button_focus)
+        
         btn_options = wx.Button(self, label="Opzioni di gioco")
         btn_options.Bind(wx.EVT_BUTTON, self.on_options_click)
         btn_options.Bind(wx.EVT_SET_FOCUS, self.on_button_focus)
@@ -132,14 +137,14 @@ class MenuPanel(BasicPanel):
         
         # Add buttons to vertical sizer
         btn_sizer = wx.BoxSizer(wx.VERTICAL)
-        for btn in [btn_play, btn_last_game, btn_leaderboard, btn_options, btn_exit]:
+        for btn in [btn_play, btn_last_game, btn_leaderboard, btn_profile_menu, btn_options, btn_exit]:
             btn_sizer.Add(btn, 0, wx.ALL | wx.EXPAND, 20)
         
         self.sizer.Add(btn_sizer, 1, wx.ALIGN_CENTER)
         
         # Set initial focus and announce menu opened
         btn_play.SetFocus()
-        self.announce("Menu principale. 5 opzioni disponibili.", interrupt=True)
+        self.announce("Menu principale. 6 opzioni disponibili.", interrupt=True)
     
     def on_button_focus(self, event: wx.FocusEvent) -> None:
         """Announce button label when focused (accessibility).
@@ -210,6 +215,21 @@ class MenuPanel(BasicPanel):
         """
         if self.controller and hasattr(self.controller, 'show_leaderboard'):
             self.controller.show_leaderboard()
+    
+    def on_profile_menu_click(self, event: wx.CommandEvent) -> None:
+        """Handle "Gestione Profili" button click (v3.1.0 Phase 10).
+        
+        Delegates to controller.show_profile_menu() which displays
+        the ProfileMenuPanel modal dialog.
+        
+        Args:
+            event: wx.CommandEvent from button click or ENTER key
+        
+        Version:
+            v3.1.0 Phase 10.4
+        """
+        if self.controller and hasattr(self.controller, 'show_profile_menu'):
+            self.controller.show_profile_menu()
     
     def on_options_click(self, event: wx.CommandEvent) -> None:
         """Handle "Opzioni di gioco" button click.
