@@ -449,3 +449,218 @@ Tutti i metodi pubblici sono completamente tipizzati. Per verificare:
 ```bash
 mypy src/ --strict
 ```
+
+---
+
+## 👤 ProfileService (v3.0.0)
+
+Il `ProfileService` gestisce i profili utente con persistenza, statistiche aggregate e tracking delle sessioni.
+
+### Inizializzazione
+
+```python
+from src.infrastructure.di_container import get_container
+
+container = get_container()
+profile_service = container.get_profile_service()
+```
+
+### Storage Paths
+
+- **Profili**: `~/.solitario/profiles/profile_{uuid}.json`
+- **Indice**: `~/.solitario/profiles/profiles_index.json`
+- **Sessione attiva**: `~/.solitario/.sessions/active_session.json`
+
+### Metodi
+
+#### `create_profile(name: str, set_as_default: bool = False) -> UserProfile`
+
+Crea un nuovo profilo utente con statistiche vuote.
+
+**Parametri:**
+- `name`: Nome del profilo
+- `set_as_default`: Se True, imposta come profilo predefinito
+
+**Ritorna:**
+- Oggetto `UserProfile` creato
+
+**Esempio:**
+```python
+profile = profile_service.create_profile("Mario Rossi", set_as_default=True)
+print(profile.profile_id)  # "profile_a1b2c3d4"
+```
+
+---
+
+#### `load_profile(profile_id: str) -> bool`
+
+Carica un profilo e lo imposta come attivo.
+
+**Parametri:**
+- `profile_id`: ID del profilo da caricare
+
+**Ritorna:**
+- `True` se caricato con successo, `False` altrimenti
+
+**Esempio:**
+```python
+success = profile_service.load_profile("profile_a1b2c3d4")
+if success:
+    print(f"Profilo attivo: {profile_service.active_profile.profile_name}")
+```
+
+---
+
+#### `save_active_profile() -> None`
+
+Salva il profilo attivo corrente su disco (atomico).
+
+**Esempio:**
+```python
+profile_service.active_profile.profile_name = "Nuovo Nome"
+profile_service.save_active_profile()
+```
+
+---
+
+#### `delete_profile(profile_id: str) -> bool`
+
+Elimina un profilo.
+
+**Parametri:**
+- `profile_id`: ID del profilo da eliminare
+
+**Ritorna:**
+- `True` se eliminato con successo
+
+**Solleva:**
+- `ValueError`: Se si tenta di eliminare il profilo guest (`profile_000`)
+
+**Esempio:**
+```python
+try:
+    profile_service.delete_profile("profile_a1b2c3d4")
+except ValueError as e:
+    print(f"Errore: {e}")  # "Cannot delete guest profile (profile_000)"
+```
+
+---
+
+#### `record_session(outcome: SessionOutcome) -> None`
+
+Registra una sessione di gioco, aggiorna le statistiche e salva automaticamente.
+
+**Parametri:**
+- `outcome`: Oggetto `SessionOutcome` con i dati della partita
+
+**Esempio:**
+```python
+from src.domain.models.profile import SessionOutcome
+from src.domain.models.game_end import EndReason
+
+outcome = SessionOutcome.create_new(
+    profile_id=profile_service.active_profile.profile_id,
+    end_reason=EndReason.VICTORY,
+    is_victory=True,
+    elapsed_time=180.5,
+    timer_enabled=False,
+    timer_limit=0,
+    timer_mode="OFF",
+    timer_expired=False,
+    scoring_enabled=True,
+    final_score=1500,
+    difficulty_level=3,
+    move_count=50
+)
+
+profile_service.record_session(outcome)
+# → Statistiche aggiornate automaticamente
+# → Profilo salvato su disco (atomic write)
+```
+
+---
+
+#### `list_all_profiles() -> List[Dict[str, Any]]`
+
+Ottiene la lista leggera di tutti i profili dall'indice.
+
+**Ritorna:**
+- Lista di dizionari con informazioni sommarie dei profili
+
+**Esempio:**
+```python
+profiles = profile_service.list_all_profiles()
+for p in profiles:
+    print(f"{p['profile_name']}: {p['total_games']} partite, {p['winrate']:.1%} vittorie")
+```
+
+---
+
+#### `ensure_guest_profile() -> None`
+
+Assicura che il profilo guest (`profile_000`) esista, creandolo se necessario.
+
+**Esempio:**
+```python
+profile_service.ensure_guest_profile()
+# Ora profile_000 esiste sicuramente
+```
+
+---
+
+## 📊 SessionTracker (v3.0.0)
+
+Il `SessionTracker` rileva e recupera sessioni orfane da crash dell'applicazione.
+
+### Metodi
+
+#### `start_session(session_id: str, profile_id: str) -> None`
+
+Marca una sessione come attiva (per rilevamento crash).
+
+**Parametri:**
+- `session_id`: ID univoco della sessione
+- `profile_id`: ID del profilo
+
+---
+
+#### `end_session(session_id: str) -> None`
+
+Marca una sessione come completata normalmente.
+
+**Parametri:**
+- `session_id`: ID della sessione
+
+---
+
+#### `get_orphaned_sessions() -> List[Dict[str, Any]]`
+
+Ottiene la lista delle sessioni non chiuse correttamente (dirty shutdown).
+
+**Ritorna:**
+- Lista di sessioni orfane con `recovered=False`
+
+**Esempio:**
+```python
+orphaned = session_tracker.get_orphaned_sessions()
+for session in orphaned:
+    # Crea SessionOutcome con ABANDON_APP_CLOSE
+    outcome = SessionOutcome.create_new(
+        profile_id=session["profile_id"],
+        end_reason=EndReason.ABANDON_APP_CLOSE,
+        is_victory=False,
+        # ... altri campi
+    )
+    profile_service.record_session(outcome)
+    session_tracker.mark_recovered(session["session_id"])
+```
+
+---
+
+## 🔒 Type Hints
+
+Tutti i metodi pubblici sono completamente tipizzati. Per verificare:
+
+```bash
+mypy src/ --strict
+```

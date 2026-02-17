@@ -29,7 +29,7 @@ class GlobalStats:
     longest_streak: int = 0               # Best win streak
     current_streak: int = 0               # Current win streak
     
-    def update_from_session(self, outcome) -> None:
+    def update_from_session(self, outcome: "SessionOutcome") -> None:  # type: ignore[name-defined]
         """Update stats incrementally from SessionOutcome."""
         self.total_games += 1
         self.total_playtime += outcome.elapsed_time
@@ -99,7 +99,7 @@ class TimerStats:
     # Performance
     average_time_vs_limit: float = 0.0    # Time efficiency
     
-    def update_from_session(self, outcome) -> None:
+    def update_from_session(self, outcome: "SessionOutcome") -> None:  # type: ignore[name-defined]
         """Update timer stats from SessionOutcome."""
         if not outcome.timer_enabled:
             return  # Skip non-timer games
@@ -149,7 +149,7 @@ class DifficultyStats:
     winrate_by_level: Dict[int, float] = field(default_factory=dict)
     average_score_by_level: Dict[int, float] = field(default_factory=dict)
     
-    def update_from_session(self, outcome) -> None:
+    def update_from_session(self, outcome: "SessionOutcome") -> None:  # type: ignore[name-defined]
         """Update difficulty stats from SessionOutcome."""
         level = outcome.difficulty_level
         
@@ -214,7 +214,7 @@ class ScoringStats:
     good_games: int = 0                   # quality >= 1.4
     average_games: int = 0                # quality < 1.4
     
-    def update_from_session(self, outcome) -> None:
+    def update_from_session(self, outcome: "SessionOutcome") -> None:  # type: ignore[name-defined]
         """Update scoring stats from SessionOutcome."""
         if not outcome.scoring_enabled:
             return  # Skip non-scoring games

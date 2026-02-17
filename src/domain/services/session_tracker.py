@@ -38,7 +38,7 @@ class SessionTracker:
             storage: SessionStorage instance (creates default if None)
         """
         self.storage = storage if storage is not None else SessionStorage()
-        self.recovered_sessions = set()
+        self.recovered_sessions: set[str] = set()
         
         log.info_query_requested(
             "session_tracker_init",

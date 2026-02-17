@@ -162,7 +162,7 @@ class ProfileStorage:
                 return None
             
             with open(file_path, 'r', encoding='utf-8') as f:
-                profile_data = json.load(f)
+                profile_data: dict[str, Any] = json.load(f)
             
             log.info_query_requested(
                 "profile_load",
@@ -282,9 +282,9 @@ class ProfileStorage:
                 return []
             
             with open(self.index_file, 'r', encoding='utf-8') as f:
-                index_data = json.load(f)
+                index_data: dict[str, Any] = json.load(f)
             
-            profiles = index_data.get("profiles", [])
+            profiles: list[dict[str, Any]] = index_data.get("profiles", [])
             
             log.info_query_requested(
                 "profile_list",

@@ -700,5 +700,137 @@ that ensures:
 
 ---
 
-*Document Version: 2.1*  
-*Last Updated: 2026-02-14*
+## 👤 Profile System v3.0.0 (Backend)
+
+### Panoramica
+
+Il Profile System introduce gestione profili utente con:
+- Persistenza JSON atomica (no corruzione su crash)
+- Statistiche aggregate (globali, timer, difficoltà, scoring)
+- Session tracking e recovery da dirty shutdown
+- Clean Architecture con separazione layer
+
+### Architecture Layers
+
+#### Domain Layer
+
+**Models:**
+- `UserProfile`: Identità profilo con preferenze
+- `SessionOutcome`: Snapshot immutabile partita completata
+- `GlobalStats`, `TimerStats`, `DifficultyStats`, `ScoringStats`: Aggregati statistici
+
+**Services:**
+- `ProfileService`: CRUD profili + session recording + aggregazione stats
+- `SessionTracker`: Rilevamento sessioni orfane (crash recovery)
+- `StatsAggregator`: Logica aggregazione incrementale statistiche
+
+#### Infrastructure Layer
+
+**Storage:**
+- `ProfileStorage`: Persistence JSON con atomic writes (temp-file-rename)
+- `SessionStorage`: Tracking sessione attiva per crash detection
+
+**DI Container:**
+- Factory methods singleton per `ProfileService`, `ProfileStorage`
+
+### Data Flow
+
+#### Session Recording
+
+```
+GameEngine.end_game()
+  ↓
+SessionOutcome.create_new(end_reason=EndReason.VICTORY, ...)
+  ↓
+ProfileService.record_session(outcome)
+  ↓
+StatsAggregator.update_all_stats(session, global_stats, timer_stats, ...)
+  ↓
+ProfileStorage.save_profile(...) [atomic write]
+  ↓
+Recent sessions cache updated (FIFO 50 limit)
+```
+
+#### Crash Recovery
+
+```
+App Startup
+  ↓
+SessionTracker.get_orphaned_sessions()
+  ↓
+If orphaned sessions found:
+  ↓
+For each orphaned session:
+  ↓
+SessionOutcome.create_new(end_reason=EndReason.ABANDON_APP_CLOSE, ...)
+  ↓
+ProfileService.record_session(outcome) [counted as defeat]
+  ↓
+SessionTracker.mark_recovered(session_id) [prevent duplicate recovery]
+```
+
+### Storage Paths
+
+```
+~/.solitario/
+├── profiles/
+│   ├── profiles_index.json          # Lightweight profile list
+│   ├── profile_a1b2c3d4.json       # Full profile + aggregates + recent sessions
+│   └── profile_000.json             # Guest profile (non-deletable)
+└── .sessions/
+    └── active_session.json          # Current active session for crash detection
+```
+
+### Data Integrity
+
+**Atomic Writes:**
+```python
+def _atomic_write_json(path: Path, data: dict):
+    temp = path.with_suffix(".tmp")
+    temp.write_text(json.dumps(data, indent=2))
+    temp.rename(path)  # Atomic on POSIX - no partial writes
+```
+
+**Guest Profile Protection:**
+- `profile_000` cannot be deleted (raises `ValueError`)
+- Always available for users without account
+
+**Session Validation:**
+- SessionOutcome validated before aggregation
+- Corrupted JSON handled gracefully (fallback to empty state)
+
+**Recent Sessions Cache:**
+- Kept in memory + profile JSON (last 50 sessions)
+- FIFO eviction policy
+- Reduces full session history reads
+
+### Integration Points
+
+**GameEngine Stubs (Phase 9):**
+```python
+# TODO: Profile System Integration (v3.0.0 - Phase 9)
+# When game ends, record session to active profile:
+# if self.profile_service and self.profile_service.active_profile:
+#     session_outcome = SessionOutcome.create_new(...)
+#     self.profile_service.record_session(session_outcome)
+```
+
+**DI Container:**
+```python
+# Singleton factories
+profile_storage = container.get_profile_storage()  # ProfileStorage instance
+profile_service = container.get_profile_service()  # ProfileService instance (uses storage + aggregator)
+```
+
+### Future Enhancements (v3.1.0+)
+
+- Victory/Abandon dialogs with statistics display
+- Detailed stats dialog (3 pages: global, timer, difficulty/scoring)
+- Leaderboard UI
+- Profile selection menu
+- NVDA accessibility polish
+
+---
+
+*Document Version: 2.2*  
+*Last Updated: 2026-02-17*

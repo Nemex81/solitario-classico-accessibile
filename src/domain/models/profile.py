@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import List
+from typing import List, Any
 import uuid
 
 from src.domain.models.game_end import EndReason
@@ -130,7 +130,7 @@ class SessionOutcome:
     notes: str = ""                      # User notes (future)
     
     @classmethod
-    def create_new(cls, profile_id: str, **kwargs) -> "SessionOutcome":
+    def create_new(cls, profile_id: str, **kwargs: Any) -> "SessionOutcome":  # type: ignore[misc]
         """Factory method for new session creation."""
         return cls(
             session_id=str(uuid.uuid4()),

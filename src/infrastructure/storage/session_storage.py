@@ -143,7 +143,7 @@ class SessionStorage:
                 return None
             
             with open(self.active_session_file, 'r', encoding='utf-8') as f:
-                session_data = json.load(f)
+                session_data: dict[str, Any] = json.load(f)
             
             log.info_query_requested(
                 "session_load",
