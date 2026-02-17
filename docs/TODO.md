@@ -231,10 +231,10 @@ Sostituzione sistema punteggi limitato con:
   - Test: `tests/unit/domain/test_profile_models.py`, `test_statistics_models.py` (44 tests passing)
   - Commit: `feat(domain): Create profile data models [Phase 1/9]` (7543c63)
 
-- [ ] **Phase 2**: ProfileStorage class (atomic writes)
+- [x] **Phase 2**: ProfileStorage class (atomic writes) ✅
   - File: `src/infrastructure/storage/profile_storage.py` (NEW)
-  - Test: `tests/unit/infrastructure/test_profile_storage.py` (NEW)
-  - Commit: `feat(infrastructure): Create ProfileStorage with atomic writes [Phase 2/9]`
+  - Test: `tests/unit/infrastructure/test_profile_storage.py` (18 tests passing)
+  - Commit: `feat(infrastructure): Create ProfileStorage with atomic writes [Phase 2/9]` (aede3fd)
 
 - [ ] **Phase 3**: Stats aggregation logic
   - File: `src/domain/services/stats_aggregator.py` (NEW)
