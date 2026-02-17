@@ -698,10 +698,10 @@ class ProfileMenuPanel(wx.Dialog):
         profile = self.profile_service.active_profile
         stats_data = {
             'profile_name': profile.profile_name,
-            'global_stats': profile.global_stats,
-            'timer_stats': profile.timer_stats,
-            'difficulty_stats': profile.difficulty_stats,
-            'scoring_stats': profile.scoring_stats
+            'global_stats': self.profile_service.global_stats,
+            'timer_stats': self.profile_service.timer_stats,
+            'difficulty_stats': self.profile_service.difficulty_stats,
+            'scoring_stats': self.profile_service.scoring_stats
         }
         
         log.info_query_requested("detailed_stats", f"profile_{profile.profile_name}")

@@ -92,17 +92,14 @@ class SolitarioController:
     
     def __init__(self):
         """Initialize application with all components."""
-        print("\n" + "="*60)
-        print("🎴 SOLITARIO ACCESSIBILE - wxPython v2.2.0")
-        print("="*60)
-        print("Inizializzazione componenti...")
+        log.debug_state("app_startup", {"version": "v2.2.0", "status": "starting"})
         
         # v2.2.0: Initialize DependencyContainer (bridge mode)
-        print("Creazione DependencyContainer...")
+        log.debug_state("dependency_container_init", {"status": "starting"})
         self.container = DependencyContainer()
         
         # Infrastructure: TTS setup
-        print("Inizializzazione TTS...")
+        log.debug_state("tts_init", {"status": "starting"})
         try:
             tts_provider = create_tts_provider(engine="auto")
             self.screen_reader = ScreenReader(
@@ -110,39 +107,57 @@ class SolitarioController:
                 enabled=True,
                 verbose=False
             )
-            print("✓ TTS inizializzato")
+            log.debug_state("tts_ready", {"status": "initialized"})
         except Exception as e:
-            print(f"⚠ Errore TTS: {e}")
-            print("Continuando senza audio...")
+            log.warning_issued("SolitarioController", f"TTS initialization failed: {e}")
             self.screen_reader = self._create_dummy_sr()
         
         # Domain: Game settings
-        print("Inizializzazione impostazioni di gioco...")
+        log.debug_state("game_settings_init", {"status": "starting"})
         self.settings = GameSettings()
-        print("✓ Impostazioni pronte")
+        log.debug_state("game_settings_ready", {"status": "initialized"})
         
         # v3.1.0: Initialize ProfileService
-        print("Inizializzazione ProfileService...")
+        log.debug_state("profile_service_init", {"status": "starting"})
         from src.domain.services.profile_service import ProfileService
         self.profile_service = ProfileService()
         
         # Ensure guest profile exists (auto-create if missing)
         self.profile_service.ensure_guest_profile()
         
-        # Load guest profile as default active profile
-        if not self.profile_service.load_profile("profile_000"):
-            print("⚠ Impossibile caricare profilo ospite, creandolo ora...")
-            self.profile_service.create_profile("Ospite", is_guest=True)
-            self.profile_service.load_profile("profile_000")
+        # Look for default profile (is_default=True)
+        all_profiles = self.profile_service.list_profiles()
+        default_profile = None
+        for p in all_profiles:
+            if p.get('is_default', False):
+                default_profile = p
+                break
         
-        print(f"✓ ProfileService pronto - Profilo attivo: {self.profile_service.active_profile.profile_name}")
+        # Load default profile if found, otherwise load guest
+        if default_profile:
+            profile_id = default_profile['profile_id']
+            if self.profile_service.load_profile(profile_id):
+                log.info_query_requested("default_profile_load", f"loaded_{default_profile['profile_name']}")
+            else:
+                # Fallback to guest if default profile is corrupted
+                log.warning_issued("SolitarioController", "Default profile corrupted, fallback to guest")
+                self.profile_service.load_profile("profile_000")
+        else:
+            # No default profile set, use guest
+            self.profile_service.load_profile("profile_000")
+            log.debug_state("profile_load", {"type": "guest", "reason": "no_default_set"})
+        
+        log.debug_state("profile_service_ready", {
+            "active_profile": self.profile_service.active_profile.profile_name,
+            "profile_id": self.profile_service.active_profile.profile_id
+        })
         
         # Infrastructure: Dialog manager (v2.0.1 - initialized after frame in run())
         # Will be set in run() after frame is created (hs_deckmanager pattern)
         self.dialog_manager = None
         
         # Application: Game engine setup
-        print("Inizializzazione motore di gioco...")
+        log.debug_state("game_engine_init", {"status": "starting"})
         self.engine = GameEngine.create(
             audio_enabled=(self.screen_reader is not None),
             tts_engine="auto",
@@ -155,17 +170,17 @@ class SolitarioController:
         
         # Inject end game callback for UI state management
         self.engine.on_game_ended = self.handle_game_ended
-        print("✓ Game engine pronto")
+        log.debug_state("game_engine_ready", {"status": "initialized"})
         
         # Application: Gameplay controller
-        print("Inizializzazione controller gameplay...")
+        log.debug_state("gameplay_controller_init", {"status": "starting"})
         self.gameplay_controller = GamePlayController(
             engine=self.engine,
             screen_reader=self.screen_reader,
             settings=self.settings,
             on_new_game_request=self.show_new_game_dialog
         )
-        print("✓ Controller pronto")
+        log.debug_state("gameplay_controller_ready", {"status": "initialized"})
         
         # Dialog manager will be passed to options_controller in run()
         
@@ -182,13 +197,12 @@ class SolitarioController:
         # v2.2.0: Register dependencies in container (bridge mode)
         self._register_dependencies()
         
-        print("="*60)
-        print("✓ Applicazione avviata con successo!")
-        print("✓ Architettura Clean completa")
-        print("✓ wxPython-only (no pygame)")
-        print("✓ DependencyContainer attivo (v2.2.0)")
-        print("Usa i tasti freccia per navigare il menu.")
-        print("="*60)
+        log.debug_state("app_ready", {
+            "architecture": "clean",
+            "ui_framework": "wxPython",
+            "container_version": "v2.2.0",
+            "status": "initialized"
+        })
     
     def _register_dependencies(self) -> None:
         """Register application dependencies in DependencyContainer.
