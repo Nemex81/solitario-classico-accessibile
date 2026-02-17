@@ -21,7 +21,7 @@ New in v1.4.2.1 (Bug Fix #3 - Phase 1-7/7 COMPLETE! + Bug #3.1 FIX):
 - Bug #3.1 FIX: Prevent double distribution on deck change
 """
 
-from typing import Optional, Tuple, Dict, Any, List, TYPE_CHECKING, Callable
+from typing import Optional, Tuple, Dict, Any, List, TYPE_CHECKING, Callable, Union
 
 from src.domain.models.table import GameTable
 from src.domain.models.deck import FrenchDeck, NeapolitanDeck
@@ -1123,7 +1123,7 @@ class GameEngine:
         """Check if game is won."""
         return self.service.is_victory()
     
-    def end_game(self, is_victory) -> None:
+    def end_game(self, is_victory: 'Union[EndReason, bool]') -> None:
         """Handle game end with full reporting and rematch prompt.
         
         Complete flow:
@@ -1676,7 +1676,7 @@ class GameEngine:
     # SESSION OUTCOME (v2.7.0) - PHASE 8
     # ========================================
     
-    def _build_session_outcome(self, end_reason) -> dict:
+    def _build_session_outcome(self, end_reason: 'Union[EndReason, bool]') -> dict:
         """Build session outcome data for ProfileService.
         
         Args:
