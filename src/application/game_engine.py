@@ -94,7 +94,8 @@ class GameEngine:
         settings: Optional[GameSettings] = None,  # NEW (Phase 1/7)
         score_storage: Optional[ScoreStorage] = None,  # NEW (Phase 8/8)
         dialog_provider: Optional['DialogProvider'] = None,  # ✨ NEW v1.6.0
-        on_game_ended: Optional[Callable[[bool], None]] = None  # 🆕 NEW v1.6.2
+        on_game_ended: Optional[Callable[[bool], None]] = None,  # 🆕 NEW v1.6.2
+        profile_service: Optional['ProfileService'] = None  # 🆕 NEW v3.1.0
     ):
         """Initialize game engine.
         
@@ -109,6 +110,7 @@ class GameEngine:
             score_storage: Optional score storage for persistent statistics (NEW v2.0.0)
             dialog_provider: Optional dialog provider for native UI dialogs (NEW v1.6.0)
             on_game_ended: Optional callback when game ends, receives wants_rematch bool (NEW v1.6.2)
+            profile_service: Optional profile service for statistics (NEW v3.1.0)
         """
         self.table = table
         self.service = service
@@ -129,6 +131,9 @@ class GameEngine:
         
         # 🆕 NEW v1.6.2: End game callback (opt-in)
         self.on_game_ended = on_game_ended
+        
+        # 🆕 NEW v3.1.0: Profile service integration
+        self.profile_service = profile_service
         
         # Configurable attributes with defaults (Phase 1/7)
         # These will be updated from settings in new_game()
@@ -1254,27 +1259,55 @@ class GameEngine:
             self.score_storage.save_score(final_score)
         
         # ═══════════════════════════════════════════════════════════
-        # TODO: Profile System Integration (v3.0.0 - Phase 9)
+        # STEP 3.5: Profile System Integration (v3.1.0 - ACTIVATED)
         # ═══════════════════════════════════════════════════════════
-        # When game ends, record session to active profile:
-        # if self.profile_service and self.profile_service.active_profile:
-        #     from src.domain.models.profile import SessionOutcome
-        #     session_outcome = SessionOutcome.create_new(
-        #         profile_id=self.profile_service.active_profile.profile_id,
-        #         end_reason=end_reason,
-        #         is_victory=is_victory_bool,
-        #         elapsed_time=final_stats['elapsed_time'],
-        #         timer_enabled=self.settings.timer_enabled if self.settings else False,
-        #         timer_limit=self.settings.timer_limit if self.settings else 0,
-        #         timer_mode=self.settings.timer_mode if self.settings else "OFF",
-        #         timer_expired=(end_reason == EndReason.TIMEOUT),
-        #         scoring_enabled=self.settings.scoring_enabled if self.settings else False,
-        #         final_score=final_score.total_score if final_score else 0,
-        #         difficulty_level=self.settings.difficulty_level if self.settings else 3,
-        #         deck_type=self.settings.deck_type if self.settings else "french",
-        #         move_count=final_stats['move_count']
-        #     )
-        #     self.profile_service.record_session(session_outcome)
+        # Record session to active profile
+        profile_summary = None
+        if self.profile_service and self.profile_service.active_profile:
+            from src.domain.models.profile import SessionOutcome
+            
+            # Build session outcome
+            session_outcome = SessionOutcome.create_new(
+                profile_id=self.profile_service.active_profile.profile_id,
+                end_reason=end_reason,
+                is_victory=is_victory_bool,
+                elapsed_time=final_stats['elapsed_time'],
+                timer_enabled=self.settings.timer_enabled if self.settings else False,
+                timer_limit=self.settings.timer_limit if self.settings else 0,
+                timer_mode=self.settings.timer_mode if self.settings else "OFF",
+                timer_expired=(end_reason == EndReason.TIMEOUT_STRICT),
+                scoring_enabled=self.settings.scoring_enabled if self.settings else False,
+                final_score=final_score.total_score if final_score else 0,
+                difficulty_level=self.settings.difficulty_level if self.settings else 3,
+                deck_type=self.settings.deck_type if self.settings else "french",
+                move_count=final_stats['move_count']
+            )
+            
+            # Record session (auto-saves profile)
+            self.profile_service.record_session(session_outcome)
+            
+            # Build profile summary for dialogs
+            profile_summary = {
+                'total_victories': self.profile_service.global_stats.total_victories,
+                'total_defeats': self.profile_service.global_stats.total_games - self.profile_service.global_stats.total_victories,
+                'winrate': self.profile_service.global_stats.winrate,
+                'new_record': self._check_new_record(session_outcome) if is_victory_bool else False,
+                'cards_placed': sum(self.table.pile_base[i].count() for i in range(4)),
+                'streak_broken': not is_victory_bool and self.profile_service.global_stats.current_streak > 0,
+                'previous_streak': self.profile_service.global_stats.longest_streak if not is_victory_bool else 0
+            }
+            
+            if profile_summary['new_record']:
+                # Get previous record for display
+                if len(self.profile_service.recent_sessions) >= 2:
+                    # Find previous victory
+                    prev_victory_time = None
+                    for session in reversed(self.profile_service.recent_sessions[:-1]):
+                        if session.is_victory:
+                            prev_victory_time = session.elapsed_time
+                            break
+                    if prev_victory_time:
+                        profile_summary['previous_record'] = prev_victory_time
         
         # ═══════════════════════════════════════════════════════════
         # STEP 4: Generate Report
@@ -1296,7 +1329,44 @@ class GameEngine:
             self.screen_reader.tts.speak(report, interrupt=True)
         
         # ═══════════════════════════════════════════════════════════
-        # STEP 6: Native Statistics Dialog (Structured, Accessible)
+        # STEP 6: Show Victory/Abandon Dialog (v3.1.0)
+        # ═══════════════════════════════════════════════════════════
+        if profile_summary:
+            # Use new stats-integrated dialogs
+            try:
+                import wx
+                from src.presentation.dialogs.victory_dialog import VictoryDialog
+                from src.presentation.dialogs.abandon_dialog import AbandonDialog
+                from src.domain.models.profile import SessionOutcome
+                
+                # Show appropriate dialog
+                if is_victory_bool:
+                    dialog = VictoryDialog(None, session_outcome, profile_summary)
+                else:
+                    dialog = AbandonDialog(None, session_outcome, profile_summary)
+                
+                result = dialog.ShowModal()
+                dialog.Destroy()
+                
+                # Handle user choice
+                if self.on_game_ended:
+                    # Pass control to acs_wx.py
+                    wants_rematch = (result == wx.ID_OK)
+                    self.on_game_ended(wants_rematch)
+                else:
+                    # Fallback: handle directly
+                    if result == wx.ID_OK:
+                        self.new_game()
+                    else:
+                        self.service.reset_game()
+                
+                return  # Skip old dialog system below
+            except ImportError:
+                # wx not available, fallback to old system
+                pass
+        
+        # ═══════════════════════════════════════════════════════════
+        # STEP 6 (Fallback): Old Dialog System
         # ═══════════════════════════════════════════════════════════
         if self.dialogs:
             # ═══════════════════════════════════════════════════════
@@ -1360,6 +1430,33 @@ class GameEngine:
                 self.on_game_ended(False)
             else:
                 self.service.reset_game()
+    
+    # ========================================
+    # PROFILE SYSTEM HELPERS (v3.1.0)
+    # ========================================
+    
+    def _check_new_record(self, outcome) -> bool:
+        """Check if session outcome is a new personal record.
+        
+        Args:
+            outcome: SessionOutcome instance
+            
+        Returns:
+            True if this is the fastest victory ever
+            
+        Version: v3.1.0
+        """
+        if not outcome.is_victory or not self.profile_service:
+            return False
+        
+        prev_fastest = self.profile_service.global_stats.fastest_victory
+        
+        # If this is the first victory, it's automatically a record
+        if prev_fastest == float('inf'):
+            return True
+        
+        # Check if current time beats previous record
+        return outcome.elapsed_time < prev_fastest
     
     # ========================================
     # THRESHOLD WARNING HELPERS (v2.6.0)
