@@ -44,6 +44,7 @@ from src.infrastructure.logging import game_logger as log
 
 if TYPE_CHECKING:
     from src.infrastructure.ui.dialog_provider import DialogProvider
+    from src.domain.services.profile_service import ProfileService  # 🆕 v3.0.0: Profile System stub
 
 
 class GameEngine:
@@ -283,6 +284,28 @@ class GameEngine:
             >>> # TTS: "Tipo di mazzo cambiato: carte napoletane."
             >>> # TTS: "Livello 2: 2 carta/e per pesca. Scarti si mischiano."
         """
+        # ═══════════════════════════════════════════════════════════
+        # TODO: Profile System Integration (v3.0.0 - Phase 9)
+        # ═══════════════════════════════════════════════════════════
+        # At startup, check for orphaned sessions (dirty shutdown recovery):
+        # if self.session_tracker:
+        #     orphaned = self.session_tracker.get_orphaned_sessions()
+        #     if orphaned:
+        #         # Recovery logic: record as ABANDON_CRASH, mark recovered
+        #         for orphan in orphaned:
+        #             if self.profile_service:
+        #                 # Create crash recovery session
+        #                 crash_session = SessionOutcome.create_new(
+        #                     profile_id=orphan['profile_id'],
+        #                     end_reason=EndReason.ABANDON_CRASH,
+        #                     is_victory=False,
+        #                     elapsed_time=0.0,
+        #                     timer_enabled=False,
+        #                     ...
+        #                 )
+        #                 self.profile_service.record_session(crash_session)
+        #             self.session_tracker.mark_recovered(orphan['session_id'])
+        
         deck_changed = False
         
         # 1️⃣ Check if deck type changed (Phase 3 integration)
@@ -1229,6 +1252,29 @@ class GameEngine:
         # ═══════════════════════════════════════════════════════════
         if final_score and self.score_storage:
             self.score_storage.save_score(final_score)
+        
+        # ═══════════════════════════════════════════════════════════
+        # TODO: Profile System Integration (v3.0.0 - Phase 9)
+        # ═══════════════════════════════════════════════════════════
+        # When game ends, record session to active profile:
+        # if self.profile_service and self.profile_service.active_profile:
+        #     from src.domain.models.profile import SessionOutcome
+        #     session_outcome = SessionOutcome.create_new(
+        #         profile_id=self.profile_service.active_profile.profile_id,
+        #         end_reason=end_reason,
+        #         is_victory=is_victory_bool,
+        #         elapsed_time=final_stats['elapsed_time'],
+        #         timer_enabled=self.settings.timer_enabled if self.settings else False,
+        #         timer_limit=self.settings.timer_limit if self.settings else 0,
+        #         timer_mode=self.settings.timer_mode if self.settings else "OFF",
+        #         timer_expired=(end_reason == EndReason.TIMEOUT),
+        #         scoring_enabled=self.settings.scoring_enabled if self.settings else False,
+        #         final_score=final_score.total_score if final_score else 0,
+        #         difficulty_level=self.settings.difficulty_level if self.settings else 3,
+        #         deck_type=self.settings.deck_type if self.settings else "french",
+        #         move_count=final_stats['move_count']
+        #     )
+        #     self.profile_service.record_session(session_outcome)
         
         # ═══════════════════════════════════════════════════════════
         # STEP 4: Generate Report

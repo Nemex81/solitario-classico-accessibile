@@ -226,54 +226,54 @@ Sostituzione sistema punteggi limitato con:
 
 ### Checklist Fasi (Aggiorna dopo ogni commit)
 
-- [ ] **Phase 1**: Domain models (UserProfile, SessionOutcome, Stats)
-  - Files: 6 nuovi file in `src/domain/models/` + `src/domain/value_objects/`
-  - Test: `tests/unit/domain/test_user_profile.py` (+ altri 3)
-  - Commit: `feat(domain): Create profile data models [Phase 1/9]`
+- [x] **Phase 1**: Domain models (UserProfile, SessionOutcome, Stats) ✅
+  - Files: `src/domain/models/profile.py`, `src/domain/models/statistics.py`
+  - Test: `tests/unit/domain/test_profile_models.py`, `test_statistics_models.py` (44 tests passing)
+  - Commit: `feat(domain): Create profile data models [Phase 1/9]` (7543c63)
 
-- [ ] **Phase 2**: ProfileStorage class (atomic writes)
+- [x] **Phase 2**: ProfileStorage class (atomic writes) ✅
   - File: `src/infrastructure/storage/profile_storage.py` (NEW)
-  - Test: `tests/unit/infrastructure/test_profile_storage.py` (NEW)
-  - Commit: `feat(infrastructure): Create ProfileStorage with atomic writes [Phase 2/9]`
+  - Test: `tests/unit/infrastructure/test_profile_storage.py` (18 tests passing)
+  - Commit: `feat(infrastructure): Create ProfileStorage with atomic writes [Phase 2/9]` (aede3fd)
 
-- [ ] **Phase 3**: Stats aggregation logic
+- [x] **Phase 3**: Stats aggregation logic ✅
   - File: `src/domain/services/stats_aggregator.py` (NEW)
-  - Test: `tests/unit/domain/test_stats_aggregator.py` (NEW)
-  - Commit: `feat(domain): Implement stats aggregation logic [Phase 3/9]`
+  - Test: `tests/unit/domain/services/test_stats_aggregator.py` (12 tests passing, 91% coverage)
+  - Commit: `feat(domain): Implement stats aggregation logic [Phase 3/9]` (c71692f)
 
-- [ ] **Phase 4**: ProfileService (CRUD operations)
+- [x] **Phase 4**: ProfileService (CRUD operations) ✅
   - File: `src/domain/services/profile_service.py` (NEW)
-  - Test: `tests/unit/domain/test_profile_service.py` (NEW)
-  - Commit: `feat(domain): Create ProfileService with CRUD [Phase 4/9]`
+  - Test: `tests/unit/domain/services/test_profile_service.py` (27 tests passing, 81% coverage)
+  - Commit: `feat(domain): Create ProfileService with CRUD [Phase 4/9]` (6437dd6)
 
-- [ ] **Phase 5**: DI container integration
+- [x] **Phase 5**: DI container integration ✅
   - File: `src/infrastructure/di_container.py` (MODIFIED)
-  - Test: `tests/integration/test_di_profile.py` (NEW)
-  - Commit: `feat(infrastructure): Integrate ProfileService in DI container [Phase 5/9]`
+  - Test: `tests/integration/test_di_profile.py` (4 tests passing)
+  - Commit: `feat(infrastructure): Integrate ProfileService in DI container [Phase 5/9]` (2979f95)
 
-- [ ] **Phase 6**: SessionStorage (active session tracking)
+- [x] **Phase 6**: SessionStorage (active session tracking) ✅
   - File: `src/infrastructure/storage/session_storage.py` (NEW)
-  - Test: `tests/unit/infrastructure/test_session_storage.py` (NEW)
-  - Commit: `feat(infrastructure): Add session tracking storage [Phase 6/9]`
+  - Test: `tests/unit/infrastructure/test_session_storage.py` (10 tests passing)
+  - Commit: Included in Phase 5 commit (2979f95)
 
-- [ ] **Phase 7**: SessionTracker (dirty shutdown recovery)
+- [x] **Phase 7**: SessionTracker (dirty shutdown recovery) ✅
   - File: `src/domain/services/session_tracker.py` (NEW)
-  - Test: `tests/integration/test_session_recovery.py` (NEW)
-  - Commit: `feat(domain): Implement session recovery tracker [Phase 7/9]`
+  - Test: `tests/integration/test_session_recovery.py` (9 tests passing)
+  - Commit: `feat(domain): Implement session recovery tracker [Phase 7/9]` (a93f1dd)
 
-- [ ] **Phase 8**: ProfileService session recording
-  - File: `src/domain/services/profile_service.py` (MODIFIED)
-  - Test: `tests/integration/test_profile_session_flow.py` (NEW)
-  - Commit: `feat(domain): Add session recording to ProfileService [Phase 8/9]`
+- [x] **Phase 8**: ProfileService session recording ✅
+  - File: `src/domain/services/profile_service.py` (VERIFIED)
+  - Test: `tests/integration/test_profile_session_flow.py` (9 tests passing)
+  - Commit: Included in Phase 7 commit (a93f1dd)
 
-- [ ] **Phase 9**: GameEngine integration (stub)
+- [x] **Phase 9**: GameEngine integration (stub) ✅
   - File: `src/application/game_engine.py` (MODIFIED)
-  - Test: `tests/integration/test_game_profile_integration.py` (NEW)
-  - Commit: `feat(game-engine): Integrate ProfileService hooks [Phase 9/9]`
+  - Test: `tests/integration/test_game_profile_integration.py` (4 tests passing)
+  - Commit: Included in Phase 7 commit (a93f1dd)
 
-**Validation**: Spunta quando Feature 2 è 100% completa.
+**Validation**: Feature 2 is 100% complete.
 
-- [ ] **✅ Feature 2 COMPLETATA**
+- [x] **✅ Feature 2 COMPLETATA**
 
 ---
 
