@@ -92,3 +92,51 @@ class TestEndReasonFormatting:
     def test_format_timeout(self):
         """Test formatting timeout reason."""
         assert "Tempo scaduto" in StatsFormatter.format_end_reason(EndReason.TIMEOUT_STRICT)
+
+
+class TestGlobalStatsFormatting:
+    """Test global stats formatting methods."""
+    
+    def test_format_global_stats_summary(self):
+        """Test formatting global stats summary for victory dialog."""
+        from src.domain.models.statistics import GlobalStats
+        
+        stats = GlobalStats(
+            total_games=42,
+            total_victories=28,
+            winrate=0.6667
+        )
+        formatter = StatsFormatter()
+        result = formatter.format_global_stats_summary(stats)
+        
+        assert "Vittorie totali: 28" in result
+        assert "66,7%" in result
+        assert "Winrate" in result
+    
+    def test_format_global_stats_detailed(self):
+        """Test formatting detailed global stats (Page 1)."""
+        from src.domain.models.statistics import GlobalStats
+        
+        stats = GlobalStats(
+            total_games=42,
+            total_victories=28,
+            winrate=0.6667,
+            current_streak=3,
+            longest_streak=8,
+            total_playtime=12300.0,  # 3h 25min
+            fastest_victory=245.0,
+            highest_score=1450
+        )
+        formatter = StatsFormatter()
+        result = formatter.format_global_stats_detailed(stats, "Luca")
+        
+        assert "STATISTICHE PROFILO: Luca" in result
+        assert "Partite totali: 42" in result
+        assert "Vittorie: 28" in result
+        assert "Streak corrente: 3" in result
+        assert "Streak massimo: 8" in result
+        assert "Tempo totale giocato" in result
+        assert "Vittoria più veloce" in result
+        assert "Punteggio massimo: 1.450" in result
+        assert "Pagina 1/3" in result
+        assert "PAGE DOWN" in result
