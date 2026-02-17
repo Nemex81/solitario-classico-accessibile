@@ -246,15 +246,15 @@ Sostituzione sistema punteggi limitato con:
   - Test: `tests/unit/domain/services/test_profile_service.py` (27 tests passing, 81% coverage)
   - Commit: `feat(domain): Create ProfileService with CRUD [Phase 4/9]` (6437dd6)
 
-- [ ] **Phase 5**: DI container integration
+- [x] **Phase 5**: DI container integration ✅
   - File: `src/infrastructure/di_container.py` (MODIFIED)
-  - Test: `tests/integration/test_di_profile.py` (NEW)
-  - Commit: `feat(infrastructure): Integrate ProfileService in DI container [Phase 5/9]`
+  - Test: `tests/integration/test_di_profile.py` (4 tests passing)
+  - Commit: `feat(infrastructure): Integrate ProfileService in DI container [Phase 5/9]` (2979f95)
 
-- [ ] **Phase 6**: SessionStorage (active session tracking)
+- [x] **Phase 6**: SessionStorage (active session tracking) ✅
   - File: `src/infrastructure/storage/session_storage.py` (NEW)
-  - Test: `tests/unit/infrastructure/test_session_storage.py` (NEW)
-  - Commit: `feat(infrastructure): Add session tracking storage [Phase 6/9]`
+  - Test: `tests/unit/infrastructure/test_session_storage.py` (10 tests passing)
+  - Commit: Included in Phase 5 commit (2979f95)
 
 - [ ] **Phase 7**: SessionTracker (dirty shutdown recovery)
   - File: `src/domain/services/session_tracker.py` (NEW)
