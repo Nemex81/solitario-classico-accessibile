@@ -206,7 +206,7 @@ class ProfileMenuPanel(wx.Dialog):
         1. Load all profiles from profile_service.list_profiles()
         2. Build choice list (exclude current active)
         3. Show wx.SingleChoiceDialog
-        4. On selection: call profile_service.switch_profile(profile_id)
+        4. On selection: call profile_service.load_profile(profile_id)
         5. Refresh active profile label
         6. Announce: "Profilo cambiato a: [nome]"
         
@@ -277,9 +277,9 @@ class ProfileMenuPanel(wx.Dialog):
             self._announce("Profilo già attivo.", interrupt=True)
             return
         
-        # Switch profile
+        # Switch profile (load_profile sets it as active)
         try:
-            success = self.profile_service.switch_profile(selected_id)
+            success = self.profile_service.load_profile(selected_id)
             
             if success:
                 log.debug_state("profile_switched", {"profile_id": selected_id})
@@ -383,8 +383,8 @@ class ProfileMenuPanel(wx.Dialog):
             if new_profile:
                 log.debug_state("profile_created", {"profile_id": new_profile.profile_id, "name": profile_name})
                 
-                # Auto-switch to new profile
-                self.profile_service.switch_profile(new_profile.profile_id)
+                # Auto-switch to new profile (load_profile sets it as active)
+                self.profile_service.load_profile(new_profile.profile_id)
                 
                 # Refresh UI
                 self._update_active_label()
@@ -415,7 +415,7 @@ class ProfileMenuPanel(wx.Dialog):
         1. Check if active profile exists
         2. Show wx.TextEntryDialog with current name as default
         3. Validate new name (same rules as create)
-        4. Call profile_service.rename_profile(new_name)
+        4. Modify active_profile.profile_name and save_active_profile()
         5. Refresh active profile label
         6. Announce: "Profilo rinominato in: [nome]"
         
@@ -504,9 +504,11 @@ class ProfileMenuPanel(wx.Dialog):
             self._announce("Nome già esistente, riprova.", interrupt=True)
             return
         
-        # Rename profile
+        # Rename profile inline
         try:
-            success = self.profile_service.rename_profile(new_name)
+            # Modify active profile name and save
+            self.profile_service.active_profile.profile_name = new_name
+            success = self.profile_service.save_active_profile()
             
             if success:
                 log.debug_state("profile_renamed", {"old_name": current_name, "new_name": new_name})
@@ -629,7 +631,8 @@ class ProfileMenuPanel(wx.Dialog):
                         break
                 
                 if next_profile:
-                    self.profile_service.switch_profile(next_profile['profile_id'])
+                    # Switch to next profile (load_profile sets it as active)
+                    self.profile_service.load_profile(next_profile['profile_id'])
                 
                 # Refresh UI
                 self._update_active_label()
@@ -717,7 +720,7 @@ class ProfileMenuPanel(wx.Dialog):
         
         Flow:
         1. Check if active profile exists
-        2. Call profile_service.set_default_profile(profile_id)
+        2. Set active_profile.is_default = True and save_active_profile()
         3. Show success message
         4. Announce: "Profilo impostato come predefinito"
         
@@ -745,15 +748,11 @@ class ProfileMenuPanel(wx.Dialog):
         current_name = self.profile_service.active_profile.profile_name
         current_id = self.profile_service.active_profile.profile_id
         
-        # Set as default
+        # Set as default inline
         try:
-            # Check if method exists
-            if hasattr(self.profile_service, 'set_default_profile'):
-                success = self.profile_service.set_default_profile(current_id)
-            else:
-                # Fallback: method not implemented yet
-                log.debug_state("set_default_fallback", {"profile_id": current_id, "not_implemented": True})
-                success = True
+            # Set is_default flag and save
+            self.profile_service.active_profile.is_default = True
+            success = self.profile_service.save_active_profile()
             
             if success:
                 log.debug_state("default_profile_set", {"profile_id": current_id, "name": current_name})
