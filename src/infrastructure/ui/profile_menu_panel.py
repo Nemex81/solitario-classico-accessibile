@@ -200,14 +200,213 @@ class ProfileMenuPanel(wx.Dialog):
         event.Skip()
     
     def _on_switch_profile(self, event: wx.CommandEvent) -> None:
-        """Handle \"Cambia Profilo\" button (Commit 10.2)."""
-        self._announce("Opzione non ancora implementata.", interrupt=True)
-        # PLACEHOLDER - Implementato in Commit 10.2
+        """Handle \"Cambia Profilo\" button.
+        
+        Flow:
+        1. Load all profiles from profile_service.list_profiles()
+        2. Build choice list (exclude current active)
+        3. Show wx.SingleChoiceDialog
+        4. On selection: call profile_service.switch_profile(profile_id)
+        5. Refresh active profile label
+        6. Announce: "Profilo cambiato a: [nome]"
+        
+        Special case:
+        - Only 1 profile (current) → Message "Nessun altro profilo disponibile"
+        - Guest profile: Show in list but mark as "(Ospite)"
+        
+        Returns to profile menu after switch (no auto-close).
+        
+        Version: v3.1.0 Phase 10.2
+        """
+        self._announce("Cambia profilo.", interrupt=True)
+        
+        # Load all profiles
+        all_profiles = self.profile_service.list_profiles()
+        
+        if len(all_profiles) <= 1:
+            wx.MessageBox(
+                "Nessun altro profilo disponibile.\n"
+                "Crea un nuovo profilo prima di cambiare.",
+                "Cambia Profilo",
+                wx.OK | wx.ICON_INFORMATION
+            )
+            self._announce("Nessun altro profilo disponibile.", interrupt=True)
+            return
+        
+        # Build choice list (profile_name + win stats)
+        current_id = self.profile_service.active_profile.profile_id if self.profile_service.active_profile else None
+        choices = []
+        profile_ids = []
+        
+        for profile in all_profiles:
+            pid = profile['profile_id']
+            name = profile['profile_name']
+            wins = profile.get('total_victories', 0)
+            games = profile.get('total_games', 0)
+            
+            # Mark current profile
+            if pid == current_id:
+                label = f"{name} (attivo) - {wins} vittorie su {games}"
+            else:
+                label = f"{name} - {wins} vittorie su {games}"
+            
+            choices.append(label)
+            profile_ids.append(pid)
+        
+        # Show choice dialog
+        dlg = wx.SingleChoiceDialog(
+            self,
+            "Seleziona profilo da attivare:",
+            "Cambia Profilo",
+            choices,
+            style=wx.OK | wx.CANCEL | wx.CENTRE
+        )
+        
+        if dlg.ShowModal() != wx.ID_OK:
+            dlg.Destroy()
+            self._announce("Cambio annullato.", interrupt=True)
+            return
+        
+        selection_idx = dlg.GetSelection()
+        dlg.Destroy()
+        
+        selected_id = profile_ids[selection_idx]
+        
+        # Skip if selecting current profile
+        if selected_id == current_id:
+            self._announce("Profilo già attivo.", interrupt=True)
+            return
+        
+        # Switch profile
+        try:
+            success = self.profile_service.switch_profile(selected_id)
+            
+            if success:
+                log.info(f"Profile switched to: {selected_id}")
+                
+                # Refresh UI
+                self._update_active_label()
+                
+                # Announce
+                new_name = self.profile_service.active_profile.profile_name
+                self._announce(f"Profilo cambiato a: {new_name}.", interrupt=True)
+            else:
+                wx.MessageBox(
+                    "Impossibile cambiare profilo.",
+                    "Errore",
+                    wx.OK | wx.ICON_ERROR
+                )
+                self._announce("Errore cambio profilo.", interrupt=True)
+                
+        except Exception as e:
+            log.error_occurred("ProfileMenuPanel", f"Failed to switch profile: {e}", e)
+            wx.MessageBox(
+                f"Errore durante cambio profilo: {e}",
+                "Errore",
+                wx.OK | wx.ICON_ERROR
+            )
+            self._announce("Errore cambio profilo.", interrupt=True)
     
     def _on_create_profile(self, event: wx.CommandEvent) -> None:
-        """Handle \"Crea Nuovo Profilo\" button (Commit 10.2)."""
-        self._announce("Opzione non ancora implementata.", interrupt=True)
-        # PLACEHOLDER - Implementato in Commit 10.2
+        """Handle \"Crea Nuovo Profilo\" button.
+        
+        Flow:
+        1. Show wx.TextEntryDialog for profile name input
+        2. Validate name (non-empty, max 30 chars, no duplicates)
+        3. Call profile_service.create_profile(name)
+        4. Auto-switch to new profile
+        5. Refresh active profile label
+        6. Announce success via TTS
+        
+        Validation errors:
+        - Empty name → "Nome profilo non può essere vuoto"
+        - Too long → "Nome profilo troppo lungo (max 30 caratteri)"
+        - Duplicate → "Profilo già esistente"
+        
+        Success: "Profilo [nome] creato e attivato."
+        
+        Version: v3.1.0 Phase 10.2
+        """
+        self._announce("Crea nuovo profilo.", interrupt=True)
+        
+        # Show text entry dialog
+        dlg = wx.TextEntryDialog(
+            self,
+            "Inserisci nome del nuovo profilo:",
+            "Crea Profilo",
+            value="",
+            style=wx.OK | wx.CANCEL | wx.CENTRE
+        )
+        
+        if dlg.ShowModal() != wx.ID_OK:
+            dlg.Destroy()
+            self._announce("Creazione annullata.", interrupt=True)
+            return
+        
+        profile_name = dlg.GetValue().strip()
+        dlg.Destroy()
+        
+        # Validate name
+        if not profile_name:
+            wx.MessageBox(
+                "Nome profilo non può essere vuoto.",
+                "Errore",
+                wx.OK | wx.ICON_ERROR
+            )
+            self._announce("Nome vuoto, riprova.", interrupt=True)
+            return
+        
+        if len(profile_name) > 30:
+            wx.MessageBox(
+                "Nome profilo troppo lungo (massimo 30 caratteri).",
+                "Errore",
+                wx.OK | wx.ICON_ERROR
+            )
+            self._announce("Nome troppo lungo, riprova.", interrupt=True)
+            return
+        
+        # Check duplicates
+        all_profiles = self.profile_service.list_profiles()
+        existing_names = [p['profile_name'] for p in all_profiles]
+        if profile_name in existing_names:
+            wx.MessageBox(
+                f"Un profilo con nome '{profile_name}' esiste già.",
+                "Errore",
+                wx.OK | wx.ICON_ERROR
+            )
+            self._announce("Nome già esistente, riprova.", interrupt=True)
+            return
+        
+        # Create profile
+        try:
+            new_profile = self.profile_service.create_profile(profile_name)
+            if new_profile:
+                log.info(f"Profile created: {new_profile.profile_id} ({profile_name})")
+                
+                # Auto-switch to new profile
+                self.profile_service.switch_profile(new_profile.profile_id)
+                
+                # Refresh UI
+                self._update_active_label()
+                
+                # Announce success
+                self._announce(f"Profilo {profile_name} creato e attivato.", interrupt=True)
+            else:
+                wx.MessageBox(
+                    "Errore durante creazione profilo.",
+                    "Errore",
+                    wx.OK | wx.ICON_ERROR
+                )
+                self._announce("Errore creazione profilo.", interrupt=True)
+            
+        except Exception as e:
+            log.error_occurred("ProfileMenuPanel", f"Failed to create profile: {e}", e)
+            wx.MessageBox(
+                f"Errore durante creazione profilo: {e}",
+                "Errore",
+                wx.OK | wx.ICON_ERROR
+            )
+            self._announce("Errore creazione profilo.", interrupt=True)
     
     def _on_rename_profile(self, event: wx.CommandEvent) -> None:
         """Handle \"Rinomina Profilo\" button (Commit 10.3)."""
