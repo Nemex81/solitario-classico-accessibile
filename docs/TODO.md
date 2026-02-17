@@ -285,15 +285,15 @@ Sostituzione sistema punteggi limitato con:
 
 ### Checklist Fasi (Aggiorna dopo ogni commit)
 
-- [ ] **Phase 1.1**: StatsFormatter base utilities
+- [x] **Phase 1.1**: StatsFormatter base utilities ✅
   - File: `src/presentation/formatters/stats_formatter.py` (NEW)
-  - Test: `tests/unit/test_stats_formatter.py` (NEW)
-  - Commit: `feat(presentation): Create StatsFormatter base [Phase 1.1/9]`
+  - Test: `tests/unit/test_stats_formatter.py` (13 tests passing)
+  - Commit: `feat(presentation): Create StatsFormatter base [Phase 1.1/9]` (eb90583)
 
-- [ ] **Phase 1.2**: StatsFormatter global stats methods
+- [x] **Phase 1.2**: StatsFormatter global stats methods ✅
   - File: `src/presentation/formatters/stats_formatter.py` (MODIFIED)
-  - Test: `tests/unit/test_stats_formatter.py` (EXTEND)
-  - Commit: `feat(presentation): Add global stats formatting [Phase 1.2/9]`
+  - Test: `tests/unit/test_stats_formatter.py` (15 tests total, 100% passing)
+  - Commit: `feat(presentation): Add global stats formatting [Phase 1.2/9]` (df5eba8)
 
 - [ ] **Phase 2**: Victory dialog
   - File: `src/presentation/dialogs/victory_dialog.py` (NEW)
