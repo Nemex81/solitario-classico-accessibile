@@ -215,45 +215,55 @@ class StatsFormatter:
     # TIMER STATS FORMATTING
     # ========================================
     
-    def format_timer_stats_detailed(self, stats: TimerStats) -> str:
+    def format_timer_stats_detailed(self, stats: TimerStats, global_stats: GlobalStats) -> str:
         """Format timer stats page (Page 2 of detailed stats).
         
         Args:
-            stats: TimerStats instance
+            stats: TimerStats instance with timer-specific data
+            global_stats: GlobalStats instance for cross-stat calculations
             
         Returns:
             Multi-line formatted text for timer performance (Page 2/3)
+            
+        Note:
+            v3.1.1: Now requires global_stats parameter for games_without_timer
+            calculation and complete timer mode breakdown display.
+            
+        Version:
+            v3.1.1: Added global_stats parameter for cross-stat support
         """
         header = f"{'=' * 56}\n"
         header += f"    STATISTICHE TIMER\n"
         header += f"{'=' * 56}\n\n"
         
+        # Calculate games_without_timer from GlobalStats (defensive: handle corruption)
+        games_without_timer = max(0, global_stats.total_games - stats.games_with_timer)
+        
         # Timer usage
         timer_section = "UTILIZZO TIMER\n"
         timer_section += f"Partite con timer attivo: {stats.games_with_timer}\n"
-        timer_section += f"Partite senza timer: {stats.games_without_timer}\n\n"
+        timer_section += f"Partite senza timer: {games_without_timer}\n\n"
         
         if stats.games_with_timer > 0:
             # Performance breakdown
             perf_section = "PERFORMANCE TEMPORALE\n"
-            perf_section += f"Entro il limite: {stats.games_within_time}\n"
-            perf_section += f"Overtime: {stats.games_overtime}\n"
-            perf_section += f"Timeout (sconfitte): {stats.games_timeout}\n"
+            perf_section += f"Entro il limite: {stats.victories_within_time}\n"
+            perf_section += f"Overtime: {stats.victories_overtime}\n"
+            perf_section += f"Timeout (sconfitte): {stats.defeats_timeout}\n"
             
             # Calculate success rate
-            if stats.games_with_timer > 0:
-                within_rate = stats.games_within_time / stats.games_with_timer
-                perf_section += f"Tasso completamento in tempo: {self.format_percentage(within_rate)}\n\n"
+            within_rate = stats.victories_within_time / stats.games_with_timer
+            perf_section += f"Tasso completamento in tempo: {self.format_percentage(within_rate)}\n\n"
             
             # Overtime analytics
             overtime_section = "ANALISI OVERTIME\n"
-            if stats.games_overtime > 0:
-                overtime_section += f"Overtime medio: {self.format_duration(stats.avg_overtime_duration)}\n"
-                overtime_section += f"Overtime massimo: {self.format_duration(stats.max_overtime_duration)}\n\n"
+            if stats.victories_overtime > 0:
+                overtime_section += f"Overtime medio: {self.format_duration(stats.average_overtime)}\n"
+                overtime_section += f"Overtime massimo: {self.format_duration(stats.max_overtime)}\n\n"
             else:
                 overtime_section += "Nessuna partita in overtime\n\n"
             
-            # Mode breakdown
+            # Mode breakdown (now tracked in TimerStats v3.1.1!)
             mode_section = "PER MODALITÀ\n"
             mode_section += f"STRICT: {stats.strict_mode_games} partite\n"
             mode_section += f"PERMISSIVE: {stats.permissive_mode_games} partite\n"
