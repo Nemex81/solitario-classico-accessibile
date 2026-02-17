@@ -440,16 +440,17 @@ class GameEngine:
         # Game continues, no end_game() call
     
     def _announce_timer_expired(self, permissive: bool = False) -> None:
-        """Announce timer expiry via TTS (placeholder for Phase 6).
+        """Announce timer expiry via TTS.
         
         Args:
             permissive: True if PERMISSIVE mode, False if STRICT
         """
-        # TODO Phase 6: Integrate with GameFormatter
-        if permissive:
-            message = "Tempo scaduto! Il gioco continua con penalità."
-        else:
-            message = "Tempo scaduto!"
+        # Use GameFormatter for consistent TTS formatting
+        from src.presentation.game_formatter import GameFormatter
+        
+        message = GameFormatter.format_timer_expired(
+            strict_mode=not permissive
+        )
         
         # Announce via screen reader if available
         self._speak(message)
