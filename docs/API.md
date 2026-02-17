@@ -4,6 +4,10 @@
 
 Questo documento descrive l'API pubblica del Solitario Classico Accessibile.
 
+**Versione API Corrente**: v3.1.0 (Stats Presentation UI Complete)
+
+---
+
 ## 🎮 GameController
 
 Il `GameController` è il punto di ingresso principale per interagire con il gioco.
@@ -121,7 +125,7 @@ position = controller.get_cursor_position_formatted()
 
 ---
 
-## 🃏 GameState
+## 🎴 GameState
 
 Rappresentazione immutabile dello stato del gioco.
 
@@ -164,7 +168,7 @@ if state.is_victory():
 
 ---
 
-## 📜 CommandHistory
+## 📋 CommandHistory
 
 Gestisce la cronologia dei comandi per undo/redo.
 
@@ -290,7 +294,587 @@ result = formatter.format_card_list([])
 
 ---
 
-## 💉 DIContainer
+## 📊 StatsFormatter (v3.1.0)
+
+Formattazione statistiche profili accessibile per NVDA.
+
+### Inizializzazione
+
+```python
+from src.presentation.formatters.stats_formatter import StatsFormatter
+
+formatter = StatsFormatter(language="it")
+```
+
+### Metodi
+
+#### `format_global_stats(stats: GlobalStats) -> str`
+
+Formatta statistiche globali del profilo.
+
+**Parametri:**
+- `stats`: Oggetto `GlobalStats` con statistiche aggregate
+
+**Ritorna:**
+- Stringa formattata per NVDA con:
+  - Partite totali (vinte/perse)
+  - Percentuale vittorie (winrate)
+  - Miglior tempo/punteggio
+  - Media mosse per partita
+
+**Esempio:**
+```python
+from src.domain.models.profile import GlobalStats
+
+stats = profile.global_stats
+text = formatter.format_global_stats(stats)
+print(text)
+# Output:
+# Partite Totali: 42 (23 vinte, 19 perse).
+# Percentuale Vittorie: 54.8%.
+# Miglior Tempo: 3min 45sec.
+# Miglior Punteggio: 1850.
+# Media Mosse: 87.3 per partita.
+```
+
+---
+
+#### `format_timer_stats(stats: TimerStats) -> str`
+
+Formatta statistiche modalità timer.
+
+**Parametri:**
+- `stats`: Oggetto `TimerStats`
+
+**Ritorna:**
+- Stringa formattata con:
+  - Partite con timer
+  - Vittorie con timer
+  - Timeout/overtime
+  - Tempo medio
+  - Miglior vittoria con timer
+
+**Esempio:**
+```python
+text = formatter.format_timer_stats(profile.timer_stats)
+# Partite con Timer: 15 (8 vinte, 7 perse).
+# Timeout: 3.
+# Partite Overtime: 2.
+# Tempo Medio: 12min 30sec.
+# Miglior Vittoria Timer: 8min 15sec.
+```
+
+---
+
+#### `format_difficulty_stats(stats: DifficultyStats) -> str`
+
+Formatta statistiche breakdown per livello difficoltà.
+
+**Parametri:**
+- `stats`: Oggetto `DifficultyStats`
+
+**Ritorna:**
+- Stringa formattata con:
+  - Partite per livello (1-5)
+  - Vittorie per livello
+  - Percentuale vittorie per livello
+
+**Esempio:**
+```python
+text = formatter.format_difficulty_stats(profile.difficulty_stats)
+# Difficoltà 1 (Principiante): 5 partite (4 vinte, 80.0%).
+# Difficoltà 2 (Facile): 10 partite (7 vinte, 70.0%).
+# Difficoltà 3 (Normale): 15 partite (8 vinte, 53.3%).
+# ...
+```
+
+---
+
+#### `format_scoring_stats(stats: ScoringStats) -> str`
+
+Formatta statistiche scoring e utilizzo mazzi.
+
+**Parametri:**
+- `stats`: Oggetto `ScoringStats`
+
+**Ritorna:**
+- Stringa formattata con:
+  - Partite con scoring
+  - Punteggio totale/medio
+  - Utilizzo mazzi (French/Neapolitan)
+  - Distribuzione carte pescate (1/2/3)
+
+**Esempio:**
+```python
+text = formatter.format_scoring_stats(profile.scoring_stats)
+# Partite con Punteggio: 30.
+# Punteggio Totale: 45000.
+# Punteggio Medio: 1500.
+# Mazzo Francese: 20 partite.
+# Mazzo Napoletano: 10 partite.
+# Pescate 3 Carte: 15 partite.
+```
+
+---
+
+#### `format_session_outcome(outcome: SessionOutcome) -> str`
+
+Formatta riepilogo singola sessione di gioco.
+
+**Parametri:**
+- `outcome`: Oggetto `SessionOutcome` con dati partita
+
+**Ritorna:**
+- Stringa formattata con:
+  - Risultato (vittoria/sconfitta + EndReason)
+  - Tempo trascorso
+  - Mosse effettuate
+  - Punteggio finale (se scoring abilitato)
+  - Info timer (se attivo)
+
+**Esempio:**
+```python
+from src.domain.models.profile import SessionOutcome
+from src.domain.models.game_end import EndReason
+
+outcome = SessionOutcome.create_new(
+    profile_id="profile_a1b2c3d4",
+    end_reason=EndReason.VICTORY,
+    is_victory=True,
+    elapsed_time=225.5,
+    move_count=87,
+    final_score=1850,
+    # ... altri campi
+)
+
+text = formatter.format_session_outcome(outcome)
+# Risultato: Vittoria.
+# Tempo: 3min 45sec.
+# Mosse: 87.
+# Punteggio: 1850.
+```
+
+---
+
+#### `format_profile_summary(profile: UserProfile) -> str`
+
+Formatta sommario profilo (vittorie/winrate).
+
+**Parametri:**
+- `profile`: Oggetto `UserProfile`
+
+**Ritorna:**
+- Stringa formattata con:
+  - Vittorie totali
+  - Partite totali
+  - Percentuale vittorie
+
+**Esempio:**
+```python
+text = formatter.format_profile_summary(profile)
+# Riepilogo Profilo:
+# Vittorie Totali: 23 su 42 partite.
+# Percentuale Vittorie: 54.8%.
+```
+
+---
+
+#### `format_new_records(outcome: SessionOutcome, profile: UserProfile) -> str`
+
+Rileva e formatta nuovi record personali.
+
+**Parametri:**
+- `outcome`: Sessione appena completata
+- `profile`: Profilo corrente (con best time/score attuali)
+
+**Ritorna:**
+- Stringa formattata con record battuti (vuota se nessun record)
+
+**Esempio:**
+```python
+text = formatter.format_new_records(outcome, profile)
+if text:
+    print(text)
+# Nuovo Record!
+# Miglior Tempo: 3min 45sec (precedente: 4min 12sec).
+# Miglior Punteggio: 1850 (precedente: 1620).
+```
+
+---
+
+#### `format_leaderboard(profiles: List[UserProfile], category: str) -> str`
+
+Formatta classifica top 10 giocatori.
+
+**Parametri:**
+- `profiles`: Lista profili ordinati per categoria
+- `category`: Nome categoria (es. "Vittoria Più Veloce", "Miglior Winrate")
+
+**Ritorna:**
+- Stringa formattata con ranking 1-10
+
+**Esempio:**
+```python
+top_players = profile_service.get_top_players_by_time()
+text = formatter.format_leaderboard(top_players, "Vittoria Più Veloce")
+# Leaderboard: Vittoria Più Veloce
+# 
+# 1. Mario Rossi - 3min 45sec
+# 2. Luigi Bianchi - 4min 12sec
+# 3. Anna Verdi - 4min 30sec
+# ...
+```
+
+---
+
+#### `format_detailed_stats_page(profile: UserProfile, page: int) -> str`
+
+Formatta pagina specifica statistiche dettagliate (1-3).
+
+**Parametri:**
+- `profile`: Oggetto `UserProfile`
+- `page`: Numero pagina (1=Global, 2=Timer, 3=Difficulty/Scoring)
+
+**Ritorna:**
+- Stringa formattata con intestazione pagina + contenuto
+
+**Esempio:**
+```python
+text = formatter.format_detailed_stats_page(profile, page=2)
+# Pagina 2 di 3: Statistiche Timer
+# 
+# Partite con Timer: 15 (8 vinte, 7 perse).
+# Timeout: 3.
+# Partite Overtime: 2.
+# Tempo Medio: 12min 30sec.
+# Miglior Vittoria Timer: 8min 15sec.
+```
+
+---
+
+### Note NVDA
+
+- Tutti i metodi ritornano testo ottimizzato per screen reader
+- Frasi brevi con punteggiatura chiara
+- Percentuali formattate (es. `"54.8%"`)
+- Tempi formattati (es. `"3min 45sec"`)
+- No elementi decorativi
+- Test coverage: 93% (15 unit tests)
+
+---
+
+## 📝 Dialogs (v3.1.0)
+
+Dialog nativi wxPython per visualizzazione statistiche.
+
+### VictoryDialog
+
+**Path**: `src/presentation/dialogs/victory_dialog.py`
+
+**Trigger**: Fine partita vinta (`EndReason.VICTORY` o `VICTORY_OVERTIME`)
+
+**Inizializzazione**:
+```python
+from src.presentation.dialogs.victory_dialog import VictoryDialog
+
+dialog = VictoryDialog(
+    parent=parent_frame,
+    outcome=session_outcome,
+    profile=active_profile,
+    formatter=stats_formatter
+)
+result = dialog.ShowModal()  # wx.ID_YES (rematch) or wx.ID_NO (menu)
+dialog.Destroy()
+```
+
+**Content**:
+- Session outcome formattato
+- Profile summary (vittorie, winrate)
+- New records detection (best time/score)
+- Prompt rivincita (Yes/No)
+
+**NVDA**: TTS announcements per outcome + nuovi record
+
+---
+
+### AbandonDialog
+
+**Path**: `src/presentation/dialogs/abandon_dialog.py`
+
+**Trigger**: Fine partita abbandonata (`ABANDON_*`, `TIMEOUT_STRICT`)
+
+**Inizializzazione**:
+```python
+from src.presentation.dialogs.abandon_dialog import AbandonDialog
+
+dialog = AbandonDialog(
+    parent=parent_frame,
+    outcome=session_outcome,
+    formatter=stats_formatter
+)
+dialog.ShowModal()  # wx.ID_OK
+dialog.Destroy()
+```
+
+**Content**:
+- EndReason classification
+- Impatto su statistiche spiegato
+- Opzione ritorno menu (OK)
+
+---
+
+### GameInfoDialog
+
+**Path**: `src/presentation/dialogs/game_info_dialog.py`
+
+**Trigger**: Tasto **I** durante gameplay
+
+**Inizializzazione**:
+```python
+from src.presentation.dialogs.game_info_dialog import GameInfoDialog
+
+dialog = GameInfoDialog(
+    parent=parent_frame,
+    current_time=engine.get_elapsed_time(),
+    current_moves=engine.get_move_count(),
+    current_score=engine.get_score(),
+    profile=profile_service.active_profile,
+    formatter=stats_formatter
+)
+dialog.ShowModal()  # wx.ID_OK
+dialog.Destroy()
+```
+
+**Content**:
+- Progresso partita corrente (tempo, mosse, score)
+- Riepilogo profilo real-time
+
+**NVDA**: Non blocca gameplay, focus return garantito
+
+---
+
+### DetailedStatsDialog
+
+**Path**: `src/presentation/dialogs/detailed_stats_dialog.py`
+
+**Trigger**: ProfileMenuPanel button 5 o menu "U - Ultima Partita"
+
+**Inizializzazione**:
+```python
+from src.presentation.dialogs.detailed_stats_dialog import DetailedStatsDialog
+
+dialog = DetailedStatsDialog(
+    parent=parent_frame,
+    profile=active_profile,
+    formatter=stats_formatter
+)
+dialog.ShowModal()  # wx.ID_OK (ESC)
+dialog.Destroy()
+```
+
+**Content**: 3 pagine navigabili
+- **Pagina 1**: Global stats (partite, winrate, best time/score)
+- **Pagina 2**: Timer stats (timer games, timeouts, overtime)
+- **Pagina 3**: Difficulty/Scoring stats (breakdown per livello)
+
+**Navigation**: PageUp/PageDown
+
+**NVDA**: Page transitions announced ("Pagina 2 di 3: Statistiche Timer")
+
+---
+
+### LeaderboardDialog
+
+**Path**: `src/presentation/dialogs/leaderboard_dialog.py`
+
+**Trigger**: Menu "L - Leaderboard Globale"
+
+**Inizializzazione**:
+```python
+from src.presentation.dialogs.leaderboard_dialog import LeaderboardDialog
+
+# Ottieni top 10 per categoria
+top_players = profile_service.get_top_players_by_time()  # o altre metriche
+
+dialog = LeaderboardDialog(
+    parent=parent_frame,
+    profiles=top_players,
+    category="Vittoria Più Veloce",
+    formatter=stats_formatter
+)
+dialog.ShowModal()  # wx.ID_OK (ESC)
+dialog.Destroy()
+```
+
+**Content**: Top 10 giocatori in 5 categorie
+- Fastest victory (sort by time)
+- Best winrate (sort by %)
+- Highest score (sort by points)
+- Most games played (sort by total)
+- Best timed victory (timer-only)
+
+**NVDA**: Rankings announced con player names + stats
+
+---
+
+### LastGameDialog
+
+**Path**: `src/presentation/dialogs/last_game_dialog.py`
+
+**Trigger**: Menu "U - Ultima Partita"
+
+**Inizializzazione**:
+```python
+from src.presentation.dialogs.last_game_dialog import LastGameDialog
+
+last_session = profile.recent_sessions[-1]
+
+dialog = LastGameDialog(
+    parent=parent_frame,
+    outcome=last_session,
+    profile=profile,
+    formatter=stats_formatter
+)
+dialog.ShowModal()  # wx.ID_OK (ESC)
+dialog.Destroy()
+```
+
+**Content**:
+- Session outcome (last completed game)
+- Profile summary snapshot
+
+**NVDA**: Read-only summary ottimizzato
+
+---
+
+## 📄 ProfileMenuPanel (v3.1.0)
+
+**Path**: `src/infrastructure/ui/profile_menu_panel.py`
+
+**Modal Dialog** (267 lines) con 6 operazioni complete.
+
+### Inizializzazione
+
+```python
+from src.infrastructure.ui.profile_menu_panel import ProfileMenuPanel
+
+panel = ProfileMenuPanel(
+    parent=parent_frame,
+    profile_service=container.get_profile_service(),
+    formatter=container.get_stats_formatter()
+)
+result = panel.ShowModal()  # wx.ID_OK (ESC)
+panel.Destroy()
+```
+
+### Operazioni
+
+#### 1. Create Profile
+
+**Button**: "Crea Nuovo Profilo" (button 1)
+
+**Flow**:
+1. Input dialog (nome validazione)
+2. `ProfileService.create_profile(name)`
+3. `ProfileService.load_profile(new_id)` [auto-switch]
+4. UI refresh
+5. TTS: "Profilo creato: {name}. Attivo."
+
+**Validation**:
+- Empty names rejected
+- Names >30 characters rejected
+- Duplicate names rejected
+
+---
+
+#### 2. Switch Profile
+
+**Button**: "Cambia Profilo" (button 2)
+
+**Flow**:
+1. Choice dialog (list all with stats preview)
+2. `ProfileService.save_active_profile()`
+3. `ProfileService.load_profile(selected_id)`
+4. UI refresh
+5. TTS: "Profilo attivo: {name}"
+
+**UI**: Current profile marked with "[ATTIVO]"
+
+---
+
+#### 3. Rename Profile
+
+**Button**: "Rinomina Profilo" (button 3)
+
+**Flow**:
+1. Input dialog (pre-filled with current name)
+2. Validation + guest protection
+3. `active_profile.profile_name = new_name`
+4. `ProfileService.save_active_profile()`
+5. UI refresh
+6. TTS: "Profilo rinominato: {new_name}"
+
+**Safeguards**:
+- Cannot rename guest profile ("Ospite")
+
+---
+
+#### 4. Delete Profile
+
+**Button**: "Elimina Profilo" (button 4)
+
+**Flow**:
+1. Confirmation dialog
+2. Safeguards check
+3. `ProfileService.delete_profile(id)`
+4. `ProfileService.load_profile("profile_000")` [auto-switch to guest]
+5. UI refresh
+6. TTS: "Profilo eliminato. Attivo: Ospite."
+
+**Safeguards**:
+- Cannot delete guest profile (`profile_000`)
+- Cannot delete last remaining profile
+
+---
+
+#### 5. View Detailed Stats ⭐
+
+**Button**: "Statistiche Dettagliate" (button 5)
+
+**Flow**:
+1. `DetailedStatsDialog(profile, formatter).ShowModal()`
+2. 3 pages navigation (PageUp/PageDown)
+3. ESC returns to ProfileMenuPanel (not main menu)
+
+**Content**: Global, Timer, Difficulty/Scoring stats
+
+---
+
+#### 6. Set Default Profile
+
+**Button**: "Imposta Predefinito" (button 6)
+
+**Flow**:
+1. `active_profile.is_default = True`
+2. `ProfileService.save_active_profile()`
+3. UI refresh
+4. TTS: "Profilo predefinito: {name}"
+
+**Effect**: Profile loaded automatically on app startup
+
+---
+
+### NVDA Accessibility
+
+- Complete keyboard navigation (TAB, ENTER, ESC)
+- TTS announcements for all operations
+- Focus management after every action
+- Error messages actionable
+- No decorative elements
+
+---
+
+## 💩 DIContainer
 
 Container per dependency injection.
 
@@ -313,8 +897,11 @@ container = get_container()
 | `get_move_validator()` | `MoveValidator` | Validatore mosse (singleton) |
 | `get_game_service()` | `GameService` | Servizio di gioco (singleton) |
 | `get_formatter(language)` | `GameFormatter` | Formatter per lingua |
+| `get_stats_formatter(language)` | `StatsFormatter` | Stats formatter (v3.1.0) |
 | `get_command_history()` | `CommandHistory` | Cronologia comandi |
 | `get_game_controller()` | `GameController` | Controller principale |
+| `get_profile_service()` | `ProfileService` | Profile service (v3.0.0) |
+| `get_profile_storage()` | `ProfileStorage` | Profile storage (v3.0.0) |
 | `reset()` | `None` | Resetta tutte le istanze |
 
 ---
@@ -330,6 +917,19 @@ GameStatus.NOT_STARTED  # Partita non iniziata
 GameStatus.IN_PROGRESS  # Partita in corso
 GameStatus.WON          # Partita vinta
 GameStatus.LOST         # Partita persa
+```
+
+### EndReason (v2.7.0)
+
+```python
+from src.domain.models.game_end import EndReason
+
+EndReason.VICTORY              # Vittoria normale
+EndReason.VICTORY_OVERTIME     # Vittoria in overtime (timer PERMISSIVE)
+EndReason.ABANDON_NEW_GAME     # Abbandono per nuova partita
+EndReason.ABANDON_EXIT         # Abbandono per uscita volontaria
+EndReason.ABANDON_APP_CLOSE    # Abbandono per crash app
+EndReason.TIMEOUT_STRICT       # Timeout con timer STRICT
 ```
 
 ### Suit
@@ -438,16 +1038,6 @@ game_service.recycle_waste()
 # → GameService.recycle_count = 1 ✅ (per stats)
 # → ScoringService.recycle_count = 1 ✅ (per penalty)
 # → Warning TTS al 3° riciclo (legge ScoringService counter)
-```
-
----
-
-## 🔒 Type Hints
-
-Tutti i metodi pubblici sono completamente tipizzati. Per verificare:
-
-```bash
-mypy src/ --strict
 ```
 
 ---
@@ -664,3 +1254,17 @@ Tutti i metodi pubblici sono completamente tipizzati. Per verificare:
 ```bash
 mypy src/ --strict
 ```
+
+---
+
+## 📚 Cross-References
+
+Per dettagli architetturali:
+- **[ARCHITECTURE.md](ARCHITECTURE.md)**: Panoramica layer, data flow, design patterns
+- **[TODO.md](TODO.md)**: Implementation tracking Feature 1-3
+- **[CHANGELOG.md](../CHANGELOG.md)**: Version history completa
+
+---
+
+*Document Version: 3.1*  
+*Last Updated: 2026-02-17*
