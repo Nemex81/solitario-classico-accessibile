@@ -1671,3 +1671,76 @@ class GameEngine:
         elif idx == 12:
             return self.table.pile_mazzo
         return None
+    
+    # ========================================
+    # SESSION OUTCOME (v2.7.0) - PHASE 8
+    # ========================================
+    
+    def _build_session_outcome(self, end_reason) -> dict:
+        """Build session outcome data for ProfileService.
+        
+        Args:
+            end_reason: EndReason enum for game end classification
+        
+        Returns:
+            Dict with all fields needed for SessionOutcome (v3.0.0)
+        
+        Note:
+            This is a stub for future ProfileService integration.
+            v3.0.0 will use this data to record game sessions.
+        """
+        from src.domain.models.game_end import EndReason
+        
+        # Convert to EndReason if needed
+        if isinstance(end_reason, bool):
+            end_reason = EndReason.VICTORY if end_reason else EndReason.ABANDON_EXIT
+        
+        # Convert VICTORY to VICTORY_OVERTIME if overtime active
+        if end_reason == EndReason.VICTORY and self.service.overtime_start is not None:
+            end_reason = EndReason.VICTORY_OVERTIME
+        
+        # Get timer mode
+        timer_mode = "OFF"
+        if self.settings and self.settings.max_time_game > 0:
+            timer_mode = "STRICT" if self.settings.timer_strict_mode else "PERMISSIVE"
+        
+        # Get statistics
+        stats = self.service.get_statistics()
+        
+        # Get final score if enabled
+        final_score = 0
+        if self.settings and self.settings.scoring_enabled and self.service.scoring:
+            final_score = self.service.scoring.calculate_final_score(
+                elapsed_seconds=stats['elapsed_time'],
+                move_count=stats['move_count'],
+                is_victory=end_reason.is_victory(),
+                timer_strict_mode=self.settings.timer_strict_mode if self.settings else True
+            )
+        
+        return {
+            "end_reason": end_reason,
+            "is_victory": end_reason.is_victory(),
+            "elapsed_time": stats['elapsed_time'],
+            "timer_enabled": self.settings.max_time_game > 0 if self.settings else False,
+            "timer_limit": self.settings.max_time_game if self.settings else 0,
+            "timer_mode": timer_mode,
+            "timer_expired": self.service.timer_expired,
+            "overtime_duration": self.service.get_overtime_duration(),
+            
+            # Gameplay stats (from GameService)
+            "move_count": stats['move_count'],
+            "draw_count_actions": stats['draw_count'],
+            "recycle_count": self.service.recycle_count,
+            "foundation_cards": list(self.service.carte_per_seme),
+            "completed_suits": self.service.semi_completati,
+            
+            # Config
+            "difficulty_level": self.settings.difficulty_level if self.settings else 1,
+            "deck_type": self.settings.deck_type if self.settings else "french",
+            "draw_count": self.draw_count,
+            "shuffle_mode": "shuffle" if self.shuffle_on_recycle else "reverse",
+            
+            # Scoring (if enabled)
+            "scoring_enabled": self.settings.scoring_enabled if self.settings else False,
+            "final_score": final_score,
+        }
