@@ -3,6 +3,8 @@
 import pytest
 import time
 from unittest.mock import Mock, patch
+from pathlib import Path
+import sys
 
 from src.domain.models.game_end import EndReason
 from src.domain.models.table import GameTable
@@ -10,17 +12,15 @@ from src.domain.services.game_service import GameService
 from src.domain.services.game_settings import GameSettings
 from src.domain.rules.solitaire_rules import SolitaireRules
 
-# We need to directly build the GameEngine without going through application.__init__
-# to avoid pygame dependency in tests
-import sys
-sys.path.insert(0, '/home/runner/work/solitario-classico-accessibile/solitario-classico-accessibile')
+# Add project root to path for importing GameEngine
+# This avoids pygame dependency issues in tests
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
 
-# Import GameEngine directly from the module file
+# Import GameEngine directly from the module file to avoid application.__init__ pygame dependency
 import importlib.util
-spec = importlib.util.spec_from_file_location(
-    "game_engine",
-    "/home/runner/work/solitario-classico-accessibile/solitario-classico-accessibile/src/application/game_engine.py"
-)
+game_engine_path = project_root / "src" / "application" / "game_engine.py"
+spec = importlib.util.spec_from_file_location("game_engine", game_engine_path)
 game_engine_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(game_engine_module)
 GameEngine = game_engine_module.GameEngine
