@@ -441,7 +441,7 @@ class SolitarioController:
         import wx
         from src.presentation.dialogs.leaderboard_dialog import LeaderboardDialog
         
-        log.info("Leaderboard requested from main menu")
+        log.info_query_requested("leaderboard", "main_menu")
         
         # Check if ProfileService is available
         if not self.engine or not hasattr(self.engine, 'profile_service'):
@@ -465,7 +465,7 @@ class SolitarioController:
         
         # Get all profiles from ProfileService
         all_profiles = profile_service.list_profiles()
-        log.debug(f"Loaded {len(all_profiles)} profiles for leaderboard")
+        log.debug_state("leaderboard_profiles", {"count": len(all_profiles)})
         
         # Get current profile ID
         current_profile_id = profile_service.active_profile.profile_id if profile_service.active_profile else "guest"
@@ -492,7 +492,7 @@ class SolitarioController:
                         }
                     })
         
-        log.info(f"Showing leaderboard with {len(profiles_with_stats)} profiles")
+        log.debug_state("leaderboard_display", {"profiles_count": len(profiles_with_stats)})
         
         # Show leaderboard dialog
         dialog = LeaderboardDialog(None, profiles_with_stats, current_profile_id, metric="victories")
@@ -510,7 +510,7 @@ class SolitarioController:
         import wx
         from src.infrastructure.ui.profile_menu_panel import ProfileMenuPanel
         
-        log.info("Profile menu requested from main menu")
+        log.info_query_requested("profile_menu", "main_menu")
         
         # Check if ProfileService and engine available
         if not self.engine or not hasattr(self.engine, 'profile_service'):
@@ -537,7 +537,7 @@ class SolitarioController:
         panel.ShowModal()
         panel.Destroy()
         
-        log.info("Profile menu closed")
+        log.dialog_closed("profile_menu", "closed")
     
     # ============================================================================
     # DEFERRED UI TRANSITIONS PATTERN (v2.4.3)

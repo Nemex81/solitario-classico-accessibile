@@ -282,7 +282,7 @@ class ProfileMenuPanel(wx.Dialog):
             success = self.profile_service.switch_profile(selected_id)
             
             if success:
-                log.info(f"Profile switched to: {selected_id}")
+                log.debug_state("profile_switched", {"profile_id": selected_id})
                 
                 # Refresh UI
                 self._update_active_label()
@@ -381,7 +381,7 @@ class ProfileMenuPanel(wx.Dialog):
         try:
             new_profile = self.profile_service.create_profile(profile_name)
             if new_profile:
-                log.info(f"Profile created: {new_profile.profile_id} ({profile_name})")
+                log.debug_state("profile_created", {"profile_id": new_profile.profile_id, "name": profile_name})
                 
                 # Auto-switch to new profile
                 self.profile_service.switch_profile(new_profile.profile_id)
@@ -509,7 +509,7 @@ class ProfileMenuPanel(wx.Dialog):
             success = self.profile_service.rename_profile(new_name)
             
             if success:
-                log.info(f"Profile renamed: {current_name} → {new_name}")
+                log.debug_state("profile_renamed", {"old_name": current_name, "new_name": new_name})
                 
                 # Refresh UI
                 self._update_active_label()
@@ -618,7 +618,7 @@ class ProfileMenuPanel(wx.Dialog):
             success = self.profile_service.delete_profile(current_id)
             
             if success:
-                log.info(f"Profile deleted: {current_id} ({current_name})")
+                log.debug_state("profile_deleted", {"profile_id": current_id, "name": current_name})
                 
                 # Auto-switch to first available non-guest profile
                 remaining = self.profile_service.list_profiles()
@@ -701,7 +701,7 @@ class ProfileMenuPanel(wx.Dialog):
             'scoring_stats': profile.scoring_stats
         }
         
-        log.info(f"Detailed stats opened: profile={profile.profile_name}")
+        log.info_query_requested("detailed_stats", f"profile_{profile.profile_name}")
         
         # Open DetailedStatsDialog (Phase 5 - already implemented!)
         dialog = DetailedStatsDialog(self, stats_data)
@@ -752,11 +752,11 @@ class ProfileMenuPanel(wx.Dialog):
                 success = self.profile_service.set_default_profile(current_id)
             else:
                 # Fallback: method not implemented yet
-                log.info(f"set_default_profile not implemented, simulating success for {current_id}")
+                log.debug_state("set_default_fallback", {"profile_id": current_id, "not_implemented": True})
                 success = True
             
             if success:
-                log.info(f"Default profile set: {current_id} ({current_name})")
+                log.debug_state("default_profile_set", {"profile_id": current_id, "name": current_name})
                 
                 # Show success message
                 wx.MessageBox(

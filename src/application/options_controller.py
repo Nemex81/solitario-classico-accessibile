@@ -486,7 +486,11 @@ class OptionsWindowController:
             preset.apply_to(self.settings)
             
             # Log preset application
-            log.info(f"Applied preset '{preset.name}' - Set {len(preset.preset_values)} values, locked {len(preset.get_locked_options())} options")
+            log.debug_state("preset_applied", {
+                "preset_name": preset.name,
+                "values_set": len(preset.preset_values),
+                "options_locked": len(preset.get_locked_options())
+            })
             
             # Log each locked option with its preset value
             for option_name in preset.get_locked_options():

@@ -42,7 +42,7 @@ class LastGameDialog(wx.Dialog):
         self.outcome = outcome
         self.formatter = StatsFormatter()
         
-        log.debug(f"LastGameDialog opened: outcome={outcome.end_reason.value}, time={outcome.elapsed_time}s")
+        log.dialog_shown("last_game_dialog", "Ultima Partita")
         
         self._create_ui()
         self._set_focus()
@@ -135,5 +135,5 @@ class LastGameDialog(wx.Dialog):
     
     def Destroy(self):
         """Override Destroy to log dialog closure."""
-        log.debug("LastGameDialog closed")
+        log.dialog_closed("last_game_dialog", "closed")
         return super().Destroy()

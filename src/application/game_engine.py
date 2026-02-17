@@ -1475,10 +1475,10 @@ class GameEngine:
         import wx
         from src.presentation.dialogs.last_game_dialog import LastGameDialog
         
-        log.debug("Last game summary requested")
+        log.debug_state("last_game_query", {"trigger": "menu_button"})
         
         if self.last_session_outcome is None:
-            log.info("No recent game available for summary")
+            log.info_query_requested("last_game", "no_recent_game")
             wx.MessageBox(
                 "Nessuna partita recente disponibile.\n"
                 "Gioca una partita per vedere il riepilogo.",
@@ -1487,7 +1487,7 @@ class GameEngine:
             )
             return
         
-        log.info(f"Showing last game summary: outcome={self.last_session_outcome.end_reason.value}")
+        log.debug_state("last_game_display", {"outcome": self.last_session_outcome.end_reason.value})
         dialog = LastGameDialog(None, self.last_session_outcome)
         dialog.ShowModal()
         dialog.Destroy()
