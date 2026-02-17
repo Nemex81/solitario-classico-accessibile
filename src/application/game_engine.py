@@ -1122,7 +1122,7 @@ class GameEngine:
         """Check if game is won."""
         return self.service.is_victory()
     
-    def end_game(self, is_victory: bool) -> None:
+    def end_game(self, is_victory) -> None:
         """Handle game end with full reporting and rematch prompt.
         
         Complete flow:
@@ -1136,7 +1136,8 @@ class GameEngine:
         8. 🆕 Call on_game_ended callback to return control to test.py
         
         Args:
-            is_victory: True if all 4 suits completed
+            is_victory: True if all 4 suits completed (legacy bool)
+                       OR EndReason enum (v2.7.0)
             
         Side effects:
             - Stops game timer
@@ -1147,14 +1148,39 @@ class GameEngine:
             If on_game_ended callback is set, this method NO LONGER handles
             UI state management (is_menu_open, menu announcements). 
             All UI logic delegated to test.py.handle_game_ended().
+        
+        Note (v2.7.0):
+            Now accepts EndReason enum for fine-grained outcome tracking.
+            For PERMISSIVE mode, automatically converts VICTORY to 
+            VICTORY_OVERTIME if overtime is active.
             
         Example:
-            >>> engine.end_game(is_victory=True)
+            >>> from src.domain.models.game_end import EndReason
+            >>> engine.end_game(EndReason.VICTORY)
             # TTS announces: "Hai Vinto! ..."
             # Dialog shows full report
             # Prompts: "Vuoi giocare ancora?"
             # Calls: self.on_game_ended(wants_rematch=False)
         """
+        # ═══════════════════════════════════════════════════════════
+        # STEP 0: Handle EndReason and overtime conversion (v2.7.0)
+        # ═══════════════════════════════════════════════════════════
+        from src.domain.models.game_end import EndReason
+        
+        # Convert is_victory parameter to EndReason if needed
+        if isinstance(is_victory, bool):
+            # Legacy bool support (backward compatibility)
+            end_reason = EndReason.VICTORY if is_victory else EndReason.ABANDON_EXIT
+        else:
+            # Already an EndReason
+            end_reason = is_victory
+        
+        # PERMISSIVE mode: Convert VICTORY to VICTORY_OVERTIME if overtime active
+        if end_reason == EndReason.VICTORY and self.service.overtime_start is not None:
+            end_reason = EndReason.VICTORY_OVERTIME
+        
+        # Extract boolean is_victory for compatibility with existing code
+        is_victory_bool = end_reason.is_victory()
         
         # ═══════════════════════════════════════════════════════════
         # STEP 1: Snapshot Statistics
@@ -1163,7 +1189,7 @@ class GameEngine:
         final_stats = self.service.get_final_statistics()
         
         # Log game end with statistics
-        if is_victory:
+        if is_victory_bool:
             # Extract score (0 if scoring disabled)
             score = 0
             if self.settings and self.settings.scoring_enabled and self.service.scoring:
@@ -1193,7 +1219,7 @@ class GameEngine:
             final_score = self.service.scoring.calculate_final_score(
                 elapsed_seconds=final_stats['elapsed_time'],
                 move_count=final_stats['move_count'],
-                is_victory=is_victory,
+                is_victory=is_victory_bool,
                 timer_strict_mode=self.settings.timer_strict_mode if self.settings else True
             )
         
