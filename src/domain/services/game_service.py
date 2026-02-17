@@ -144,6 +144,36 @@ class GameService:
             return 0.0
         return time.time() - self.overtime_start
     
+    def check_timer_expiry(self, timer_limit: int) -> bool:
+        """Check if timer has expired (single-fire check).
+        
+        Args:
+            timer_limit: Maximum time in seconds (from GameSettings)
+        
+        Returns:
+            True if timer just expired (first detection), False otherwise.
+        
+        Side Effects:
+            - Sets self.timer_expired = True on first expiry
+            - This method returns True only ONCE per game
+        """
+        # Already expired, don't fire again
+        if self.timer_expired:
+            return False
+        
+        # Timer disabled
+        if timer_limit <= 0:
+            return False
+        
+        elapsed = self.get_elapsed_time()
+        
+        # Check expiry
+        if elapsed >= timer_limit:
+            self.timer_expired = True
+            return True  # First time expiry detected
+        
+        return False
+    
     # ========================================
     # CARD MOVEMENT
     # ========================================
