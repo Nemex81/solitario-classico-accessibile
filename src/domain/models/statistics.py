@@ -99,12 +99,26 @@ class TimerStats:
     # Performance
     average_time_vs_limit: float = 0.0    # Time efficiency
     
+    # ========== v3.1.1: Timer mode breakdown ==========
+    strict_mode_games: int = 0           # Games with STRICT timer
+    permissive_mode_games: int = 0       # Games with PERMISSIVE timer
+    
     def update_from_session(self, outcome: "SessionOutcome") -> None:  # type: ignore[name-defined]
         """Update timer stats from SessionOutcome."""
         if not outcome.timer_enabled:
             return  # Skip non-timer games
         
         self.games_with_timer += 1
+        
+        # Track timer mode breakdown (v3.1.1)
+        if outcome.timer_mode == "STRICT":
+            self.strict_mode_games += 1
+        elif outcome.timer_mode == "PERMISSIVE":
+            self.permissive_mode_games += 1
+        elif outcome.timer_mode != "OFF":
+            # Defensive: log unexpected values for debugging
+            from src.infrastructure.logging import game_logger as log
+            log.warning_issued("TimerStats", f"Unknown timer_mode: {outcome.timer_mode}")
         
         # Classify outcome
         if outcome.end_reason == EndReason.VICTORY:
@@ -131,12 +145,25 @@ class TimerStats:
             "total_overtime": self.total_overtime,
             "average_overtime": self.average_overtime,
             "max_overtime": self.max_overtime,
-            "average_time_vs_limit": self.average_time_vs_limit
+            "average_time_vs_limit": self.average_time_vs_limit,
+            "strict_mode_games": self.strict_mode_games,       # ✨ NEW v3.1.1
+            "permissive_mode_games": self.permissive_mode_games  # ✨ NEW v3.1.1
         }
     
     @classmethod
     def from_dict(cls, data: dict) -> "TimerStats":
-        """Create from JSON dict."""
+        """Create from JSON dict (backward compatible with v3.1.0).
+        
+        Provides default values for v3.1.1 fields (strict_mode_games,
+        permissive_mode_games) to handle profiles saved with v3.1.0.
+        
+        Version:
+            v3.1.1: Added backward compatibility for new mode tracking
+        """
+        # Provide defaults for new v3.1.1 fields
+        data = data.copy()
+        data.setdefault("strict_mode_games", 0)
+        data.setdefault("permissive_mode_games", 0)
         return cls(**data)
 
 
