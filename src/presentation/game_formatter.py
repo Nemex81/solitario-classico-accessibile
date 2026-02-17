@@ -485,3 +485,58 @@ class GameFormatter:
 
         
         return msg
+    
+    # ========================================
+    # TIMER EXPIRY ANNOUNCEMENTS (v2.7.0)
+    # ========================================
+    
+    @staticmethod
+    def format_timer_expired(strict_mode: bool) -> str:
+        """Format timer expiry announcement.
+        
+        Args:
+            strict_mode: True if STRICT mode, False if PERMISSIVE
+        
+        Returns:
+            TTS-friendly message for timer expiry
+        
+        Examples:
+            >>> GameFormatter.format_timer_expired(strict_mode=True)
+            "Tempo scaduto!"
+            
+            >>> GameFormatter.format_timer_expired(strict_mode=False)
+            "Tempo scaduto! Il gioco continua con penalità."
+        
+        Note:
+            STRICT mode: Game ends immediately
+            PERMISSIVE mode: Game continues with overtime tracking
+        """
+        if strict_mode:
+            return "Tempo scaduto!"
+        else:
+            return "Tempo scaduto! Il gioco continua con penalità."
+    
+    @staticmethod
+    def format_overtime_warning(minutes_over: int) -> str:
+        """Format overtime warning (optional, for future use).
+        
+        Args:
+            minutes_over: Minutes of overtime elapsed
+        
+        Returns:
+            TTS-friendly overtime warning
+        
+        Examples:
+            >>> GameFormatter.format_overtime_warning(1)
+            "Hai superato il tempo limite di 1 minuto."
+            
+            >>> GameFormatter.format_overtime_warning(5)
+            "Hai superato il tempo limite di 5 minuti."
+        
+        Note:
+            Can be used for periodic overtime notifications in PERMISSIVE mode.
+        """
+        if minutes_over == 1:
+            return "Hai superato il tempo limite di 1 minuto."
+        else:
+            return f"Hai superato il tempo limite di {minutes_over} minuti."

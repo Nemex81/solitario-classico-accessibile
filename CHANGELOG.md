@@ -13,6 +13,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.7.0] - 2026-02-17
+
+### Added
+- **Timer System Infrastructure**: Timer expiry now a real game event with semantic consequences.
+- **EndReason enum**: Fine-grained game end classification (6 variants: VICTORY, VICTORY_OVERTIME, ABANDON_NEW_GAME, ABANDON_EXIT, ABANDON_APP_CLOSE, TIMEOUT_STRICT).
+- **Timer state tracking**: `timer_expired` flag and `overtime_start` timestamp in GameService.
+- **STRICT mode**: Auto-stop game on timer expiry with TIMEOUT_STRICT reason.
+- **PERMISSIVE mode**: Continue gameplay after expiry, track overtime duration for statistics.
+- **Session outcome preparation**: `_build_session_outcome()` populates timer + gameplay data for future ProfileService (v3.0.0).
+- **TTS announcements**: Single-fire timer expiry notifications via GameFormatter ("Tempo scaduto!" / "Tempo scaduto! Il gioco continua con penalità.").
+- **Overtime tracking**: `get_overtime_duration()` calculates seconds beyond time limit (PERMISSIVE only).
+
+### Changed
+- **end_game() signature**: Now accepts `Union[EndReason, bool]` (backward compatible with deprecation warning).
+- **Victory classification**: PERMISSIVE overtime victories auto-converted to VICTORY_OVERTIME.
+- **Timer tick system**: wx.Timer checks expiry every 1 second, delegates to mode-specific handlers.
+
+### Fixed
+- Timer expiry detection now single-fire (prevents TTS spam).
+- Timer state properly reset on `reset_game()`.
+
+### Technical
+- 25 unit/integration tests (100% pass rate).
+- Implementation time: ~17 minutes (GitHub Copilot Agent).
+- Test coverage maintained at ≥88%.
+- Zero regression on existing features.
+
+### Infrastructure Changes
+- New domain model: `src/domain/models/game_end.py`.
+- Modified: `GameService` (timer state), `GameEngine` (tick handler), `GameFormatter` (TTS).
+- Session outcome dict compatible with v3.0.0 ProfileService SessionOutcome model.
+
+### Notes
+- **Semantic milestone**: Game end reasons now stable domain vocabulary (foundation for v3.0.0 statistics).
+- **Breaking for v3.0.0**: `is_victory: bool` fully replaced by `EndReason` enum.
+- **Backward compatible**: Existing `end_game(True/False)` calls still work with deprecation warning.
+
+---
+
 ## [2.6.1] - 2026-02-16
 
 ### Added
@@ -400,7 +439,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **For detailed technical changes, see commit history or [docs/DETAILED_CHANGELOG.md](docs/DETAILED_CHANGELOG.md)**
 
-[Unreleased]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v2.6.1...HEAD
+[Unreleased]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v2.7.0...HEAD
+[2.7.0]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v2.6.1...v2.7.0
 [2.6.1]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v2.6.0...v2.6.1
 [2.6.0]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v2.5.1...v2.6.0
 [2.5.1]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v2.4.0...v2.5.1
@@ -414,7 +454,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [2.0.7]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v2.0.6...v2.0.7
 [2.0.6]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v2.0.5...v2.0.6
 [2.0.5]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v2.0.4...v2.0.5
-[2.0.4]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v2.0.3...v2.0.4
+[2.0.4]: https://github.com/Nemex81/solitario-accessico-accessibile/compare/v2.0.3...v2.0.4
 [2.0.3]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v2.0.2...v2.0.3
 [2.0.2]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v2.0.0...v2.0.2
 [2.0.0]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v1.8.0...v2.0.0

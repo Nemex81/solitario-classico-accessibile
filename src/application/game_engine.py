@@ -21,7 +21,7 @@ New in v1.4.2.1 (Bug Fix #3 - Phase 1-7/7 COMPLETE! + Bug #3.1 FIX):
 - Bug #3.1 FIX: Prevent double distribution on deck change
 """
 
-from typing import Optional, Tuple, Dict, Any, List, TYPE_CHECKING, Callable
+from typing import Optional, Tuple, Dict, Any, List, TYPE_CHECKING, Callable, Union
 
 from src.domain.models.table import GameTable
 from src.domain.models.deck import FrenchDeck, NeapolitanDeck
@@ -376,6 +376,84 @@ class GameEngine:
             True if game is in progress
         """
         return self.service.is_game_running
+    
+    # ========================================
+    # TIMER TICK HANDLING (v2.7.0)
+    # ========================================
+    
+    def on_timer_tick(self) -> None:
+        """Timer tick handler (called every 1 second by external timer).
+        
+        Checks for timer expiry and handles STRICT/PERMISSIVE behavior.
+        This method is designed to be called by wx.Timer or similar
+        mechanism in the UI layer.
+        """
+        # Only check if game is running and timer is enabled
+        if not self.service.is_game_running:
+            return
+        
+        if not self.settings or self.settings.max_time_game <= 0:
+            return
+        
+        # Check expiry (single-fire)
+        expired = self.service.check_timer_expiry(
+            self.settings.max_time_game
+        )
+        
+        if not expired:
+            return  # No expiry, continue
+        
+        # Timer expired: handle based on mode
+        if self.settings.timer_strict_mode:
+            # STRICT: Auto-stop game
+            self._handle_strict_timeout()
+        else:
+            # PERMISSIVE: Start overtime tracking
+            self._handle_permissive_timeout()
+    
+    def _handle_strict_timeout(self) -> None:
+        """Handle timer expiry in STRICT mode.
+        
+        Auto-stops game immediately with TIMEOUT_STRICT reason.
+        """
+        # Import EndReason locally to avoid circular dependency
+        from src.domain.models.game_end import EndReason
+        
+        # Announce expiry (TTS)
+        self._announce_timer_expired(permissive=False)
+        
+        # End game immediately
+        self.end_game(EndReason.TIMEOUT_STRICT)
+    
+    def _handle_permissive_timeout(self) -> None:
+        """Handle timer expiry in PERMISSIVE mode.
+        
+        Allows game to continue, starts overtime tracking.
+        """
+        # Start overtime tracking
+        import time
+        self.service.overtime_start = time.time()
+        
+        # Announce expiry (TTS, different message)
+        self._announce_timer_expired(permissive=True)
+        
+        # Game continues, no end_game() call
+    
+    def _announce_timer_expired(self, permissive: bool = False) -> None:
+        """Announce timer expiry via TTS.
+        
+        Args:
+            permissive: True if PERMISSIVE mode, False if STRICT
+        """
+        # Use GameFormatter for consistent TTS formatting
+        from src.presentation.game_formatter import GameFormatter
+        
+        message = GameFormatter.format_timer_expired(
+            strict_mode=not permissive
+        )
+        
+        # Announce via screen reader if available
+        self._speak(message)
     
     # ========================================
     # OPTIONS WINDOW MANAGEMENT (v1.4.1)
@@ -1045,7 +1123,7 @@ class GameEngine:
         """Check if game is won."""
         return self.service.is_victory()
     
-    def end_game(self, is_victory: bool) -> None:
+    def end_game(self, is_victory: 'Union[EndReason, bool]') -> None:
         """Handle game end with full reporting and rematch prompt.
         
         Complete flow:
@@ -1059,7 +1137,8 @@ class GameEngine:
         8. 🆕 Call on_game_ended callback to return control to test.py
         
         Args:
-            is_victory: True if all 4 suits completed
+            is_victory: True if all 4 suits completed (legacy bool)
+                       OR EndReason enum (v2.7.0)
             
         Side effects:
             - Stops game timer
@@ -1070,14 +1149,39 @@ class GameEngine:
             If on_game_ended callback is set, this method NO LONGER handles
             UI state management (is_menu_open, menu announcements). 
             All UI logic delegated to test.py.handle_game_ended().
+        
+        Note (v2.7.0):
+            Now accepts EndReason enum for fine-grained outcome tracking.
+            For PERMISSIVE mode, automatically converts VICTORY to 
+            VICTORY_OVERTIME if overtime is active.
             
         Example:
-            >>> engine.end_game(is_victory=True)
+            >>> from src.domain.models.game_end import EndReason
+            >>> engine.end_game(EndReason.VICTORY)
             # TTS announces: "Hai Vinto! ..."
             # Dialog shows full report
             # Prompts: "Vuoi giocare ancora?"
             # Calls: self.on_game_ended(wants_rematch=False)
         """
+        # ═══════════════════════════════════════════════════════════
+        # STEP 0: Handle EndReason and overtime conversion (v2.7.0)
+        # ═══════════════════════════════════════════════════════════
+        from src.domain.models.game_end import EndReason
+        
+        # Convert is_victory parameter to EndReason if needed
+        if isinstance(is_victory, bool):
+            # Legacy bool support (backward compatibility)
+            end_reason = EndReason.VICTORY if is_victory else EndReason.ABANDON_EXIT
+        else:
+            # Already an EndReason
+            end_reason = is_victory
+        
+        # PERMISSIVE mode: Convert VICTORY to VICTORY_OVERTIME if overtime active
+        if end_reason == EndReason.VICTORY and self.service.overtime_start is not None:
+            end_reason = EndReason.VICTORY_OVERTIME
+        
+        # Extract boolean is_victory for compatibility with existing code
+        is_victory_bool = end_reason.is_victory()
         
         # ═══════════════════════════════════════════════════════════
         # STEP 1: Snapshot Statistics
@@ -1086,7 +1190,7 @@ class GameEngine:
         final_stats = self.service.get_final_statistics()
         
         # Log game end with statistics
-        if is_victory:
+        if is_victory_bool:
             # Extract score (0 if scoring disabled)
             score = 0
             if self.settings and self.settings.scoring_enabled and self.service.scoring:
@@ -1116,7 +1220,7 @@ class GameEngine:
             final_score = self.service.scoring.calculate_final_score(
                 elapsed_seconds=final_stats['elapsed_time'],
                 move_count=final_stats['move_count'],
-                is_victory=is_victory,
+                is_victory=is_victory_bool,
                 timer_strict_mode=self.settings.timer_strict_mode if self.settings else True
             )
         
@@ -1567,3 +1671,76 @@ class GameEngine:
         elif idx == 12:
             return self.table.pile_mazzo
         return None
+    
+    # ========================================
+    # SESSION OUTCOME (v2.7.0) - PHASE 8
+    # ========================================
+    
+    def _build_session_outcome(self, end_reason: 'Union[EndReason, bool]') -> dict:
+        """Build session outcome data for ProfileService.
+        
+        Args:
+            end_reason: EndReason enum for game end classification
+        
+        Returns:
+            Dict with all fields needed for SessionOutcome (v3.0.0)
+        
+        Note:
+            This is a stub for future ProfileService integration.
+            v3.0.0 will use this data to record game sessions.
+        """
+        from src.domain.models.game_end import EndReason
+        
+        # Convert to EndReason if needed
+        if isinstance(end_reason, bool):
+            end_reason = EndReason.VICTORY if end_reason else EndReason.ABANDON_EXIT
+        
+        # Convert VICTORY to VICTORY_OVERTIME if overtime active
+        if end_reason == EndReason.VICTORY and self.service.overtime_start is not None:
+            end_reason = EndReason.VICTORY_OVERTIME
+        
+        # Get timer mode
+        timer_mode = "OFF"
+        if self.settings and self.settings.max_time_game > 0:
+            timer_mode = "STRICT" if self.settings.timer_strict_mode else "PERMISSIVE"
+        
+        # Get statistics
+        stats = self.service.get_statistics()
+        
+        # Get final score if enabled
+        final_score = 0
+        if self.settings and self.settings.scoring_enabled and self.service.scoring:
+            final_score = self.service.scoring.calculate_final_score(
+                elapsed_seconds=stats['elapsed_time'],
+                move_count=stats['move_count'],
+                is_victory=end_reason.is_victory(),
+                timer_strict_mode=self.settings.timer_strict_mode if self.settings else True
+            )
+        
+        return {
+            "end_reason": end_reason,
+            "is_victory": end_reason.is_victory(),
+            "elapsed_time": stats['elapsed_time'],
+            "timer_enabled": self.settings.max_time_game > 0 if self.settings else False,
+            "timer_limit": self.settings.max_time_game if self.settings else 0,
+            "timer_mode": timer_mode,
+            "timer_expired": self.service.timer_expired,
+            "overtime_duration": self.service.get_overtime_duration(),
+            
+            # Gameplay stats (from GameService)
+            "move_count": stats['move_count'],
+            "draw_count_actions": stats['draw_count'],
+            "recycle_count": self.service.recycle_count,
+            "foundation_cards": list(self.service.carte_per_seme),
+            "completed_suits": self.service.semi_completati,
+            
+            # Config
+            "difficulty_level": self.settings.difficulty_level if self.settings else 1,
+            "deck_type": self.settings.deck_type if self.settings else "french",
+            "draw_count": self.draw_count,
+            "shuffle_mode": "shuffle" if self.shuffle_on_recycle else "reverse",
+            
+            # Scoring (if enabled)
+            "scoring_enabled": self.settings.scoring_enabled if self.settings else False,
+            "final_score": final_score,
+        }
