@@ -5,8 +5,9 @@
 
 **Feature**: Profile & Statistics System v3.0.0  
 **Layer**: Backend (Storage + Domain Logic)  
-**Stato**: Implementation Phase  
+**Stato**: Implementation Phase — **REVIEW APPROVED**  
 **Data Creazione**: 17 Febbraio 2026  
+**Data Aggiornamento**: 17 Febbraio 2026 13:30 CET  
 **Prerequisiti**: 
 - [DESIGN_PROFILE_STATISTICS_SYSTEM.md](../2%20-%20projects/DESIGN_PROFILE_STATISTICS_SYSTEM.md) (data model)
 - [DESIGN_TIMER_MODE_SYSTEM.md](../2%20-%20projects/DESIGN_TIMER_MODE_SYSTEM.md) (EndReason definitions)
@@ -17,15 +18,59 @@
 
 Implementare **solo il backend** del sistema profili:
 - ✅ Data models (dataclasses immutabili)
-- ✅ JSON storage layer (read/write/index)
+- ✅ JSON storage layer (read/write/index) con **atomic writes**
 - ✅ Profile management service (CRUD operations)
 - ✅ Session recording (SessionOutcome persistence)
 - ✅ Stats aggregation (incremental updates)
 - ✅ Session tracking (dirty shutdown recovery)
+- ✅ **DI Container integration** (architectural consistency)
+- ✅ **Logging integration** (game_logger pattern)
 
 **Scope limitato**: Zero UI in questa fase. Solo API + storage + logic.
 
-**Deliverable**: Dopo questa fase, GameEngine può chiamare `ProfileService.record_session(outcome)` e salvare/aggregare dati in modo deterministico.
+**Deliverable**: Dopo questa fase, GameEngine può chiamare `ProfileService.record_session(outcome)` e salvare/aggregare dati in modo **deterministico e resiliente**.
+
+---
+
+## 📋 CHANGELOG da Versione Originale
+
+### 🔴 Critical Fixes Applied
+
+1. **Storage Path Consistency**
+   - ❌ Original: `Path("data/profiles")`
+   - ✅ Fixed: `Path.home() / ".solitario" / "profiles"`
+   - **Rationale**: Consistent with existing `ScoreStorage` pattern
+
+2. **Atomic JSON Writes**
+   - ❌ Original: Direct `json.dump()` (corruption risk)
+   - ✅ Fixed: `_atomic_write_json()` helper (temp file + rename)
+   - **Rationale**: Prevent data loss on app crash during save
+
+3. **Guest Profile Protection**
+   - ❌ Original: Soft fail in `ProfileService` only
+   - ✅ Fixed: Hard fail (`ValueError`) in `ProfileStorage` layer
+   - **Rationale**: Defense-in-depth, cannot bypass protection
+
+4. **Logging Integration**
+   - ❌ Original: No logging
+   - ✅ Fixed: `game_logger` in all storage methods
+   - **Rationale**: Consistent with existing `ScoreStorage` pattern
+
+5. **DI Container Integration**
+   - ❌ Original: Direct instantiation
+   - ✅ Fixed: New Phase 5 commit + DI-compatible constructors
+   - **Rationale**: Architectural consistency, testability
+
+6. **Missing Imports**
+   - ❌ Original: `uuid` not imported in `SessionTracker`
+   - ✅ Fixed: Explicit imports added in code snippets
+   - **Rationale**: Prevent runtime errors
+
+### 🟡 Deferred to v3.1
+
+- **Sessions File Growth**: Archiving/pagination deferred (documented limitation)
+- **Backup Strategy**: Manual backup documented, auto-backup in v3.1
+- **Stress Tests**: Concurrent writes, race conditions (v3.1+)
 
 ---
 
@@ -45,9 +90,11 @@ src/
 │     └─ session_tracker.py  # SessionTracker (dirty shutdown recovery)
 │
 ├─ infrastructure/
-│  └─ storage/
-│     ├─ profile_storage.py  # ProfileStorage (JSON read/write)
-│     └─ session_storage.py  # SessionStorage (append-only storico)
+│  ├─ storage/
+│  │  ├─ profile_storage.py  # ProfileStorage (JSON read/write atomic)
+│  │  └─ session_storage.py  # SessionStorage (append-only storico)
+│  │
+│  └─ di_container.py         # EXTENDED: +ProfileService factory methods
 │
 └─ tests/
    ├─ unit/
@@ -58,13 +105,14 @@ src/
    └─ integration/
       └─ test_profile_integration.py  # End-to-end storage scenarios
 
-data/
-└─ profiles/
-   ├─ profiles_index.json       # Lista profili + summary
-   ├─ profile_<uuid>.json       # Aggregati + recent sessions cache
-   ├─ sessions_<uuid>.json      # Storico completo (append-only)
-   └─ session_active.json       # Flag partita in corso (dirty tracking)
+~/.solitario/profiles/              # CHANGED: System-wide storage
+├─ profiles_index.json              # Lista profili + summary
+├─ profile_<uuid>.json              # Aggregati + recent sessions cache
+├─ sessions_<uuid>.json             # Storico completo (append-only)
+└─ session_active.json              # Flag partita in corso (dirty tracking)
 ```
+
+**⚠️ NOTA STORAGE PATH**: Changed from `./data/profiles/` to `~/.solitario/profiles/` for consistency with `ScoreStorage`.
 
 ---
 
@@ -81,7 +129,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import List, Dict
 from enum import Enum
-import uuid
+import uuid  # ADDED: Explicit import
 
 # ========================================
 # EndReason Enum (from Timer System Design)
@@ -269,6 +317,7 @@ class SessionOutcome:
 - ✅ SessionOutcome creation
 - ✅ SessionOutcome to_dict / from_dict roundtrip
 - ✅ EndReason enum values
+- ✅ UUID generation
 
 **Estimated Time**: 10-12 min  
 **Test Count**: 6-8
@@ -474,34 +523,38 @@ class ScoringStats:
 
 ---
 
-## 🗄️ PHASE 2: Storage Layer
+## 🗄️ PHASE 2: Storage Layer (with Atomic Writes)
 
-### Commit 2.1: Profile Storage (JSON Read/Write)
+### Commit 2.1: Profile Storage (JSON Read/Write + Atomic)
 
 **File**: `src/infrastructure/storage/profile_storage.py`
 
 ```python
-"""JSON storage for profile data and index."""
+"""JSON storage for profile data and index with atomic write safety."""
 
 import json
 import os
+import tempfile
+import shutil
 from pathlib import Path
 from typing import List, Optional, Dict
 from datetime import datetime
 
 from src.domain.models.profile import UserProfile
 from src.domain.models.statistics import GlobalStats, TimerStats, DifficultyStats, ScoringStats
+from src.infrastructure.logging import game_logger as log  # ADDED: Logging integration
 
 
 class ProfileStorage:
-    """Handles JSON persistence for profile data.
+    """Handles JSON persistence for profile data with atomic write safety.
     
     File structure:
-    - data/profiles/profiles_index.json (profile list + summary)
-    - data/profiles/profile_<uuid>.json (full profile + aggregates + recent sessions)
+    - ~/.solitario/profiles/profiles_index.json (profile list + summary)
+    - ~/.solitario/profiles/profile_<uuid>.json (full profile + aggregates + recent sessions)
     """
     
-    PROFILES_DIR = Path("data/profiles")
+    # CHANGED: System-wide storage path (consistent with ScoreStorage)
+    PROFILES_DIR = Path.home() / ".solitario" / "profiles"
     INDEX_FILE = PROFILES_DIR / "profiles_index.json"
     
     def __init__(self, data_dir: Path = None):
@@ -515,6 +568,36 @@ class ProfileStorage:
     def _ensure_directory_exists(self) -> None:
         """Create profiles directory if not exists."""
         self.PROFILES_DIR.mkdir(parents=True, exist_ok=True)
+        log.info_query_requested(
+            "profile_storage_init",
+            f"Profile storage initialized at {self.PROFILES_DIR}"
+        )
+    
+    # ========================================
+    # ATOMIC WRITE HELPER (NEW)
+    # ========================================
+    
+    def _atomic_write_json(self, file_path: Path, data: dict) -> None:
+        """Write JSON atomically using temp file + rename to prevent corruption.
+        
+        This ensures that even if app crashes during write, the original file
+        remains intact (no partial/corrupted JSON).
+        """
+        temp_path = file_path.with_suffix('.tmp')
+        
+        try:
+            # Write to temp file first
+            with open(temp_path, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            
+            # Atomic replace (OS-level operation)
+            shutil.move(str(temp_path), str(file_path))
+            
+        except Exception as e:
+            # Cleanup temp file on error
+            if temp_path.exists():
+                temp_path.unlink()
+            raise e
     
     # ========================================
     # INDEX OPERATIONS
@@ -528,19 +611,46 @@ class ProfileStorage:
             Empty structure if file doesn't exist.
         """
         if not self.INDEX_FILE.exists():
+            log.warning_issued(
+                "ProfileStorage",
+                f"Index file not found: {self.INDEX_FILE}, returning empty index"
+            )
             return self._create_empty_index()
         
         try:
             with open(self.INDEX_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f)
+                index = json.load(f)
+            
+            log.info_query_requested(
+                "profile_index_load",
+                f"Loaded profile index with {len(index.get('profiles', []))} profiles"
+            )
+            return index
+        
         except (json.JSONDecodeError, IOError) as e:
             # Corrupted index, recreate
+            log.error_occurred(
+                "ProfileStorage",
+                f"Corrupted index file: {self.INDEX_FILE}",
+                e
+            )
             return self._create_empty_index()
     
     def save_index(self, index_data: Dict) -> None:
-        """Save profiles_index.json."""
-        with open(self.INDEX_FILE, 'w', encoding='utf-8') as f:
-            json.dump(index_data, f, indent=2, ensure_ascii=False)
+        """Save profiles_index.json atomically."""
+        try:
+            self._atomic_write_json(self.INDEX_FILE, index_data)
+            log.info_query_requested(
+                "profile_index_save",
+                f"Saved profile index with {len(index_data.get('profiles', []))} profiles"
+            )
+        except Exception as e:
+            log.error_occurred(
+                "ProfileStorage",
+                f"Failed to save index: {self.INDEX_FILE}",
+                e
+            )
+            raise
     
     def _create_empty_index(self) -> Dict:
         """Create empty index structure."""
@@ -590,6 +700,10 @@ class ProfileStorage:
             index["default_profile_id"] = None
         
         self.save_index(index)
+        log.info_query_requested(
+            "profile_index_remove",
+            f"Removed profile {profile_id} from index"
+        )
     
     def get_default_profile_id(self) -> Optional[str]:
         """Get default profile ID from index."""
@@ -618,7 +732,7 @@ class ProfileStorage:
         scoring_stats: ScoringStats,
         recent_sessions: List[Dict] = None
     ) -> None:
-        """Save complete profile with aggregates to JSON."""
+        """Save complete profile with aggregates to JSON atomically."""
         file_path = self._get_profile_file_path(profile.profile_id)
         
         data = {
@@ -639,8 +753,19 @@ class ProfileStorage:
             "recent_sessions": recent_sessions or []
         }
         
-        with open(file_path, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
+        try:
+            self._atomic_write_json(file_path, data)
+            log.info_query_requested(
+                "profile_save",
+                f"Saved profile {profile.profile_id} ({profile.profile_name})"
+            )
+        except Exception as e:
+            log.error_occurred(
+                "ProfileStorage",
+                f"Failed to save profile {profile.profile_id}",
+                e
+            )
+            raise
         
         # Update index
         self.add_profile_to_index(profile, global_stats)
@@ -654,26 +779,60 @@ class ProfileStorage:
         file_path = self._get_profile_file_path(profile_id)
         
         if not file_path.exists():
+            log.warning_issued(
+                "ProfileStorage",
+                f"Profile file not found: {profile_id}"
+            )
             return None
         
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except (json.JSONDecodeError, IOError):
+                data = json.load(f)
+            
+            log.info_query_requested(
+                "profile_load",
+                f"Loaded profile {profile_id}"
+            )
+            return data
+        
+        except (json.JSONDecodeError, IOError) as e:
+            log.error_occurred(
+                "ProfileStorage",
+                f"Failed to load profile {profile_id}",
+                e
+            )
             return None
     
     def delete_profile(self, profile_id: str) -> bool:
         """Delete profile file and remove from index.
         
+        CHANGED: Hard protection for guest profile (defense-in-depth).
+        
         Returns:
             True if deleted, False if not found.
+        
+        Raises:
+            ValueError: If attempting to delete guest profile.
         """
+        # ADDED: Hard fail for guest profile (cannot bypass)
+        if profile_id == "guest":
+            raise ValueError("Cannot delete guest profile (system-protected)")
+        
         file_path = self._get_profile_file_path(profile_id)
         
         if file_path.exists():
             file_path.unlink()
             self.remove_profile_from_index(profile_id)
+            log.info_query_requested(
+                "profile_delete",
+                f"Deleted profile {profile_id}"
+            )
             return True
+        
+        log.warning_issued(
+            "ProfileStorage",
+            f"Attempted to delete non-existent profile: {profile_id}"
+        )
         return False
     
     def profile_exists(self, profile_id: str) -> bool:
@@ -696,37 +855,39 @@ class ProfileStorage:
 - ✅ Index load/save (empty + populated)
 - ✅ Add/remove profile from index
 - ✅ Profile save/load roundtrip
-- ✅ Profile deletion
+- ✅ Profile deletion (normal + guest protection)
 - ✅ Profile existence check
 - ✅ Default profile ID handling
+- ✅ Atomic write safety (simulate crash during write)
 
-**Estimated Time**: 15-20 min  
-**Test Count**: 8-10
+**Estimated Time**: 20-25 min  
+**Test Count**: 10-12
 
 ---
 
-### Commit 2.2: Session Storage (Append-Only History)
+### Commit 2.2: Session Storage (Append-Only History + Atomic)
 
 **File**: `src/infrastructure/storage/session_storage.py`
 
 ```python
-"""Append-only JSON storage for session history."""
+"""Append-only JSON storage for session history with atomic write safety."""
 
 import json
 from pathlib import Path
 from typing import List, Dict
 
 from src.domain.models.profile import SessionOutcome
+from src.infrastructure.logging import game_logger as log  # ADDED: Logging integration
 
 
 class SessionStorage:
-    """Handles append-only session history storage.
+    """Handles append-only session history storage with atomic writes.
     
     File structure:
-    - data/profiles/sessions_<uuid>.json (complete history per profile)
+    - ~/.solitario/profiles/sessions_<uuid>.json (complete history per profile)
     """
     
-    PROFILES_DIR = Path("data/profiles")
+    PROFILES_DIR = Path.home() / ".solitario" / "profiles"  # CHANGED: System-wide
     
     def __init__(self, data_dir: Path = None):
         if data_dir:
@@ -738,16 +899,29 @@ class SessionStorage:
         return self.PROFILES_DIR / f"sessions_{profile_id}.json"
     
     def append_session(self, outcome: SessionOutcome) -> None:
-        """Append SessionOutcome to profile's session history.
+        """Append SessionOutcome to profile's session history atomically.
         
         Creates file if doesn't exist (first session for profile).
+        Uses atomic write to prevent corruption on crash.
         """
         file_path = self._get_sessions_file_path(outcome.profile_id)
         
         # Load existing sessions (or create empty)
         if file_path.exists():
-            with open(file_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+            except (json.JSONDecodeError, IOError) as e:
+                log.error_occurred(
+                    "SessionStorage",
+                    f"Corrupted sessions file: {file_path}, recreating",
+                    e
+                )
+                data = {
+                    "profile_id": outcome.profile_id,
+                    "version": "3.0.0",
+                    "sessions": []
+                }
         else:
             data = {
                 "profile_id": outcome.profile_id,
@@ -758,9 +932,29 @@ class SessionStorage:
         # Append new session
         data["sessions"].append(outcome.to_dict())
         
-        # Write back (full rewrite, but append-only logic)
-        with open(file_path, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
+        # Atomic write
+        try:
+            temp_path = file_path.with_suffix('.tmp')
+            with open(temp_path, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            
+            import shutil
+            shutil.move(str(temp_path), str(file_path))
+            
+            log.info_query_requested(
+                "session_append",
+                f"Appended session {outcome.session_id} to profile {outcome.profile_id}"
+            )
+        
+        except Exception as e:
+            if temp_path.exists():
+                temp_path.unlink()
+            log.error_occurred(
+                "SessionStorage",
+                f"Failed to append session {outcome.session_id}",
+                e
+            )
+            raise
     
     def load_all_sessions(self, profile_id: str) -> List[SessionOutcome]:
         """Load all sessions for a profile.
@@ -771,14 +965,30 @@ class SessionStorage:
         file_path = self._get_sessions_file_path(profile_id)
         
         if not file_path.exists():
+            log.info_query_requested(
+                "session_load",
+                f"No sessions file for profile {profile_id}, returning empty list"
+            )
             return []
         
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
                 sessions_data = data.get("sessions", [])
-                return [SessionOutcome.from_dict(s) for s in sessions_data]
-        except (json.JSONDecodeError, IOError):
+                sessions = [SessionOutcome.from_dict(s) for s in sessions_data]
+            
+            log.info_query_requested(
+                "session_load",
+                f"Loaded {len(sessions)} sessions for profile {profile_id}"
+            )
+            return sessions
+        
+        except (json.JSONDecodeError, IOError) as e:
+            log.error_occurred(
+                "SessionStorage",
+                f"Failed to load sessions for profile {profile_id}",
+                e
+            )
             return []
     
     def load_recent_sessions(self, profile_id: str, limit: int = 50) -> List[SessionOutcome]:
@@ -814,6 +1024,10 @@ class SessionStorage:
         
         if file_path.exists():
             file_path.unlink()
+            log.info_query_requested(
+                "session_delete",
+                f"Deleted all sessions for profile {profile_id}"
+            )
             return True
         return False
 ```
@@ -825,34 +1039,41 @@ class SessionStorage:
 - ✅ Get session count
 - ✅ Delete sessions
 - ✅ SessionOutcome roundtrip (to_dict/from_dict)
+- ✅ Corrupted file recovery
+- ✅ Atomic write safety
 
-**Estimated Time**: 10-15 min  
-**Test Count**: 6-8
+**Estimated Time**: 12-18 min  
+**Test Count**: 8-10
 
 ---
 
 ## 🧠 PHASE 3: Domain Services
 
-### Commit 3.1: ProfileService (CRUD + Aggregation)
+### Commit 3.1: ProfileService (CRUD + Aggregation + DI-Compatible)
 
 **File**: `src/domain/services/profile_service.py`
 
 ```python
 """Profile management service with CRUD and statistics aggregation."""
 
-from typing import List, Optional
+from typing import List, Optional, Dict
 from datetime import datetime
 
 from src.domain.models.profile import UserProfile, SessionOutcome
 from src.domain.models.statistics import GlobalStats, TimerStats, DifficultyStats, ScoringStats
 from src.infrastructure.storage.profile_storage import ProfileStorage
 from src.infrastructure.storage.session_storage import SessionStorage
+from src.infrastructure.logging import game_logger as log  # ADDED: Logging integration
 
 
 class ProfileService:
-    """High-level service for profile and session management."""
+    """High-level service for profile and session management.
+    
+    DI-Compatible: Accepts optional storage instances for testing/injection.
+    """
     
     def __init__(self, profile_storage: ProfileStorage = None, session_storage: SessionStorage = None):
+        # CHANGED: DI-compatible constructor
         self.profile_storage = profile_storage or ProfileStorage()
         self.session_storage = session_storage or SessionStorage()
         
@@ -875,6 +1096,11 @@ class ProfileService:
         - Create guest profile if needed
         - Load default profile (or prompt creation)
         """
+        log.info_query_requested(
+            "profile_service_init",
+            "Initializing ProfileService"
+        )
+        
         index = self.profile_storage.load_index()
         
         # Ensure guest profile exists
@@ -884,15 +1110,26 @@ class ProfileService:
         default_id = self.profile_storage.get_default_profile_id()
         if default_id:
             self.load_profile(default_id)
+            log.info_query_requested(
+                "profile_service_init",
+                f"Loaded default profile: {default_id}"
+            )
         else:
             # First run: no profiles yet (handled by UI)
-            pass
+            log.info_query_requested(
+                "profile_service_init",
+                "No default profile found (first run)"
+            )
     
     def _ensure_guest_profile(self) -> None:
         """Ensure guest profile exists in storage."""
         if not self.profile_storage.profile_exists("guest"):
             guest = UserProfile.create_guest()
             self._save_profile_to_storage(guest)
+            log.info_query_requested(
+                "profile_service_init",
+                "Created guest profile"
+            )
     
     # ========================================
     # PROFILE CRUD
@@ -914,6 +1151,11 @@ class ProfileService:
         # Save to storage with empty stats
         self._save_profile_to_storage(profile)
         
+        log.info_query_requested(
+            "profile_create",
+            f"Created profile {profile.profile_id} ({name})"
+        )
+        
         return profile
     
     def load_profile(self, profile_id: str) -> bool:
@@ -928,6 +1170,10 @@ class ProfileService:
         data = self.profile_storage.load_profile(profile_id)
         
         if not data:
+            log.warning_issued(
+                "ProfileService",
+                f"Failed to load profile {profile_id} (not found)"
+            )
             return False
         
         # Reconstruct profile and stats
@@ -940,6 +1186,11 @@ class ProfileService:
         
         # Update last_played
         self.active_profile.last_played = datetime.utcnow()
+        
+        log.info_query_requested(
+            "profile_load",
+            f"Loaded profile {profile_id} as active"
+        )
         
         return True
     
@@ -958,17 +1209,35 @@ class ProfileService:
         
         Returns:
             True if deleted, False if not found or guest
+        
+        Raises:
+            ValueError: If attempting to delete guest profile.
         """
+        # ADDED: Soft check here too (defense-in-depth)
         if profile_id == "guest":
-            return False  # Guest cannot be deleted
+            log.warning_issued(
+                "ProfileService",
+                "Attempted to delete guest profile (blocked)"
+            )
+            raise ValueError("Cannot delete guest profile")
         
-        # Delete profile file
-        profile_deleted = self.profile_storage.delete_profile(profile_id)
+        try:
+            # Delete profile file (storage layer has hard protection)
+            profile_deleted = self.profile_storage.delete_profile(profile_id)
+            
+            # Delete sessions
+            sessions_deleted = self.session_storage.delete_sessions(profile_id)
+            
+            log.info_query_requested(
+                "profile_delete",
+                f"Deleted profile {profile_id} (profile={profile_deleted}, sessions={sessions_deleted})"
+            )
+            
+            return profile_deleted
         
-        # Delete sessions
-        sessions_deleted = self.session_storage.delete_sessions(profile_id)
-        
-        return profile_deleted
+        except ValueError as e:
+            # Re-raise protection errors
+            raise e
     
     def list_all_profiles(self) -> List[Dict]:
         """List all profiles (lightweight from index)."""
@@ -998,6 +1267,11 @@ class ProfileService:
         # Save updated profile
         self._save_profile_to_storage(profile)
         
+        log.info_query_requested(
+            "profile_set_default",
+            f"Set profile {profile_id} as default"
+        )
+        
         return True
     
     # ========================================
@@ -1015,6 +1289,11 @@ class ProfileService:
         
         # Ensure outcome has correct profile_id
         outcome.profile_id = self.active_profile.profile_id
+        
+        log.info_query_requested(
+            "session_record",
+            f"Recording session {outcome.session_id} (reason={outcome.end_reason.value}, victory={outcome.is_victory})"
+        )
         
         # Update aggregates incrementally
         self.global_stats.update_from_session(outcome)
@@ -1129,11 +1408,13 @@ class ProfileService:
 """Session tracking for dirty shutdown recovery."""
 
 import json
+import uuid  # ADDED: Explicit import (was missing)
 from pathlib import Path
 from typing import Optional, Dict
 from datetime import datetime
 
 from src.domain.models.profile import SessionOutcome, EndReason
+from src.infrastructure.logging import game_logger as log  # ADDED: Logging integration
 
 
 class SessionTracker:
@@ -1144,7 +1425,7 @@ class SessionTracker:
     as ABANDON_APP_CLOSE.
     """
     
-    SESSION_FILE = Path("data/profiles/session_active.json")
+    SESSION_FILE = Path.home() / ".solitario" / "profiles" / "session_active.json"  # CHANGED: System-wide
     
     def __init__(self, data_dir: Path = None):
         if data_dir:
@@ -1167,11 +1448,20 @@ class SessionTracker:
         
         with open(self.SESSION_FILE, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2)
+        
+        log.info_query_requested(
+            "session_tracker_start",
+            f"Session {data['session_id']} marked as active"
+        )
     
     def end_session(self) -> None:
         """Mark session as ended (clean exit)."""
         if self.SESSION_FILE.exists():
             self.SESSION_FILE.unlink()
+            log.info_query_requested(
+                "session_tracker_end",
+                "Session ended cleanly (flag removed)"
+            )
     
     def has_orphaned_session(self) -> bool:
         """Check if there's an orphaned session (dirty shutdown)."""
@@ -1227,11 +1517,21 @@ class SessionTracker:
             # Clean up orphan file
             self.SESSION_FILE.unlink()
             
+            log.info_query_requested(
+                "session_tracker_recover",
+                f"Recovered orphaned session {outcome.session_id} (profile={outcome.profile_id})"
+            )
+            
             return outcome
             
-        except (json.JSONDecodeError, IOError, KeyError):
+        except (json.JSONDecodeError, IOError, KeyError) as e:
             # Corrupted orphan, delete and ignore
             self.SESSION_FILE.unlink()
+            log.error_occurred(
+                "SessionTracker",
+                "Corrupted orphan session file (deleted)",
+                e
+            )
             return None
 ```
 
@@ -1251,16 +1551,27 @@ class SessionTracker:
 
 ### Commit 4.1: GameEngine Hooks (Session Recording)
 
-**File Modification**: `src/domain/services/game_engine.py`
+**File Modification**: `src/domain/services/game_engine.py` (o application layer se GameEngine è lì)
 
 **Changes**:
 
 ```python
+# ADDED: Imports
+from src.domain.models.profile import EndReason, SessionOutcome
+from src.domain.services.profile_service import ProfileService
+from src.domain.services.session_tracker import SessionTracker
+from src.infrastructure.di_container import get_container  # ADDED: DI usage
+
+
 class GameEngine:
-    def __init__(self, ..., profile_service: ProfileService = None):
+    def __init__(self, ...):
         # ... existing init ...
-        self.profile_service = profile_service or ProfileService()
+        
+        # CHANGED: Use DI container (not direct instantiation)
+        container = get_container()
+        self.profile_service = container.get_profile_service()
         self.session_tracker = SessionTracker()
+        
         self.current_session_outcome: Optional[SessionOutcome] = None
     
     def new_game(self) -> None:
@@ -1302,6 +1613,8 @@ class GameEngine:
     
     def end_game(self, end_reason: EndReason) -> None:
         """End game and record session.
+        
+        CHANGED: New signature with EndReason (was is_victory: bool).
         
         Args:
             end_reason: Why game ended (victory, abandon, timeout)
@@ -1384,13 +1697,27 @@ class GameEngine:
 **Changes**:
 
 ```python
+from src.infrastructure.di_container import get_container
+from src.domain.services.session_tracker import SessionTracker
+from src.infrastructure.logging import game_logger as log  # ADDED: Logging
+
+
 class SolitaireApp(wx.App):
     def OnInit(self):
         # ... existing init ...
         
+        # Initialize DI Container
+        container = get_container()
+        
         # Initialize ProfileService
-        self.profile_service = ProfileService()
+        self.profile_service = container.get_profile_service()
         self.profile_service.initialize()
+        
+        # Log storage path for user reference
+        log.info_query_requested(
+            "app_startup",
+            f"Profile data stored in: {self.profile_service.profile_storage.PROFILES_DIR}"
+        )
         
         # Check for orphaned session (dirty shutdown recovery)
         session_tracker = SessionTracker()
@@ -1399,8 +1726,11 @@ class SolitaireApp(wx.App):
             if orphaned:
                 # Record as ABANDON_APP_CLOSE
                 self.profile_service.record_session(orphaned)
-                # Optional: Log or notify user
-                print(f"Recovered orphaned session: {orphaned.session_id}")
+                
+                log.warning_issued(
+                    "AppStartup",
+                    f"Recovered orphaned session: {orphaned.session_id} (registered as defeat)"
+                )
         
         # ... continue with existing init ...
         return True
@@ -1416,6 +1746,82 @@ class SolitaireApp(wx.App):
 
 ---
 
+## 🏗️ PHASE 5: DI Container Integration (NEW)
+
+### Commit 5.1: Update DI Container with Profile Services
+
+**File Modification**: `src/infrastructure/di_container.py`
+
+**Changes**:
+
+```python
+# Add to existing DIContainer class
+
+class DIContainer:
+    # ... existing methods ...
+    
+    # ========================================
+    # PROFILE SERVICES (NEW)
+    # ========================================
+    
+    def get_profile_service(self):
+        """Get or create ProfileService singleton.
+        
+        ProfileService manages user profiles and statistics.
+        
+        Returns:
+            ProfileService singleton
+        """
+        if "profile_service" not in self._instances:
+            from src.domain.services.profile_service import ProfileService
+            
+            # Inject storage dependencies
+            profile_storage = self.get_profile_storage()
+            session_storage = self.get_session_storage()
+            
+            self._instances["profile_service"] = ProfileService(
+                profile_storage=profile_storage,
+                session_storage=session_storage
+            )
+        
+        return self._instances["profile_service"]
+    
+    def get_profile_storage(self):
+        """Get or create ProfileStorage singleton.
+        
+        Returns:
+            ProfileStorage singleton
+        """
+        if "profile_storage" not in self._instances:
+            from src.infrastructure.storage.profile_storage import ProfileStorage
+            self._instances["profile_storage"] = ProfileStorage()
+        
+        return self._instances["profile_storage"]
+    
+    def get_session_storage(self):
+        """Get or create SessionStorage singleton.
+        
+        Returns:
+            SessionStorage singleton
+        """
+        if "session_storage" not in self._instances:
+            from src.infrastructure.storage.session_storage import SessionStorage
+            self._instances["session_storage"] = SessionStorage()
+        
+        return self._instances["session_storage"]
+```
+
+**Test Coverage** (`tests/unit/test_di_container.py`):
+- ✅ `get_profile_service()` returns singleton
+- ✅ `get_profile_storage()` returns singleton
+- ✅ `get_session_storage()` returns singleton
+- ✅ Dependencies injected correctly
+
+**Estimated Time**: 10-12 min  
+**Test Count**: 3-4
+
+---
+
 ## ✅ Testing Strategy
 
 ### Unit Tests (Per-Commit)
@@ -1424,7 +1830,7 @@ class SolitaireApp(wx.App):
 
 **Test Pyramid**:
 - **Models** (40% tests): Data integrity, serialization
-- **Storage** (30% tests): JSON read/write, edge cases
+- **Storage** (30% tests): JSON read/write, edge cases, atomic writes
 - **Services** (30% tests): Business logic, aggregation
 
 ### Integration Tests (Phase 4)
@@ -1435,6 +1841,7 @@ class SolitaireApp(wx.App):
 3. **Profile switching**: Play as Profile A → switch to Profile B → play → verify isolation
 4. **Guest mode**: Play as guest → verify separate stats
 5. **Record updates**: Beat personal record → verify update
+6. **Atomic write resilience**: Simulate crash during save → verify no corruption
 
 ### Test Utilities
 
@@ -1478,21 +1885,24 @@ def create_test_outcome(is_victory=True, **kwargs) -> SessionOutcome:
 
 ---
 
-## 📊 Commit Strategy Summary
+## 📊 Commit Strategy Summary (UPDATED)
 
 | Phase | Commit | Description | Time | Tests |
 |---|---|---|---|---|
 | **1. Models** | 1.1 | Core Profile Models (UserProfile, SessionOutcome, EndReason) | 10-12 min | 6-8 |
 | | 1.2 | Statistics Aggregates (GlobalStats, TimerStats, etc.) | 12-15 min | 10-12 |
-| **2. Storage** | 2.1 | ProfileStorage (JSON read/write/index) | 15-20 min | 8-10 |
-| | 2.2 | SessionStorage (append-only history) | 10-15 min | 6-8 |
-| **3. Services** | 3.1 | ProfileService (CRUD + aggregation) | 20-25 min | 12-15 |
-| | 3.2 | SessionTracker (dirty shutdown recovery) | 10-12 min | 5-6 |
-| **4. Integration** | 4.1 | GameEngine hooks (session recording) | 15-20 min | 8-10 |
-| | 4.2 | App startup (orphan recovery) | 8-10 min | 3-4 |
-| **TOTAL** | **8 commits** | | **100-129 min** | **58-73 tests** |
+| **2. Storage** | 2.1 | ProfileStorage (JSON + atomic write + logging) | 20-25 min | 10-12 |
+| | 2.2 | SessionStorage (append-only + atomic + logging) | 12-18 min | 8-10 |
+| **3. Services** | 3.1 | ProfileService (CRUD + aggregation + DI-compatible) | 20-25 min | 12-15 |
+| | 3.2 | SessionTracker (dirty shutdown recovery + logging) | 10-12 min | 5-6 |
+| **4. Integration** | 4.1 | GameEngine hooks (session recording + imports fixed) | 15-20 min | 8-10 |
+| | 4.2 | App startup (orphan recovery + logging) | 8-10 min | 3-4 |
+| **5. DI Container** | 5.1 | DI container extension (profile services) | 10-12 min | 3-4 |
+| **TOTAL** | **9 commits** | | **110-141 min** | **63-81 tests** |
 
-**Realistic Estimate**: GitHub Copilot Agent completes backend in **1.5-2 hours**.
+**Realistic Estimate**: GitHub Copilot Agent completes backend in **2-2.5 hours** (was 1.5-2h).
+
+**Delta from Original**: +1 commit, +10 min, +5 tests (critical fixes applied).
 
 ---
 
@@ -1500,14 +1910,16 @@ def create_test_outcome(is_victory=True, **kwargs) -> SessionOutcome:
 
 Before declaring backend complete:
 
-- [ ] All 8 commits merged to `refactoring-engine`
+- [ ] All 9 commits merged to `refactoring-engine`
 - [ ] Test coverage ≥90% overall
 - [ ] All integration tests passing
-- [ ] Manual test: Create profile → play game → verify JSON files created
+- [ ] **Manual test: Create profile → play game → verify JSON files in `~/.solitario/profiles/`**
 - [ ] Manual test: Dirty shutdown → restart → verify orphan recovered
 - [ ] Manual test: Guest mode → verify isolated stats
+- [ ] Manual test: Atomic write safety (kill app during save, verify no corruption)
 - [ ] Documentation: Update API.md with ProfileService methods
 - [ ] No UI changes in this phase (pure backend)
+- [ ] Logging working (check logs for profile operations)
 
 ---
 
@@ -1519,16 +1931,50 @@ Before declaring backend complete:
 
 ---
 
+## 🔗 Known Limitations (Deferred to v3.1)
+
+### Sessions File Growth
+
+**Issue**: `sessions_<uuid>.json` grows unbounded (append-only).
+
+**Impact**: After 1000+ games (~500KB file), `load_all_sessions()` slows down.
+
+**Mitigation v3.0**:
+- UI uses `load_recent_sessions(limit=50)` (cached in profile)
+- Full history load only on-demand (user request)
+
+**Solution v3.1**:
+- Archiving: Move sessions older than 365 days to `sessions_<uuid>_archive_2025.json`
+- Pagination: Always use offset/limit, never load full history
+
+### Backup Strategy
+
+**Issue**: No automated backups.
+
+**Mitigation v3.0**:
+- Atomic writes prevent corruption
+- User can manually backup `~/.solitario/profiles/` folder
+- Log path at startup for discoverability
+
+**Solution v3.1**:
+- Automatic daily backups to `~/.solitario/backups/`
+- Keep last 7 days (FIFO cleanup)
+- Compression with `gzip`
+
+---
+
 ## 📚 Riferimenti
 
 - **Design Doc**: [DESIGN_PROFILE_STATISTICS_SYSTEM.md](../2%20-%20projects/DESIGN_PROFILE_STATISTICS_SYSTEM.md)
 - **Timer Design**: [DESIGN_TIMER_MODE_SYSTEM.md](../2%20-%20projects/DESIGN_TIMER_MODE_SYSTEM.md)
 - **Stats Presentation**: [DESIGN_STATISTICS_PRESENTATION.md](../2%20-%20projects/DESIGN_STATISTICS_PRESENTATION.md)
 - **Codebase**: [refactoring-engine branch](https://github.com/Nemex81/solitario-classico-accessibile/tree/refactoring-engine)
+- **ScoreStorage Pattern**: [score_storage.py](https://github.com/Nemex81/solitario-classico-accessibile/blob/refactoring-engine/src/infrastructure/storage/score_storage.py)
 
 ---
 
 **Documento creato**: 17 Febbraio 2026, 12:50 CET  
-**Autore**: Luca (utente) + Perplexity AI (technical planning)  
-**Status**: Ready for Copilot Agent execution  
-**Estimated Completion**: 1.5-2 hours agent time
+**Ultimo Aggiornamento**: 17 Febbraio 2026, 13:30 CET  
+**Autore**: Luca (utente) + Perplexity AI (technical planning + review fixes)  
+**Status**: **Ready for Copilot Agent execution** ✅  
+**Estimated Completion**: 2-2.5 hours agent time
