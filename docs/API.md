@@ -303,116 +303,147 @@ Formattazione statistiche profili accessibile per NVDA.
 ```python
 from src.presentation.formatters.stats_formatter import StatsFormatter
 
-formatter = StatsFormatter(language="it")
+formatter = StatsFormatter()
 ```
 
-### Metodi
+### Metodi Pubblici
 
-#### `format_global_stats(stats: GlobalStats) -> str`
+#### `format_global_stats_summary(stats: GlobalStats) -> str`
 
-Formatta statistiche globali del profilo.
+Formatta statistiche globali sommario (2-3 righe per victory dialog).
 
 **Parametri:**
 - `stats`: Oggetto `GlobalStats` con statistiche aggregate
 
 **Ritorna:**
-- Stringa formattata per NVDA con:
-  - Partite totali (vinte/perse)
-  - Percentuale vittorie (winrate)
-  - Miglior tempo/punteggio
-  - Media mosse per partita
+- Stringa compatta formattata per NVDA (vittorie + winrate)
 
 **Esempio:**
 ```python
-from src.domain.models.profile import GlobalStats
+from src.domain.models.statistics import GlobalStats
 
 stats = profile.global_stats
-text = formatter.format_global_stats(stats)
+text = formatter.format_global_stats_summary(stats)
 print(text)
 # Output:
-# Partite Totali: 42 (23 vinte, 19 perse).
-# Percentuale Vittorie: 54.8%.
-# Miglior Tempo: 3min 45sec.
-# Miglior Punteggio: 1850.
-# Media Mosse: 87.3 per partita.
+# Vittorie totali: 23
+# Winrate: 54,8%
 ```
 
 ---
 
-#### `format_timer_stats(stats: TimerStats) -> str`
+#### `format_global_stats_detailed(stats: GlobalStats, profile_name: str) -> str`
 
-Formatta statistiche modalità timer.
+Formatta statistiche globali dettagliate (Page 1/3 del DetailedStatsDialog).
+
+**Parametri:**
+- `stats`: Oggetto `GlobalStats`
+- `profile_name`: Nome profilo per intestazione
+
+**Ritorna:**
+- Stringa formattata multi-riga con:
+  - Performance globale (partite, winrate)
+  - Streak corrente/massimo
+  - Tempo totale/medio
+  - Record personali (best time, best score)
+
+**Esempio:**
+```python
+text = formatter.format_global_stats_detailed(stats, "Mario Rossi")
+print(text)
+# Output:
+# ========================================================
+#     STATISTICHE PROFILO: Mario Rossi
+# ========================================================
+# 
+# PERFORMANCE GLOBALE
+# Partite totali: 42
+# Vittorie: 23 (54,8%)
+# Sconfitte: 19 (45,2%)
+# 
+# STREAK
+# Streak corrente: 3 vittorie
+# Streak massimo: 8 vittorie consecutive
+# ...
+```
+
+---
+
+#### `format_timer_stats_detailed(stats: TimerStats) -> str`
+
+Formatta statistiche timer dettagliate (Page 2/3).
 
 **Parametri:**
 - `stats`: Oggetto `TimerStats`
 
 **Ritorna:**
 - Stringa formattata con:
-  - Partite con timer
-  - Vittorie con timer
-  - Timeout/overtime
-  - Tempo medio
-  - Miglior vittoria con timer
+  - Utilizzo timer (games con/senza)
+  - Performance temporale (entro limite, overtime, timeout)
+  - Analisi overtime (media, massimo)
+  - Breakdown per modalità (STRICT/PERMISSIVE)
 
 **Esempio:**
 ```python
-text = formatter.format_timer_stats(profile.timer_stats)
-# Partite con Timer: 15 (8 vinte, 7 perse).
-# Timeout: 3.
-# Partite Overtime: 2.
-# Tempo Medio: 12min 30sec.
-# Miglior Vittoria Timer: 8min 15sec.
-```
-
----
-
-#### `format_difficulty_stats(stats: DifficultyStats) -> str`
-
-Formatta statistiche breakdown per livello difficoltà.
-
-**Parametri:**
-- `stats`: Oggetto `DifficultyStats`
-
-**Ritorna:**
-- Stringa formattata con:
-  - Partite per livello (1-5)
-  - Vittorie per livello
-  - Percentuale vittorie per livello
-
-**Esempio:**
-```python
-text = formatter.format_difficulty_stats(profile.difficulty_stats)
-# Difficoltà 1 (Principiante): 5 partite (4 vinte, 80.0%).
-# Difficoltà 2 (Facile): 10 partite (7 vinte, 70.0%).
-# Difficoltà 3 (Normale): 15 partite (8 vinte, 53.3%).
+text = formatter.format_timer_stats_detailed(profile.timer_stats)
+print(text)
+# ========================================================
+#     STATISTICHE TIMER
+# ========================================================
+# 
+# UTILIZZO TIMER
+# Partite con timer attivo: 15
+# Partite senza timer: 27
+# 
+# PERFORMANCE TEMPORALE
+# Entro il limite: 10
+# Overtime: 2
+# Timeout (sconfitte): 3
+# Tasso completamento in tempo: 66,7%
 # ...
 ```
 
 ---
 
-#### `format_scoring_stats(stats: ScoringStats) -> str`
+#### `format_scoring_difficulty_stats(scoring_stats: ScoringStats, difficulty_stats: DifficultyStats) -> str`
 
-Formatta statistiche scoring e utilizzo mazzi.
+Formatta statistiche scoring e difficoltà (Page 3/3 - metodo combinato).
 
 **Parametri:**
-- `stats`: Oggetto `ScoringStats`
+- `scoring_stats`: Oggetto `ScoringStats`
+- `difficulty_stats`: Oggetto `DifficultyStats`
 
 **Ritorna:**
 - Stringa formattata con:
-  - Partite con scoring
-  - Punteggio totale/medio
-  - Utilizzo mazzi (French/Neapolitan)
-  - Distribuzione carte pescate (1/2/3)
+  - Analisi punteggio (partite con scoring, media, massimo)
+  - Breakdown per difficoltà (1-5 livelli)
+  - Winrate per livello
+  - Punteggio medio per livello
 
 **Esempio:**
 ```python
-text = formatter.format_scoring_stats(profile.scoring_stats)
-# Partite con Punteggio: 30.
-# Punteggio Totale: 45000.
-# Punteggio Medio: 1500.
-# Mazzo Francese: 20 partite.
-# Mazzo Napoletano: 10 partite.
-# Pescate 3 Carte: 15 partite.
+text = formatter.format_scoring_difficulty_stats(
+    profile.scoring_stats,
+    profile.difficulty_stats
+)
+print(text)
+# ========================================================
+#     PUNTEGGIO & DIFFICOLTÀ
+# ========================================================
+# 
+# PUNTEGGIO
+# Partite con punteggio: 30
+# Punteggio medio: 1.500 punti
+# Punteggio massimo: 2.350 punti
+# 
+# PERFORMANCE PER DIFFICOLTÀ
+# --------------------------------------------------------
+# 
+# Facile (Livello 1):
+#   Partite: 10
+#   Vittorie: 9 (90,0%)
+#   Punteggio medio: 1.800 punti
+# ...
 ```
 
 ---
@@ -449,9 +480,9 @@ outcome = SessionOutcome.create_new(
 
 text = formatter.format_session_outcome(outcome)
 # Risultato: Vittoria.
-# Tempo: 3min 45sec.
+# Tempo: 3 minuti e 45 secondi.
 # Mosse: 87.
-# Punteggio: 1850.
+# Punteggio: 1.850.
 ```
 
 ---
@@ -474,7 +505,7 @@ Formatta sommario profilo (vittorie/winrate).
 text = formatter.format_profile_summary(profile)
 # Riepilogo Profilo:
 # Vittorie Totali: 23 su 42 partite.
-# Percentuale Vittorie: 54.8%.
+# Percentuale Vittorie: 54,8%.
 ```
 
 ---
@@ -496,8 +527,8 @@ text = formatter.format_new_records(outcome, profile)
 if text:
     print(text)
 # Nuovo Record!
-# Miglior Tempo: 3min 45sec (precedente: 4min 12sec).
-# Miglior Punteggio: 1850 (precedente: 1620).
+# Miglior Tempo: 3 minuti e 45 secondi (precedente: 4 minuti e 12 secondi).
+# Miglior Punteggio: 1.850 (precedente: 1.620).
 ```
 
 ---
@@ -519,35 +550,72 @@ top_players = profile_service.get_top_players_by_time()
 text = formatter.format_leaderboard(top_players, "Vittoria Più Veloce")
 # Leaderboard: Vittoria Più Veloce
 # 
-# 1. Mario Rossi - 3min 45sec
-# 2. Luigi Bianchi - 4min 12sec
-# 3. Anna Verdi - 4min 30sec
+# 1. Mario Rossi - 3 minuti e 45 secondi
+# 2. Luigi Bianchi - 4 minuti e 12 secondi
+# 3. Anna Verdi - 4 minuti e 30 secondi
 # ...
 ```
 
 ---
 
-#### `format_detailed_stats_page(profile: UserProfile, page: int) -> str`
+### Metodi Helper (Time/Number Formatting)
 
-Formatta pagina specifica statistiche dettagliate (1-3).
+#### `format_duration(seconds: float) -> str`
 
-**Parametri:**
-- `profile`: Oggetto `UserProfile`
-- `page`: Numero pagina (1=Global, 2=Timer, 3=Difficulty/Scoring)
-
-**Ritorna:**
-- Stringa formattata con intestazione pagina + contenuto
+Formatta durata in italiano human-readable.
 
 **Esempio:**
 ```python
-text = formatter.format_detailed_stats_page(profile, page=2)
-# Pagina 2 di 3: Statistiche Timer
-# 
-# Partite con Timer: 15 (8 vinte, 7 perse).
-# Timeout: 3.
-# Partite Overtime: 2.
-# Tempo Medio: 12min 30sec.
-# Miglior Vittoria Timer: 8min 15sec.
+formatter.format_duration(225.5)  # "3 minuti e 45 secondi"
+formatter.format_duration(42)      # "42 secondi"
+formatter.format_duration(3665)    # "1 ora, 1 minuto e 5 secondi"
+```
+
+---
+
+#### `format_time_mm_ss(seconds: float) -> str`
+
+Formatta tempo come MM:SS.
+
+**Esempio:**
+```python
+formatter.format_time_mm_ss(325)  # "5:25"
+```
+
+---
+
+#### `format_number(value: int) -> str`
+
+Formatta numeri con separatore migliaia italiano.
+
+**Esempio:**
+```python
+formatter.format_number(1850)  # "1.850"
+```
+
+---
+
+#### `format_percentage(value: float, decimals: int = 1) -> str`
+
+Formatta percentuale con decimali.
+
+**Esempio:**
+```python
+formatter.format_percentage(0.548, decimals=1)  # "54,8%"
+```
+
+---
+
+#### `format_end_reason(reason: EndReason) -> str`
+
+Formatta EndReason come label italiano.
+
+**Esempio:**
+```python
+from src.domain.models.game_end import EndReason
+
+formatter.format_end_reason(EndReason.VICTORY)  # "Vittoria"
+formatter.format_end_reason(EndReason.TIMEOUT_STRICT)  # "Tempo scaduto"
 ```
 
 ---
@@ -556,9 +624,10 @@ text = formatter.format_detailed_stats_page(profile, page=2)
 
 - Tutti i metodi ritornano testo ottimizzato per screen reader
 - Frasi brevi con punteggiatura chiara
-- Percentuali formattate (es. `"54.8%"`)
-- Tempi formattati (es. `"3min 45sec"`)
-- No elementi decorativi
+- Percentuali formattate con virgola decimale italiana (es. `"54,8%"`)
+- Tempi formattati estesi (es. `"3 minuti e 45 secondi"`)
+- Numeri con separatore migliaia punto (es. `"1.850"`)
+- No elementi decorativi che confondono NVDA
 - Test coverage: 93% (15 unit tests)
 
 ---
@@ -663,19 +732,25 @@ dialog.Destroy()
 ```python
 from src.presentation.dialogs.detailed_stats_dialog import DetailedStatsDialog
 
+# Build stats data dictionary
+profile = profile_service.active_profile
+
 dialog = DetailedStatsDialog(
     parent=parent_frame,
-    profile=active_profile,
-    formatter=stats_formatter
+    profile_name=profile.profile_name,
+    global_stats=profile.global_stats,
+    timer_stats=profile.timer_stats,
+    difficulty_stats=profile.difficulty_stats,
+    scoring_stats=profile.scoring_stats
 )
 dialog.ShowModal()  # wx.ID_OK (ESC)
 dialog.Destroy()
 ```
 
 **Content**: 3 pagine navigabili
-- **Pagina 1**: Global stats (partite, winrate, best time/score)
-- **Pagina 2**: Timer stats (timer games, timeouts, overtime)
-- **Pagina 3**: Difficulty/Scoring stats (breakdown per livello)
+- **Pagina 1**: Global stats (partite, winrate, best time/score, avg moves)
+- **Pagina 2**: Timer stats (timer games, timeouts, overtime, avg time)
+- **Pagina 3**: Difficulty/Scoring stats (breakdown per livello, deck usage)
 
 **Navigation**: PageUp/PageDown
 
@@ -761,9 +836,9 @@ from src.infrastructure.ui.profile_menu_panel import ProfileMenuPanel
 panel = ProfileMenuPanel(
     parent=parent_frame,
     profile_service=container.get_profile_service(),
-    formatter=container.get_stats_formatter()
+    screen_reader=screen_reader  # Optional for TTS
 )
-result = panel.ShowModal()  # wx.ID_OK (ESC)
+result = panel.ShowModal()  # wx.ID_CANCEL (ESC)
 panel.Destroy()
 ```
 
@@ -771,7 +846,7 @@ panel.Destroy()
 
 #### 1. Create Profile
 
-**Button**: "Crea Nuovo Profilo" (button 1)
+**Button**: "Crea Nuovo Profilo" (button 2)
 
 **Flow**:
 1. Input dialog (nome validazione)
@@ -789,7 +864,7 @@ panel.Destroy()
 
 #### 2. Switch Profile
 
-**Button**: "Cambia Profilo" (button 2)
+**Button**: "Cambia Profilo" (button 1)
 
 **Flow**:
 1. Choice dialog (list all with stats preview)
@@ -798,7 +873,7 @@ panel.Destroy()
 4. UI refresh
 5. TTS: "Profilo attivo: {name}"
 
-**UI**: Current profile marked with "[ATTIVO]"
+**UI**: Current profile marked with "(attivo)"
 
 ---
 
@@ -842,9 +917,10 @@ panel.Destroy()
 **Button**: "Statistiche Dettagliate" (button 5)
 
 **Flow**:
-1. `DetailedStatsDialog(profile, formatter).ShowModal()`
-2. 3 pages navigation (PageUp/PageDown)
-3. ESC returns to ProfileMenuPanel (not main menu)
+1. Build stats_data dict from active_profile
+2. `DetailedStatsDialog(parent, profile_name, global_stats, timer_stats, difficulty_stats, scoring_stats).ShowModal()`
+3. 3 pages navigation (PageUp/PageDown)
+4. ESC returns to ProfileMenuPanel (not main menu)
 
 **Content**: Global, Timer, Difficulty/Scoring stats
 
@@ -1266,5 +1342,6 @@ Per dettagli architetturali:
 
 ---
 
-*Document Version: 3.1*  
-*Last Updated: 2026-02-17*
+*Document Version: 3.1.1*  
+*Last Updated: 2026-02-17*  
+*Revision: Method names aligned with implementation*
