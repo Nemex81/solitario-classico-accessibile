@@ -226,10 +226,10 @@ Sostituzione sistema punteggi limitato con:
 
 ### Checklist Fasi (Aggiorna dopo ogni commit)
 
-- [ ] **Phase 1**: Domain models (UserProfile, SessionOutcome, Stats)
-  - Files: 6 nuovi file in `src/domain/models/` + `src/domain/value_objects/`
-  - Test: `tests/unit/domain/test_user_profile.py` (+ altri 3)
-  - Commit: `feat(domain): Create profile data models [Phase 1/9]`
+- [x] **Phase 1**: Domain models (UserProfile, SessionOutcome, Stats) ✅
+  - Files: `src/domain/models/profile.py`, `src/domain/models/statistics.py`
+  - Test: `tests/unit/domain/test_profile_models.py`, `test_statistics_models.py` (44 tests passing)
+  - Commit: `feat(domain): Create profile data models [Phase 1/9]` (7543c63)
 
 - [ ] **Phase 2**: ProfileStorage class (atomic writes)
   - File: `src/infrastructure/storage/profile_storage.py` (NEW)
