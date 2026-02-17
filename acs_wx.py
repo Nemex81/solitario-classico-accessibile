@@ -121,6 +121,22 @@ class SolitarioController:
         self.settings = GameSettings()
         print("✓ Impostazioni pronte")
         
+        # v3.1.0: Initialize ProfileService
+        print("Inizializzazione ProfileService...")
+        from src.domain.services.profile_service import ProfileService
+        self.profile_service = ProfileService()
+        
+        # Ensure guest profile exists (auto-create if missing)
+        self.profile_service.ensure_guest_profile()
+        
+        # Load guest profile as default active profile
+        if not self.profile_service.load_profile("profile_000"):
+            print("⚠ Impossibile caricare profilo ospite, creandolo ora...")
+            self.profile_service.create_profile("Ospite", is_guest=True)
+            self.profile_service.load_profile("profile_000")
+        
+        print(f"✓ ProfileService pronto - Profilo attivo: {self.profile_service.active_profile.profile_name}")
+        
         # Infrastructure: Dialog manager (v2.0.1 - initialized after frame in run())
         # Will be set in run() after frame is created (hs_deckmanager pattern)
         self.dialog_manager = None
@@ -133,7 +149,8 @@ class SolitarioController:
             verbose=1,
             settings=self.settings,
             use_native_dialogs=True,
-            parent_window=None  # wx dialogs don't need parent
+            parent_window=None,  # wx dialogs don't need parent
+            profile_service=self.profile_service  # 🆕 NEW v3.1.0
         )
         
         # Inject end game callback for UI state management

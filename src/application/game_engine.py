@@ -154,7 +154,8 @@ class GameEngine:
         verbose: int = 1,
         settings: Optional[GameSettings] = None,
         use_native_dialogs: bool = False,  # ✨ NEW v1.6.0
-        parent_window = None  # 🆕 NEW v1.6.2 - pygame screen for modal dialogs
+        parent_window = None,  # 🆕 NEW v1.6.2 - pygame screen for modal dialogs
+        profile_service: Optional['ProfileService'] = None  # 🆕 NEW v3.1.0
     ) -> "GameEngine":
         """Factory method to create fully initialized game engine.
         
@@ -166,6 +167,7 @@ class GameEngine:
             use_native_dialogs: Enable native wxPython dialogs (NEW v1.6.0)
             parent_window: pygame.display surface for modal dialog parenting (NEW v1.6.2)
                            If provided, wxDialogs won't appear in ALT+TAB switcher
+            profile_service: Optional profile service for session tracking (NEW v3.1.0)
             
         Returns:
             Initialized GameEngine instance ready to play
@@ -256,7 +258,12 @@ class GameEngine:
                 # wxPython not available, graceful degradation
                 dialog_provider = None
         
-        return cls(table, service, rules, cursor, selection, screen_reader, settings, score_storage, dialog_provider)
+        return cls(
+            table, service, rules, cursor, selection, screen_reader,
+            settings, score_storage, dialog_provider,
+            on_game_ended=None,              # 🆕 Forward callback placeholder
+            profile_service=profile_service  # 🆕 Forward profile_service
+        )
     
     # ========================================
     # GAME LIFECYCLE
