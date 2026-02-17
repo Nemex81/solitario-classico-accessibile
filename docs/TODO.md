@@ -236,10 +236,10 @@ Sostituzione sistema punteggi limitato con:
   - Test: `tests/unit/infrastructure/test_profile_storage.py` (18 tests passing)
   - Commit: `feat(infrastructure): Create ProfileStorage with atomic writes [Phase 2/9]` (aede3fd)
 
-- [ ] **Phase 3**: Stats aggregation logic
+- [x] **Phase 3**: Stats aggregation logic ✅
   - File: `src/domain/services/stats_aggregator.py` (NEW)
-  - Test: `tests/unit/domain/test_stats_aggregator.py` (NEW)
-  - Commit: `feat(domain): Implement stats aggregation logic [Phase 3/9]`
+  - Test: `tests/unit/domain/services/test_stats_aggregator.py` (12 tests passing, 91% coverage)
+  - Commit: `feat(domain): Implement stats aggregation logic [Phase 3/9]` (c71692f)
 
 - [ ] **Phase 4**: ProfileService (CRUD operations)
   - File: `src/domain/services/profile_service.py` (NEW)
