@@ -249,11 +249,12 @@ Sostituzione sistema punteggi limitato con:
   - **Funzionalità**: Dialog read-only con riassunto ultima partita giocata ✓
   - **Piano**: [PHASE_9_MENU_INTEGRATION_UPDATED.md](3%20-%20coding%20plans/PHASE_9_MENU_INTEGRATION_UPDATED.md) Commit 9.1
 
-- [ ] **Phase 9.2**: Leaderboard menu option (8-12 min)
-  - **File MODIFICA**: `acs_wx.py` (main menu handler)
-  - **Target**: Main menu options list
-  - **Handler**: Bind "L" key → apri `LeaderboardDialog` (già creato in Phase 6)
-  - **Funzionalità**: Mostra leaderboard globale (5 classifiche)
+- [x] **Phase 9.2**: Leaderboard menu option (8-12 min) ✅
+  - **File MODIFICA**: `src/infrastructure/ui/menu_panel.py` (button already added in 9.1) ✓
+  - **File MODIFICA**: `acs_wx.py` (refined show_leaderboard implementation) ✓
+  - **Target**: Main menu options list - button added
+  - **Handler**: Button click → `controller.show_leaderboard()` - loads all profiles and shows LeaderboardDialog
+  - **Funzionalità**: Mostra leaderboard globale (5 classifiche) ✓
   - **Piano**: [PHASE_9_MENU_INTEGRATION_UPDATED.md](3%20-%20coding%20plans/PHASE_9_MENU_INTEGRATION_UPDATED.md) Commit 9.2
 
 - [ ] **Phase 9.3**: Detailed stats in profile menu (10-15 min)

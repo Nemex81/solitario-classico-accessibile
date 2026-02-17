@@ -441,8 +441,11 @@ class SolitarioController:
         import wx
         from src.presentation.dialogs.leaderboard_dialog import LeaderboardDialog
         
+        log.info("Leaderboard requested from main menu")
+        
         # Check if ProfileService is available
         if not self.engine or not hasattr(self.engine, 'profile_service'):
+            log.warning_issued("SolitarioController", "ProfileService not available for leaderboard")
             wx.MessageBox(
                 "Servizio profili non disponibile.",
                 "Errore",
@@ -452,6 +455,7 @@ class SolitarioController:
         
         profile_service = self.engine.profile_service
         if profile_service is None:
+            log.warning_issued("SolitarioController", "ProfileService not initialized")
             wx.MessageBox(
                 "Servizio profili non inizializzato.",
                 "Errore",
@@ -459,12 +463,39 @@ class SolitarioController:
             )
             return
         
-        # Get all profiles for leaderboard
-        # For now, we'll use a simple approach - LeaderboardDialog will handle it
-        all_profiles = []  # LeaderboardDialog will load from ProfileService
+        # Get all profiles from ProfileService
+        all_profiles = profile_service.list_profiles()
+        log.debug(f"Loaded {len(all_profiles)} profiles for leaderboard")
+        
+        # Get current profile ID
         current_profile_id = profile_service.active_profile.profile_id if profile_service.active_profile else "guest"
         
-        dialog = LeaderboardDialog(None, all_profiles, current_profile_id, metric="victories")
+        # Load full profile data for each profile in list
+        profiles_with_stats = []
+        for profile_summary in all_profiles:
+            profile_id = profile_summary.get('profile_id')
+            if profile_id:
+                # Load full profile to get stats
+                full_profile = profile_service.storage.load_profile(profile_id)
+                if full_profile:
+                    profiles_with_stats.append({
+                        'profile_id': full_profile.profile_id,
+                        'profile_name': full_profile.profile_name,
+                        'is_guest': full_profile.is_guest,
+                        'global_stats': {
+                            'total_games': full_profile.global_stats.total_games,
+                            'total_victories': full_profile.global_stats.total_victories,
+                            'winrate': full_profile.global_stats.winrate,
+                            'fastest_victory': full_profile.global_stats.fastest_victory,
+                            'highest_score': full_profile.global_stats.highest_score,
+                            'longest_streak': full_profile.global_stats.longest_streak
+                        }
+                    })
+        
+        log.info(f"Showing leaderboard with {len(profiles_with_stats)} profiles")
+        
+        # Show leaderboard dialog
+        dialog = LeaderboardDialog(None, profiles_with_stats, current_profile_id, metric="victories")
         dialog.ShowModal()
         dialog.Destroy()
     
