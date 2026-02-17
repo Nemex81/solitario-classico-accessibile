@@ -3,9 +3,9 @@
 **Branch**: `refactoring-engine` (base) → `copilot/implement-profile-system-v3-1-0` (feature)  
 **Tipo**: FEATURE STACK  
 **Priorità**: HIGH  
-**Stato**: Feature 1 ✅ + Feature 2 ✅ + Feature 3 🔄 90% (Phase 9 mancante)  
+**Stato**: Feature 1 ✅ + Feature 2 ✅ + Feature 3 🔄 90% (Phase 7.5 + 9 mancanti)  
 **Stima Totale**: 5-6 ore agent time  
-**Tempo Effettivo**: ~2.5 ore (Feature 1+2+3 core)
+**Tempo Effettivo**: ~2.5 ore (Feature 1+2+3 core Phase 1-8)
 
 ---
 
@@ -28,9 +28,11 @@
 
 ### Feature 3: Stats Presentation v3.1.0 UI 🔄 IN CORSO (90%)
 - **Piano Implementazione**: [`docs/3 - coding plans/IMPLEMENTATION_STATS_PRESENTATION.md`](3%20-%20coding%20plans/IMPLEMENTATION_STATS_PRESENTATION.md)
+- **Phase 7.5 Fix Opzionali**: [`docs/3 - coding plans/PHASE_7_5_OPTIONAL_FIXES.md`](3%20-%20coding%20plans/PHASE_7_5_OPTIONAL_FIXES.md) ⚡ **12 min critici**
+- **Phase 9 Menu Integration**: [`docs/3 - coding plans/PHASE_9_MENU_INTEGRATION_UPDATED.md`](3%20-%20coding%20plans/PHASE_9_MENU_INTEGRATION_UPDATED.md) 📋 **45 min**
 - **Design Doc**: [`docs/2 - projects/DESIGN_STATISTICS_PRESENTATION.md`](2%20-%20projects/DESIGN_STATISTICS_PRESENTATION.md)
 - **Stima**: 2-3 ore (12-15 commit atomici)
-- **Completamento**: ~70 min (8/9 fasi, Phase 9 menu integration mancante)
+- **Completamento**: ~70 min (8/9 fasi core) + 12 min fix critici + 45 min menu = **~127 min totali**
 - **Dipende da**: Feature 2 (ProfileService) ✅
 
 **Questo TODO è solo un sommario operativo.** I piani completi contengono:
@@ -83,7 +85,7 @@ Stack completo di 3 feature interdipendenti:
 
 2. **Profile System v3.0.0 Backend** ✅: Gestione profili utente con persistenza JSON atomica, statistiche aggregate (globali, timer, difficoltà, scoring), session tracking, e recovery da crash.
 
-3. **Stats Presentation v3.1.0 UI** 🔄: Layer di presentazione con dialog vittoria/abbandono integrate, statistiche dettagliate (3 pagine), leaderboard globale, accessibilità NVDA completa. **Core implementato (Phase 1-8)**, menu integration (Phase 9) mancante.
+3. **Stats Presentation v3.1.0 UI** 🔄: Layer di presentazione con dialog vittoria/abbandono integrate, statistiche dettagliate (3 pagine), leaderboard globale, accessibilità NVDA completa. **Core implementato (Phase 1-8)**, fix opzionali (Phase 7.5) e menu integration (Phase 9) mancanti.
 
 ### Perché Viene Fatto
 
@@ -117,8 +119,10 @@ Sostituzione sistema punteggi limitato con:
 └─────────────────────────────────────┘
            ↓ (prerequisito)
 ┌─────────────────────────────────────┐
-│ 3. Stats Presentation v3.1.0 UI 🔄 │ ← 90% (Phase 9 mancante)
-│    ~70 min core + 45 min menu      │
+│ 3. Stats Presentation v3.1.0 UI 🔄 │ ← 90% (Phase 7.5 + 9 mancanti)
+│    Phase 1-8: ~70 min COMPLETATE ✅│
+│    Phase 7.5: 12 min critici ⚡     │
+│    Phase 9: 45 min menu 📋          │
 └─────────────────────────────────────┘
 ```
 
@@ -147,11 +151,11 @@ Sostituzione sistema punteggi limitato con:
 
 ---
 
-## 🔄 FEATURE 3: Stats Presentation v3.1.0 UI (90% - Phase 9 mancante)
+## 🔄 FEATURE 3: Stats Presentation v3.1.0 UI (90% - Phase 7.5 + 9 mancanti)
 
 **Piano Dettagliato**: [`IMPLEMENTATION_STATS_PRESENTATION.md`](3%20-%20coding%20plans/IMPLEMENTATION_STATS_PRESENTATION.md)
 
-**⚠️ STATO ATTUALE**: Copilot ha completato Phase 1-8 (~70 min), saltando Phase 9 (menu integration).
+**⚠️ STATO ATTUALE**: Copilot ha completato Phase 1-8 (~70 min), saltando Phase 7.5 (fix opzionali) e Phase 9 (menu integration).
 
 ### ✅ Checklist Fasi COMPLETATE (Phase 1-8)
 
@@ -191,32 +195,72 @@ Sostituzione sistema punteggi limitato con:
   - **Changes**: Focus management, TTS announcements, keyboard navigation
   - **Tests**: Manual NVDA checklist (30+ items)
 
+### ⚡ Checklist Fasi OPZIONALI (Phase 7.5 - Fix Post-Integration)
+
+**📘 GUIDA DETTAGLIATA**: [`PHASE_7_5_OPTIONAL_FIXES.md`](3%20-%20coding%20plans/PHASE_7_5_OPTIONAL_FIXES.md)
+
+**⚠️ NOTA**: Copilot ha saltato 4 fix opzionali post-Phase 7. **2 fix critici raccomandati (12 min)**, 2 nice-to-have (20 min).
+
+#### ⚡ Fix Critici (RACCOMANDATI - 12 min totali)
+
+- [ ] **Fix 7.5.2**: Typo `ABANDON_CRASH` → `ABANDON_APP_CLOSE` (2 min)
+  - **File**: `src/application/game_engine.py` (linea ~703)
+  - **Change**: Replace TODO + typo con EndReason corretto
+  - **Criticità**: Low (solo naming), ma rimuove TODO obsoleto
+  - **Piano**: [PHASE_7_5_OPTIONAL_FIXES.md](3%20-%20coding%20plans/PHASE_7_5_OPTIONAL_FIXES.md) Fix 7.5.2
+
+- [ ] **Fix 7.5.3**: Timer expiry verification + test (10 min)
+  - **File**: `src/application/game_engine.py` (metodo `on_timer_tick()`)
+  - **Change**: Verificare che STRICT mode chiami `end_game()` su timeout
+  - **Criticità**: **MEDIUM** - Potenziale bug silente se logica mancante
+  - **Test**: Manual timer test (30 sec STRICT)
+  - **Piano**: [PHASE_7_5_OPTIONAL_FIXES.md](3%20-%20coding%20plans/PHASE_7_5_OPTIONAL_FIXES.md) Fix 7.5.3
+
+#### 📋 Fix Nice-to-Have (OPZIONALI - 20 min totali)
+
+- [ ] **Fix 7.5.1**: Semantic logging helpers `ProfileLogger` (15 min)
+  - **File NUOVO**: `src/infrastructure/logging/profile_logger.py`
+  - **Impatto**: Low (dev experience, log più leggibili)
+  - **Piano**: [PHASE_7_5_OPTIONAL_FIXES.md](3%20-%20coding%20plans/PHASE_7_5_OPTIONAL_FIXES.md) Fix 7.5.1
+
+- [ ] **Fix 7.5.4**: App startup recovery dialog (5 min)
+  - **File**: `acs_wx.py` (startup check)
+  - **Impatto**: Low (recovery già funziona, questo aggiunge solo dialog UI)
+  - **Piano**: [PHASE_7_5_OPTIONAL_FIXES.md](3%20-%20coding%20plans/PHASE_7_5_OPTIONAL_FIXES.md) Fix 7.5.4
+
+**DECISIONE RICHIESTA**: 
+- **Scenario A**: Implementa tutti e 4 i fix (30-45 min) → Feature 100% completa
+- **Scenario B**: Implementa solo fix critici 7.5.2 + 7.5.3 (12 min) → Evita bug, skip nice-to-have ⚡ **RACCOMANDATO**
+- **Scenario C**: Skip Phase 7.5 → Crea Issue GitHub per fix post-merge
+
 ### ⏸️ Checklist Fasi MANCANTI (Phase 9 - Menu Integration)
+
+**📘 GUIDA DETTAGLIATA**: [`PHASE_9_MENU_INTEGRATION_UPDATED.md`](3%20-%20coding%20plans/PHASE_9_MENU_INTEGRATION_UPDATED.md)
 
 **⚠️ NOTA**: Copilot ha saltato Phase 9, considerandola "opzionale". Richiesta implementazione.
 
-- [ ] **Phase 9.1**: "Ultima Partita" menu option  
+- [ ] **Phase 9.1**: "Ultima Partita" menu option (15-22 min)
   - **File NUOVO**: `src/presentation/dialogs/last_game_dialog.py`
   - **File MODIFICA**: `src/application/game_engine.py` (add `last_session_outcome` storage)
   - **File MODIFICA**: `acs_wx.py` (add "U - Ultima Partita" menu item)
   - **Target**: Main menu handler in `acs_wx.py`
   - **Handler**: Bind "U" key → `game_engine.show_last_game_summary()`
   - **Funzionalità**: Dialog read-only con riassunto ultima partita giocata
-  - **Tempo stimato**: 15-22 min
+  - **Piano**: [PHASE_9_MENU_INTEGRATION_UPDATED.md](3%20-%20coding%20plans/PHASE_9_MENU_INTEGRATION_UPDATED.md) Commit 9.1
 
-- [ ] **Phase 9.2**: Leaderboard menu option  
+- [ ] **Phase 9.2**: Leaderboard menu option (8-12 min)
   - **File MODIFICA**: `acs_wx.py` (main menu handler)
   - **Target**: Main menu options list
   - **Handler**: Bind "L" key → apri `LeaderboardDialog` (già creato in Phase 6)
   - **Funzionalità**: Mostra leaderboard globale (5 classifiche)
-  - **Tempo stimato**: 8-12 min
+  - **Piano**: [PHASE_9_MENU_INTEGRATION_UPDATED.md](3%20-%20coding%20plans/PHASE_9_MENU_INTEGRATION_UPDATED.md) Commit 9.2
 
-- [ ] **Phase 9.3**: Detailed stats in profile menu  
+- [ ] **Phase 9.3**: Detailed stats in profile menu (10-15 min)
   - **File MODIFICA**: `acs_wx.py` (profile menu handler)
   - **Target**: Profile management menu (opzione "5. Statistiche Dettagliate")
   - **Handler**: Wire existing option → `DetailedStatsDialog` (già creato in Phase 5)
   - **Funzionalità**: 3-page stats navigation da profile menu
-  - **Tempo stimato**: 10-15 min
+  - **Piano**: [PHASE_9_MENU_INTEGRATION_UPDATED.md](3%20-%20coding%20plans/PHASE_9_MENU_INTEGRATION_UPDATED.md) Commit 9.3
 
 ### 📊 Riepilogo Implementazione Feature 3
 
@@ -230,6 +274,10 @@ Sostituzione sistema punteggi limitato con:
 | **LeaderboardDialog** | ✅ | a2e13c2 | 5 classifiche |
 | **GameEngine hooks** | ✅ | 288cbef | ProfileService ATTIVATO |
 | **NVDA accessibility** | ✅ | 846aa8f | Focus, TTS, keyboard |
+| **Fix 7.5.2 - Typo** | ❌ | - | 2 min (raccomandato) |
+| **Fix 7.5.3 - Timer** | ❌ | - | 10 min (CRITICO) |
+| **Fix 7.5.1 - Logging** | ❌ | - | 15 min (nice-to-have) |
+| **Fix 7.5.4 - Recovery** | ❌ | - | 5 min (nice-to-have) |
 | **LastGameDialog** | ❌ | - | Phase 9.1 mancante |
 | **Menu "U" (Ultima Partita)** | ❌ | - | Phase 9.1 mancante |
 | **Menu "L" (Leaderboard)** | ❌ | - | Phase 9.2 mancante |
@@ -246,14 +294,23 @@ Sostituzione sistema punteggi limitato con:
 - [x] Detailed stats 3 pagine (formatter pronto, dialog creato)
 - [x] Leaderboard 5 classifiche (dialog creato)
 
-### ⏸️ Validation Mancante (Phase 9)
+### ⏸️ Validation Mancante (Phase 7.5 + 9)
 
+**Phase 7.5 - Fix Opzionali**:
+- [ ] Fix 7.5.2: Typo ABANDON_CRASH corretto
+- [ ] Fix 7.5.3: Timer expiry STRICT mode testato
+- [ ] Fix 7.5.1: ProfileLogger creato (opzionale)
+- [ ] Fix 7.5.4: Startup recovery dialog (opzionale)
+
+**Phase 9 - Menu Integration**:
 - [ ] LastGameDialog creato
 - [ ] Menu "U - Ultima Partita" funzionante
 - [ ] Menu "L - Leaderboard" funzionante
 - [ ] Profile menu opzione "5" wired a DetailedStatsDialog
 
-**DECISIONE RICHIESTA**: Completare Phase 9 (45 min) o merge parziale?
+**DECISIONE RICHIESTA**: 
+- Completare Phase 7.5 critici (12 min) + Phase 9 (45 min) = **~57 min totali**?
+- Oppure skip 7.5 e fare solo Phase 9 (45 min), Issue per fix post-merge?
 
 ---
 
@@ -310,6 +367,12 @@ Sostituzione sistema punteggi limitato con:
 - [x] GameEngine ProfileService ATTIVATO
 - [x] NVDA accessibility implementata
 
+**⏸️ Mancante (Phase 7.5 - Fix Opzionali):**
+- [ ] Fix 7.5.2: Typo ABANDON_CRASH (2 min - raccomandato)
+- [ ] Fix 7.5.3: Timer expiry verification (10 min - CRITICO)
+- [ ] Fix 7.5.1: Semantic logging (15 min - nice-to-have)
+- [ ] Fix 7.5.4: Startup recovery dialog (5 min - nice-to-have)
+
 **⏸️ Mancante (Phase 9 - Menu Integration):**
 - [ ] LastGameDialog creato
 - [ ] Menu "U - Ultima Partita" implementato
@@ -321,11 +384,11 @@ Sostituzione sistema punteggi limitato con:
 
 - [x] Feature 1 completata (100%) ✅
 - [x] Feature 2 completata (100%) ✅
-- [ ] Feature 3 completata (90% - Phase 9 mancante) 🔄
+- [ ] Feature 3 completata (90% - Phase 7.5 + 9 mancanti) 🔄
 - [x] Test coverage ≥88% (su componenti implementati) ✅
 - [ ] CHANGELOG.md aggiornato
 - [ ] README.md aggiornato se necessario
-- [ ] Branch ready per merge (dopo Phase 9)
+- [ ] Branch ready per merge (dopo Phase 7.5 + 9)
 
 ---
 
@@ -333,7 +396,8 @@ Sostituzione sistema punteggi limitato con:
 
 ### Post Feature 3 (Stats Presentation v3.1.0 UI)
 
-- [ ] **COMPLETARE Phase 9**: Menu integration (45 min stimati)
+- [ ] **COMPLETARE Phase 7.5**: Fix critici 7.5.2 + 7.5.3 (12 min stimati) ⚡
+- [ ] **COMPLETARE Phase 9**: Menu integration (45 min stimati) 📋
 - [ ] Aggiornare `CHANGELOG.md` con entry v3.1.0 UI
   - Victory/abandon dialogs with stats ✅
   - Detailed stats (3 pages) ✅
@@ -349,7 +413,25 @@ Sostituzione sistema punteggi limitato con:
 
 ## 📌 Note Operative
 
-### Phase 9 Implementation Notes
+### Phase 7.5 + Phase 9 Implementation Notes
+
+**Workflow Raccomandato**:
+```
+1. ⚡ Phase 7.5 Fix Critici (12 min):
+   - Fix 7.5.2: Typo ABANDON_CRASH (2 min)
+   - Fix 7.5.3: Timer expiry test (10 min)
+   
+2. 📋 Phase 9 Menu Integration (45 min):
+   - Commit 9.1: LastGameDialog + menu "U" (15-22 min)
+   - Commit 9.2: Menu "L - Leaderboard" (8-12 min)
+   - Commit 9.3: Profile menu "5" → Stats (10-15 min)
+   
+3. 📋 Issue Post-Merge (opzionale):
+   - Fix 7.5.1: Semantic logging (15 min)
+   - Fix 7.5.4: Startup recovery dialog (5 min)
+```
+
+**Tempo Totale**: 12 min (fix critici) + 45 min (menu) = **~57 minuti**
 
 **File Target Identificati**:
 - **Main entry point**: `acs_wx.py` (root directory)
@@ -358,32 +440,29 @@ Sostituzione sistema punteggi limitato con:
   - Main menu builder/handler (pattern: "Nuova Partita", "Opzioni", "Esci")
   - Profile menu handler (pattern: "Cambia Profilo", "Crea Nuovo")
 
-**Pattern di Intervento**:
-1. **Identificare metodo menu** (es. `_build_main_menu()`, `_handle_menu_input()`)
-2. **Aggiungere voce menu** con shortcut key
-3. **Bind handler** alla key press
-4. **Aprire dialog** esistente (già creati in Phase 5-6)
-
-**Tempo Stimato Phase 9**: 33-49 minuti (3 commit)
-
 ---
 
-## 🚀 Quick Start per Copilot Agent - Phase 9
+## 🚀 Quick Start per Copilot Agent - Phase 7.5 + 9
 
 ### Step-by-Step per Completamento
 
 1. **✅ Phase 1-8 COMPLETATE** - Core dialogs + ProfileService funzionanti
-2. **Next: Phase 9** - Menu integration (3 commit)
-3. **Read** [`IMPLEMENTATION_STATS_PRESENTATION.md`](3%20-%20coding%20plans/IMPLEMENTATION_STATS_PRESENTATION.md) linee 940-1050
-4. **Implement Phase 9.1**: LastGameDialog + menu "U"
-5. **Implement Phase 9.2**: Menu "L" → LeaderboardDialog
-6. **Implement Phase 9.3**: Profile menu "5" → DetailedStatsDialog
-7. **Update** TODO.md (spunta Phase 9 checkboxes)
-8. **Manual testing**: NVDA checklist completa
-9. **Ready for merge**
+2. **⚡ Next: Phase 7.5 Fix Critici** (12 min raccomandati)
+   - Read [`PHASE_7_5_OPTIONAL_FIXES.md`](3%20-%20coding%20plans/PHASE_7_5_OPTIONAL_FIXES.md)
+   - Implement Fix 7.5.2 (typo - 2 min)
+   - Implement Fix 7.5.3 (timer test - 10 min)
+   - Update TODO.md (spunta fix completati)
+3. **📋 Next: Phase 9 Menu** (45 min)
+   - Read [`PHASE_9_MENU_INTEGRATION_UPDATED.md`](3%20-%20coding%20plans/PHASE_9_MENU_INTEGRATION_UPDATED.md)
+   - Implement Commit 9.1: LastGameDialog + menu "U"
+   - Implement Commit 9.2: Menu "L" → LeaderboardDialog
+   - Implement Commit 9.3: Profile menu "5" → DetailedStatsDialog
+   - Update TODO.md (spunta Phase 9 checkboxes)
+4. **🧪 Manual testing**: NVDA checklist completa
+5. **✅ Ready for merge**
 
 ---
 
 **Fine TODO.**
 
-**STATUS**: Feature 3 al 90% - Phase 9 (menu integration) richiesta per completamento 100%.
+**STATUS**: Feature 3 al 90% - Phase 7.5 fix critici (12 min) + Phase 9 menu (45 min) richiesti per completamento 100%.
