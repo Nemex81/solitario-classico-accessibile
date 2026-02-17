@@ -378,6 +378,83 @@ class GameEngine:
         return self.service.is_game_running
     
     # ========================================
+    # TIMER TICK HANDLING (v2.7.0)
+    # ========================================
+    
+    def on_timer_tick(self) -> None:
+        """Timer tick handler (called every 1 second by external timer).
+        
+        Checks for timer expiry and handles STRICT/PERMISSIVE behavior.
+        This method is designed to be called by wx.Timer or similar
+        mechanism in the UI layer.
+        """
+        # Only check if game is running and timer is enabled
+        if not self.service.is_game_running:
+            return
+        
+        if not self.settings or self.settings.max_time_game <= 0:
+            return
+        
+        # Check expiry (single-fire)
+        expired = self.service.check_timer_expiry(
+            self.settings.max_time_game
+        )
+        
+        if not expired:
+            return  # No expiry, continue
+        
+        # Timer expired: handle based on mode
+        if self.settings.timer_strict_mode:
+            # STRICT: Auto-stop game
+            self._handle_strict_timeout()
+        else:
+            # PERMISSIVE: Start overtime tracking
+            self._handle_permissive_timeout()
+    
+    def _handle_strict_timeout(self) -> None:
+        """Handle timer expiry in STRICT mode.
+        
+        Auto-stops game immediately with TIMEOUT_STRICT reason.
+        """
+        # Import EndReason locally to avoid circular dependency
+        from src.domain.models.game_end import EndReason
+        
+        # Announce expiry (TTS)
+        self._announce_timer_expired(permissive=False)
+        
+        # End game immediately
+        self.end_game(EndReason.TIMEOUT_STRICT)
+    
+    def _handle_permissive_timeout(self) -> None:
+        """Handle timer expiry in PERMISSIVE mode.
+        
+        Allows game to continue, starts overtime tracking.
+        """
+        # Start overtime tracking
+        import time
+        self.service.overtime_start = time.time()
+        
+        # Announce expiry (TTS, different message)
+        self._announce_timer_expired(permissive=True)
+        
+        # Game continues, no end_game() call
+    
+    def _announce_timer_expired(self, permissive: bool = False) -> None:
+        """Announce timer expiry via TTS (placeholder for Phase 6).
+        
+        Args:
+            permissive: True if PERMISSIVE mode, False if STRICT
+        """
+        # TODO Phase 6: Integrate with GameFormatter
+        if permissive:
+            message = "Tempo scaduto! Il gioco continua con penalità."
+        else:
+            message = "Tempo scaduto!"
+        
+        # Announce via screen reader if available
+        self._speak(message)
+    
+    # ========================================
     # OPTIONS WINDOW MANAGEMENT (v1.4.1)
     # ========================================
     
