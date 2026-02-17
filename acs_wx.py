@@ -480,36 +480,12 @@ class SolitarioController:
             )
             return
         
-        # Get all profiles from ProfileService
-        all_profiles = profile_service.list_profiles()
-        log.debug_state("leaderboard_profiles", {"count": len(all_profiles)})
+        # Load all profiles with full stats (using ProfileService helper)
+        # This respects Clean Architecture: Controller -> Service -> Storage
+        profiles_with_stats = profile_service.get_all_profiles_with_stats()
         
         # Get current profile ID
         current_profile_id = profile_service.active_profile.profile_id if profile_service.active_profile else "guest"
-        
-        # Load full profile data for each profile in list
-        profiles_with_stats = []
-        for profile_summary in all_profiles:
-            profile_id = profile_summary.get('profile_id')
-            if profile_id:
-                # Load full profile to get stats
-                full_profile = profile_service.storage.load_profile(profile_id)
-                if full_profile:
-                    profiles_with_stats.append({
-                        'profile_id': full_profile.profile_id,
-                        'profile_name': full_profile.profile_name,
-                        'is_guest': full_profile.is_guest,
-                        'global_stats': {
-                            'total_games': full_profile.global_stats.total_games,
-                            'total_victories': full_profile.global_stats.total_victories,
-                            'winrate': full_profile.global_stats.winrate,
-                            'fastest_victory': full_profile.global_stats.fastest_victory,
-                            'highest_score': full_profile.global_stats.highest_score,
-                            'longest_streak': full_profile.global_stats.longest_streak
-                        }
-                    })
-        
-        log.debug_state("leaderboard_display", {"profiles_count": len(profiles_with_stats)})
         
         # Show leaderboard dialog
         dialog = LeaderboardDialog(None, profiles_with_stats, current_profile_id, metric="victories")
