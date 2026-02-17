@@ -1,6 +1,6 @@
 # Architettura del Sistema
 
-## 📐 Panoramica
+## 📀 Panoramica
 
 Il Solitario Classico Accessibile utilizza una **Clean Architecture** (architettura a cipolla) che separa le responsabilità in livelli distinti, garantendo:
 
@@ -14,19 +14,19 @@ Il Solitario Classico Accessibile utilizza una **Clean Architecture** (architett
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    Presentation Layer                        │
-│  ┌─────────────────────────────────────────────────────┐    │
+│  ┌─────────────────────────────────────────────────────────┐    │
 │  │     GameFormatter, StatsFormatter (v3.1.0)          │    │
 │  │  - Formattazione stato per screen reader            │    │
-│  │  - Statistiche formattate (9 metodi)                │    │
+│  │  - Statistiche formattate (metodi summary/detailed) │    │
 │  │  - Localizzazione italiano                          │    │
 │  │  - Output accessibile                               │    │
-│  └─────────────────────────────────────────────────────┘    │
-│  ┌─────────────────────────────────────────────────────┐    │
+│  └─────────────────────────────────────────────────────────┘    │
+│  ┌─────────────────────────────────────────────────────────┐    │
 │  │     Dialogs (v3.1.0)                                │    │
 │  │  - VictoryDialog, AbandonDialog, GameInfoDialog     │    │
 │  │  - DetailedStatsDialog, LeaderboardDialog           │    │
 │  │  - LastGameDialog                                   │    │
-│  └─────────────────────────────────────────────────────┘    │
+│  └─────────────────────────────────────────────────────────┘    │
 ├─────────────────────────────────────────────────────────────┤
 │                    Application Layer                         │
 │  ┌───────────────────┐  ┌────────────────────────────┐     │
@@ -50,31 +50,31 @@ Il Solitario Classico Accessibile utilizza una **Clean Architecture** (architett
 │  │  - Profile  │  │             │  │  - StatsAggregator│   │
 │  │  - Session  │  │             │  │                   │   │
 │  └─────────────┘  └─────────────┘  └───────────────────┘   │
-│  ┌─────────────────────────────────────────────────────┐   │
+│  ┌─────────────────────────────────────────────────────────┐   │
 │  │                 Protocol Interfaces                  │   │
 │  │  - MoveValidatorProtocol                            │   │
 │  │  - GameServiceProtocol                              │   │
 │  │  - FormatterProtocol                                │   │
-│  └─────────────────────────────────────────────────────┘   │
+│  └─────────────────────────────────────────────────────────┘   │
 ├─────────────────────────────────────────────────────────────┤
 │                   Infrastructure Layer                       │
-│  ┌─────────────────────────────────────────────────────┐   │
+│  ┌─────────────────────────────────────────────────────────┐   │
 │  │                   DIContainer                        │   │
 │  │  - Dependency Injection                             │   │
 │  │  - Component lifecycle                              │   │
 │  │  - Configuration                                    │   │
-│  └─────────────────────────────────────────────────────┘   │
-│  ┌─────────────────────────────────────────────────────┐   │
+│  └─────────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────────┐   │
 │  │     Storage (v3.0.0)                                │   │
 │  │  - ProfileStorage (atomic writes)                   │   │
 │  │  - SessionStorage (crash detection)                 │   │
-│  └─────────────────────────────────────────────────────┘   │
-│  ┌─────────────────────────────────────────────────────┐   │
+│  └─────────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────────┐   │
 │  │     UI Layer (v3.1.0)                               │   │
 │  │  - MenuPanel (extended to 6 buttons)                │   │
 │  │  - ProfileMenuPanel (6 operations modal)            │   │
 │  │  - NVDA accessibility integration                   │   │
-│  └─────────────────────────────────────────────────────┘   │
+│  └─────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -225,7 +225,7 @@ src/
     ├── __init__.py
     ├── formatters/
     │   ├── game_formatter.py
-    │   └── stats_formatter.py (v3.1.0) # 9 metodi statistiche
+    │   └── stats_formatter.py (v3.1.0) # Statistiche formattate
     └── dialogs/         (v3.1.0)
         ├── victory_dialog.py
         ├── abandon_dialog.py
@@ -335,26 +335,55 @@ class GameFormatter:
 
 Formattazione statistiche profilo accessibile per NVDA.
 
-**9 Metodi di Formattazione:**
+**Metodi Principali di Formattazione:**
 
 ```python
 class StatsFormatter:
-    def format_global_stats(stats: GlobalStats) -> str: ...
-    def format_timer_stats(stats: TimerStats) -> str: ...
-    def format_difficulty_stats(stats: DifficultyStats) -> str: ...
-    def format_scoring_stats(stats: ScoringStats) -> str: ...
+    # Summary methods (for dialogs)
+    def format_global_stats_summary(stats: GlobalStats) -> str: ...
     def format_session_outcome(outcome: SessionOutcome) -> str: ...
     def format_profile_summary(profile: UserProfile) -> str: ...
     def format_new_records(outcome: SessionOutcome, profile: UserProfile) -> str: ...
+    
+    # Detailed page methods (for DetailedStatsDialog)
+    def format_global_stats_detailed(stats: GlobalStats, profile_name: str) -> str: ...
+    def format_timer_stats_detailed(stats: TimerStats) -> str: ...
+    def format_scoring_difficulty_stats(
+        scoring_stats: ScoringStats, 
+        difficulty_stats: DifficultyStats
+    ) -> str: ...
+    
+    # Utility methods
     def format_leaderboard(profiles: List[UserProfile], category: str) -> str: ...
-    def format_detailed_stats_page(profile: UserProfile, page: int) -> str: ...
+```
+
+**Helper Methods (Formatting):**
+```python
+# Time formatting
+@staticmethod
+def format_duration(seconds: float) -> str: ...  # "3 minuti e 45 secondi"
+
+@staticmethod
+def format_time_mm_ss(seconds: float) -> str: ...  # "5:25"
+
+# Number formatting
+@staticmethod
+def format_number(value: int) -> str: ...  # "1.850" (Italian thousands)
+
+@staticmethod
+def format_percentage(value: float, decimals: int = 1) -> str: ...  # "54,8%"
+
+# EndReason labels
+@staticmethod
+def format_end_reason(reason: EndReason) -> str: ...  # "Vittoria", "Tempo scaduto"
 ```
 
 **Caratteristiche:**
 - Localizzazione italiana completa
 - Output ottimizzato per NVDA (frasi brevi, punteggiatura chiara)
-- Percentuali formattate (es. `"54.8%"`)
-- Tempi formattati (es. `"3min 45sec"`)
+- Percentuali formattate con virgola decimale (es. `"54,8%"`)
+- Tempi formattati estesi (es. `"3 minuti e 45 secondi"`)
+- Numeri con separatore migliaia punto (es. `"1.850"`)
 - 15 unit tests, 93% coverage
 
 ### Infrastructure Layer
@@ -1007,7 +1036,7 @@ profile_service = container.get_profile_service()  # ProfileService instance (us
 Il layer di presentazione statistiche introduce:
 - 5 dialog nativi wxPython per visualizzazione stats
 - ProfileMenuPanel (gestione profili modal con 6 operazioni)
-- StatsFormatter (9 metodi formattazione)
+- StatsFormatter (metodi summary/detailed per diverse pagine)
 - Integrazione menu principale (U, L, Gestione Profili)
 - Accessibilità NVDA completa
 
@@ -1017,16 +1046,7 @@ Il layer di presentazione statistiche introduce:
 
 **Responsabilità**: Formattazione statistiche localizzate italiano NVDA-optimized.
 
-**9 Metodi Pubblici**:
-1. `format_global_stats(stats)` → Riepilogo globale
-2. `format_timer_stats(stats)` → Statistiche timer
-3. `format_difficulty_stats(stats)` → Breakdown per livello difficoltà
-4. `format_scoring_stats(stats)` → Statistiche scoring + deck usage
-5. `format_session_outcome(outcome)` → Singola sessione (tempo, mosse, score)
-6. `format_profile_summary(profile)` → Sommario profilo (vittorie, winrate)
-7. `format_new_records(outcome, profile)` → Rilevamento nuovi record
-8. `format_leaderboard(profiles, category)` → Classifica top 10
-9. `format_detailed_stats_page(profile, page)` → Pagina multipla stats (1-3)
+**Metodi Principali** (vedi sezione Presentation Layer sopra per lista completa)
 
 **Test Coverage**: 15 unit tests, 93% coverage
 
@@ -1234,7 +1254,7 @@ MenuPanel (v3.1.0 extended to 6 buttons)
 3. profile = profile_service.active_profile
    outcome = profile.recent_sessions[-1]
    ↓
-4. formatter = StatsFormatter(language="it")
+4. formatter = StatsFormatter()
    text = formatter.format_session_outcome(outcome)
    summary = formatter.format_profile_summary(profile)
    ↓
@@ -1278,5 +1298,6 @@ MenuPanel (v3.1.0 extended to 6 buttons)
 
 ---
 
-*Document Version: 3.1*  
-*Last Updated: 2026-02-17*
+*Document Version: 3.1.1*  
+*Last Updated: 2026-02-17*  
+*Revision: StatsFormatter method list aligned with implementation*
