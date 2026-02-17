@@ -210,3 +210,125 @@ class StatsFormatter:
         footer += "ESC - Torna a Gestione Profili"
         
         return header + performance + streak + time_stats + records + footer
+    
+    # ========================================
+    # TIMER STATS FORMATTING
+    # ========================================
+    
+    def format_timer_stats_detailed(self, stats: TimerStats) -> str:
+        """Format timer stats page (Page 2 of detailed stats).
+        
+        Args:
+            stats: TimerStats instance
+            
+        Returns:
+            Multi-line formatted text for timer performance (Page 2/3)
+        """
+        header = f"{'=' * 56}\n"
+        header += f"    STATISTICHE TIMER\n"
+        header += f"{'=' * 56}\n\n"
+        
+        # Timer usage
+        timer_section = "UTILIZZO TIMER\n"
+        timer_section += f"Partite con timer attivo: {stats.games_with_timer}\n"
+        timer_section += f"Partite senza timer: {stats.games_without_timer}\n\n"
+        
+        if stats.games_with_timer > 0:
+            # Performance breakdown
+            perf_section = "PERFORMANCE TEMPORALE\n"
+            perf_section += f"Entro il limite: {stats.games_within_time}\n"
+            perf_section += f"Overtime: {stats.games_overtime}\n"
+            perf_section += f"Timeout (sconfitte): {stats.games_timeout}\n"
+            
+            # Calculate success rate
+            if stats.games_with_timer > 0:
+                within_rate = stats.games_within_time / stats.games_with_timer
+                perf_section += f"Tasso completamento in tempo: {self.format_percentage(within_rate)}\n\n"
+            
+            # Overtime analytics
+            overtime_section = "ANALISI OVERTIME\n"
+            if stats.games_overtime > 0:
+                overtime_section += f"Overtime medio: {self.format_duration(stats.avg_overtime_duration)}\n"
+                overtime_section += f"Overtime massimo: {self.format_duration(stats.max_overtime_duration)}\n\n"
+            else:
+                overtime_section += "Nessuna partita in overtime\n\n"
+            
+            # Mode breakdown
+            mode_section = "PER MODALITÀ\n"
+            mode_section += f"STRICT: {stats.strict_mode_games} partite\n"
+            mode_section += f"PERMISSIVE: {stats.permissive_mode_games} partite\n"
+            
+            content = timer_section + perf_section + overtime_section + mode_section
+        else:
+            content = timer_section + "\nNessuna partita con timer giocata.\n"
+        
+        footer = f"\n{'─' * 56}\n"
+        footer += "Pagina 2/3\n"
+        footer += "PAGE UP - Pagina precedente | PAGE DOWN - Pagina successiva\n"
+        footer += "ESC - Torna a Gestione Profili"
+        
+        return header + content + footer
+    
+    # ========================================
+    # SCORING + DIFFICULTY STATS FORMATTING
+    # ========================================
+    
+    def format_scoring_difficulty_stats(
+        self,
+        scoring_stats: ScoringStats,
+        difficulty_stats: DifficultyStats
+    ) -> str:
+        """Format scoring and difficulty stats (Page 3 of detailed stats).
+        
+        Args:
+            scoring_stats: ScoringStats instance
+            difficulty_stats: DifficultyStats instance
+            
+        Returns:
+            Multi-line formatted text for scoring/difficulty (Page 3/3)
+        """
+        header = f"{'=' * 56}\n"
+        header += f"    PUNTEGGIO & DIFFICOLTÀ\n"
+        header += f"{'=' * 56}\n\n"
+        
+        # Scoring analytics
+        scoring_section = "PUNTEGGIO\n"
+        if scoring_stats.games_with_scoring > 0:
+            scoring_section += f"Partite con punteggio: {scoring_stats.games_with_scoring}\n"
+            scoring_section += f"Punteggio medio: {self.format_number(int(scoring_stats.average_score))} punti\n"
+            scoring_section += f"Punteggio massimo: {self.format_number(scoring_stats.highest_score)} punti\n\n"
+        else:
+            scoring_section += "Nessuna partita con punteggio abilitato\n\n"
+        
+        # Difficulty breakdown
+        diff_section = "PERFORMANCE PER DIFFICOLTÀ\n"
+        diff_section += f"{'─' * 56}\n"
+        
+        # Difficulty levels: 1=molto facile, 2=facile, 3=medio, 4=difficile, 5=molto difficile
+        diff_labels = {
+            1: "Molto Facile",
+            2: "Facile",
+            3: "Medio",
+            4: "Difficile",
+            5: "Molto Difficile"
+        }
+        
+        for level in range(1, 6):
+            games_at_level = difficulty_stats.games_per_level.get(level, 0)
+            if games_at_level > 0:
+                victories = difficulty_stats.victories_per_level.get(level, 0)
+                winrate = victories / games_at_level if games_at_level > 0 else 0
+                avg_score = difficulty_stats.avg_score_per_level.get(level, 0)
+                
+                diff_section += f"\n{diff_labels[level]} (Livello {level}):\n"
+                diff_section += f"  Partite: {games_at_level}\n"
+                diff_section += f"  Vittorie: {victories} ({self.format_percentage(winrate)})\n"
+                if avg_score > 0:
+                    diff_section += f"  Punteggio medio: {self.format_number(int(avg_score))} punti\n"
+        
+        footer = f"\n{'─' * 56}\n"
+        footer += "Pagina 3/3\n"
+        footer += "PAGE UP - Pagina precedente\n"
+        footer += "ESC - Torna a Gestione Profili"
+        
+        return header + scoring_section + diff_section + footer
