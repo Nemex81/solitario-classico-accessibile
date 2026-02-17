@@ -694,20 +694,19 @@ class ProfileMenuPanel(wx.Dialog):
             self._announce("Nessun profilo attivo.", interrupt=True)
             return
         
-        # Build stats data
         profile = self.profile_service.active_profile
-        stats_data = {
-            'profile_name': profile.profile_name,
-            'global_stats': self.profile_service.global_stats,
-            'timer_stats': self.profile_service.timer_stats,
-            'difficulty_stats': self.profile_service.difficulty_stats,
-            'scoring_stats': self.profile_service.scoring_stats
-        }
         
         log.info_query_requested("detailed_stats", f"profile_{profile.profile_name}")
         
-        # Open DetailedStatsDialog (Phase 5 - already implemented!)
-        dialog = DetailedStatsDialog(self, stats_data)
+        # Open DetailedStatsDialog with separate parameters (NOT dict)
+        dialog = DetailedStatsDialog(
+            self,
+            profile_name=profile.profile_name,
+            global_stats=self.profile_service.global_stats,
+            timer_stats=self.profile_service.timer_stats,
+            difficulty_stats=self.profile_service.difficulty_stats,
+            scoring_stats=self.profile_service.scoring_stats
+        )
         dialog.ShowModal()
         dialog.Destroy()
         
