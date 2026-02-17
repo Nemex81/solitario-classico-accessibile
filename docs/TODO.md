@@ -241,10 +241,10 @@ Sostituzione sistema punteggi limitato con:
   - Test: `tests/unit/domain/services/test_stats_aggregator.py` (12 tests passing, 91% coverage)
   - Commit: `feat(domain): Implement stats aggregation logic [Phase 3/9]` (c71692f)
 
-- [ ] **Phase 4**: ProfileService (CRUD operations)
+- [x] **Phase 4**: ProfileService (CRUD operations) ✅
   - File: `src/domain/services/profile_service.py` (NEW)
-  - Test: `tests/unit/domain/test_profile_service.py` (NEW)
-  - Commit: `feat(domain): Create ProfileService with CRUD [Phase 4/9]`
+  - Test: `tests/unit/domain/services/test_profile_service.py` (27 tests passing, 81% coverage)
+  - Commit: `feat(domain): Create ProfileService with CRUD [Phase 4/9]` (6437dd6)
 
 - [ ] **Phase 5**: DI container integration
   - File: `src/infrastructure/di_container.py` (MODIFIED)

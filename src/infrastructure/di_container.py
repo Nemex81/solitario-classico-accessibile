@@ -178,6 +178,42 @@ class DIContainer:
             self._instances[key] = GameFormatter()
         return cast(GameFormatter, self._instances[key])
     
+    def get_profile_storage(self) -> Any:
+        """Get or create ProfileStorage singleton.
+        
+        ProfileStorage manages profile persistence and should be shared
+        across the application.
+        
+        Returns:
+            ProfileStorage singleton (late import to avoid circular deps)
+        """
+        if "profile_storage" not in self._instances:
+            from src.infrastructure.storage.profile_storage import ProfileStorage
+            self._instances["profile_storage"] = ProfileStorage()
+        return self._instances["profile_storage"]
+    
+    def get_profile_service(self) -> Any:
+        """Get or create ProfileService singleton.
+        
+        ProfileService manages active profile and session tracking.
+        Depends on ProfileStorage and StatsAggregator.
+        
+        Returns:
+            ProfileService singleton (late import to avoid circular deps)
+        """
+        if "profile_service" not in self._instances:
+            from src.domain.services.profile_service import ProfileService
+            from src.domain.services.stats_aggregator import StatsAggregator
+            
+            storage = self.get_profile_storage()
+            aggregator = StatsAggregator()
+            
+            self._instances["profile_service"] = ProfileService(
+                storage=storage,
+                aggregator=aggregator
+            )
+        return self._instances["profile_service"]
+    
     # ========================================================================
     # UTILITY METHODS
     # ========================================================================
