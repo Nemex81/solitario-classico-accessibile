@@ -60,7 +60,7 @@ class DetailedStatsDialog(wx.Dialog):
         # Build all 3 pages
         self.pages: List[str] = [
             self.formatter.format_global_stats_detailed(global_stats, profile_name),
-            self.formatter.format_timer_stats_detailed(timer_stats),
+            self.formatter.format_timer_stats_detailed(timer_stats, global_stats),  # Pass global_stats (v3.1.1)
             self.formatter.format_scoring_difficulty_stats(scoring_stats, difficulty_stats)
         ]
         

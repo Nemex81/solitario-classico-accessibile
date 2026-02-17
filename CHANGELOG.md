@@ -13,6 +13,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.1.1] - 2026-02-18
+
+### Fixed
+- **DetailedStatsDialog AttributeError**: Fixed crash when opening stats on profile with 0 games
+  - Root cause: StatsFormatter used non-existent TimerStats attributes
+  - Solution: Extended TimerStats domain model with proper timer mode tracking
+- **StatsFormatter**: Corrected attribute names to match TimerStats model
+  - `games_within_time` → `victories_within_time`
+  - `games_overtime` → `victories_overtime`
+  - `games_timeout` → `defeats_timeout`
+  - `avg_overtime_duration` → `average_overtime`
+  - `max_overtime_duration` → `max_overtime`
+- **Cross-stat calculation**: Added defensive programming for `games_without_timer`
+  - Uses `max(0, total_games - games_with_timer)` to handle data corruption
+
+### Added
+- **TimerStats (Domain Model)**: Timer mode breakdown tracking
+  - `strict_mode_games`: Count of STRICT mode games
+  - `permissive_mode_games`: Count of PERMISSIVE mode games
+  - Automatically tracked in `update_from_session()` via `SessionOutcome.timer_mode`
+- **StatsFormatter**: Cross-stat calculation support
+  - `format_timer_stats_detailed()` now accepts `global_stats` parameter
+  - Enables accurate `games_without_timer` calculation
+
+### Changed
+- **StatsFormatter.format_timer_stats_detailed()** signature:
+  - **BEFORE**: `format_timer_stats_detailed(self, stats: TimerStats) -> str`
+  - **AFTER**: `format_timer_stats_detailed(self, stats: TimerStats, global_stats: GlobalStats) -> str`
+  - **Impact**: DetailedStatsDialog updated to pass both parameters
+- **TimerStats.from_dict()**: Added backward compatibility
+  - Provides default values (`strict_mode_games=0`, `permissive_mode_games=0`) for v3.1.0 profiles
+  - No migration script required - profiles auto-upgrade on load
+
+### Technical
+- **Architecture**: Business logic moved from Presentation to Domain Layer
+- **Backward Compatibility**: 100% compatible with v3.1.0 profile files
+- **Performance**: Negligible impact (+8 bytes per profile, O(1) operations)
+- **Testing**: Manual verification required (no automated tests for stats presentation)
+
+---
+
 ## [3.1.0] - 2026-02-17
 
 ### ✨ Added - Feature 3: Stats Presentation v3.1.0 UI (100% COMPLETA!)
