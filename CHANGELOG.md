@@ -9,7 +9,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-- Planned: Leaderboard online, achievement system, daily challenges
+- Planned: Stats Presentation UI (v3.1.0), Leaderboard online, achievement system, daily challenges
+
+---
+
+## [3.0.0] - 2026-02-17
+
+### Added
+- **Profile System Backend**: Complete user profile management with persistent statistics.
+- **UserProfile model**: JSON-serializable profiles with metadata (display name, creation date, last played).
+- **SessionOutcome model**: Comprehensive game session records with EndReason classification.
+- **Statistics aggregation**: 4 categories (Global, Timer, Difficulty, Scoring) with incremental updates.
+- **ProfileService**: CRUD operations (create, get, list, update, delete) with guest profile protection.
+- **Session recording**: Auto-aggregates statistics from session outcomes, auto-saves profiles.
+- **Crash recovery**: SessionTracker detects orphaned sessions, records ABANDON_APP_CLOSE outcomes.
+- **Atomic writes**: Temp-file-rename pattern prevents JSON corruption on system crashes.
+- **Guest profile**: Special `profile_000` profile with deletion protection (raises ValueError).
+- **DI integration**: ProfileService and SessionTracker registered in DependencyContainer.
+- **GameEngine stubs**: Placeholder hooks for future UI integration (v3.1.0).
+
+### Changed
+- **BREAKING**: Profile system uses `EndReason` enum exclusively (no boolean `is_victory`).
+- Statistics now track victory/overtime/timeout/abandon separately via EndReason.
+
+### Technical
+- 137 unit/integration tests (101 unit, 36 integration).
+- Test coverage: 80%+ on new files.
+- CodeQL: 0 vulnerabilities.
+- Zero regressions on existing tests.
+- Implementation time: ~4 hours (GitHub Copilot Agent).
+
+### Storage Paths
+- Profiles: `~/.solitario/profiles/{profile_id}.json`
+- Active sessions: `~/.solitario/.sessions/active_session.json`
+
+### Data Integrity
+- JSON corruption handled gracefully (fallback to defaults).
+- Session validation before statistics aggregation.
+- Recent session history limited to 50 (FIFO).
+- Atomic write implementation: `write(.tmp) → rename()`.
+
+### Infrastructure Changes
+- New domain models: `UserProfile`, `SessionOutcome`, `GlobalStats`, `TimerStats`, `DifficultyStats`, `ScoringStats`.
+- New services: `ProfileService`, `SessionTracker`, `StatsAggregator`.
+- New storage: `ProfileStorage`, `SessionStorage`.
+- Modified: `di_container.py` (profile factories), `game_engine.py` (session stub).
+
+### Out of Scope (v3.1.0)
+- Victory/Abandon dialog with statistics display.
+- Detailed stats dialog (3 pages).
+- Leaderboard UI.
+- Menu integration ("U", "L" shortcuts).
+- NVDA accessibility polish.
+
+### Notes
+- **Semantic milestone**: Profile backend complete, UI decoupled for v3.1.0.
+- Backend provides foundation for persistent player progression.
+- Session tracking enables analytics and crash recovery.
 
 ---
 
@@ -439,7 +495,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **For detailed technical changes, see commit history or [docs/DETAILED_CHANGELOG.md](docs/DETAILED_CHANGELOG.md)**
 
-[Unreleased]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v2.7.0...HEAD
+[Unreleased]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v3.0.0...HEAD
+[3.0.0]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v2.7.0...v3.0.0
 [2.7.0]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v2.6.1...v2.7.0
 [2.6.1]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v2.6.0...v2.6.1
 [2.6.0]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v2.5.1...v2.6.0
