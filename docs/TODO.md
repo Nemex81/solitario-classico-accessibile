@@ -1,10 +1,11 @@
-# 📋 TODO – Timer + Profile + Stats Features (v2.7.0 → v3.0.0)
+# 📋 TODO – Timer + Profile + Stats Features (v2.7.0 → v3.1.0)
 
-**Branch**: `refactoring-engine`  
+**Branch**: `refactoring-engine` (base) → `copilot/implement-profile-system-v3-1-0` (feature)  
 **Tipo**: FEATURE STACK  
 **Priorità**: HIGH  
-**Stato**: Feature 1 COMPLETATA ✅  
-**Stima Totale**: 5-6 ore agent time
+**Stato**: Feature 1 ✅ + Feature 2 ✅ + Feature 3 🔄 90% (Phase 9 mancante)  
+**Stima Totale**: 5-6 ore agent time  
+**Tempo Effettivo**: ~2.5 ore (Feature 1+2+3 core)
 
 ---
 
@@ -18,17 +19,19 @@
 - **Stima**: 45-70 min (8 commit atomici)
 - **Completamento**: ~17 min (10 commit)
 
-### Feature 2: Profile System v3.0.0 Backend
+### Feature 2: Profile System v3.0.0 Backend ✅ COMPLETATA
 - **Piano Implementazione**: [`docs/3 - coding plans/IMPLEMENTATION_PROFILE_SYSTEM.md`](3%20-%20coding%20plans/IMPLEMENTATION_PROFILE_SYSTEM.md)
 - **Design Doc**: [`docs/2 - projects/DESIGN_PROFILE_STATISTICS_SYSTEM.md`](2%20-%20projects/DESIGN_PROFILE_STATISTICS_SYSTEM.md)
 - **Stima**: 2-2.5 ore (9 commit atomici)
+- **Completamento**: 100% (tutte le 9 fasi)
 - **Dipende da**: Feature 1 (EndReason enum) ✅
 
-### Feature 3: Stats Presentation v3.0.0 UI
+### Feature 3: Stats Presentation v3.1.0 UI 🔄 IN CORSO (90%)
 - **Piano Implementazione**: [`docs/3 - coding plans/IMPLEMENTATION_STATS_PRESENTATION.md`](3%20-%20coding%20plans/IMPLEMENTATION_STATS_PRESENTATION.md)
 - **Design Doc**: [`docs/2 - projects/DESIGN_STATISTICS_PRESENTATION.md`](2%20-%20projects/DESIGN_STATISTICS_PRESENTATION.md)
 - **Stima**: 2-3 ore (12-15 commit atomici)
-- **Dipende da**: Feature 2 (ProfileService)
+- **Completamento**: ~70 min (8/9 fasi, Phase 9 menu integration mancante)
+- **Dipende da**: Feature 2 (ProfileService) ✅
 
 **Questo TODO è solo un sommario operativo.** I piani completi contengono:
 - Architettura dettagliata
@@ -68,33 +71,6 @@
 - Saltare checkpoint (aggiornamento TODO/piano)
 - Implementare feature 2/3 prima di completare prerequisiti
 
-### Esempio Workflow Reale
-
-```
-[Feature 1 - Phase 1]
-→ Leggi IMPLEMENTATION_TIMER_SYSTEM.md Phase 1
-→ Implementa EndReason enum + test
-→ Commit: "feat(domain): Add EndReason enum [Phase 1/8]"
-→ Aggiorna IMPLEMENTATION_TIMER_SYSTEM.md (spunta Phase 1)
-→ Aggiorna TODO.md (spunta Feature 1 - Phase 1)
-
-[Feature 1 - Phase 2]
-→ Leggi IMPLEMENTATION_TIMER_SYSTEM.md Phase 2
-→ Implementa timer state attributes
-→ Commit: "feat(game-service): Add timer state [Phase 2/8]"
-→ Aggiorna plan + TODO
-
-... continua fino a Phase 8 completata
-
-[Feature 2 - Phase 1]
-→ Leggi IMPLEMENTATION_PROFILE_SYSTEM.md Phase 1
-→ Implementa data models
-→ Commit: "feat(domain): Create profile data models [Phase 1/9]"
-→ Aggiorna plan + TODO
-
-... e così via
-```
-
 ---
 
 ## 🎯 Obiettivo Implementazione
@@ -105,25 +81,25 @@ Stack completo di 3 feature interdipendenti:
 
 1. **Timer System v2.7.0** ✅: Gestione timer come evento di gioco reale con scadenza, overtime tracking, e comportamento STRICT/PERMISSIVE. Introduce `EndReason` enum per classificare motivi di termine partita.
 
-2. **Profile System v3.0.0 Backend**: Gestione profili utente con persistenza JSON atomica, statistiche aggregate (globali, timer, difficoltà, scoring), session tracking, e recovery da crash.
+2. **Profile System v3.0.0 Backend** ✅: Gestione profili utente con persistenza JSON atomica, statistiche aggregate (globali, timer, difficoltà, scoring), session tracking, e recovery da crash.
 
-3. **Stats Presentation v3.0.0 UI**: Layer di presentazione con dialog vittoria/abbandono integrate, statistiche dettagliate (3 pagine), leaderboard globale, accessibilità NVDA completa.
+3. **Stats Presentation v3.1.0 UI** 🔄: Layer di presentazione con dialog vittoria/abbandono integrate, statistiche dettagliate (3 pagine), leaderboard globale, accessibilità NVDA completa. **Core implementato (Phase 1-8)**, menu integration (Phase 9) mancante.
 
 ### Perché Viene Fatto
 
 Sostituzione sistema punteggi limitato con:
-- Profili persistenti per statistiche long-term
-- Timer mode richiesto da utenti (competizione tempo)
-- UI statistiche accessibile (NVDA-friendly)
+- Profili persistenti per statistiche long-term ✅
+- Timer mode richiesto da utenti (competizione tempo) ✅
+- UI statistiche accessibile (NVDA-friendly) ✅
 - Foundation per future feature (multiplayer, achievements)
 
 ### Impatto Sistema
 
 - **Domain**: Nuovi modelli (`UserProfile`, `SessionOutcome`, `EndReason`) ✅
-- **Application**: `ProfileService`, `GameEngine` hooks, dialog integration
-- **Infrastructure**: JSON storage con atomic writes, session recovery
-- **Presentation**: 5 nuovi dialog, `StatsFormatter`, menu options
-- **Accessibilità**: TTS announcements, keyboard navigation, NVDA optimized
+- **Application**: `ProfileService` ✅, `GameEngine` hooks ✅, dialog integration ✅
+- **Infrastructure**: JSON storage con atomic writes ✅, session recovery ✅
+- **Presentation**: 5 nuovi dialog ✅, `StatsFormatter` ✅, menu options ⏸️ (Phase 9)
+- **Accessibilità**: TTS announcements ✅, keyboard navigation ✅, NVDA optimized ✅
 
 ---
 
@@ -136,17 +112,15 @@ Sostituzione sistema punteggi limitato con:
 └─────────────────────────────────────┘
            ↓ (prerequisito soddisfatto)
 ┌─────────────────────────────────────┐
-│ 2. Profile System v3.0.0 Backend    │ ← PROSSIMA
+│ 2. Profile System v3.0.0 Backend ✅│ ← COMPLETATO
 │    2-2.5 ore                        │
 └─────────────────────────────────────┘
            ↓ (prerequisito)
 ┌─────────────────────────────────────┐
-│ 3. Stats Presentation v3.0.0 UI     │
-│    2-3 ore                          │
+│ 3. Stats Presentation v3.1.0 UI 🔄 │ ← 90% (Phase 9 mancante)
+│    ~70 min core + 45 min menu      │
 └─────────────────────────────────────┘
 ```
-
-**Non saltare feature**. Feature 2 richiede `EndReason` da Feature 1 ✅. Feature 3 richiede `ProfileService` da Feature 2.
 
 ---
 
@@ -156,189 +130,130 @@ Sostituzione sistema punteggi limitato con:
 
 ### Checklist Fasi (Tutte completate ✅)
 
-- [x] **Phase 1**: EndReason enum creato e testato
-  - File: `src/domain/models/game_end.py` (NEW)
-  - Test: `tests/unit/test_game_end.py` (NEW)
-  - Commit: `feat(domain): Add EndReason enum [Phase 1/8]`
-
-- [x] **Phase 2**: Timer state attributes in GameService
-  - File: `src/domain/services/game_service.py` (MODIFIED)
-  - Test: `tests/unit/test_timer_state.py` (NEW)
-  - Commit: `feat(game-service): Add timer state tracking [Phase 2/8]`
-
-- [x] **Phase 3**: Timer expiry detection logic
-  - File: `src/domain/services/game_service.py` (MODIFIED)
-  - Test: `tests/unit/test_timer_logic.py` (NEW)
-  - Commit: `feat(game-service): Implement timer expiry detection [Phase 3/8]`
-
-- [x] **Phase 4**: STRICT mode auto-stop
-  - File: `src/application/game_engine.py` (MODIFIED)
-  - Test: `tests/integration/test_timer_integration.py` (NEW)
-  - Commit: `feat(game-engine): Implement STRICT mode timeout [Phase 4/8]`
-
-- [x] **Phase 5**: PERMISSIVE mode overtime tracking + backward compatibility
-  - File: `src/application/game_engine.py` (MODIFIED)
-  - Test: `tests/integration/test_timer_integration.py` (EXTEND)
-  - Commit: `feat(game-engine): Implement PERMISSIVE mode overtime [Phase 5/8]`
-  - **Nota**: Include anche Phase 7 (backward compatibility)
-
-- [x] **Phase 6**: TTS announcements
-  - File: `src/presentation/formatters/game_formatter.py` (MODIFIED)
-  - Test: `tests/unit/test_game_formatter.py` (EXTEND)
-  - Commit: `feat(presentation): Add timer expiry TTS [Phase 6/8]`
-
-- [x] **Phase 7**: Backward compatibility wrapper
-  - **Integrato in Phase 5** (decisione ottimale)
-
-- [x] **Phase 8**: Session outcome population (stub)
-  - File: `src/application/game_engine.py` (MODIFIED)
-  - Test: `tests/integration/test_timer_integration.py` (EXTEND)
-  - Commit: `feat(game-engine): Prepare session outcome for ProfileService [Phase 8/8]`
-
-**Post-implementation fixes**:
-
-- [x] **Fix**: Relative paths in integration tests
-  - Commit: `fix(tests): Use relative paths in timer integration tests`
-
-- [x] **Fix**: Type hints per Union[EndReason, bool]
-  - Commit: `fix(typing): Add type hints for end_reason parameters`
-
-**Validation**: Feature 1 100% completa ✅
-
+- [x] **Phase 1-8**: Tutte completate (vedere piano dettagliato)
+- [x] **Post-fixes**: Relative paths + type hints
 - [x] **✅ Feature 1 COMPLETATA**
-
-### Risultati
-
-| Metrica | Atteso | Ottenuto | Delta |
-|---------|--------|----------|-------|
-| Commit atomici | 8 | 10 | +2 (fix post-review) |
-| Test | 29 | 25 | -4 (consolidati) |
-| Tempo | 45-70 min | ~17 min | 🚀 **3-4x più veloce** |
-| Pass rate | ≥88% | 100% | ✅ Superiore |
 
 ---
 
-## ✅ FEATURE 2: Profile System v3.0.0 Backend (2-2.5h)
+## ✅ FEATURE 2: Profile System v3.0.0 Backend (completata)
 
 **Piano Dettagliato**: [`IMPLEMENTATION_PROFILE_SYSTEM.md`](3%20-%20coding%20plans/IMPLEMENTATION_PROFILE_SYSTEM.md)
 
-**✅ PREREQUISITO SODDISFATTO**: Feature 1 completata (EndReason enum disponibile)
+### Checklist Fasi (Tutte completate ✅)
 
-### Checklist Fasi (Aggiorna dopo ogni commit)
-
-- [x] **Phase 1**: Domain models (UserProfile, SessionOutcome, Stats) ✅
-  - Files: `src/domain/models/profile.py`, `src/domain/models/statistics.py`
-  - Test: `tests/unit/domain/test_profile_models.py`, `test_statistics_models.py` (44 tests passing)
-  - Commit: `feat(domain): Create profile data models [Phase 1/9]` (7543c63)
-
-- [x] **Phase 2**: ProfileStorage class (atomic writes) ✅
-  - File: `src/infrastructure/storage/profile_storage.py` (NEW)
-  - Test: `tests/unit/infrastructure/test_profile_storage.py` (18 tests passing)
-  - Commit: `feat(infrastructure): Create ProfileStorage with atomic writes [Phase 2/9]` (aede3fd)
-
-- [x] **Phase 3**: Stats aggregation logic ✅
-  - File: `src/domain/services/stats_aggregator.py` (NEW)
-  - Test: `tests/unit/domain/services/test_stats_aggregator.py` (12 tests passing, 91% coverage)
-  - Commit: `feat(domain): Implement stats aggregation logic [Phase 3/9]` (c71692f)
-
-- [x] **Phase 4**: ProfileService (CRUD operations) ✅
-  - File: `src/domain/services/profile_service.py` (NEW)
-  - Test: `tests/unit/domain/services/test_profile_service.py` (27 tests passing, 81% coverage)
-  - Commit: `feat(domain): Create ProfileService with CRUD [Phase 4/9]` (6437dd6)
-
-- [x] **Phase 5**: DI container integration ✅
-  - File: `src/infrastructure/di_container.py` (MODIFIED)
-  - Test: `tests/integration/test_di_profile.py` (4 tests passing)
-  - Commit: `feat(infrastructure): Integrate ProfileService in DI container [Phase 5/9]` (2979f95)
-
-- [x] **Phase 6**: SessionStorage (active session tracking) ✅
-  - File: `src/infrastructure/storage/session_storage.py` (NEW)
-  - Test: `tests/unit/infrastructure/test_session_storage.py` (10 tests passing)
-  - Commit: Included in Phase 5 commit (2979f95)
-
-- [x] **Phase 7**: SessionTracker (dirty shutdown recovery) ✅
-  - File: `src/domain/services/session_tracker.py` (NEW)
-  - Test: `tests/integration/test_session_recovery.py` (9 tests passing)
-  - Commit: `feat(domain): Implement session recovery tracker [Phase 7/9]` (a93f1dd)
-
-- [x] **Phase 8**: ProfileService session recording ✅
-  - File: `src/domain/services/profile_service.py` (VERIFIED)
-  - Test: `tests/integration/test_profile_session_flow.py` (9 tests passing)
-  - Commit: Included in Phase 7 commit (a93f1dd)
-
-- [x] **Phase 9**: GameEngine integration (stub) ✅
-  - File: `src/application/game_engine.py` (MODIFIED)
-  - Test: `tests/integration/test_game_profile_integration.py` (4 tests passing)
-  - Commit: Included in Phase 7 commit (a93f1dd)
-
-**Validation**: Feature 2 is 100% complete.
-
+- [x] **Phase 1-9**: Tutte completate (vedere piano dettagliato)
 - [x] **✅ Feature 2 COMPLETATA**
 
 ---
 
-## ✅ FEATURE 3: Stats Presentation v3.0.0 UI (2-3h)
+## 🔄 FEATURE 3: Stats Presentation v3.1.0 UI (90% - Phase 9 mancante)
 
 **Piano Dettagliato**: [`IMPLEMENTATION_STATS_PRESENTATION.md`](3%20-%20coding%20plans/IMPLEMENTATION_STATS_PRESENTATION.md)
 
-**⚠️ PREREQUISITI**: Feature 1 ✅ + Feature 2 (EndReason + ProfileService)
+**⚠️ STATO ATTUALE**: Copilot ha completato Phase 1-8 (~70 min), saltando Phase 9 (menu integration).
 
-### Checklist Fasi (Aggiorna dopo ogni commit)
+### ✅ Checklist Fasi COMPLETATE (Phase 1-8)
 
-- [x] **Phase 1.1**: StatsFormatter base utilities ✅
-  - File: `src/presentation/formatters/stats_formatter.py` (NEW)
-  - Test: `tests/unit/test_stats_formatter.py` (13 tests passing)
-  - Commit: `feat(presentation): Create StatsFormatter base [Phase 1.1/9]` (eb90583)
+- [x] **Phase 1**: StatsFormatter base + global stats  
+  - **Commit**: `eb90583` (Phase 1.1), `df5eba8` (Phase 1.2)
+  - **Files**: `src/presentation/formatters/stats_formatter.py` ✅
+  - **Tests**: `tests/unit/test_stats_formatter.py` (15 tests, 93% coverage) ✅
 
-- [x] **Phase 1.2**: StatsFormatter global stats methods ✅
-  - File: `src/presentation/formatters/stats_formatter.py` (MODIFIED)
-  - Test: `tests/unit/test_stats_formatter.py` (15 tests total, 100% passing)
-  - Commit: `feat(presentation): Add global stats formatting [Phase 1.2/9]` (df5eba8)
+- [x] **Phase 2-4**: Victory + Abandon + GameInfo dialogs  
+  - **Commit**: `3cd9e30` (condensed: Phases 2-4 insieme)
+  - **Files**:
+    - `src/presentation/dialogs/victory_dialog.py` ✅
+    - `src/presentation/dialogs/abandon_dialog.py` ✅
+    - `src/presentation/dialogs/game_info_dialog.py` ✅
+  - **Tests**: Manual NVDA checklist
 
-- [x] **Phase 2**: Victory dialog ✅
-  - File: `src/presentation/dialogs/victory_dialog.py` (NEW)
-  - Test: Manual checklist
-  - Commit: `feat(presentation): Create victory, abandon, and game info dialogs [Phases 2-4/9]` (3cd9e30)
+- [x] **Phase 5-6**: Detailed Stats (3 pages) + Leaderboard  
+  - **Commit**: `a2e13c2` (condensed: Phases 5-6 insieme)
+  - **Files**:
+    - `src/presentation/dialogs/detailed_stats_dialog.py` ✅
+    - `src/presentation/dialogs/leaderboard_dialog.py` ✅
+  - **Tests**: Manual checklist + formatter tests
 
-- [x] **Phase 3**: Abandon dialog ✅
-  - File: `src/presentation/dialogs/abandon_dialog.py` (NEW)
-  - Test: Manual checklist
-  - Commit: Included in Phase 2 commit (3cd9e30)
+- [x] **Phase 7**: GameEngine integration + ProfileService ATTIVATO  
+  - **Commit**: `288cbef` (Phase 7)
+  - **File**: `src/application/game_engine.py` (MODIFIED) ✅
+  - **Changes**:
+    - ✅ ProfileService recording ATTIVATO (linee 1257-1311)
+    - ✅ SessionOutcome creato con tutti i dati
+    - ✅ Victory/Abandon dialogs integrati
+    - ✅ Profile summary building (vittorie, winrate, record)
+    - ✅ New record detection
+  - **Tests**: Integration tests
 
-- [x] **Phase 4**: Game info dialog (tasto I) ✅
-  - File: `src/presentation/dialogs/game_info_dialog.py` (NEW)
-  - Test: Manual checklist
-  - Commit: Included in Phase 2 commit (3cd9e30)
+- [x] **Phase 8**: NVDA accessibility polish  
+  - **Commit**: `846aa8f` (integrato in Phase 7 commit)
+  - **Changes**: Focus management, TTS announcements, keyboard navigation
+  - **Tests**: Manual NVDA checklist (30+ items)
 
-- [x] **Phase 5.1-5.3**: Detailed stats dialog (3 pagine) ✅
-  - Files: `detailed_stats_dialog.py` (NEW) + `stats_formatter.py` (MODIFIED)
-  - Test: Manual checklist
-  - Commit: `feat(presentation): Add detailed stats and leaderboard dialogs [Phases 5-6/9]` (a2e13c2)
+### ⏸️ Checklist Fasi MANCANTI (Phase 9 - Menu Integration)
 
-- [x] **Phase 6**: Leaderboard dialog ✅
-  - File: `src/presentation/dialogs/leaderboard_dialog.py` (NEW)
-  - Test: Manual checklist
-  - Commit: Included in Phase 5 commit (a2e13c2)
+**⚠️ NOTA**: Copilot ha saltato Phase 9, considerandola "opzionale". Richiesta implementazione.
 
-- [x] **Phase 7.1-7.2**: GameEngine integration (dialogs + ProfileService activation) ✅
-  - File: `src/application/game_engine.py` (MODIFIED)
-  - Test: Integration ready for manual testing
-  - Commit: `feat(game-engine): Integrate victory/abandon dialogs and activate ProfileService [Phase 7/9]` (288cbef)
+- [ ] **Phase 9.1**: "Ultima Partita" menu option  
+  - **File NUOVO**: `src/presentation/dialogs/last_game_dialog.py`
+  - **File MODIFICA**: `src/application/game_engine.py` (add `last_session_outcome` storage)
+  - **File MODIFICA**: `acs_wx.py` (add "U - Ultima Partita" menu item)
+  - **Target**: Main menu handler in `acs_wx.py`
+  - **Handler**: Bind "U" key → `game_engine.show_last_game_summary()`
+  - **Funzionalità**: Dialog read-only con riassunto ultima partita giocata
+  - **Tempo stimato**: 15-22 min
 
-- [x] **Phase 8**: NVDA accessibility polish ✅
-  - Files: All dialogs (ALREADY IMPLEMENTED in Phases 2-6)
-  - Test: Manual NVDA checklist
-  - Note: Focus management, TTS announcements, keyboard nav already complete
-  - Commit: No separate commit needed (built into all dialogs)
+- [ ] **Phase 9.2**: Leaderboard menu option  
+  - **File MODIFICA**: `acs_wx.py` (main menu handler)
+  - **Target**: Main menu options list
+  - **Handler**: Bind "L" key → apri `LeaderboardDialog` (già creato in Phase 6)
+  - **Funzionalità**: Mostra leaderboard globale (5 classifiche)
+  - **Tempo stimato**: 8-12 min
 
-- [ ] **Phase 9**: Menu integration (Ultima Partita, Leaderboard, Stats)
-  - Files: Menu system (MODIFIED)
-  - Test: Manual
-  - Commit: Final phase - menu options
+- [ ] **Phase 9.3**: Detailed stats in profile menu  
+  - **File MODIFICA**: `acs_wx.py` (profile menu handler)
+  - **Target**: Profile management menu (opzione "5. Statistiche Dettagliate")
+  - **Handler**: Wire existing option → `DetailedStatsDialog` (già creato in Phase 5)
+  - **Funzionalità**: 3-page stats navigation da profile menu
+  - **Tempo stimato**: 10-15 min
 
-**Validation**: Feature 3 è completata al 90% - componenti core funzionali.
+### 📊 Riepilogo Implementazione Feature 3
 
-- [x] **✅ Feature 3 CORE COMPLETATA** (Phases 1-8 complete, Phase 9 optional menu integration)
+| Componente | Stato | Commit | Note |
+|------------|-------|--------|------|
+| **StatsFormatter** | ✅ | eb90583, df5eba8 | 9 metodi, 93% coverage |
+| **VictoryDialog** | ✅ | 3cd9e30 | Stats integrate, TTS, NVDA |
+| **AbandonDialog** | ✅ | 3cd9e30 | EndReason, impact stats |
+| **GameInfoDialog** | ✅ | 3cd9e30 | Tasto I durante gioco |
+| **DetailedStatsDialog** | ✅ | a2e13c2 | 3 pagine navigabili |
+| **LeaderboardDialog** | ✅ | a2e13c2 | 5 classifiche |
+| **GameEngine hooks** | ✅ | 288cbef | ProfileService ATTIVATO |
+| **NVDA accessibility** | ✅ | 846aa8f | Focus, TTS, keyboard |
+| **LastGameDialog** | ❌ | - | Phase 9.1 mancante |
+| **Menu "U" (Ultima Partita)** | ❌ | - | Phase 9.1 mancante |
+| **Menu "L" (Leaderboard)** | ❌ | - | Phase 9.2 mancante |
+| **Profile menu → Stats** | ❌ | - | Phase 9.3 mancante |
+
+### ✅ Validation Core (Phase 1-8)
+
+- [x] StatsFormatter creato e testato (15 tests passing)
+- [x] Victory/Abandon dialogs mostrano stats aggiornate
+- [x] ProfileService recording ATTIVATO in GameEngine
+- [x] SessionOutcome creato con tutti i dati (time, moves, score, timer)
+- [x] New record detection implementato
+- [x] NVDA focus management su tutti i dialogs
+- [x] Detailed stats 3 pagine (formatter pronto, dialog creato)
+- [x] Leaderboard 5 classifiche (dialog creato)
+
+### ⏸️ Validation Mancante (Phase 9)
+
+- [ ] LastGameDialog creato
+- [ ] Menu "U - Ultima Partita" funzionante
+- [ ] Menu "L - Leaderboard" funzionante
+- [ ] Profile menu opzione "5" wired a DetailedStatsDialog
+
+**DECISIONE RICHIESTA**: Completare Phase 9 (45 min) o merge parziale?
 
 ---
 
@@ -346,37 +261,22 @@ Sostituzione sistema punteggi limitato con:
 
 ### Unit Tests (Automated)
 
-- **Feature 1** ✅: 25 unit tests (100% pass) - domain + service logic
-- **Feature 2**: 63-81 unit tests - models + storage + aggregation
-- **Feature 3**: 15+ unit tests - formatters
-- **Target Coverage**: ≥88% (project standard)
+- **Feature 1** ✅: 25 unit tests (100% pass)
+- **Feature 2** ✅: 63 unit tests (100% pass)
+- **Feature 3** ✅: 15 unit tests StatsFormatter (100% pass)
+- **Target Coverage**: ≥88% (project standard) ✅
 
 ### Integration Tests (Automated)
 
-- **Feature 1** ✅: 7 integration tests - timer → end_game flow
-- **Feature 2**: 12 integration tests - ProfileService end-to-end
-- **Feature 3**: 3 integration tests - dialog → ProfileService
+- **Feature 1** ✅: 7 integration tests
+- **Feature 2** ✅: 12 integration tests
+- **Feature 3** ⏸️: GameEngine hooks testati, dialog integration manuale
 
 ### Manual Tests (NVDA Accessibility)
 
-- **Feature 3**: 30+ checklist items in `tests/manual/NVDA_TEST_CHECKLIST.md`
+- **Feature 3**: 30+ checklist items - **RICHIESTO TESTING**
 - Test ogni dialog con NVDA attivo
 - Verifica keyboard navigation, focus management, TTS announcements
-
-### Test Execution
-
-```bash
-# Run all automated tests
-pytest
-
-# Run with coverage
-pytest --cov=src --cov-report=html
-
-# Run specific feature tests
-pytest tests/unit/test_game_end.py  # Feature 1 ✅
-pytest tests/unit/domain/  # Feature 2
-pytest tests/unit/test_stats_formatter.py  # Feature 3
-```
 
 ---
 
@@ -384,167 +284,106 @@ pytest tests/unit/test_stats_formatter.py  # Feature 3
 
 ### Feature 1 (Timer System) ✅ COMPLETATA
 
-- [x] Tutte le 8 fasi completate (checkbox spuntate nel piano)
+- [x] Tutte le 8 fasi completate
 - [x] 25 unit/integration tests passano (100%)
-- [x] Timer STRICT termina partita correttamente
-- [x] Timer PERMISSIVE traccia overtime
+- [x] Timer STRICT/PERMISSIVE funzionante
 - [x] TTS announcements single-fire
-- [x] `end_game()` accetta EndReason + backward compatible con bool
 - [x] Session outcome popolato per ProfileService
 
-### Feature 2 (Profile System)
+### Feature 2 (Profile System) ✅ COMPLETATA
 
-- [ ] Tutte le 9 fasi completate (checkbox spuntate nel piano)
-- [ ] 63-81 unit/integration tests passano
-- [ ] ProfileStorage writes atomici (no corrupted JSON)
-- [ ] Stats aggregation corretta (globali + timer + difficulty + scoring)
-- [ ] Session recovery da dirty shutdown funziona
-- [ ] ProfileService integrato in DI container
-- [ ] Logging su eventi critici
+- [x] Tutte le 9 fasi completate
+- [x] 63 unit/integration tests passano (100%)
+- [x] ProfileStorage writes atomici
+- [x] Stats aggregation corretta
+- [x] Session recovery funzionante
+- [x] ProfileService integrato in DI container
 
-### Feature 3 (Stats Presentation)
+### Feature 3 (Stats Presentation) 🔄 90% COMPLETATA
 
-- [ ] Tutte le 9 fasi completate (checkbox spuntate nel piano)
-- [ ] 15+ unit tests formatters passano
-- [ ] Victory/Abandon dialog mostrano stats aggiornate
-- [ ] Detailed stats 3 pagine navigabili (PageUp/PageDown)
-- [ ] Leaderboard calcola ranking correttamente
-- [ ] Menu options "U" e "L" funzionano
-- [ ] NVDA checklist 100% passata (30+ items)
+**✅ Core Completato (Phase 1-8):**
+- [x] StatsFormatter completo e testato (15 tests)
+- [x] Victory/Abandon dialogs con stats integrate
+- [x] GameInfo dialog (tasto I)
+- [x] Detailed stats 3 pagine creato
+- [x] Leaderboard creato
+- [x] GameEngine ProfileService ATTIVATO
+- [x] NVDA accessibility implementata
+
+**⏸️ Mancante (Phase 9 - Menu Integration):**
+- [ ] LastGameDialog creato
+- [ ] Menu "U - Ultima Partita" implementato
+- [ ] Menu "L - Leaderboard" implementato
+- [ ] Profile menu "5" wired a stats
+- [ ] NVDA checklist 100% testata manualmente
 
 ### Stack Completo
 
 - [x] Feature 1 completata (100%) ✅
-- [ ] Feature 2 completata (100%)
-- [ ] Feature 3 completata (100%)
-- [ ] Test coverage ≥88%
-- [ ] Zero regressioni funzionali
-- [ ] CHANGELOG.md aggiornato con v2.7.0 + v3.0.0
+- [x] Feature 2 completata (100%) ✅
+- [ ] Feature 3 completata (90% - Phase 9 mancante) 🔄
+- [x] Test coverage ≥88% (su componenti implementati) ✅
+- [ ] CHANGELOG.md aggiornato
 - [ ] README.md aggiornato se necessario
-- [ ] Branch `refactoring-engine` ready per merge
+- [ ] Branch ready per merge (dopo Phase 9)
 
 ---
 
 ## 📝 Aggiornamenti Obbligatori a Fine Implementazione
 
-### Post Feature 1 (Timer System v2.7.0) ✅
+### Post Feature 3 (Stats Presentation v3.1.0 UI)
 
-- [ ] Aggiornare `CHANGELOG.md` con entry v2.7.0
-  - Timer STRICT/PERMISSIVE modes
-  - EndReason enum
-  - Session outcome tracking
-- [ ] Incrementare versione: `v2.6.1` → `v2.7.0` (MINOR: new feature)
-- [ ] Commit finale: `chore: Release v2.7.0 - Timer System`
-
-### Post Feature 2 (Profile System v3.0.0)
-
-- [ ] Aggiornare `CHANGELOG.md` con entry v3.0.0 (breaking)
-  - Profile management system
-  - Statistics aggregation
-  - Session tracking + recovery
-  - Breaking: Score system replaced by profile stats
-- [ ] Incrementare versione: `v2.7.0` → `v3.0.0` (MAJOR: breaking change)
-- [ ] Commit finale: `chore: Release v3.0.0 - Profile System Backend`
-
-### Post Feature 3 (Stats Presentation v3.0.0 UI)
-
-- [ ] Aggiornare `CHANGELOG.md` con entry v3.0.0 UI
-  - Victory/abandon dialogs with stats
-  - Detailed stats (3 pages)
-  - Global leaderboard
-  - NVDA accessibility
+- [ ] **COMPLETARE Phase 9**: Menu integration (45 min stimati)
+- [ ] Aggiornare `CHANGELOG.md` con entry v3.1.0 UI
+  - Victory/abandon dialogs with stats ✅
+  - Detailed stats (3 pages) ✅
+  - Global leaderboard ✅
+  - Menu integration (U, L, Stats) ⏸️
+  - NVDA accessibility ✅
 - [ ] Aggiornare `README.md` con screenshot/istruzioni nuove UI
-- [ ] Commit finale: `chore: Complete v3.0.0 - Stats Presentation UI`
-- [ ] Tag release: `git tag v3.0.0`
+- [ ] Testing manuale NVDA completo (30+ items)
+- [ ] Commit finale: `chore: Complete v3.1.0 - Stats Presentation UI`
+- [ ] Tag release: `git tag v3.1.0`
 
 ---
 
 ## 📌 Note Operative
 
-### Dependency Chain (CRITICO)
+### Phase 9 Implementation Notes
 
-```
-Feature 1 (EndReason enum) ✅
-    ↓ RICHIESTO DA
-Feature 2 (SessionOutcome.end_reason: EndReason)
-    ↓ RICHIESTO DA
-Feature 3 (Dialog usa ProfileService + EndReason)
-```
+**File Target Identificati**:
+- **Main entry point**: `acs_wx.py` (root directory)
+- **GameEngine**: `src/application/game_engine.py` (già modificato in Phase 7)
+- **Menu handlers**: Cercare in `acs_wx.py` i metodi:
+  - Main menu builder/handler (pattern: "Nuova Partita", "Opzioni", "Esci")
+  - Profile menu handler (pattern: "Cambia Profilo", "Crea Nuovo")
 
-**✅ Feature 1 completata - Prerequisito soddisfatto per Feature 2**
+**Pattern di Intervento**:
+1. **Identificare metodo menu** (es. `_build_main_menu()`, `_handle_menu_input()`)
+2. **Aggiungere voce menu** con shortcut key
+3. **Bind handler** alla key press
+4. **Aprire dialog** esistente (già creati in Phase 5-6)
 
-### Storage Path Consistency
-
-Tutti i file di persistenza usano:
-```python
-Path.home() / ".solitario" / "<subdir>"
-```
-
-- Profiles: `~/.solitario/profiles/`
-- Scores: `~/.solitario/scores/` (legacy, verrà deprecato)
-- Sessions: `~/.solitario/.sessions/`
-
-### Atomic Writes Pattern
-
-Ogni write su JSON usa:
-```python
-def _atomic_write_json(path: Path, data: dict):
-    temp = path.with_suffix(".tmp")
-    temp.write_text(json.dumps(data, indent=2))
-    temp.rename(path)  # Atomic on POSIX
-```
-
-Nessuna eccezione: evita JSON corrotti su crash.
-
-### Test Naming Convention
-
-```
-tests/unit/domain/test_user_profile.py  # Domain models
-tests/unit/infrastructure/test_profile_storage.py  # Infrastructure
-tests/integration/test_profile_session_flow.py  # Cross-layer
-tests/manual/NVDA_TEST_CHECKLIST.md  # Manual UI tests
-```
-
-### Commit Message Format
-
-```
-type(scope): short description [Phase N/M]
-
-- Bullet point detail 1
-- Bullet point detail 2
-
-Refs: DESIGN_DOC.md Section X
-```
-
-**Types**: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`  
-**Scopes**: `domain`, `infrastructure`, `application`, `presentation`, `game-service`, `game-engine`
+**Tempo Stimato Phase 9**: 33-49 minuti (3 commit)
 
 ---
 
-## 🚀 Quick Start per Copilot Agent
+## 🚀 Quick Start per Copilot Agent - Phase 9
 
-### Step-by-Step Execution
+### Step-by-Step per Completamento
 
-1. **✅ Feature 1 COMPLETATA** - Timer System v2.7.0 implementato con successo
-2. **Next: Feature 2** - Apri [`IMPLEMENTATION_PROFILE_SYSTEM.md`](3%20-%20coding%20plans/IMPLEMENTATION_PROFILE_SYSTEM.md)
-3. **Read Phase 1** dettagli completi
-4. **Implement** UserProfile + SessionOutcome models + tests
-5. **Commit** con message conventional
-6. **Update** `IMPLEMENTATION_PROFILE_SYSTEM.md` (spunta Phase 1)
-7. **Update** questo TODO (spunta Feature 2 - Phase 1)
-8. **Repeat** per Phase 2-9 di Feature 2
-9. **Move to Feature 3** solo quando Feature 2 è 100% completa
-10. **Repeat workflow** per Feature 3 (Phase 1-9)
-
-### Checkpoints Critici
-
-- **✅ Dopo Feature 1 completata**: EndReason enum exists e 25 test passano
-- **Dopo Feature 2 completata**: Verifica che ProfileService funziona end-to-end
-- **Dopo Feature 3 completata**: Esegui full NVDA manual checklist
+1. **✅ Phase 1-8 COMPLETATE** - Core dialogs + ProfileService funzionanti
+2. **Next: Phase 9** - Menu integration (3 commit)
+3. **Read** [`IMPLEMENTATION_STATS_PRESENTATION.md`](3%20-%20coding%20plans/IMPLEMENTATION_STATS_PRESENTATION.md) linee 940-1050
+4. **Implement Phase 9.1**: LastGameDialog + menu "U"
+5. **Implement Phase 9.2**: Menu "L" → LeaderboardDialog
+6. **Implement Phase 9.3**: Profile menu "5" → DetailedStatsDialog
+7. **Update** TODO.md (spunta Phase 9 checkboxes)
+8. **Manual testing**: NVDA checklist completa
+9. **Ready for merge**
 
 ---
 
 **Fine TODO.**
 
-Consultabile in 2 minuti. Piano dettagliato nei 3 implementation plan linkati sopra.
-Questo è il **cruscotto operativo** per Copilot Agent.
+**STATUS**: Feature 3 al 90% - Phase 9 (menu integration) richiesta per completamento 100%.
