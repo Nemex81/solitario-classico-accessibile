@@ -256,24 +256,24 @@ Sostituzione sistema punteggi limitato con:
   - Test: `tests/unit/infrastructure/test_session_storage.py` (10 tests passing)
   - Commit: Included in Phase 5 commit (2979f95)
 
-- [ ] **Phase 7**: SessionTracker (dirty shutdown recovery)
+- [x] **Phase 7**: SessionTracker (dirty shutdown recovery) ✅
   - File: `src/domain/services/session_tracker.py` (NEW)
-  - Test: `tests/integration/test_session_recovery.py` (NEW)
-  - Commit: `feat(domain): Implement session recovery tracker [Phase 7/9]`
+  - Test: `tests/integration/test_session_recovery.py` (9 tests passing)
+  - Commit: `feat(domain): Implement session recovery tracker [Phase 7/9]` (a93f1dd)
 
-- [ ] **Phase 8**: ProfileService session recording
-  - File: `src/domain/services/profile_service.py` (MODIFIED)
-  - Test: `tests/integration/test_profile_session_flow.py` (NEW)
-  - Commit: `feat(domain): Add session recording to ProfileService [Phase 8/9]`
+- [x] **Phase 8**: ProfileService session recording ✅
+  - File: `src/domain/services/profile_service.py` (VERIFIED)
+  - Test: `tests/integration/test_profile_session_flow.py` (9 tests passing)
+  - Commit: Included in Phase 7 commit (a93f1dd)
 
-- [ ] **Phase 9**: GameEngine integration (stub)
+- [x] **Phase 9**: GameEngine integration (stub) ✅
   - File: `src/application/game_engine.py` (MODIFIED)
-  - Test: `tests/integration/test_game_profile_integration.py` (NEW)
-  - Commit: `feat(game-engine): Integrate ProfileService hooks [Phase 9/9]`
+  - Test: `tests/integration/test_game_profile_integration.py` (4 tests passing)
+  - Commit: Included in Phase 7 commit (a93f1dd)
 
-**Validation**: Spunta quando Feature 2 è 100% completa.
+**Validation**: Feature 2 is 100% complete.
 
-- [ ] **✅ Feature 2 COMPLETATA**
+- [x] **✅ Feature 2 COMPLETATA**
 
 ---
 
