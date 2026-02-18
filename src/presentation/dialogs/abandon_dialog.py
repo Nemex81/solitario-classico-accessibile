@@ -26,13 +26,16 @@ class AbandonDialog(wx.Dialog):
     - ESC: Main menu
     """
     
-    def __init__(self, parent, outcome: SessionOutcome, profile_summary: Dict[str, Any]):
+    def __init__(self, parent, outcome: SessionOutcome, profile_summary: Dict[str, Any], 
+                 show_rematch_option: bool = False):
         """Initialize abandon dialog.
         
         Args:
             parent: Parent window
             outcome: SessionOutcome with game results
             profile_summary: Dict with updated profile stats
+            show_rematch_option: If True, show rematch/stats/menu buttons (for timeout).
+                                If False, show standard new game/menu buttons (default).
         """
         super().__init__(
             parent,
@@ -42,6 +45,7 @@ class AbandonDialog(wx.Dialog):
         
         self.outcome = outcome
         self.profile_summary = profile_summary
+        self.show_rematch_option = show_rematch_option
         self.formatter = StatsFormatter()
         
         self._create_ui()
@@ -77,14 +81,25 @@ class AbandonDialog(wx.Dialog):
         self.stats_text.SetName("Statistiche abbandono")
         sizer.Add(self.stats_text, 1, wx.ALL | wx.EXPAND, 10)
         
-        # Buttons
+        # Buttons (timeout vs normal abandon)
         btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
         
-        self.btn_new_game = wx.Button(self, wx.ID_OK, "Nuova Partita (INVIO)")
-        self.btn_menu = wx.Button(self, wx.ID_CANCEL, "Menu Principale (ESC)")
-        
-        btn_sizer.Add(self.btn_new_game, 0, wx.ALL, 5)
-        btn_sizer.Add(self.btn_menu, 0, wx.ALL, 5)
+        if self.show_rematch_option:
+            # Timeout scenario: 3 buttons (Rematch / Stats / Menu)
+            self.btn_rematch = wx.Button(self, wx.ID_YES, "Rivincita")
+            self.btn_stats = wx.Button(self, wx.ID_MORE, "Statistiche Dettagliate")
+            self.btn_menu = wx.Button(self, wx.ID_NO, "Torna al Menu (ESC)")
+            
+            btn_sizer.Add(self.btn_rematch, 0, wx.ALL, 5)
+            btn_sizer.Add(self.btn_stats, 0, wx.ALL, 5)
+            btn_sizer.Add(self.btn_menu, 0, wx.ALL, 5)
+        else:
+            # Normal abandon: 2 buttons (New Game / Menu)
+            self.btn_new_game = wx.Button(self, wx.ID_OK, "Nuova Partita (INVIO)")
+            self.btn_menu = wx.Button(self, wx.ID_CANCEL, "Menu Principale (ESC)")
+            
+            btn_sizer.Add(self.btn_new_game, 0, wx.ALL, 5)
+            btn_sizer.Add(self.btn_menu, 0, wx.ALL, 5)
         
         sizer.Add(btn_sizer, 0, wx.ALL | wx.CENTER, 10)
         

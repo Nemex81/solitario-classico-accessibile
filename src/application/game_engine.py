@@ -1356,19 +1356,50 @@ class GameEngine:
                 if is_victory_bool:
                     dialog = VictoryDialog(None, session_outcome, profile_summary)
                 else:
-                    dialog = AbandonDialog(None, session_outcome, profile_summary)
+                    # v3.1.2: For timeout, show rematch option (3 buttons instead of 2)
+                    show_rematch = (end_reason == EndReason.TIMEOUT_STRICT)
+                    dialog = AbandonDialog(None, session_outcome, profile_summary, 
+                                         show_rematch_option=show_rematch)
                 
                 result = dialog.ShowModal()
                 dialog.Destroy()
                 
                 # Handle user choice
-                if self.on_game_ended:
+                # v3.1.2: Support timeout rematch options (wx.ID_YES, wx.ID_MORE, wx.ID_NO)
+                if result == wx.ID_MORE:
+                    # User wants to see detailed stats (timeout scenario)
+                    try:
+                        from src.presentation.dialogs.detailed_stats_dialog import DetailedStatsDialog
+                        
+                        stats_dialog = DetailedStatsDialog(
+                            None,
+                            profile_name=self.profile_service.active_profile.profile_name,
+                            global_stats=self.profile_service.global_stats,
+                            timer_stats=self.profile_service.timer_stats,
+                            difficulty_stats=self.profile_service.difficulty_stats,
+                            scoring_stats=self.profile_service.scoring_stats
+                        )
+                        stats_dialog.ShowModal()
+                        stats_dialog.Destroy()
+                    except Exception as e:
+                        # If stats dialog fails, just log and continue
+                        import logging
+                        logging.error(f"Failed to show detailed stats: {e}")
+                    
+                    # After viewing stats, return to menu (don't start new game)
+                    if self.on_game_ended:
+                        self.on_game_ended(False)  # Don't want rematch
+                    else:
+                        self.service.reset_game()
+                
+                elif self.on_game_ended:
                     # Pass control to acs_wx.py
-                    wants_rematch = (result == wx.ID_OK)
+                    # wx.ID_YES (Rivincita) or wx.ID_OK (Nuova Partita) = wants rematch
+                    wants_rematch = (result == wx.ID_OK or result == wx.ID_YES)
                     self.on_game_ended(wants_rematch)
                 else:
                     # Fallback: handle directly
-                    if result == wx.ID_OK:
+                    if result == wx.ID_OK or result == wx.ID_YES:
                         self.new_game()
                     else:
                         self.service.reset_game()
