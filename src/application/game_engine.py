@@ -1388,20 +1388,28 @@ class GameEngine:
                     
                     # After viewing stats, return to menu (don't start new game)
                     if self.on_game_ended:
+                        print("[DEBUG end_game] User viewed stats, calling callback(wants_rematch=False)")
                         self.on_game_ended(False)  # Don't want rematch
                     else:
+                        print("[DEBUG end_game] No callback, resetting game locally")
                         self.service.reset_game()
                 
                 elif self.on_game_ended:
-                    # Pass control to acs_wx.py
+                    # ✅ CORRECT: Pass control to acs_wx.py
                     # wx.ID_YES (Rivincita) or wx.ID_OK (Nuova Partita) = wants rematch
                     wants_rematch = (result == wx.ID_OK or result == wx.ID_YES)
+                    print(f"[DEBUG end_game] Dialog result={result}, wants_rematch={wants_rematch}")
+                    print("[DEBUG end_game] Chiamando callback on_game_ended()...")
                     self.on_game_ended(wants_rematch)
+                    print("[DEBUG end_game] Callback completato")
                 else:
-                    # Fallback: handle directly
+                    # ⚠️ FALLBACK: No callback (test mode or legacy code)
+                    print("[DEBUG end_game] ⚠️ No callback registered, handling locally")
                     if result == wx.ID_OK or result == wx.ID_YES:
+                        print("[DEBUG end_game] Starting new game locally...")
                         self.new_game()
                     else:
+                        print("[DEBUG end_game] Resetting game locally (no UI transition)...")
                         self.service.reset_game()
                 
                 return  # Skip old dialog system below
