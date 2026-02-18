@@ -4,7 +4,7 @@
 
 Questo documento descrive l'API pubblica del Solitario Classico Accessibile.
 
-**Versione API Corrente**: v3.1.2 (Bug Fixes - Dialog improvements)
+**Versione API Corrente**: v3.1.2 (Bug Fixes - Dialog improvements + GameEngine documentation)
 
 ---
 
@@ -125,6 +125,238 @@ position = controller.get_cursor_position_formatted()
 
 ---
 
+## 🎯 GameEngine (v3.1.2)
+
+Il `GameEngine` è il layer business logic sotto il GameController. Espone metodi pubblici per l'integrazione diretta con la UI.
+
+### Inizializzazione
+
+```python
+from src.application.game_engine import GameEngine
+from src.domain.services.game_settings import GameSettings
+
+settings = GameSettings()
+engine = GameEngine.create(
+    audio_enabled=True,
+    tts_engine="auto",
+    verbose=1,
+    settings=settings,
+    use_native_dialogs=True,
+    parent_window=None,
+    profile_service=None
+)
+```
+
+### Metodi Pubblici
+
+#### `new_game() -> None`
+
+Inizia una nuova partita con le impostazioni correnti.
+
+**Side Effects:**
+- Redistribuisce le carte
+- Applica impostazioni (draw_count, shuffle_mode, timer)
+- Reset cursor e selezione
+- Annuncio TTS partita iniziata
+
+---
+
+#### `reset_game() -> None`
+
+Reset dello stato di gioco senza ridistribuire carte.
+
+---
+
+#### `is_game_running() -> bool`
+
+Verifica se una partita è attualmente in corso.
+
+**Ritorna:**
+- `True` se partita attiva
+
+---
+
+#### `on_timer_tick() -> None` ⭐ NEW v3.1.0
+
+Handler chiamato ogni secondo da `wx.Timer` per gestire timer di gioco.
+
+**Comportamento:**
+- Verifica scadenza timer (`settings.max_time_game`)
+- STRICT mode: Auto-stop con `TIMEOUT_STRICT`
+- PERMISSIVE mode: Avvia overtime tracking
+
+**Esempio:**
+```python
+# In acs_wx.py
+self.game_timer = wx.Timer(self)
+self.Bind(wx.EVT_TIMER, self._on_timer_tick, self.game_timer)
+self.game_timer.Start(1000)  # 1 tick/secondo
+
+def _on_timer_tick(self, event):
+    self.engine.on_timer_tick()
+```
+
+---
+
+#### `show_last_game_summary() -> None` ⭐ NEW v3.1.0
+
+Mostra dialog riepilogo ultima partita completata (menu "U - Ultima Partita").
+
+**Precondizioni:**
+- `profile_service` attivo
+- Almeno 1 sessione in `profile.recent_sessions`
+
+**Comportamento:**
+- Recupera `SessionOutcome` da `ProfileService.recent_sessions[-1]`
+- Mostra `LastGameDialog` con outcome + profile summary
+- Gestisce caso "nessuna partita recente" con MessageBox
+
+**Esempio:**
+```python
+# In menu handler
+engine.show_last_game_summary()
+# → Mostra dialog con ultima partita (persisted, funziona dopo restart)
+```
+
+---
+
+#### `move_cursor(direction: str) -> Tuple[str, Optional[str]]`
+
+Sposta il cursore nella direzione specificata.
+
+**Parametri:**
+- `direction`: `"up"`, `"down"`, `"left"`, `"right"`, `"tab"`, `"home"`, `"end"`
+
+**Ritorna:**
+- Tupla `(message: str, hint: Optional[str])`
+
+---
+
+#### `jump_to_pile(pile_idx: int) -> Tuple[str, Optional[str]]`
+
+Salta a una pila specifica con supporto double-tap auto-selection.
+
+**Parametri:**
+- `pile_idx`: Indice pila (0-12)
+
+**Ritorna:**
+- Tupla `(message: str, hint: Optional[str])`
+
+---
+
+#### `select_card_at_cursor() -> Tuple[bool, str]`
+
+Seleziona carta alla posizione cursore corrente.
+
+**Ritorna:**
+- Tupla `(success: bool, message: str)`
+
+---
+
+#### `execute_move() -> Tuple[bool, str]`
+
+Esegue mossa con carte selezionate verso posizione cursore.
+
+**Ritorna:**
+- Tupla `(success: bool, message: str)`
+
+---
+
+#### `draw_from_stock(count: Optional[int] = None) -> Tuple[bool, str]`
+
+Pesca carte dal mazzo (con auto-recycle waste se mazzo vuoto).
+
+**Parametri:**
+- `count`: Numero carte da pescare (None = usa `settings.draw_count`)
+
+**Ritorna:**
+- Tupla `(success: bool, message: str)`
+
+---
+
+#### `recycle_waste(shuffle: Optional[bool] = None) -> Tuple[bool, str]`
+
+Ricicla scarti nel mazzo (con auto-draw dopo reshuffle).
+
+**Parametri:**
+- `shuffle`: Mode shuffle (None = usa `settings.shuffle_discards`)
+
+**Ritorna:**
+- Tupla `(success: bool, message: str)`
+
+---
+
+#### `end_game(is_victory: Union[EndReason, bool]) -> None`
+
+Gestisce fine partita con report completo e prompt rematch.
+
+**Parametri:**
+- `is_victory`: `EndReason` enum o bool legacy
+
+**Side Effects:**
+- Snapshot statistiche finali
+- Calcolo score finale (se scoring enabled)
+- Salvataggio score storage
+- Record sessione su profile (se profile_service attivo)
+- Mostra dialog vittoria/abbandono
+- Prompt rivincita (se dialogs disponibili)
+
+---
+
+#### `get_game_state() -> Dict[str, Any]`
+
+Ottiene snapshot completo stato di gioco.
+
+**Ritorna:**
+- Dict con `statistics`, `game_over`, `piles`, `cursor`, `has_selection`
+
+---
+
+#### `is_victory() -> bool`
+
+Verifica se il gioco è vinto (4 semi completati).
+
+---
+
+#### `open_options() -> str`
+
+Apre finestra virtuale opzioni (F1-F5).
+
+---
+
+#### `close_options() -> str`
+
+Chiude finestra virtuale opzioni.
+
+---
+
+#### `is_options_open() -> bool`
+
+Verifica se finestra opzioni è aperta.
+
+---
+
+### Metodi Debug
+
+#### `_debug_force_victory() -> str` 🔥 DEBUG ONLY
+
+Simula vittoria per testing (binding CTRL+ALT+W).
+
+**⚠️ WARNING:** Solo per development/testing!
+
+**Comportamento:**
+- Chiama `end_game(is_victory=True)` senza completare gioco
+- Trigger completo victory flow (report, dialog, rematch)
+
+**Esempio:**
+```python
+# In test_wx.py per testing dialogs
+engine._debug_force_victory()
+# → Victory dialog appare immediatamente
+```
+
+---
+
 ## 🎴 GameState
 
 Rappresentazione immutabile dello stato del gioco.
@@ -165,6 +397,91 @@ Verifica se il gioco è vinto.
 if state.is_victory():
     print("Hai vinto!")
 ```
+
+---
+
+## 🃏 Pile (Domain Model)
+
+**Path**: `src/domain/models/pile.py`
+
+Rappresenta una pila di carte (tableau, foundation, stock, waste).
+
+### Attributi
+
+| Attributo | Tipo | Descrizione |
+|-----------|------|-------------|
+| `cards` | `List[Card]` | Lista carte nella pila |
+| `name` | `str` | Nome human-readable (per TTS) |
+| `pile_type` | `str` | Tipo (`"base"`, `"semi"`, `"mazzo"`, `"scarti"`) |
+| `assigned_suit` | `Optional[str]` | Seme assegnato (foundation piles) |
+
+### Metodi
+
+#### `aggiungi_carta(card: Card) -> None`
+
+Aggiunge carta in cima alla pila.
+
+---
+
+#### `rimuovi_carta() -> Optional[Card]`
+
+Rimuove e ritorna carta in cima (None se vuota).
+
+---
+
+#### `get_top_card() -> Optional[Card]`
+
+Ottiene carta in cima senza rimuoverla (None se vuota).
+
+---
+
+#### `is_empty() -> bool`
+
+Verifica se la pila è vuota.
+
+---
+
+#### `get_size() -> int`
+
+Ottiene numero carte nella pila.
+
+---
+
+#### `get_card_count() -> int` ⚠️ CRITICAL
+
+Ottiene numero carte nella pila (alias di `get_size()`).
+
+**⚠️ IMPORTANTE:**
+- **Usa SEMPRE `get_card_count()`** nei loop/statistiche
+- **NON usare `.count()`** → metodo inesistente! (AttributeError)
+- Bug trovato: `pile.count()` → `pile.get_card_count()` ✅
+
+**Esempio corretto:**
+```python
+# ✅ CORRETTO
+cards_placed = sum(self.table.pile_semi[i].get_card_count() for i in range(4))
+
+# ❌ ERRATO (AttributeError!)
+cards_placed = sum(self.table.pile_semi[i].count() for i in range(4))
+```
+
+---
+
+#### `get_all_cards() -> List[Card]`
+
+Ottiene copia lista di tutte le carte.
+
+---
+
+#### `clear() -> None`
+
+Rimuove tutte le carte dalla pila.
+
+---
+
+#### `remove_last_card() -> Optional[Card]`
+
+Alias di `rimuovi_carta()`.
 
 ---
 
@@ -950,7 +1267,7 @@ panel.Destroy()
 
 ---
 
-## 💩 DIContainer
+## 💉 DIContainer
 
 Container per dependency injection.
 
@@ -1118,7 +1435,7 @@ game_service.recycle_waste()
 
 ---
 
-## 👤 ProfileService (v3.0.0)
+## 👤 ProfileService (v3.1.0)
 
 Il `ProfileService` gestisce i profili utente con persistenza, statistiche aggregate e tracking delle sessioni.
 
@@ -1342,6 +1659,6 @@ Per dettagli architetturali:
 
 ---
 
-*Document Version: 3.1.2*  
-*Last Updated: 2026-02-18*  
-*Revision: Method names aligned with implementation*
+*Document Version: 3.1.2 (Revision 2)*  
+*Last Updated: 2026-02-18 14:20 CET*  
+*Revision Notes: Added GameEngine public API, Pile methods reference, debug utilities*
