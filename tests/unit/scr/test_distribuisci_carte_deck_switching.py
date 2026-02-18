@@ -8,8 +8,8 @@ Fix: Calcolo dinamico delle carte rimanenti basato su self.mazzo.get_total_cards
 """
 
 import pytest
-from scr.game_table import TavoloSolitario
-from scr.decks import FrenchDeck, NeapolitanDeck
+from src.domain.models.table import GameTable
+from src.domain.models.deck import FrenchDeck, NeapolitanDeck
 
 
 class TestDistribuisciCarteDynamicCalculation:

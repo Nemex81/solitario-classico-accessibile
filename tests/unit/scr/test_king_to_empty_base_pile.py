@@ -9,9 +9,9 @@ e modificato put_to_base() per usare self.mazzo.is_king(card) invece del check s
 """
 
 import pytest
-from scr.game_table import TavoloSolitario
-from scr.decks import FrenchDeck, NeapolitanDeck
-from scr.cards import Card
+from src.domain.models.table import GameTable
+from src.domain.models.deck import FrenchDeck, NeapolitanDeck
+from src.domain.models.card import Card
 
 
 class TestIsKingMethod:
