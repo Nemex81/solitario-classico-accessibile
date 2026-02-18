@@ -1282,7 +1282,7 @@ class GameEngine:
                 end_reason=end_reason,
                 is_victory=is_victory_bool,
                 elapsed_time=final_stats['elapsed_time'],
-                timer_enabled=self.settings.timer_enabled if self.settings else False,
+                timer_enabled=(self.settings.max_time_game > 0) if self.settings else False,
                 timer_limit=self.settings.timer_limit if self.settings else 0,
                 timer_mode=self.settings.timer_mode if self.settings else "OFF",
                 timer_expired=(end_reason == EndReason.TIMEOUT_STRICT),
