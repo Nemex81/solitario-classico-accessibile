@@ -285,6 +285,65 @@ class ProfileService:
             )
             return []
     
+    def get_all_profiles_with_stats(self) -> List[Dict[str, Any]]:
+        """Get all profiles with full stats loaded (for leaderboard/comparisons).
+        
+        Returns:
+            List of dicts with profile info + stats
+            
+        Note:
+            Heavier than list_profiles() - loads all profile files from disk.
+            Use for leaderboard or when full stats are needed for all profiles.
+        """
+        try:
+            profiles_summary = self.list_profiles()
+            profiles_with_stats = []
+            
+            for summary in profiles_summary:
+                profile_id = summary.get('profile_id')
+                if not profile_id:
+                    continue
+                
+                # Load full profile data from storage (returns dict)
+                full_data = self.storage.load_profile(profile_id)
+                if not full_data:
+                    continue
+                
+                # Extract profile info and stats from dict structure
+                profile_info = full_data.get('profile', {})
+                stats_data = full_data.get('stats', {})
+                global_stats = stats_data.get('global', {})
+                
+                # Build clean dict for presentation layer
+                profiles_with_stats.append({
+                    'profile_id': profile_info.get('profile_id'),
+                    'profile_name': profile_info.get('profile_name'),
+                    'is_guest': profile_info.get('is_guest', False),
+                    'global_stats': {
+                        'total_games': global_stats.get('total_games', 0),
+                        'total_victories': global_stats.get('total_victories', 0),
+                        'winrate': global_stats.get('winrate', 0.0),
+                        'fastest_victory': global_stats.get('fastest_victory'),
+                        'highest_score': global_stats.get('highest_score', 0),
+                        'longest_streak': global_stats.get('longest_streak', 0)
+                    }
+                })
+            
+            log.debug_state(
+                "profiles_with_stats_loaded",
+                {"count": len(profiles_with_stats)}
+            )
+            
+            return profiles_with_stats
+        
+        except Exception as e:
+            log.error_occurred(
+                "ProfileService",
+                "Error loading profiles with stats",
+                e
+            )
+            return []
+    
     def ensure_guest_profile(self) -> bool:
         """Ensure guest profile exists (create if missing).
         

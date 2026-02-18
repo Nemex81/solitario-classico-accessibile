@@ -92,17 +92,14 @@ class SolitarioController:
     
     def __init__(self):
         """Initialize application with all components."""
-        print("\n" + "="*60)
-        print("🎴 SOLITARIO ACCESSIBILE - wxPython v2.2.0")
-        print("="*60)
-        print("Inizializzazione componenti...")
+        log.debug_state("app_startup", {"version": "v2.2.0", "status": "starting"})
         
         # v2.2.0: Initialize DependencyContainer (bridge mode)
-        print("Creazione DependencyContainer...")
+        log.debug_state("dependency_container_init", {"status": "starting"})
         self.container = DependencyContainer()
         
         # Infrastructure: TTS setup
-        print("Inizializzazione TTS...")
+        log.debug_state("tts_init", {"status": "starting"})
         try:
             tts_provider = create_tts_provider(engine="auto")
             self.screen_reader = ScreenReader(
@@ -110,45 +107,80 @@ class SolitarioController:
                 enabled=True,
                 verbose=False
             )
-            print("✓ TTS inizializzato")
+            log.debug_state("tts_ready", {"status": "initialized"})
         except Exception as e:
-            print(f"⚠ Errore TTS: {e}")
-            print("Continuando senza audio...")
+            log.warning_issued("SolitarioController", f"TTS initialization failed: {e}")
             self.screen_reader = self._create_dummy_sr()
         
         # Domain: Game settings
-        print("Inizializzazione impostazioni di gioco...")
+        log.debug_state("game_settings_init", {"status": "starting"})
         self.settings = GameSettings()
-        print("✓ Impostazioni pronte")
+        log.debug_state("game_settings_ready", {"status": "initialized"})
+        
+        # v3.1.0: Initialize ProfileService
+        log.debug_state("profile_service_init", {"status": "starting"})
+        from src.domain.services.profile_service import ProfileService
+        self.profile_service = ProfileService()
+        
+        # Ensure guest profile exists (auto-create if missing)
+        self.profile_service.ensure_guest_profile()
+        
+        # Look for default profile (is_default=True)
+        all_profiles = self.profile_service.list_profiles()
+        default_profile = None
+        for p in all_profiles:
+            if p.get('is_default', False):
+                default_profile = p
+                break
+        
+        # Load default profile if found, otherwise load guest
+        if default_profile:
+            profile_id = default_profile['profile_id']
+            if self.profile_service.load_profile(profile_id):
+                log.info_query_requested("default_profile_load", f"loaded_{default_profile['profile_name']}")
+            else:
+                # Fallback to guest if default profile is corrupted
+                log.warning_issued("SolitarioController", "Default profile corrupted, fallback to guest")
+                self.profile_service.load_profile("profile_000")
+        else:
+            # No default profile set, use guest
+            self.profile_service.load_profile("profile_000")
+            log.debug_state("profile_load", {"type": "guest", "reason": "no_default_set"})
+        
+        log.debug_state("profile_service_ready", {
+            "active_profile": self.profile_service.active_profile.profile_name,
+            "profile_id": self.profile_service.active_profile.profile_id
+        })
         
         # Infrastructure: Dialog manager (v2.0.1 - initialized after frame in run())
         # Will be set in run() after frame is created (hs_deckmanager pattern)
         self.dialog_manager = None
         
         # Application: Game engine setup
-        print("Inizializzazione motore di gioco...")
+        log.debug_state("game_engine_init", {"status": "starting"})
         self.engine = GameEngine.create(
             audio_enabled=(self.screen_reader is not None),
             tts_engine="auto",
             verbose=1,
             settings=self.settings,
             use_native_dialogs=True,
-            parent_window=None  # wx dialogs don't need parent
+            parent_window=None,  # wx dialogs don't need parent
+            profile_service=self.profile_service  # 🆕 NEW v3.1.0
         )
         
         # Inject end game callback for UI state management
         self.engine.on_game_ended = self.handle_game_ended
-        print("✓ Game engine pronto")
+        log.debug_state("game_engine_ready", {"status": "initialized"})
         
         # Application: Gameplay controller
-        print("Inizializzazione controller gameplay...")
+        log.debug_state("gameplay_controller_init", {"status": "starting"})
         self.gameplay_controller = GamePlayController(
             engine=self.engine,
             screen_reader=self.screen_reader,
             settings=self.settings,
             on_new_game_request=self.show_new_game_dialog
         )
-        print("✓ Controller pronto")
+        log.debug_state("gameplay_controller_ready", {"status": "initialized"})
         
         # Dialog manager will be passed to options_controller in run()
         
@@ -165,13 +197,12 @@ class SolitarioController:
         # v2.2.0: Register dependencies in container (bridge mode)
         self._register_dependencies()
         
-        print("="*60)
-        print("✓ Applicazione avviata con successo!")
-        print("✓ Architettura Clean completa")
-        print("✓ wxPython-only (no pygame)")
-        print("✓ DependencyContainer attivo (v2.2.0)")
-        print("Usa i tasti freccia per navigare il menu.")
-        print("="*60)
+        log.debug_state("app_ready", {
+            "architecture": "clean",
+            "ui_framework": "wxPython",
+            "container_version": "v2.2.0",
+            "status": "initialized"
+        })
     
     def _register_dependencies(self) -> None:
         """Register application dependencies in DependencyContainer.
@@ -419,6 +450,102 @@ class SolitarioController:
         # Delegate to quit_app() which now shows dialog
         self.quit_app()
     
+    def show_last_game_summary(self) -> None:
+        """Show last game summary dialog (called from MenuPanel).
+        
+        Displays LastGameDialog with summary of most recent game.
+        
+        Version:
+            v3.1.0 Phase 9.1
+        """
+        if self.engine and hasattr(self.engine, 'show_last_game_summary'):
+            self.engine.show_last_game_summary()
+    
+    def show_leaderboard(self) -> None:
+        """Show global leaderboard dialog (called from MenuPanel).
+        
+        Displays LeaderboardDialog with rankings across all profiles.
+        
+        Version:
+            v3.1.0 Phase 9.2
+        """
+        import wx
+        from src.presentation.dialogs.leaderboard_dialog import LeaderboardDialog
+        
+        log.info_query_requested("leaderboard", "main_menu")
+        
+        # Check if ProfileService is available
+        if not self.engine or not hasattr(self.engine, 'profile_service'):
+            log.warning_issued("SolitarioController", "ProfileService not available for leaderboard")
+            wx.MessageBox(
+                "Servizio profili non disponibile.",
+                "Errore",
+                wx.OK | wx.ICON_ERROR
+            )
+            return
+        
+        profile_service = self.engine.profile_service
+        if profile_service is None:
+            log.warning_issued("SolitarioController", "ProfileService not initialized")
+            wx.MessageBox(
+                "Servizio profili non inizializzato.",
+                "Errore",
+                wx.OK | wx.ICON_ERROR
+            )
+            return
+        
+        # Load all profiles with full stats (using ProfileService helper)
+        # This respects Clean Architecture: Controller -> Service -> Storage
+        profiles_with_stats = profile_service.get_all_profiles_with_stats()
+        
+        # Get current profile ID
+        current_profile_id = profile_service.active_profile.profile_id if profile_service.active_profile else "guest"
+        
+        # Show leaderboard dialog
+        dialog = LeaderboardDialog(None, profiles_with_stats, current_profile_id, metric="victories")
+        dialog.ShowModal()
+        dialog.Destroy()
+    
+    def show_profile_menu(self) -> None:
+        """Show profile management menu (called from MenuPanel).
+        
+        Displays ProfileMenuPanel modal dialog with 6 profile management options.
+        
+        Version:
+            v3.1.0 Phase 10.4
+        """
+        import wx
+        from src.infrastructure.ui.profile_menu_panel import ProfileMenuPanel
+        
+        log.info_query_requested("profile_menu", "main_menu")
+        
+        # Check if ProfileService and engine available
+        if not self.engine or not hasattr(self.engine, 'profile_service'):
+            log.warning_issued("SolitarioController", "ProfileService not available for profile menu")
+            wx.MessageBox(
+                "Servizio profili non disponibile.",
+                "Errore",
+                wx.OK | wx.ICON_ERROR
+            )
+            return
+        
+        profile_service = self.engine.profile_service
+        if profile_service is None:
+            log.warning_issued("SolitarioController", "ProfileService not initialized")
+            wx.MessageBox(
+                "Servizio profili non inizializzato.",
+                "Errore",
+                wx.OK | wx.ICON_ERROR
+            )
+            return
+        
+        # Show profile menu panel
+        panel = ProfileMenuPanel(None, profile_service, self.screen_reader)
+        panel.ShowModal()
+        panel.Destroy()
+        
+        log.dialog_closed("profile_menu", "closed")
+    
     # ============================================================================
     # DEFERRED UI TRANSITIONS PATTERN (v2.4.3)
     # ============================================================================
@@ -495,58 +622,65 @@ class SolitarioController:
         )
     
     def _safe_abandon_to_menu(self) -> None:
-        """Deferred handler for abandon game → menu transition (called via wx.CallAfter).
+        """Deferred handler for abandon game → menu transition.
         
-        This method runs AFTER the ESC event handler completes, preventing nested
-        event loops and crashes. Performs safe 3-step transition:
-            1. Hide gameplay panel
-            2. Reset game engine
-            3. Return to menu
+        FIXED v3.1.3.2: Simplified flow - removed callback suppression.
         
-        IMPORTANT: This method should ONLY be called via wx.CallAfter() from
-        show_abandon_game_dialog(). Do NOT call directly from event handlers.
+        Previous behavior (REMOVED):
+            - Suppressed on_game_ended callback
+            - Called end_game() with callback disabled
+            - Manually called return_to_menu()
         
-        Pattern:
-            ✅ CORRECT: Call via wx.CallAfter() from deferred handlers
-                wx.CallAfter(self._safe_abandon_to_menu)
-            
-            ❌ WRONG: Direct call from event handler
-                self._safe_abandon_to_menu()  # Causes nested event loop
+        New behavior (v3.1.3.2):
+            - Hides gameplay panel (CRITICAL for Bug #68)
+            - Calls end_game() with callback ACTIVE
+            - end_game() shows AbandonDialog
+            - User chooses: "Nuova Partita" / "Menu Principale" / "Statistiche"
+            - end_game() calls on_game_ended(wants_rematch) callback
+            - handle_game_ended() handles UI transition automatically
         
-        Version History:
-            v2.0.3: Initial implementation with panel swap logic
-            v2.0.4: Created as deferred handler for abandon game flow
-            v2.0.9: Added CallAfter deferred execution
-            v2.4.3: Corrected to wx.CallAfter (global function)
+        Flow:
+            1. Hide gameplay panel (prevent empty window)
+            2. Call end_game(ABANDON_EXIT) → shows AbandonDialog
+            3. Dialog closed → end_game() calls on_game_ended(bool)
+            4. handle_game_ended() → start_gameplay() OR _safe_return_to_main_menu()
+        
+        Version:
+            v3.1.3.2: Removed callback suppression (OPZIONE A fix)
         """
-        print("\n→ Executing deferred abandon transition...")
+        print("\n[DEBUG _safe_abandon] INIZIO")
+        print("[DEBUG _safe_abandon] Nascondo gameplay panel...")
         
-        # Log abandon transition
-        log.debug_state("abandon_transition", {
-            "trigger": "ESC_confirmed",
-            "from_panel": "gameplay"
-        })
-        
-        # Hide gameplay panel
+        # 1. Hide gameplay panel (CRITICAL for Bug #68)
         if self.view_manager:
             gameplay_panel = self.view_manager.get_panel('gameplay')
             if gameplay_panel:
                 gameplay_panel.Hide()
-                
-                # Log panel hidden
-                log.debug_state("panel_hidden", {"panel": "gameplay"})
+                print("[DEBUG _safe_abandon] ✅ Gameplay panel nascosto")
+            else:
+                print("[DEBUG _safe_abandon] ⚠️ gameplay_panel è None!")
+        else:
+            print("[DEBUG _safe_abandon] ⚠️ view_manager è None!")
         
-        # Reset game engine
-        self.engine.reset_game()
-        self._timer_expired_announced = False
+        # 2. Call end_game() with callback ACTIVE (no suppression)
+        print("[DEBUG _safe_abandon] Chiamando end_game(ABANDON_EXIT)...")
+        from src.domain.models.game_end import EndReason
+        self.engine.end_game(EndReason.ABANDON_EXIT)
         
-        # Return to menu
-        self.return_to_menu()
+        # 3. end_game() will:
+        #    - Show AbandonDialog
+        #    - User chooses: "Nuova Partita" / "Menu Principale" / "Statistiche"
+        #    - Call on_game_ended(wants_rematch) callback
+        #    - handle_game_ended() will handle UI transition
         
-        print("→ Abandon transition completed\n")
+        print("[DEBUG _safe_abandon] end_game() completato")
+        print("[DEBUG _safe_abandon] FINE (UI gestita da callback)\n")
     
     def show_new_game_dialog(self) -> None:
         """Show new game confirmation dialog (non-blocking).
+        
+        FIXED v3.1.3: Records abandoned session before starting new game.
+        Uses callback suppression to avoid double dialog (abandon + rematch).
         
         Uses async dialog API to prevent nested event loops.
         
@@ -566,11 +700,36 @@ class SolitarioController:
         Version:
             v1.7.5: Fixed to use semantic API without parameters
             v2.2: Migrated to async dialog API
+            v3.1.3: FIXED - Record abandoned session via end_game() before new_game()
         """
         def on_new_game_result(confirmed: bool):
             if confirmed:
-                self.engine.reset_game()
+                # 🔥 FIXED v3.1.3: Record abandoned session via end_game()
+                # Use callback suppression to prevent double dialog
+                
+                # Step 1: Temporarily suppress on_game_ended callback
+                # This prevents AbandonDialog from showing (we already showed confirmation)
+                original_callback = self.engine.on_game_ended
+                self.engine.on_game_ended = None
+                
+                # Step 2: End current game properly (records session)
+                from src.domain.models.game_end import EndReason
+                self.engine.end_game(EndReason.ABANDON_EXIT)
+                
+                # What end_game() does (without callback):
+                # 1. Creates SessionOutcome with ABANDON_EXIT reason
+                # 2. Calls profile_service.record_session() ✅
+                # 3. Shows AbandonDialog (SUPPRESSED by None callback) ❌
+                # 4. Resets game internally
+                
+                # Step 3: Restore callback for future games
+                self.engine.on_game_ended = original_callback
+                
+                # Step 4: Start new game immediately
                 self.engine.new_game()
+                
+                # Result: Single dialog, session recorded, clean UX ✅
+                
                 self._timer_expired_announced = False
                 
                 if self.screen_reader:
@@ -609,66 +768,37 @@ class SolitarioController:
     def handle_game_ended(self, wants_rematch: bool) -> None:
         """Handle game end callback from GameEngine.
         
-        Called after game victory or defeat (timeout excluded).
-        User is prompted for rematch via dialog.
+        Called by GameEngine.end_game() after dialog closes.
+        Handles UI transition based on user choice.
         
         Args:
-            wants_rematch: True if user wants rematch, False to return to menu
+            wants_rematch: True if user chose "Nuova Partita"/"Rivincita",
+                          False if user chose "Menu Principale"
         
-        Async Dialog Pattern (v2.5.0 - Bug #68 final fix):
-            This method is called from GameEngine.on_rematch_result() callback,
-            which is invoked by wxPython's event loop AFTER the async rematch
-            dialog closes. UI is in stable state, no need for wx.CallAfter().
-            
-            ✅ CORRECT (v2.5.0): Direct calls (no wx.CallAfter needed)
-                → Callback already deferred by async dialog API
-                → UI state is stable when this executes
-                → Can safely call start_gameplay() or _safe_return_to_main_menu()
-            
-            ❌ OLD PATTERN (v2.4.3): Required wx.CallAfter() workaround
-                → Synchronous dialog (ShowModal) caused unstable UI state
-                → Had to defer with wx.CallAfter()
-                → Now unnecessary with async dialog
-        
-        Why No CallAfter Needed:
-            show_rematch_prompt_async() uses Show() (non-blocking), not ShowModal().
-            Callback is invoked by wx event loop after dialog closes and focus
-            is restored. By the time this method executes, UI is already stable.
+        Flow:
+            - wants_rematch=True → start_gameplay() (new game)
+            - wants_rematch=False → _safe_return_to_main_menu() (menu)
         
         Version:
-            v2.0.2: Fixed operation order for decline rematch path
-            v2.0.4: Added defer pattern for both branches
-            v2.0.9: Added CallAfter deferred execution
-            v2.4.2: Bug #68 fix - panel hiding + CallAfter
-            v2.4.3: Bug #68 - corrected to wx.CallAfter (global function)
-            v2.5.0: Bug #68 FINAL - async dialog, no CallAfter needed
+            v2.5.0: Created for async dialog callback chain
+            v3.1.3.2: Added debug logging for abandon flow troubleshooting
         """
-        print(f"\n→ Game ended callback - Rematch: {wants_rematch}")
+        print(f"\n[DEBUG handle_game_ended] INIZIO: wants_rematch={wants_rematch}")
         
-        # Reset timer announcement flag (for next game)
+        # Reset timer expiry flag
         self._timer_expired_announced = False
+        print("[DEBUG handle_game_ended] Timer expiry flag resettato")
         
         if wants_rematch:
-            # ═══════════════════════════════════════════════════════════
-            # REMATCH: Start New Game
-            # ═══════════════════════════════════════════════════════════
-            print("→ Starting rematch...")
-            
-            # ✅ DIRECT CALL: No wx.CallAfter needed (v2.5.0)
-            # Callback already deferred by async dialog API
-            # UI state is stable when this callback executes
+            print("[DEBUG handle_game_ended] Percorso REMATCH: avviando nuova partita...")
             self.start_gameplay()
-            
+            print("[DEBUG handle_game_ended] Nuova partita avviata ✅")
         else:
-            # ═══════════════════════════════════════════════════════════
-            # DECLINE: Return to Main Menu
-            # ═══════════════════════════════════════════════════════════
-            print("→ Returning to main menu...")
-            
-            # ✅ DIRECT CALL: No wx.CallAfter needed (v2.5.0)
-            # Callback already deferred by async dialog API
-            # UI state is stable when this callback executes
+            print("[DEBUG handle_game_ended] Percorso DECLINE: tornando al menu...")
             self._safe_return_to_main_menu()
+            print("[DEBUG handle_game_ended] Menu principale mostrato ✅")
+        
+        print(f"[DEBUG handle_game_ended] FINE\n")
     
     def _safe_decline_to_menu(self) -> None:
         """Deferred handler for decline rematch → menu transition (called via wx.CallAfter).
@@ -714,79 +844,54 @@ class SolitarioController:
     def _safe_return_to_main_menu(self) -> None:
         """Return to main menu after declining rematch.
         
-        Called via wx.CallAfter() when user declines rematch in end game dialog.
+        Called by handle_game_ended(wants_rematch=False).
         
         Flow:
-        0. Hide gameplay panel (CRITICAL - prevents UI freeze)
-        1. Reset game state (service.reset_game())
-        2. Switch to MenuPanel (show main menu)
-        3. Announce return to menu via TTS
+            1. Hide gameplay panel (if not already hidden)
+            2. Reset game state (clear statistics, timer)
+            3. Show menu panel
+            4. Announce return to menu via TTS
         
-        Version: v2.4.2 (fix for Bug #68 - decline rematch behavior)
-        
-        Note:
-            Called via wx.CallAfter() to ensure dialog is fully closed
-            before panel switching occurs.
-        
-        Why CallAfter?
-            - Modal dialogs block UI thread
-            - Panel switching while dialog open can cause crashes
-            - CallAfter defers execution until after dialog closes
-            - Ensures clean UI state transition
-        
-        Pattern Consistency:
-            This method follows the same 3-step pattern as:
-            - _safe_abandon_to_menu() (ESC → menu)
-            - _safe_timeout_to_menu() (timeout → menu)
-            All use: Hide panel → Reset game → Show menu
-        
-        Example:
-            >>> # User finishes game
-            >>> # Dialog: "Vuoi giocare ancora?"
-            >>> # User presses NO
-            >>> # → handle_game_ended(wants_rematch=False)
-            >>> # → wx.CallAfter(self._safe_return_to_main_menu)
-            >>> # → Dialog closes
-            >>> # → _safe_return_to_main_menu() executes
-            >>> # → Panel hidden + Game reset + switch to menu + TTS announcement
+        Version:
+            v2.5.0: Created for Bug #68.2 fix
+            v3.1.3.2: Added debug logging for abandon flow troubleshooting
         """
-        print("→ _safe_return_to_main_menu() called")
+        print("\n[DEBUG _safe_return_to_menu] INIZIO")
         
-        # Log decline rematch transition
-        log.debug_state("decline_rematch_transition", {
-            "trigger": "rematch_declined",
-            "from_panel": "gameplay"
-        })
-        
-        # 0. Hide gameplay panel (CRITICAL FIX for Bug #68)
-        # Without this, gameplay panel remains visible over menu → UI freeze
+        # 1. Hide gameplay panel (CRITICAL FIX for Bug #68)
+        print("[DEBUG _safe_return_to_menu] Nascondo gameplay panel...")
         if self.view_manager:
             gameplay_panel = self.view_manager.get_panel('gameplay')
             if gameplay_panel:
                 gameplay_panel.Hide()
-                
-                # Log panel hidden
-                log.debug_state("panel_hidden", {"panel": "gameplay"})
-        print("  ✓ Gameplay panel hidden")
+                print("[DEBUG _safe_return_to_menu] ✅ Gameplay panel nascosto")
+            else:
+                print("[DEBUG _safe_return_to_menu] ⚠️ gameplay_panel è None!")
+        else:
+            print("[DEBUG _safe_return_to_menu] ⚠️ view_manager è None!")
         
-        # 1. Reset game state
-        # Stops timer, resets move count, clears statistics
+        # 2. Reset game state
+        print("[DEBUG _safe_return_to_menu] Resetto game engine...")
         self.engine.service.reset_game()
-        print("  ✓ Game state reset")
+        print("[DEBUG _safe_return_to_menu] ✅ Game engine resettato")
         
-        # 2. Switch to main menu panel
-        # Shows MenuPanel with "Nuova Partita", "Opzioni", etc.
+        # 3. Switch to main menu panel
+        print("[DEBUG _safe_return_to_menu] Mostro menu panel...")
         self.view_manager.show_panel("menu")
-        print("  ✓ Switched to MenuPanel")
+        print("[DEBUG _safe_return_to_menu] ✅ Menu panel mostrato")
         
-        # 3. Announce return to menu via TTS
-        # Helps blind users understand they're back at main menu
-        if self.screen_reader and self.screen_reader.tts:
+        # 4. Announce return to menu via TTS
+        if self.screen_reader:
+            print("[DEBUG _safe_return_to_menu] Annuncio TTS...")
             self.screen_reader.tts.speak(
                 "Sei tornato al menu principale. Usa le frecce per navigare.",
                 interrupt=True
             )
+            print("[DEBUG _safe_return_to_menu] ✅ TTS annunciato")
+        else:
+            print("[DEBUG _safe_return_to_menu] ⚠️ screen_reader è None, salto TTS")
         
+        print("[DEBUG _safe_return_to_menu] FINE\n")
         print("✓ Successfully returned to main menu")
     
     # === OPTIONS HANDLING ===
@@ -816,7 +921,11 @@ class SolitarioController:
     # === TIMER MANAGEMENT ===
     
     def _check_timer_expiration(self) -> None:
-        """Check timer expiration (called every second by wx.Timer)."""
+        """Check timer expiration (called every second by wx.Timer).
+        
+        FIXED v3.1.3.1: Delegates to engine.on_timer_tick() instead of local handler.
+        This ensures proper session recording and dialog flow via end_game().
+        """
         # Skip if not in gameplay mode
         # PRIORITY 1: Use ViewManager if available (modern approach)
         if self.view_manager:
@@ -838,145 +947,24 @@ class SolitarioController:
         if game_over:
             return
         
-        # Get current elapsed time
-        elapsed = self.engine.service.get_elapsed_time()
-        max_time = self.settings.max_time_game
+        # 🔥 FIXED v3.1.3.1: Delegate to engine.on_timer_tick()
+        # This replaces local timer handling which bypassed end_game()
+        self.engine.on_timer_tick()
         
-        # Timer still OK
-        if elapsed < max_time:
-            self._timer_expired_announced = False
-            return
-        
-        # Timer expired
-        if self.settings.timer_strict_mode:
-            self._handle_game_over_by_timeout()
-        else:
-            # Permissive mode - announce once
-            if not self._timer_expired_announced:
-                overtime_seconds = int(elapsed - max_time)
-                overtime_minutes = max(1, overtime_seconds // 60)
-                penalty_points = 100 * overtime_minutes
-                max_minutes = max_time // 60
-                
-                malus_msg = f"Attenzione! Tempo scaduto! "
-                malus_msg += f"Hai superato il limite di {max_minutes} minuti. "
-                malus_msg += f"Penalità applicata: meno {penalty_points} punti."
-                
-                if self.screen_reader:
-                    self.screen_reader.tts.speak(malus_msg, interrupt=True)
-                    wx.MilliSleep(800)
-                
-                self._timer_expired_announced = True
+        # What engine.on_timer_tick() does:
+        # 1. Checks if timer expired
+        # 2. STRICT mode: calls _handle_strict_timeout()
+        #    → Announces timeout
+        #    → Calls end_game(TIMEOUT_STRICT)
+        #    → Shows AbandonDialog with statistics
+        #    → Calls on_game_ended(wants_rematch) callback
+        #    → handle_game_ended() manages UI transition
+        # 3. PERMISSIVE mode: starts overtime tracking + announces
     
-    def _handle_game_over_by_timeout(self) -> None:
-        """Handle game over by timeout in STRICT mode.
-        
-        Shows defeat message with statistics, then defers menu transition.
-        
-        Defer Pattern (CRITICAL to prevent crashes):
-            ✅ CORRECT: Show TTS message, then use wx.CallAfter()
-                → Message shown (may take 2+ seconds)
-                → Defer _safe_timeout_to_menu()
-                → Timer check completes immediately
-                → Frame's event queue processes deferred transition
-                → NO nested event loops = NO crash
-            
-            ❌ WRONG: Perform UI transition directly in timer check
-                → Would create nested event loops
-                → SafeYield() crash during panel swap
-        
-        Why frame.CallAfter() works:
-            Uses frame's instance event queue directly, bypassing global wx.App
-            lookup. Works immediately after frame creation, no timing issues.
-            Guaranteed to work in all app lifecycle phases.
-        
-        Version:
-            v2.0.2: Fixed operation order to prevent crash (Hide → Reset → Show)
-            v2.0.4: Added wx.CallAfter() defer pattern to prevent nested event loops
-            v2.0.6: Changed to wx.CallAfter() (DEFINITIVE FIX)
-        """
-        max_time = self.settings.max_time_game
-        elapsed = self.engine.service.get_elapsed_time()
-        
-        minutes_max = max_time // 60
-        seconds_max = max_time % 60
-        minutes_elapsed = int(elapsed) // 60
-        seconds_elapsed = int(elapsed) % 60
-        
-        defeat_msg = "⏰ TEMPO SCADUTO!\n\n"
-        defeat_msg += f"Tempo limite: {minutes_max} minuti"
-        if seconds_max > 0:
-            defeat_msg += f" e {seconds_max} secondi"
-        defeat_msg += ".\n"
-        defeat_msg += f"Tempo trascorso: {minutes_elapsed} minuti"
-        if seconds_elapsed > 0:
-            defeat_msg += f" e {seconds_elapsed} secondi"
-        defeat_msg += ".\n\n"
-        
-        report, _ = self.engine.service.get_game_report()
-        defeat_msg += "--- STATISTICHE FINALI ---\n"
-        defeat_msg += report
-        
-        print(defeat_msg)
-        
-        if self.screen_reader:
-            self.screen_reader.tts.speak(defeat_msg, interrupt=True)
-            wx.MilliSleep(2000)
-        
-        # ✅ Defer UI transition until AFTER timer event completes
-        print("→ Timeout defeat - Scheduling deferred transition...")
-        wx.CallAfter(self._safe_timeout_to_menu)
-    
-    def _safe_timeout_to_menu(self) -> None:
-        """Deferred handler for timeout defeat → menu transition (called via wx.CallAfter).
-        
-        This method runs AFTER the timer event completes, preventing nested
-        event loops and crashes. Performs safe 3-step transition:
-            1. Hide gameplay panel
-            2. Reset game engine
-            3. Return to menu
-        
-        IMPORTANT: This method should ONLY be called via wx.CallAfter() from
-        _handle_game_over_by_timeout(). Do NOT call directly from timer callbacks.
-        
-        Pattern:
-            ✅ CORRECT: Call via wx.CallAfter() from timer handlers
-                wx.CallAfter(self._safe_timeout_to_menu)
-            
-            ❌ WRONG: Direct call from timer callback
-                self._safe_timeout_to_menu()  # Causes nested event loop
-        
-        Version History:
-            v2.0.3: Initial implementation with panel swap logic
-            v2.0.4: Created as deferred handler for timeout defeat flow
-            v2.0.9: Added CallAfter deferred execution
-            v2.4.3: Corrected to wx.CallAfter (global function)
-        """
-        print("\n→ Executing deferred timeout transition...")
-        
-        # Log timeout transition
-        log.debug_state("timeout_transition", {
-            "trigger": "timer_expired",
-            "from_panel": "gameplay"
-        })
-        
-        # Hide gameplay panel
-        if self.view_manager:
-            gameplay_panel = self.view_manager.get_panel('gameplay')
-            if gameplay_panel:
-                gameplay_panel.Hide()
-                
-                # Log panel hidden
-                log.debug_state("panel_hidden", {"panel": "gameplay"})
-        
-        # Reset game engine
-        self.engine.reset_game()
-        self._timer_expired_announced = False
-        
-        # Return to menu
-        self.return_to_menu()
-        
-        print("→ Timeout transition completed\n")
+    # ❌ DEPRECATED v3.1.3.1: _handle_game_over_by_timeout() removed
+    # ❌ DEPRECATED v3.1.3.1: _safe_timeout_to_menu() removed
+    # These methods bypassed end_game() and didn't record sessions properly.
+    # Timer timeout now handled via engine.on_timer_tick() → end_game() → on_game_ended() callback
     
     # === EVENT HANDLERS (v2.0.1 - Simplified with ViewManager) ===
     

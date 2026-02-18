@@ -94,7 +94,8 @@ class GameEngine:
         settings: Optional[GameSettings] = None,  # NEW (Phase 1/7)
         score_storage: Optional[ScoreStorage] = None,  # NEW (Phase 8/8)
         dialog_provider: Optional['DialogProvider'] = None,  # ✨ NEW v1.6.0
-        on_game_ended: Optional[Callable[[bool], None]] = None  # 🆕 NEW v1.6.2
+        on_game_ended: Optional[Callable[[bool], None]] = None,  # 🆕 NEW v1.6.2
+        profile_service: Optional['ProfileService'] = None  # 🆕 NEW v3.1.0
     ):
         """Initialize game engine.
         
@@ -109,6 +110,7 @@ class GameEngine:
             score_storage: Optional score storage for persistent statistics (NEW v2.0.0)
             dialog_provider: Optional dialog provider for native UI dialogs (NEW v1.6.0)
             on_game_ended: Optional callback when game ends, receives wants_rematch bool (NEW v1.6.2)
+            profile_service: Optional profile service for statistics (NEW v3.1.0)
         """
         self.table = table
         self.service = service
@@ -130,6 +132,12 @@ class GameEngine:
         # 🆕 NEW v1.6.2: End game callback (opt-in)
         self.on_game_ended = on_game_ended
         
+        # 🆕 NEW v3.1.0: Profile service integration
+        self.profile_service = profile_service
+        
+        # 🆕 NEW v3.1.0: Last session storage for "Ultima Partita" menu
+        self.last_session_outcome: Optional['SessionOutcome'] = None
+        
         # Configurable attributes with defaults (Phase 1/7)
         # These will be updated from settings in new_game()
         self.draw_count: int = 1  # Default: 1 carta
@@ -146,7 +154,8 @@ class GameEngine:
         verbose: int = 1,
         settings: Optional[GameSettings] = None,
         use_native_dialogs: bool = False,  # ✨ NEW v1.6.0
-        parent_window = None  # 🆕 NEW v1.6.2 - pygame screen for modal dialogs
+        parent_window = None,  # 🆕 NEW v1.6.2 - pygame screen for modal dialogs
+        profile_service: Optional['ProfileService'] = None  # 🆕 NEW v3.1.0
     ) -> "GameEngine":
         """Factory method to create fully initialized game engine.
         
@@ -158,6 +167,7 @@ class GameEngine:
             use_native_dialogs: Enable native wxPython dialogs (NEW v1.6.0)
             parent_window: pygame.display surface for modal dialog parenting (NEW v1.6.2)
                            If provided, wxDialogs won't appear in ALT+TAB switcher
+            profile_service: Optional profile service for session tracking (NEW v3.1.0)
             
         Returns:
             Initialized GameEngine instance ready to play
@@ -248,7 +258,12 @@ class GameEngine:
                 # wxPython not available, graceful degradation
                 dialog_provider = None
         
-        return cls(table, service, rules, cursor, selection, screen_reader, settings, score_storage, dialog_provider)
+        return cls(
+            table, service, rules, cursor, selection, screen_reader,
+            settings, score_storage, dialog_provider,
+            on_game_ended=None,              # 🆕 Forward callback placeholder
+            profile_service=profile_service  # 🆕 Forward profile_service
+        )
     
     # ========================================
     # GAME LIFECYCLE
@@ -1254,27 +1269,58 @@ class GameEngine:
             self.score_storage.save_score(final_score)
         
         # ═══════════════════════════════════════════════════════════
-        # TODO: Profile System Integration (v3.0.0 - Phase 9)
+        # STEP 3.5: Profile System Integration (v3.1.0 - ACTIVATED)
         # ═══════════════════════════════════════════════════════════
-        # When game ends, record session to active profile:
-        # if self.profile_service and self.profile_service.active_profile:
-        #     from src.domain.models.profile import SessionOutcome
-        #     session_outcome = SessionOutcome.create_new(
-        #         profile_id=self.profile_service.active_profile.profile_id,
-        #         end_reason=end_reason,
-        #         is_victory=is_victory_bool,
-        #         elapsed_time=final_stats['elapsed_time'],
-        #         timer_enabled=self.settings.timer_enabled if self.settings else False,
-        #         timer_limit=self.settings.timer_limit if self.settings else 0,
-        #         timer_mode=self.settings.timer_mode if self.settings else "OFF",
-        #         timer_expired=(end_reason == EndReason.TIMEOUT),
-        #         scoring_enabled=self.settings.scoring_enabled if self.settings else False,
-        #         final_score=final_score.total_score if final_score else 0,
-        #         difficulty_level=self.settings.difficulty_level if self.settings else 3,
-        #         deck_type=self.settings.deck_type if self.settings else "french",
-        #         move_count=final_stats['move_count']
-        #     )
-        #     self.profile_service.record_session(session_outcome)
+        # Record session to active profile
+        profile_summary = None
+        if self.profile_service and self.profile_service.active_profile:
+            from src.domain.models.profile import SessionOutcome
+            
+            # Build session outcome
+            session_outcome = SessionOutcome.create_new(
+                profile_id=self.profile_service.active_profile.profile_id,
+                end_reason=end_reason,
+                is_victory=is_victory_bool,
+                elapsed_time=final_stats['elapsed_time'],
+                timer_enabled=(self.settings.max_time_game > 0) if self.settings else False,
+                timer_limit=self.settings.max_time_game if self.settings else 0,
+                timer_mode=("STRICT" if self.settings.timer_strict_mode else "PERMISSIVE") if (self.settings and self.settings.max_time_game > 0) else "OFF",
+                timer_expired=(end_reason == EndReason.TIMEOUT_STRICT),
+                scoring_enabled=self.settings.scoring_enabled if self.settings else False,
+                final_score=final_score.total_score if final_score else 0,
+                difficulty_level=self.settings.difficulty_level if self.settings else 3,
+                deck_type=self.settings.deck_type if self.settings else "french",
+                move_count=final_stats['move_count']
+            )
+            
+            # Store for "Ultima Partita" menu (v3.1.0 Phase 9.1)
+            self.last_session_outcome = session_outcome
+            
+            # Record session (auto-saves profile)
+            self.profile_service.record_session(session_outcome)
+            
+            # Build profile summary for dialogs
+            profile_summary = {
+                'total_victories': self.profile_service.global_stats.total_victories,
+                'total_defeats': self.profile_service.global_stats.total_games - self.profile_service.global_stats.total_victories,
+                'winrate': self.profile_service.global_stats.winrate,
+                'new_record': self._check_new_record(session_outcome) if is_victory_bool else False,
+                'cards_placed': sum(self.table.pile_semi[i].get_card_count() for i in range(4)),
+                'streak_broken': not is_victory_bool and self.profile_service.global_stats.current_streak > 0,
+                'previous_streak': self.profile_service.global_stats.longest_streak if not is_victory_bool else 0
+            }
+            
+            if profile_summary['new_record']:
+                # Get previous record for display
+                if len(self.profile_service.recent_sessions) >= 2:
+                    # Find previous victory
+                    prev_victory_time = None
+                    for session in reversed(self.profile_service.recent_sessions[:-1]):
+                        if session.is_victory:
+                            prev_victory_time = session.elapsed_time
+                            break
+                    if prev_victory_time:
+                        profile_summary['previous_record'] = prev_victory_time
         
         # ═══════════════════════════════════════════════════════════
         # STEP 4: Generate Report
@@ -1296,7 +1342,83 @@ class GameEngine:
             self.screen_reader.tts.speak(report, interrupt=True)
         
         # ═══════════════════════════════════════════════════════════
-        # STEP 6: Native Statistics Dialog (Structured, Accessible)
+        # STEP 6: Show Victory/Abandon Dialog (v3.1.0)
+        # ═══════════════════════════════════════════════════════════
+        if profile_summary:
+            # Use new stats-integrated dialogs
+            try:
+                import wx
+                from src.presentation.dialogs.victory_dialog import VictoryDialog
+                from src.presentation.dialogs.abandon_dialog import AbandonDialog
+                from src.domain.models.profile import SessionOutcome
+                
+                # Show appropriate dialog
+                if is_victory_bool:
+                    dialog = VictoryDialog(None, session_outcome, profile_summary)
+                else:
+                    # v3.1.2: For timeout, show rematch option (3 buttons instead of 2)
+                    show_rematch = (end_reason == EndReason.TIMEOUT_STRICT)
+                    dialog = AbandonDialog(None, session_outcome, profile_summary, 
+                                         show_rematch_option=show_rematch)
+                
+                result = dialog.ShowModal()
+                dialog.Destroy()
+                
+                # Handle user choice
+                # v3.1.2: Support timeout rematch options (wx.ID_YES, wx.ID_MORE, wx.ID_NO)
+                if result == wx.ID_MORE:
+                    # User wants to see detailed stats (timeout scenario)
+                    try:
+                        from src.presentation.dialogs.detailed_stats_dialog import DetailedStatsDialog
+                        
+                        stats_dialog = DetailedStatsDialog(
+                            None,
+                            profile_name=self.profile_service.active_profile.profile_name,
+                            global_stats=self.profile_service.global_stats,
+                            timer_stats=self.profile_service.timer_stats,
+                            difficulty_stats=self.profile_service.difficulty_stats,
+                            scoring_stats=self.profile_service.scoring_stats
+                        )
+                        stats_dialog.ShowModal()
+                        stats_dialog.Destroy()
+                    except Exception as e:
+                        # If stats dialog fails, just log and continue
+                        import logging
+                        logging.error(f"Failed to show detailed stats: {e}")
+                    
+                    # After viewing stats, return to menu (don't start new game)
+                    if self.on_game_ended:
+                        print("[DEBUG end_game] User viewed stats, calling callback(wants_rematch=False)")
+                        self.on_game_ended(False)  # Don't want rematch
+                    else:
+                        print("[DEBUG end_game] No callback, resetting game locally")
+                        self.service.reset_game()
+                
+                elif self.on_game_ended:
+                    # ✅ CORRECT: Pass control to acs_wx.py
+                    # wx.ID_YES (Rivincita) or wx.ID_OK (Nuova Partita) = wants rematch
+                    wants_rematch = (result == wx.ID_OK or result == wx.ID_YES)
+                    print(f"[DEBUG end_game] Dialog result={result}, wants_rematch={wants_rematch}")
+                    print("[DEBUG end_game] Chiamando callback on_game_ended()...")
+                    self.on_game_ended(wants_rematch)
+                    print("[DEBUG end_game] Callback completato")
+                else:
+                    # ⚠️ FALLBACK: No callback (test mode or legacy code)
+                    print("[DEBUG end_game] ⚠️ No callback registered, handling locally")
+                    if result == wx.ID_OK or result == wx.ID_YES:
+                        print("[DEBUG end_game] Starting new game locally...")
+                        self.new_game()
+                    else:
+                        print("[DEBUG end_game] Resetting game locally (no UI transition)...")
+                        self.service.reset_game()
+                
+                return  # Skip old dialog system below
+            except ImportError:
+                # wx not available, fallback to old system
+                pass
+        
+        # ═══════════════════════════════════════════════════════════
+        # STEP 6 (Fallback): Old Dialog System
         # ═══════════════════════════════════════════════════════════
         if self.dialogs:
             # ═══════════════════════════════════════════════════════
@@ -1360,6 +1482,68 @@ class GameEngine:
                 self.on_game_ended(False)
             else:
                 self.service.reset_game()
+    
+    # ========================================
+    # PROFILE SYSTEM HELPERS (v3.1.0)
+    # ========================================
+    
+    def _check_new_record(self, outcome) -> bool:
+        """Check if session outcome is a new personal record.
+        
+        Args:
+            outcome: SessionOutcome instance
+            
+        Returns:
+            True if this is the fastest victory ever
+            
+        Version: v3.1.0
+        """
+        if not outcome.is_victory or not self.profile_service:
+            return False
+        
+        prev_fastest = self.profile_service.global_stats.fastest_victory
+        
+        # If this is the first victory, it's automatically a record
+        if prev_fastest == float('inf'):
+            return True
+        
+        # Check if current time beats previous record
+        return outcome.elapsed_time < prev_fastest
+    
+    def show_last_game_summary(self) -> None:
+        """Show last game summary dialog (menu option 'Ultima Partita').
+        
+        Displays LastGameDialog with summary of most recently completed game.
+        Retrieves from ProfileService.recent_sessions (persisted) instead of
+        memory-only GameEngine.last_session_outcome.
+        
+        Version:
+            v3.1.0: Initial implementation
+            v3.1.2: Fixed to use ProfileService (Single Source of Truth, persisted)
+        """
+        import wx
+        from src.presentation.dialogs.last_game_dialog import LastGameDialog
+        
+        log.debug_state("last_game_query", {"trigger": "menu_button"})
+        
+        # v3.1.2: Use ProfileService.recent_sessions (persisted, works after restart)
+        if not self.profile_service or not self.profile_service.recent_sessions:
+            log.info_query_requested("last_game", "no_recent_game")
+            wx.MessageBox(
+                "Nessuna partita recente disponibile.\n"
+                "Gioca una partita per vedere il riepilogo.",
+                "Ultima Partita",
+                wx.OK | wx.ICON_INFORMATION
+            )
+            return
+        
+        # Get last session from ProfileService (always up-to-date, even after app restart)
+        last_session = self.profile_service.recent_sessions[-1]
+        
+        log.debug_state("last_game_display", {"outcome": last_session.end_reason.value})
+        dialog = LastGameDialog(None, last_session)
+        dialog.ShowModal()
+        dialog.Destroy()
     
     # ========================================
     # THRESHOLD WARNING HELPERS (v2.6.0)
