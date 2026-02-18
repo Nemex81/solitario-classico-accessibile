@@ -1298,6 +1298,6 @@ MenuPanel (v3.1.0 extended to 6 buttons)
 
 ---
 
-*Document Version: 3.1.1*  
-*Last Updated: 2026-02-17*  
+*Document Version: 3.1.2*  
+*Last Updated: 2026-02-18*  
 *Revision: StatsFormatter method list aligned with implementation*

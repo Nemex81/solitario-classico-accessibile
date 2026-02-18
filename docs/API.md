@@ -4,7 +4,7 @@
 
 Questo documento descrive l'API pubblica del Solitario Classico Accessibile.
 
-**Versione API Corrente**: v3.1.0 (Stats Presentation UI Complete)
+**Versione API Corrente**: v3.1.2 (Bug Fixes - Dialog improvements)
 
 ---
 
@@ -1342,6 +1342,6 @@ Per dettagli architetturali:
 
 ---
 
-*Document Version: 3.1.1*  
-*Last Updated: 2026-02-17*  
+*Document Version: 3.1.2*  
+*Last Updated: 2026-02-18*  
 *Revision: Method names aligned with implementation*
