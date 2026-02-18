@@ -328,3 +328,52 @@ git push origin v3.1.2.1
 **Fine TODO.**
 
 **STATUS**: ✅ **100% COMPLETO - READY FOR MERGE TO REFACTORING-ENGINE**
+
+---
+
+## 🧪 Test Suite Modernization v3.2.0
+
+**Branch**: `copilot/modernize-legacy-test-suite`  
+**Tipo**: TEST INFRASTRUCTURE MODERNIZATION  
+**Priorità**: HIGH  
+**Stato**: 🔄 **IN PROGRESS** (Phase 0/6 Complete)  
+**Stima Totale**: 50-75 min
+
+### 📖 Riferimenti Documentazione
+
+- **Implementation Plan**: [`docs/3 - coding plans/IMPLEMENTATION_LEGACY_TEST_MODERNIZATION.md`](3%20-%20coding%20plans/IMPLEMENTATION_LEGACY_TEST_MODERNIZATION.md) ✅
+- **Audit Report**: [`docs/LEGACY_TEST_AUDIT.md`](LEGACY_TEST_AUDIT.md)
+- **Base Branch**: `refactoring-engine`
+
+### ✅ Checklist Fasi (6 fasi atomiche)
+
+- [x] **Phase 0**: Create Implementation Plan (~3 min) ✅
+- [ ] **Phase 1**: Fix Import Errors (8-12 min)
+  - [ ] Fix scr → src imports (3 files)
+  - [ ] Remove GameState imports (3 files)
+  - [ ] Fix other import errors (2 files)
+- [ ] **Phase 2**: Remove PileType References (3-5 min)
+  - [ ] Update test_pile.py
+  - [ ] Update test_selection_manager.py
+- [ ] **Phase 3**: Profile Integration Tests (15-20 min)
+  - [ ] Create test_profile_game_integration.py
+  - [ ] 5 test scenarios (victory, abandon, timeout, overtime, timer mapping)
+- [ ] **Phase 4**: Timer Field Mapping Tests (8-10 min)
+  - [ ] Extend integration tests with edge cases
+  - [ ] Validate STRICT/PERMISSIVE/OFF modes
+- [ ] **Phase 5**: Update EndReason Assertions (10-15 min)
+  - [ ] Find all end_game() calls
+  - [ ] Update assertions for 6 EndReason values
+- [ ] **Phase 6**: GUI Markers + Cleanup (5-8 min)
+  - [ ] Update pytest.ini with gui marker
+  - [ ] Mark GUI tests
+  - [ ] Archive tests/unit/scr/
+
+### 📊 Success Metrics
+
+- **Test Health Score**: 75% → 88%+ (Target)
+- **Commit Atomicity**: 6 implementation commits + checkpoint updates
+- **Execution Time**: 50-75 min estimated
+- **Zero Production Changes**: Only tests/ directory modified
+
+---
