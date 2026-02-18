@@ -624,14 +624,16 @@ class SolitarioController:
     def _safe_abandon_to_menu(self) -> None:
         """Deferred handler for abandon game → menu transition (called via wx.CallAfter).
         
-        FIXED v3.1.3: Now calls end_game() to record session to ProfileService.
-        This ensures "Ultima Partita" menu shows correct statistics after ESC abandon.
+        FIXED v3.1.3.1: Records session via end_game() with callback suppression.
+        Prevents double transition by temporarily removing on_game_ended callback.
         
         This method runs AFTER the ESC event handler completes, preventing nested
-        event loops and crashes. Performs safe 3-step transition:
+        event loops and crashes. Performs safe transition:
             1. Hide gameplay panel
-            2. End game (record session) - FIXED v3.1.3
-            3. Return to menu
+            2. Suppress on_game_ended callback
+            3. End game (records session, shows dialog, no callback)
+            4. Restore callback
+            5. Return to menu (only once)
         
         IMPORTANT: This method should ONLY be called via wx.CallAfter() from
         show_abandon_game_dialog(). Do NOT call directly from event handlers.
@@ -649,6 +651,7 @@ class SolitarioController:
             v2.0.9: Added CallAfter deferred execution
             v2.4.3: Corrected to wx.CallAfter (global function)
             v3.1.3: FIXED - Call end_game() to record session (was reset_game())
+            v3.1.3.1: CRITICAL FIX - Added callback suppression to prevent double transition
         """
         print("\n→ Executing deferred abandon transition...")
         
@@ -667,21 +670,22 @@ class SolitarioController:
                 # Log panel hidden
                 log.debug_state("panel_hidden", {"panel": "gameplay"})
         
-        # 🔥 FIXED v3.1.3: Call end_game() to record session
-        # This replaces reset_game() which didn't save statistics
+        # 🔥 FIXED v3.1.3.1: Suppress callback to prevent double transition
+        # end_game() calls on_game_ended() which would call handle_game_ended()
+        # This would cause double menu transition (end_game + return_to_menu)
+        original_callback = self.engine.on_game_ended
+        self.engine.on_game_ended = None
+        
+        # End game (records session, shows dialog, but no callback)
         from src.domain.models.game_end import EndReason
         self.engine.end_game(EndReason.ABANDON_EXIT)
         
-        # Note: end_game() will:
-        # 1. Create SessionOutcome with current stats
-        # 2. Call profile_service.record_session()
-        # 3. Show AbandonDialog with statistics
-        # 4. Call on_game_ended(wants_rematch) callback
-        # 5. Reset game internally (no need for explicit reset_game())
+        # Restore callback for future games
+        self.engine.on_game_ended = original_callback
         
         self._timer_expired_announced = False
         
-        # Return to menu (end_game already handled reset)
+        # Return to menu (only once, no conflict with callback)
         self.return_to_menu()
         
         print("→ Abandon transition completed\n")
@@ -985,7 +989,11 @@ class SolitarioController:
     # === TIMER MANAGEMENT ===
     
     def _check_timer_expiration(self) -> None:
-        """Check timer expiration (called every second by wx.Timer)."""
+        """Check timer expiration (called every second by wx.Timer).
+        
+        FIXED v3.1.3.1: Delegates to engine.on_timer_tick() instead of local handler.
+        This ensures proper session recording and dialog flow via end_game().
+        """
         # Skip if not in gameplay mode
         # PRIORITY 1: Use ViewManager if available (modern approach)
         if self.view_manager:
@@ -1007,145 +1015,24 @@ class SolitarioController:
         if game_over:
             return
         
-        # Get current elapsed time
-        elapsed = self.engine.service.get_elapsed_time()
-        max_time = self.settings.max_time_game
+        # 🔥 FIXED v3.1.3.1: Delegate to engine.on_timer_tick()
+        # This replaces local timer handling which bypassed end_game()
+        self.engine.on_timer_tick()
         
-        # Timer still OK
-        if elapsed < max_time:
-            self._timer_expired_announced = False
-            return
-        
-        # Timer expired
-        if self.settings.timer_strict_mode:
-            self._handle_game_over_by_timeout()
-        else:
-            # Permissive mode - announce once
-            if not self._timer_expired_announced:
-                overtime_seconds = int(elapsed - max_time)
-                overtime_minutes = max(1, overtime_seconds // 60)
-                penalty_points = 100 * overtime_minutes
-                max_minutes = max_time // 60
-                
-                malus_msg = f"Attenzione! Tempo scaduto! "
-                malus_msg += f"Hai superato il limite di {max_minutes} minuti. "
-                malus_msg += f"Penalità applicata: meno {penalty_points} punti."
-                
-                if self.screen_reader:
-                    self.screen_reader.tts.speak(malus_msg, interrupt=True)
-                    wx.MilliSleep(800)
-                
-                self._timer_expired_announced = True
+        # What engine.on_timer_tick() does:
+        # 1. Checks if timer expired
+        # 2. STRICT mode: calls _handle_strict_timeout()
+        #    → Announces timeout
+        #    → Calls end_game(TIMEOUT_STRICT)
+        #    → Shows AbandonDialog with statistics
+        #    → Calls on_game_ended(wants_rematch) callback
+        #    → handle_game_ended() manages UI transition
+        # 3. PERMISSIVE mode: starts overtime tracking + announces
     
-    def _handle_game_over_by_timeout(self) -> None:
-        """Handle game over by timeout in STRICT mode.
-        
-        Shows defeat message with statistics, then defers menu transition.
-        
-        Defer Pattern (CRITICAL to prevent crashes):
-            ✅ CORRECT: Show TTS message, then use wx.CallAfter()
-                → Message shown (may take 2+ seconds)
-                → Defer _safe_timeout_to_menu()
-                → Timer check completes immediately
-                → Frame's event queue processes deferred transition
-                → NO nested event loops = NO crash
-            
-            ❌ WRONG: Perform UI transition directly in timer check
-                → Would create nested event loops
-                → SafeYield() crash during panel swap
-        
-        Why frame.CallAfter() works:
-            Uses frame's instance event queue directly, bypassing global wx.App
-            lookup. Works immediately after frame creation, no timing issues.
-            Guaranteed to work in all app lifecycle phases.
-        
-        Version:
-            v2.0.2: Fixed operation order to prevent crash (Hide → Reset → Show)
-            v2.0.4: Added wx.CallAfter() defer pattern to prevent nested event loops
-            v2.0.6: Changed to wx.CallAfter() (DEFINITIVE FIX)
-        """
-        max_time = self.settings.max_time_game
-        elapsed = self.engine.service.get_elapsed_time()
-        
-        minutes_max = max_time // 60
-        seconds_max = max_time % 60
-        minutes_elapsed = int(elapsed) // 60
-        seconds_elapsed = int(elapsed) % 60
-        
-        defeat_msg = "⏰ TEMPO SCADUTO!\n\n"
-        defeat_msg += f"Tempo limite: {minutes_max} minuti"
-        if seconds_max > 0:
-            defeat_msg += f" e {seconds_max} secondi"
-        defeat_msg += ".\n"
-        defeat_msg += f"Tempo trascorso: {minutes_elapsed} minuti"
-        if seconds_elapsed > 0:
-            defeat_msg += f" e {seconds_elapsed} secondi"
-        defeat_msg += ".\n\n"
-        
-        report, _ = self.engine.service.get_game_report()
-        defeat_msg += "--- STATISTICHE FINALI ---\n"
-        defeat_msg += report
-        
-        print(defeat_msg)
-        
-        if self.screen_reader:
-            self.screen_reader.tts.speak(defeat_msg, interrupt=True)
-            wx.MilliSleep(2000)
-        
-        # ✅ Defer UI transition until AFTER timer event completes
-        print("→ Timeout defeat - Scheduling deferred transition...")
-        wx.CallAfter(self._safe_timeout_to_menu)
-    
-    def _safe_timeout_to_menu(self) -> None:
-        """Deferred handler for timeout defeat → menu transition (called via wx.CallAfter).
-        
-        This method runs AFTER the timer event completes, preventing nested
-        event loops and crashes. Performs safe 3-step transition:
-            1. Hide gameplay panel
-            2. Reset game engine
-            3. Return to menu
-        
-        IMPORTANT: This method should ONLY be called via wx.CallAfter() from
-        _handle_game_over_by_timeout(). Do NOT call directly from timer callbacks.
-        
-        Pattern:
-            ✅ CORRECT: Call via wx.CallAfter() from timer handlers
-                wx.CallAfter(self._safe_timeout_to_menu)
-            
-            ❌ WRONG: Direct call from timer callback
-                self._safe_timeout_to_menu()  # Causes nested event loop
-        
-        Version History:
-            v2.0.3: Initial implementation with panel swap logic
-            v2.0.4: Created as deferred handler for timeout defeat flow
-            v2.0.9: Added CallAfter deferred execution
-            v2.4.3: Corrected to wx.CallAfter (global function)
-        """
-        print("\n→ Executing deferred timeout transition...")
-        
-        # Log timeout transition
-        log.debug_state("timeout_transition", {
-            "trigger": "timer_expired",
-            "from_panel": "gameplay"
-        })
-        
-        # Hide gameplay panel
-        if self.view_manager:
-            gameplay_panel = self.view_manager.get_panel('gameplay')
-            if gameplay_panel:
-                gameplay_panel.Hide()
-                
-                # Log panel hidden
-                log.debug_state("panel_hidden", {"panel": "gameplay"})
-        
-        # Reset game engine
-        self.engine.reset_game()
-        self._timer_expired_announced = False
-        
-        # Return to menu
-        self.return_to_menu()
-        
-        print("→ Timeout transition completed\n")
+    # ❌ DEPRECATED v3.1.3.1: _handle_game_over_by_timeout() removed
+    # ❌ DEPRECATED v3.1.3.1: _safe_timeout_to_menu() removed
+    # These methods bypassed end_game() and didn't record sessions properly.
+    # Timer timeout now handled via engine.on_timer_tick() → end_game() → on_game_ended() callback
     
     # === EVENT HANDLERS (v2.0.1 - Simplified with ViewManager) ===
     
