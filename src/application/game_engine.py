@@ -1305,7 +1305,7 @@ class GameEngine:
                 'total_defeats': self.profile_service.global_stats.total_games - self.profile_service.global_stats.total_victories,
                 'winrate': self.profile_service.global_stats.winrate,
                 'new_record': self._check_new_record(session_outcome) if is_victory_bool else False,
-                'cards_placed': sum(self.table.pile_base[i].count() for i in range(4)),
+                'cards_placed': sum(self.table.pile_semi[i].get_card_count() for i in range(4)),
                 'streak_broken': not is_victory_bool and self.profile_service.global_stats.current_streak > 0,
                 'previous_streak': self.profile_service.global_stats.longest_streak if not is_victory_bool else 0
             }
