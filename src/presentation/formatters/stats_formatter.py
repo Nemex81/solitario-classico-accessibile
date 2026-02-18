@@ -352,11 +352,11 @@ ESC - Torna a Gestione Profili"""
         }
         
         for level in range(1, 6):
-            games_at_level = difficulty_stats.games_per_level.get(level, 0)
+            games_at_level = difficulty_stats.games_by_level.get(level, 0)
             if games_at_level > 0:
-                victories = difficulty_stats.victories_per_level.get(level, 0)
+                victories = difficulty_stats.victories_by_level.get(level, 0)
                 winrate = victories / games_at_level if games_at_level > 0 else 0
-                avg_score = difficulty_stats.avg_score_per_level.get(level, 0)
+                avg_score = difficulty_stats.avg_score_by_level.get(level, 0)
                 
                 diff_section += f"\n{diff_labels[level]} (Livello {level}):\n"
                 diff_section += f"  Partite: {games_at_level}\n"
