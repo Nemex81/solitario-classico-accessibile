@@ -656,34 +656,37 @@ class ProfileMenuPanel(wx.Dialog):
                 wx.OK | wx.ICON_ERROR
             )
             self._announce("Errore eliminazione profilo.", interrupt=True)
-    
+
+
     def _on_show_stats(self, event: wx.CommandEvent) -> None:
-        """Handle \"Statistiche Dettagliate\" button (Phase 9.3 COMPLETION!).
-        
-        Flow:
-        1. Check if active profile exists
-        2. Load stats from profile_service
-        3. Build stats_data dict (format expected by DetailedStatsDialog)
-        4. Open DetailedStatsDialog (modal, blocks until closed)
-        5. Returns to profile menu after closing
-        
-        Stats data structure:
-        {
-            'profile_name': str,
-            'global_stats': GlobalStats,
-            'timer_stats': TimerStats,
-            'difficulty_stats': DifficultyStats,
-            'scoring_stats': ScoringStats
-        }
-        
-        Note: This completes Feature 3 implementation (Phase 9.3)!
-        
-        Version: v3.1.0 Phase 10.4
         """
+            Handle "Statistiche Dettagliate" button (Phase 9.3 COMPLETION!).
+
+            Flow:
+            1. Check if active profile exists
+            2. Check if stats are loaded (v3.1.3.3: corruption safety)
+            3. Load stats from profile_service
+            4. Open DetailedStatsDialog (modal, blocks until closed)
+            5. Returns to profile menu after closing
+
+            Stats data structure:
+            {
+                'profile_name': str,
+                'global_stats': GlobalStats,
+                'timer_stats': TimerStats,
+                'difficulty_stats': DifficultyStats,
+                'scoring_stats': ScoringStats
+            }
+
+            Note: This completes Feature 3 implementation (Phase 9.3)!
+
+            Version: v3.1.3.3 (added stats None check for corruption safety)
+        """
+
         from src.presentation.dialogs.detailed_stats_dialog import DetailedStatsDialog
-        
+
         self._announce("Statistiche dettagliate.", interrupt=True)
-        
+
         # Check active profile
         if self.profile_service.active_profile is None:
             wx.MessageBox(
@@ -693,11 +696,25 @@ class ProfileMenuPanel(wx.Dialog):
             )
             self._announce("Nessun profilo attivo.", interrupt=True)
             return
-        
+
+        # Check stats loaded (prevent corruption crash) - v3.1.3.3
+        if (self.profile_service.global_stats is None or
+            self.profile_service.timer_stats is None or
+            self.profile_service.difficulty_stats is None or
+            self.profile_service.scoring_stats is None):
+            wx.MessageBox(
+                "Statistiche non disponibili per questo profilo.\n"
+                "Il file potrebbe essere corrotto.",
+                "Errore",
+                wx.OK | wx.ICON_ERROR
+            )
+            self._announce("Statistiche non disponibili.", interrupt=True)
+            return
+
         profile = self.profile_service.active_profile
-        
+
         log.info_query_requested("detailed_stats", f"profile_{profile.profile_name}")
-        
+
         # Open DetailedStatsDialog with separate parameters (NOT dict)
         dialog = DetailedStatsDialog(
             self,
@@ -709,8 +726,9 @@ class ProfileMenuPanel(wx.Dialog):
         )
         dialog.ShowModal()
         dialog.Destroy()
-        
+
         # Return to profile menu (no announce needed, dialog handles TTS)
+
     
     def _on_set_default(self, event: wx.CommandEvent) -> None:
         """Handle \"Imposta come Predefinito\" button.
