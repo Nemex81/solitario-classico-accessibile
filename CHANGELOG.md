@@ -13,6 +13,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.1.2] - 2026-02-18
+
+### Fixed
+- **ProfileMenuPanel:** "Statistiche Dettagliate" button now handles profiles with 0 games gracefully
+  - Added defensive programming in `StatsFormatter.format_global_stats_detailed()`
+  - Shows "Nessuna statistica disponibile" message for empty profiles
+  - Prevents AttributeError on fastest/slowest victory when None
+  - Records display "N/D" (not available) when no data exists
+- **Last Game Dialog:** "Ultima Partita" menu button now retrieves last game from ProfileService
+  - Changed from memory-only `GameEngine.last_session_outcome` to persisted `ProfileService.recent_sessions`
+  - Last game now available even after app restart (Single Source of Truth pattern)
+  - Fixed issue where button showed "no game" despite having played games in same session
+
+### Technical Details
+- **StatsFormatter:** Added edge case handling for 0-game profiles
+  - Early return with friendly message when `total_games == 0`
+  - Defensive None checks for `fastest_victory` and `slowest_victory`
+- **GameEngine:** Refactored `show_last_game_summary()` to use `ProfileService.recent_sessions[-1]`
+  - Enforces Clean Architecture: domain layer holds data, application layer orchestrates
+  - Data persists across app sessions (stored in profile JSON files)
+- Maintains 100% backward compatibility with v3.1.1 profiles
+- No breaking changes to API or data structures
+
+### Architecture Improvements
+- Enforced Single Source of Truth: ProfileService for session history
+- Reduced memory-only state in GameEngine
+- Better separation of concerns: presentation handles edge cases, domain holds persistent data
+
+---
+
 ## [3.1.1] - 2026-02-18
 
 ### Fixed
