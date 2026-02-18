@@ -174,7 +174,26 @@ class StatsFormatter:
             
         Returns:
             Multi-line formatted text for 3-page stats dialog (Page 1/3)
+            
+        Version:
+            v3.1.0: Initial implementation
+            v3.1.2: Added edge case handling for 0-game profiles
         """
+        # ========== v3.1.2: Handle empty profile (0 games) ==========
+        if stats.total_games == 0:
+            return f"""{'=' * 56}
+    STATISTICHE PROFILO: {profile_name}
+{'=' * 56}
+
+Nessuna statistica disponibile.
+Gioca la tua prima partita per iniziare a tracciare le statistiche!
+
+{'─' * 56}
+Pagina 1/3
+PAGE DOWN - Pagina successiva
+ESC - Torna a Gestione Profili"""
+        
+        # ========== Normal formatting (existing code) ==========
         header = f"{'=' * 56}\n"
         header += f"    STATISTICHE PROFILO: {profile_name}\n"
         header += f"{'=' * 56}\n\n"
@@ -197,12 +216,21 @@ class StatsFormatter:
         time_stats += f"Tempo medio per partita: {self.format_duration(avg_time)}\n\n"
         
         records = "RECORD PERSONALI\n"
-        if stats.fastest_victory < float('inf'):
+        # v3.1.2: Defensive programming for None/infinite values
+        if stats.fastest_victory and stats.fastest_victory < float('inf'):
             records += f"🏆 Vittoria più veloce: {self.format_duration(stats.fastest_victory)}\n"
-        if stats.slowest_victory > 0:
+        else:
+            records += "🏆 Vittoria più veloce: N/D\n"
+        
+        if stats.slowest_victory and stats.slowest_victory > 0:
             records += f"🏆 Vittoria più lenta: {self.format_duration(stats.slowest_victory)}\n"
+        else:
+            records += "🏆 Vittoria più lenta: N/D\n"
+        
         if stats.highest_score > 0:
             records += f"🏆 Punteggio massimo: {self.format_number(stats.highest_score)} punti\n"
+        else:
+            records += "🏆 Punteggio massimo: N/D\n"
         
         footer = f"\n{'─' * 56}\n"
         footer += "Pagina 1/3\n"
