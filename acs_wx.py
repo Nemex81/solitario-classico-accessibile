@@ -624,10 +624,13 @@ class SolitarioController:
     def _safe_abandon_to_menu(self) -> None:
         """Deferred handler for abandon game → menu transition (called via wx.CallAfter).
         
+        FIXED v3.1.3: Now calls end_game() to record session to ProfileService.
+        This ensures "Ultima Partita" menu shows correct statistics after ESC abandon.
+        
         This method runs AFTER the ESC event handler completes, preventing nested
         event loops and crashes. Performs safe 3-step transition:
             1. Hide gameplay panel
-            2. Reset game engine
+            2. End game (record session) - FIXED v3.1.3
             3. Return to menu
         
         IMPORTANT: This method should ONLY be called via wx.CallAfter() from
@@ -645,6 +648,7 @@ class SolitarioController:
             v2.0.4: Created as deferred handler for abandon game flow
             v2.0.9: Added CallAfter deferred execution
             v2.4.3: Corrected to wx.CallAfter (global function)
+            v3.1.3: FIXED - Call end_game() to record session (was reset_game())
         """
         print("\n→ Executing deferred abandon transition...")
         
@@ -663,17 +667,30 @@ class SolitarioController:
                 # Log panel hidden
                 log.debug_state("panel_hidden", {"panel": "gameplay"})
         
-        # Reset game engine
-        self.engine.reset_game()
+        # 🔥 FIXED v3.1.3: Call end_game() to record session
+        # This replaces reset_game() which didn't save statistics
+        from src.domain.models.game_end import EndReason
+        self.engine.end_game(EndReason.ABANDON_EXIT)
+        
+        # Note: end_game() will:
+        # 1. Create SessionOutcome with current stats
+        # 2. Call profile_service.record_session()
+        # 3. Show AbandonDialog with statistics
+        # 4. Call on_game_ended(wants_rematch) callback
+        # 5. Reset game internally (no need for explicit reset_game())
+        
         self._timer_expired_announced = False
         
-        # Return to menu
+        # Return to menu (end_game already handled reset)
         self.return_to_menu()
         
         print("→ Abandon transition completed\n")
     
     def show_new_game_dialog(self) -> None:
         """Show new game confirmation dialog (non-blocking).
+        
+        FIXED v3.1.3: Records abandoned session before starting new game.
+        Uses callback suppression to avoid double dialog (abandon + rematch).
         
         Uses async dialog API to prevent nested event loops.
         
@@ -693,11 +710,36 @@ class SolitarioController:
         Version:
             v1.7.5: Fixed to use semantic API without parameters
             v2.2: Migrated to async dialog API
+            v3.1.3: FIXED - Record abandoned session via end_game() before new_game()
         """
         def on_new_game_result(confirmed: bool):
             if confirmed:
-                self.engine.reset_game()
+                # 🔥 FIXED v3.1.3: Record abandoned session via end_game()
+                # Use callback suppression to prevent double dialog
+                
+                # Step 1: Temporarily suppress on_game_ended callback
+                # This prevents AbandonDialog from showing (we already showed confirmation)
+                original_callback = self.engine.on_game_ended
+                self.engine.on_game_ended = None
+                
+                # Step 2: End current game properly (records session)
+                from src.domain.models.game_end import EndReason
+                self.engine.end_game(EndReason.ABANDON_EXIT)
+                
+                # What end_game() does (without callback):
+                # 1. Creates SessionOutcome with ABANDON_EXIT reason
+                # 2. Calls profile_service.record_session() ✅
+                # 3. Shows AbandonDialog (SUPPRESSED by None callback) ❌
+                # 4. Resets game internally
+                
+                # Step 3: Restore callback for future games
+                self.engine.on_game_ended = original_callback
+                
+                # Step 4: Start new game immediately
                 self.engine.new_game()
+                
+                # Result: Single dialog, session recorded, clean UX ✅
+                
                 self._timer_expired_announced = False
                 
                 if self.screen_reader:
