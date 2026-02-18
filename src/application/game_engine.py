@@ -1472,19 +1472,23 @@ class GameEngine:
         return outcome.elapsed_time < prev_fastest
     
     def show_last_game_summary(self) -> None:
-        """Show last game summary dialog (menu option 'U').
+        """Show last game summary dialog (menu option 'Ultima Partita').
         
         Displays LastGameDialog with summary of most recently completed game.
-        Shows message box if no recent game available.
+        Retrieves from ProfileService.recent_sessions (persisted) instead of
+        memory-only GameEngine.last_session_outcome.
         
-        Version: v3.1.0 Phase 9.1
+        Version:
+            v3.1.0: Initial implementation
+            v3.1.2: Fixed to use ProfileService (Single Source of Truth, persisted)
         """
         import wx
         from src.presentation.dialogs.last_game_dialog import LastGameDialog
         
         log.debug_state("last_game_query", {"trigger": "menu_button"})
         
-        if self.last_session_outcome is None:
+        # v3.1.2: Use ProfileService.recent_sessions (persisted, works after restart)
+        if not self.profile_service or not self.profile_service.recent_sessions:
             log.info_query_requested("last_game", "no_recent_game")
             wx.MessageBox(
                 "Nessuna partita recente disponibile.\n"
@@ -1494,8 +1498,11 @@ class GameEngine:
             )
             return
         
-        log.debug_state("last_game_display", {"outcome": self.last_session_outcome.end_reason.value})
-        dialog = LastGameDialog(None, self.last_session_outcome)
+        # Get last session from ProfileService (always up-to-date, even after app restart)
+        last_session = self.profile_service.recent_sessions[-1]
+        
+        log.debug_state("last_game_display", {"outcome": last_session.end_reason.value})
+        dialog = LastGameDialog(None, last_session)
         dialog.ShowModal()
         dialog.Destroy()
     
