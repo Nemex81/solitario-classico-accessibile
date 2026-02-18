@@ -56,8 +56,8 @@ Ogni fase segue questo pattern:
 - [x] **Phase 0**: Create Implementation Plan (questo documento)
 - [x] **Phase 1**: Fix Import Errors (scr → src, GameState removed)
 - [x] **Phase 2**: Remove PileType References
-- [ ] **Phase 3**: Add Profile Integration Tests (5 scenarios)
-- [ ] **Phase 4**: Add Timer Field Mapping Tests (3 scenarios)
+- [x] **Phase 3**: Add Profile Integration Tests (5 scenarios)
+- [x] **Phase 4**: Add Timer Field Mapping Tests (3 scenarios)
 - [ ] **Phase 5**: Update EndReason Assertions
 - [ ] **Phase 6**: GUI Markers + Archive Obsolete Tests
 
