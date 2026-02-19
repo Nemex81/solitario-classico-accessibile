@@ -58,7 +58,7 @@ Ogni fase segue questo pattern:
 - [x] **Phase 2**: Remove PileType References
 - [x] **Phase 3**: Add Profile Integration Tests (5 scenarios)
 - [x] **Phase 4**: Add Timer Field Mapping Tests (3 scenarios)
-- [ ] **Phase 5**: Update EndReason Assertions
+- [x] **Phase 5**: Update EndReason Assertions (SKIPPED - existing tests already use EndReason enum)
 - [ ] **Phase 6**: GUI Markers + Archive Obsolete Tests
 
 **Istruzioni**: Dopo ogni commit di fase, spunta `[x]` la fase completata.
@@ -510,9 +510,29 @@ Refs: LEGACY_TEST_AUDIT.md Timer Field Names Section
 
 ---
 
-## 🔄 PHASE 5: Update EndReason Assertions
+## ✅ PHASE 5: Update EndReason Assertions (SKIPPED)
 
-### 🎯 Obiettivo
+### ✅ Status: SKIPPED - No Updates Needed
+
+**Reason**: Analysis of existing tests shows all `end_game()` calls already use `EndReason` enum correctly.
+
+**Verification Command**:
+```bash
+grep -r "end_game" tests/ --include="*.py" | grep -v "test_profile_game_integration" | grep -v "archive"
+```
+
+**Findings**:
+- `tests/integration/test_timer_integration.py`: Already uses `EndReason.TIMEOUT_STRICT` ✅
+- `tests/integration/test_game_profile_integration.py`: Placeholder only (no actual calls) ✅
+- No legacy `end_game()` calls without `EndReason` found ✅
+
+**Conclusion**: All existing tests were already updated during Timer System v2.7.0 implementation. No additional work needed for Phase 5.
+
+---
+
+## 🎯 PHASE 5 ORIGINAL SPECIFICATION (for reference)
+
+### 🎯 Obiettivo (NOT IMPLEMENTED - Not Needed)
 
 Aggiornare test esistenti che chiamano `end_game()` per supportare nuovi valori EndReason:
 - `EndReason.VICTORY` (timer off)
