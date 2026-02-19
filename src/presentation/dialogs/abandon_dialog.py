@@ -103,6 +103,10 @@ class AbandonDialog(wx.Dialog):
             self.btn_new_game = wx.Button(self, wx.ID_OK, "Nuova Partita (INVIO)")
             self.btn_menu = wx.Button(self, wx.ID_CANCEL, "Menu Principale (ESC)")
             
+            # Bind event handlers (v3.1.3 fix)
+            self.btn_new_game.Bind(wx.EVT_BUTTON, self._on_new_game)
+            self.btn_menu.Bind(wx.EVT_BUTTON, self._on_menu_normal)
+            
             btn_sizer.Add(self.btn_new_game, 0, wx.ALL, 5)
             btn_sizer.Add(self.btn_menu, 0, wx.ALL, 5)
         
