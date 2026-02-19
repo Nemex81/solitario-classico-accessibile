@@ -13,6 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.1.3] - 2026-02-19
+
+### Fixed
+
+- **AbandonDialog buttons unresponsive**: Fixed critical bug where all 5 buttons (3 timeout scenario + 2 normal abandon) did not respond to mouse clicks or TAB+SPACE keyboard navigation. Root cause: missing `wx.EVT_BUTTON` event handlers. Now all buttons properly close dialog with correct return codes (`wx.ID_YES`, `wx.ID_MORE`, `wx.ID_NO`, `wx.ID_OK`, `wx.ID_CANCEL`). Affects timeout expiry dialog and manual abandon dialog. Critical for accessibility (screen reader users). [FIX_ABANDON_DIALOG_BUTTONS.md]
+
+---
+
 ## [3.2.1] - 2026-02-19
 
 ### ✨ Added - GUI Test Markers (v3.2.1 Housekeeping)
