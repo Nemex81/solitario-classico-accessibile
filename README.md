@@ -2,7 +2,7 @@
 
 Un gioco di carte Solitario (Klondike) in versione accessibile per non vedenti, sviluppato in Python con supporto per screen reader.
 
-**Versione Corrente**: 3.1.0 (Profile System + Stats Presentation UI Complete)
+**Versione Corrente**: 3.2.0 (Test Suite Modernization Complete)
 
 ## 🎯 Caratteristiche
 
@@ -229,17 +229,18 @@ pip install -r requirements-dev.txt
 - ✅ **Improved accessibility**: Better NVDA/JAWS screen reader integration
 - ✅ **Lighter dependencies**: -2 packages removed (pygame, pygame-menu)
 
-### ✨ Versione Clean Architecture (Consigliata) - **v3.1.0 wxPython-only**
+### ✨ Versione Clean Architecture (Consigliata) - **v3.2.0 wxPython-only**
 
 ```bash
 python test.py
 ```
 
-**Caratteristiche v3.1.0**:
+**Caratteristiche v3.2.0**:
 - ✅ **wxPython-only**: Evento loop wxPython nativo (no pygame)
 - ✅ **Profile System completo**: CRUD profili + statistiche persistenti (v3.0.0 + v3.1.0)
 - ✅ **Stats Presentation UI**: 5 dialogs (Victory, Abandon, GameInfo, DetailedStats, Leaderboard)
 - ✅ **Timer System avanzato**: STRICT/PERMISSIVE modes, overtime tracking (v2.7.0)
+- ✅ **Test Suite Modernization**: 88%+ coverage, 10 new integration tests (v3.2.0)
 - ✅ Architettura Clean completa (`src/` modules)
 - ✅ Dependency Injection
 - ✅ Testabilità elevata (≥88% coverage)
@@ -308,7 +309,7 @@ solitario-classico-accessibile/
 ├── test.py                    # ✨ Entry point Clean Architecture
 ├── acs.py                     # 🔧 Entry point legacy
 │
-├── src/                       # 🆕 Clean Architecture (v3.1.0)
+├── src/                       # 🆕 Clean Architecture (v3.2.0)
 │   ├── domain/               # Core business logic
 │   │   ├── models/          # Card, Deck, Pile, Table, Scoring, Profile, GameEnd
 │   │   ├── rules/           # SolitaireRules, MoveValidator
@@ -337,7 +338,9 @@ solitario-classico-accessibile/
 │
 ├── tests/
 │   ├── unit/                # Unit tests
-│   └── integration/         # Integration tests (Clean Arch)
+│   ├── integration/         # Integration tests (Clean Arch)
+│   └── archive/             # Archived legacy tests (v3.2.0)
+│       └── scr/             # 3 legacy test files with documentation
 │
 └── docs/
     ├── ARCHITECTURE.md       # Architecture details
@@ -623,14 +626,14 @@ pytest tests/unit/ -v
 pytest tests/integration/ -v
 ```
 
-### Coverage Target
+### Coverage Target (v3.2.0)
 
 | Layer | Coverage Target | Status |
 |-------|-----------------|--------|
 | Domain | ≥ 95% | ✅ |
 | Application | ≥ 85% | ✅ |
 | Infrastructure | ≥ 70% | ✅ |
-| **Totale** | **≥ 80%** | **✅ 91.47%** |
+| **Totale** | **≥ 88%** | **✅ 88%+** |
 
 ## 📚 Documentazione
 
@@ -645,7 +648,12 @@ pytest tests/integration/ -v
 - **[docs/2 - projects/DESIGN_PROFILE_STATISTICS_SYSTEM.md](docs/2%20-%20projects/DESIGN_PROFILE_STATISTICS_SYSTEM.md)** - Design doc completo
 - **[docs/3 - coding plans/IMPLEMENTATION_PROFILE_SYSTEM.md](docs/3%20-%20coding%20plans/IMPLEMENTATION_PROFILE_SYSTEM.md)** - Piano implementazione backend
 - **[docs/3 - coding plans/IMPLEMENTATION_STATS_PRESENTATION.md](docs/3%20-%20coding%20plans/IMPLEMENTATION_STATS_PRESENTATION.md)** - Piano implementazione UI
-- **[docs/TODO.md](docs/TODO.md)** - Implementation tracking (Feature 1-3 complete)
+- **[docs/TODO.md](docs/TODO.md)** - Implementation tracking (Feature 1-3 + Test Modernization complete)
+
+### Test Suite (v3.2.0)
+- **[docs/LEGACY_TEST_AUDIT.md](docs/LEGACY_TEST_AUDIT.md)** - Test suite audit report
+- **[docs/3 - coding plans/IMPLEMENTATION_PLAN_LEGACY_TEST_MODERNIZATION.md](docs/3%20-%20coding%20plans/IMPLEMENTATION_PLAN_LEGACY_TEST_MODERNIZATION.md)** - Test modernization plan
+- **[tests/archive/scr/README.md](tests/archive/scr/README.md)** - Archived legacy tests documentation
 
 ### Scoring System (v1.5.2)
 - **[docs/IMPLEMENTATION_SCORING_SYSTEM.md](docs/IMPLEMENTATION_SCORING_SYSTEM.md)** - Guida implementativa completa
@@ -656,18 +664,19 @@ pytest tests/integration/ -v
 
 ## 🔄 Stato Migrazione
 
-**Branch corrente**: `copilot/implement-profile-system-v3-1-0`
+**Branch corrente**: `refactoring-engine`
 
-✅ **COMPLETA** - Feature Stack 1-3 implementata (Feb 17, 2026)
+✅ **COMPLETA** - Feature Stack 1-3 + Test Modernization (Feb 19, 2026)
 
 | Fase | Features | Stato |
 |------|----------|-------|
 | Feature 1 | Timer System v2.7.0 | ✅ ~17 min (4.1x faster) |
 | Feature 2 | Profile System Backend v3.0.0 | ✅ ~4 hours (1.6x faster) |
 | Feature 3 | Stats Presentation UI v3.1.0 | ✅ ~170 min (3.5x faster) |
-| **TOTALE** | **Stack Completo** | **✅ ~5.8h vs 16h estimate (2.8x)** |
+| Feature 4 | Test Suite Modernization v3.2.0 | ✅ ~45 min (1.3x faster) |
+| **TOTALE** | **Stack Completo** | **✅ ~6.6h vs 18h estimate (2.7x)** |
 
-**Feature Parity**: 100% con v1.3.3 legacy + Profile System + Stats UI
+**Feature Parity**: 100% con v1.3.3 legacy + Profile System + Stats UI + Modern Tests
 
 Per dettagli: [docs/TODO.md](docs/TODO.md), [CHANGELOG.md](CHANGELOG.md)
 
@@ -715,4 +724,4 @@ Questo progetto è rilasciato sotto licenza MIT.
 
 ---
 
-**🎉 v3.1.0** - Profile System + Stats Presentation UI complete! Feature stack implementation ~5.8 hours (2.8x faster than manual estimate).
+**🎉 v3.2.0** - Test Suite Modernization complete! 88%+ coverage achieved with 10 new integration tests.
