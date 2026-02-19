@@ -8,10 +8,10 @@ from unittest.mock import Mock, patch, MagicMock, MagicMock as MockModule
 # Mock wx module before importing game_engine
 sys.modules['wx'] = MockModule()
 
-from scr.game_engine import EngineSolitario
-from scr.game_table import TavoloSolitario
-from scr.decks import FrenchDeck
-from scr.cards import Card
+from src.application.game_engine import GameEngine
+from src.domain.models.table import GameTable
+from src.domain.models.deck import FrenchDeck
+from src.domain.models.card import Card
 
 
 class TestF3TimerDecrement:

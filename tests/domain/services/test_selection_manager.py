@@ -3,7 +3,7 @@
 import pytest
 from src.domain.models.deck import FrenchDeck
 from src.domain.models.table import GameTable
-from src.domain.models.pile import Pile, PileType
+from src.domain.models.pile import Pile
 from src.domain.services.selection_manager import SelectionManager
 
 
@@ -70,8 +70,8 @@ def test_select_covered_card(manager, table):
 
 def test_select_from_empty_pile(manager, table):
     """Test selecting from empty pile."""
-    # Create empty pile
-    empty_pile = Pile("test", PileType.TABLEAU)
+    # Create empty pile (using string pile_type like current architecture)
+    empty_pile = Pile(name="test tableau", pile_type="base")
     
     msg = manager.select_card_sequence(empty_pile, 0)
     assert "vuota" in msg.lower()
