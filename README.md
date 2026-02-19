@@ -624,7 +624,12 @@ pytest tests/unit/ -v
 
 # Solo test integrazione (Clean Architecture)
 pytest tests/integration/ -v
+
+# Headless CI (salta test GUI che richiedono display)
+pytest tests/ -m "not gui" -v
 ```
+
+Per la guida completa ai marker pytest, esempi CI e troubleshooting: **[docs/TESTING.md](docs/TESTING.md)**
 
 ### Coverage Target (v3.2.0)
 
@@ -650,7 +655,8 @@ pytest tests/integration/ -v
 - **[docs/3 - coding plans/IMPLEMENTATION_STATS_PRESENTATION.md](docs/3%20-%20coding%20plans/IMPLEMENTATION_STATS_PRESENTATION.md)** - Piano implementazione UI
 - **[docs/TODO.md](docs/TODO.md)** - Implementation tracking (Feature 1-3 + Test Modernization complete)
 
-### Test Suite (v3.2.0)
+### Test Suite (v3.2.1)
+- **[docs/TESTING.md](docs/TESTING.md)** - Guida completa pytest marker + CI examples + troubleshooting
 - **[docs/LEGACY_TEST_AUDIT.md](docs/LEGACY_TEST_AUDIT.md)** - Test suite audit report
 - **[docs/3 - coding plans/IMPLEMENTATION_PLAN_LEGACY_TEST_MODERNIZATION.md](docs/3%20-%20coding%20plans/IMPLEMENTATION_PLAN_LEGACY_TEST_MODERNIZATION.md)** - Test modernization plan
 - **[tests/archive/scr/README.md](tests/archive/scr/README.md)** - Archived legacy tests documentation

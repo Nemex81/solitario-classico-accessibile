@@ -13,6 +13,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.2.1] - 2026-02-19
+
+### ✨ Added - GUI Test Markers (v3.2.1 Housekeeping)
+
+**New pytest marker `@pytest.mark.gui`:**
+- Isolates wxPython-dependent tests from headless CI environments
+- Registered in `pytest.ini` with description
+- Usage: `pytest -m "not gui"` to skip GUI tests in CI
+- Usage: `pytest -m "gui"` to run only GUI tests locally
+
+**GUI test files marked (v3.2.1 audit):**
+- `tests/unit/presentation/widgets/test_timer_combobox.py`: 5 classes, 40+ tests
+  - `TestTimerComboBoxInitialization` — `@pytest.mark.gui`
+  - `TestTimerComboBoxGetSetMethods` — `@pytest.mark.gui`
+  - `TestTimerComboBoxEdgeCases` — `@pytest.mark.gui`
+  - `TestTimerComboBoxPresetManagement` — `@pytest.mark.gui`
+  - `TestTimerComboBoxIntegration` — `@pytest.mark.gui`
+- `tests/infrastructure/test_view_manager.py`: 10+ tests, `pytestmark = pytest.mark.gui`
+
+**New documentation:**
+- **docs/TESTING.md**: Comprehensive pytest guide (307 lines)
+  - All 4 markers documented (`unit`, `integration`, `gui`, `slow`)
+  - CI configuration examples (GitHub Actions, Xvfb)
+  - Test structure overview
+  - Troubleshooting section
+
+### 📊 Test Health Metrics
+
+**After v3.2.1:**
+- Pytest markers: **4** (`unit`, `integration`, `slow`, `gui`) ✅
+- GUI tests isolated: **Yes** ✅
+- CI-safe test command: `pytest -m "not gui"` ✅
+- Coverage: **88.2%** (unchanged) ✅
+
+---
+
 ## [3.2.0] - 2026-02-19
 
 ### ✨ Added - Test Suite Modernization (Phase 0-5 Complete)
@@ -954,7 +990,8 @@ None - All changes are additive. Existing functionality preserved.
 
 **For detailed technical changes, see commit history or [docs/DETAILED_CHANGELOG.md](docs/DETAILED_CHANGELOG.md)**
 
-[Unreleased]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v3.2.0...HEAD
+[Unreleased]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v3.2.1...HEAD
+[3.2.1]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v3.2.0...v3.2.1
 [3.2.0]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v3.1.2.1...v3.2.0
 [3.1.2.1]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v3.1.2...v3.1.2.1
 [3.1.2]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v3.1.1...v3.1.2

@@ -652,6 +652,11 @@ class MoveValidatorProtocol(Protocol):
 - ✅ **3 legacy tests archived** (with documentation)
 - ✅ **Test modernization complete** (Clean Architecture aligned)
 
+**v3.2.1 Improvements:**
+- ✅ **`@pytest.mark.gui` marker** — isolates wxPython-dependent tests
+- ✅ **CI-safe command**: `pytest -m "not gui"` skips ~50 GUI tests
+- ✅ **[docs/TESTING.md](TESTING.md)** — comprehensive test guide
+
 ### Test Organization Strategy (v3.2.0)
 
 ```

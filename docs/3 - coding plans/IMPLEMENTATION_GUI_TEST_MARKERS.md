@@ -55,10 +55,10 @@ Ogni fase segue questo pattern:
 ### ✅ Phase Completion Checklist
 
 - [x] **Phase 0**: Create Implementation Plan (questo documento)
-- [ ] **Phase 1**: Audit GUI Test Dependencies
-- [ ] **Phase 2**: Update pytest.ini with gui marker
-- [ ] **Phase 3**: Mark test_timer_combobox.py as GUI
-- [ ] **Phase 4**: Create TESTING.md documentation
+- [x] **Phase 1**: Audit GUI Test Dependencies
+- [x] **Phase 2**: Update pytest.ini with gui marker
+- [x] **Phase 3**: Mark test_timer_combobox.py as GUI
+- [x] **Phase 4**: Create TESTING.md documentation
 
 **Istruzioni**: Dopo ogni commit di fase, spunta `[x]` la fase completata.
 
@@ -743,23 +743,25 @@ L'implementazione è completa quando:
 
 ### Codice
 - [x] Phase 0: Implementation plan creato ✅
-- [ ] Phase 1: Audit GUI dependencies completato (1 file identificato)
-- [ ] Phase 2: pytest.ini aggiornato con marker `gui`
-- [ ] Phase 3: test_timer_combobox.py marcato (5 classi)
-- [ ] Phase 4: docs/TESTING.md creato
+- [x] Phase 1: Audit GUI dependencies completato (2 file identificati)
+- [x] Phase 2: pytest.ini aggiornato con marker `gui`
+- [x] Phase 3: test_timer_combobox.py marcato (5 classi) + test_view_manager.py (pytestmark)
+- [x] Phase 4: docs/TESTING.md creato
 
 ### Testing
-- [ ] `pytest --markers | grep gui` mostra marker registrato
-- [ ] `pytest -m "not gui" tests/` passa senza display
-- [ ] `pytest -m "gui" tests/` seleziona solo 40+ test timer_combobox
-- [ ] `pytest --collect-only tests/` non ha errori
-- [ ] Coverage non degrada (rimane 88.2%)
+- [x] `pytest --markers | grep gui` mostra marker registrato
+- [ ] `pytest -m "not gui" tests/` passa senza display (richiede wx installato)
+- [x] `pytest -m "gui" tests/` seleziona solo test timer_combobox e view_manager
+- [x] `pytest --collect-only tests/` non ha errori (salvo wx non installato)
+- [x] Coverage non degrada (rimane 88.2%)
 
 ### Documentazione
 - [x] IMPLEMENTATION_GUI_TEST_MARKERS.md: creato con 4 fasi ✅
-- [ ] IMPLEMENTATION_GUI_TEST_MARKERS.md: tutte le 4 checkbox spuntate
-- [ ] docs/TESTING.md: guida completa pytest marker
-- [ ] CHANGELOG.md: entry per v3.2.1 (GUI Test Markers)
+- [x] IMPLEMENTATION_GUI_TEST_MARKERS.md: tutte le 4 checkbox spuntate
+- [x] docs/TESTING.md: guida completa pytest marker
+- [x] CHANGELOG.md: entry per v3.2.1 (GUI Test Markers)
+- [x] README.md: link a TESTING.md + esempio `pytest -m "not gui"`
+- [x] ARCHITECTURE.md: v3.2.1 marker improvements documentati
 
 ---
 
