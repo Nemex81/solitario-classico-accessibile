@@ -6,6 +6,8 @@ Tests the LIFO stack-based window management system.
 import pytest
 import wx
 
+pytestmark = pytest.mark.gui
+
 
 class MockView(wx.Frame):
     """Mock view for testing."""

@@ -13,6 +13,8 @@ from src.infrastructure.di_container import (
 )
 from src.presentation.game_formatter import GameFormatter
 
+pytestmark = pytest.mark.gui
+
 
 class TestDIContainer:
     """Test suite for DIContainer."""

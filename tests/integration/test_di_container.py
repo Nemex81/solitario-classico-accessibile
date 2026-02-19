@@ -16,6 +16,8 @@ from src.application.input_handler import InputHandler
 from src.domain.models.deck import FrenchDeck, NeapolitanDeck
 from src.presentation.game_formatter import GameFormatter
 
+pytestmark = pytest.mark.gui
+
 
 class TestDIContainer:
     """Test dependency injection container."""

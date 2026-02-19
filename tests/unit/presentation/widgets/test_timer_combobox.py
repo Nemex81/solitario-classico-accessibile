@@ -19,6 +19,7 @@ import wx
 from src.presentation.widgets.timer_combobox import TimerComboBox
 
 
+@pytest.mark.gui
 class TestTimerComboBoxInitialization:
     """Test TimerComboBox initialization and construction."""
     
@@ -81,6 +82,7 @@ class TestTimerComboBoxInitialization:
         assert combo.GetWindowStyle() & wx.CB_READONLY
 
 
+@pytest.mark.gui
 class TestTimerComboBoxGetSetMethods:
     """Test get_selected_minutes() and set_minutes() methods."""
     
@@ -150,6 +152,7 @@ class TestTimerComboBoxGetSetMethods:
             assert combo.get_selected_minutes() == expected_minutes
 
 
+@pytest.mark.gui
 class TestTimerComboBoxEdgeCases:
     """Test edge cases and boundary conditions."""
     
@@ -204,6 +207,7 @@ class TestTimerComboBoxEdgeCases:
         assert combo.get_selected_minutes() == 5
 
 
+@pytest.mark.gui
 class TestTimerComboBoxPresetManagement:
     """Test preset-related methods."""
     
@@ -252,6 +256,7 @@ class TestTimerComboBoxPresetManagement:
             assert combo.get_selected_minutes() == minutes
 
 
+@pytest.mark.gui
 class TestTimerComboBoxIntegration:
     """Integration tests for complete workflows."""
     

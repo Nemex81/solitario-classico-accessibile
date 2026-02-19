@@ -11,6 +11,8 @@ from src.application.commands import (
 )
 from src.domain.models.game_state import GameState, GameStatus
 
+pytestmark = pytest.mark.gui
+
 
 class TestMoveCommand:
     """Test suite for MoveCommand."""

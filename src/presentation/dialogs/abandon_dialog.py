@@ -90,6 +90,11 @@ class AbandonDialog(wx.Dialog):
             self.btn_stats = wx.Button(self, wx.ID_MORE, "Statistiche Dettagliate")
             self.btn_menu = wx.Button(self, wx.ID_NO, "Torna al Menu (ESC)")
             
+            # Bind event handlers (v3.1.3 fix)
+            self.btn_rematch.Bind(wx.EVT_BUTTON, self._on_rematch)
+            self.btn_stats.Bind(wx.EVT_BUTTON, self._on_stats)
+            self.btn_menu.Bind(wx.EVT_BUTTON, self._on_menu_timeout)
+            
             btn_sizer.Add(self.btn_rematch, 0, wx.ALL, 5)
             btn_sizer.Add(self.btn_stats, 0, wx.ALL, 5)
             btn_sizer.Add(self.btn_menu, 0, wx.ALL, 5)
@@ -97,6 +102,10 @@ class AbandonDialog(wx.Dialog):
             # Normal abandon: 2 buttons (New Game / Menu)
             self.btn_new_game = wx.Button(self, wx.ID_OK, "Nuova Partita (INVIO)")
             self.btn_menu = wx.Button(self, wx.ID_CANCEL, "Menu Principale (ESC)")
+            
+            # Bind event handlers (v3.1.3 fix)
+            self.btn_new_game.Bind(wx.EVT_BUTTON, self._on_new_game)
+            self.btn_menu.Bind(wx.EVT_BUTTON, self._on_menu_normal)
             
             btn_sizer.Add(self.btn_new_game, 0, wx.ALL, 5)
             btn_sizer.Add(self.btn_menu, 0, wx.ALL, 5)
@@ -154,3 +163,47 @@ class AbandonDialog(wx.Dialog):
         )
         
         self.SetTitle(announcement)
+
+    # ========================================
+    # BUTTON EVENT HANDLERS (v3.1.3 - Bug Fix)
+    # ========================================
+
+    def _on_rematch(self, event):
+        """Handler for Rematch button (timeout scenario).
+
+        Closes dialog with wx.ID_YES to signal rematch request.
+        GameEngine will start new game.
+        """
+        self.EndModal(wx.ID_YES)
+
+    def _on_stats(self, event):
+        """Handler for Detailed Stats button (timeout scenario).
+
+        Closes dialog with wx.ID_MORE to signal stats request.
+        GameEngine will open DetailedStatsDialog.
+        """
+        self.EndModal(wx.ID_MORE)
+
+    def _on_menu_timeout(self, event):
+        """Handler for Main Menu button (timeout scenario).
+
+        Closes dialog with wx.ID_NO to signal menu return.
+        GameEngine will return control to main menu.
+        """
+        self.EndModal(wx.ID_NO)
+
+    def _on_new_game(self, event):
+        """Handler for New Game button (normal abandon scenario).
+
+        Closes dialog with wx.ID_OK to signal new game request.
+        GameEngine will start new game.
+        """
+        self.EndModal(wx.ID_OK)
+
+    def _on_menu_normal(self, event):
+        """Handler for Main Menu button (normal abandon scenario).
+
+        Closes dialog with wx.ID_CANCEL to signal menu return.
+        GameEngine will return control to main menu.
+        """
+        self.EndModal(wx.ID_CANCEL)
