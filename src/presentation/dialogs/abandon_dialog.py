@@ -90,6 +90,11 @@ class AbandonDialog(wx.Dialog):
             self.btn_stats = wx.Button(self, wx.ID_MORE, "Statistiche Dettagliate")
             self.btn_menu = wx.Button(self, wx.ID_NO, "Torna al Menu (ESC)")
             
+            # Bind event handlers (v3.1.3 fix)
+            self.btn_rematch.Bind(wx.EVT_BUTTON, self._on_rematch)
+            self.btn_stats.Bind(wx.EVT_BUTTON, self._on_stats)
+            self.btn_menu.Bind(wx.EVT_BUTTON, self._on_menu_timeout)
+            
             btn_sizer.Add(self.btn_rematch, 0, wx.ALL, 5)
             btn_sizer.Add(self.btn_stats, 0, wx.ALL, 5)
             btn_sizer.Add(self.btn_menu, 0, wx.ALL, 5)
