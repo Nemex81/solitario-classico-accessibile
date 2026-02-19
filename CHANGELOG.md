@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [3.1.3] - 2026-02-19
+## [3.2.2] - 2026-02-19
 
 ### Fixed
 
@@ -998,7 +998,8 @@ None - All changes are additive. Existing functionality preserved.
 
 **For detailed technical changes, see commit history or [docs/DETAILED_CHANGELOG.md](docs/DETAILED_CHANGELOG.md)**
 
-[Unreleased]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v3.2.1...HEAD
+[Unreleased]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v3.2.2...HEAD
+[3.2.2]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v3.2.1...v3.2.2
 [3.2.1]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v3.2.0...v3.2.1
 [3.2.0]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v3.1.2.1...v3.2.0
 [3.1.2.1]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v3.1.2...v3.1.2.1
