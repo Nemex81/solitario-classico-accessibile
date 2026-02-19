@@ -20,6 +20,8 @@ from src.domain.services.game_service import GameService
 from src.domain.services.cursor_manager import CursorManager
 from src.domain.services.selection_manager import SelectionManager
 
+pytestmark = pytest.mark.gui
+
 
 @pytest.fixture
 def mock_screen_reader():

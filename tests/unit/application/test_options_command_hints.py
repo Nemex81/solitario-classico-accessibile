@@ -10,6 +10,8 @@ from src.presentation.options_formatter import OptionsFormatter
 from src.application.options_controller import OptionsWindowController
 from src.domain.services.game_settings import GameSettings, GameState
 
+pytestmark = pytest.mark.gui
+
 
 class TestOptionsFormatterCommandHints:
     """Test OptionsFormatter methods for command hints option."""

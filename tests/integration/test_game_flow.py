@@ -15,6 +15,8 @@ from src.domain.services.game_service import GameService
 from src.infrastructure.di_container import DIContainer
 from src.presentation.game_formatter import GameFormatter
 
+pytestmark = pytest.mark.gui
+
 
 class TestGameFlowIntegration:
     """Integration tests for complete game flow."""

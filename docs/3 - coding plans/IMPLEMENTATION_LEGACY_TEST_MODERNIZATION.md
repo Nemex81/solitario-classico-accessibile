@@ -59,7 +59,7 @@ Ogni fase segue questo pattern:
 - [x] **Phase 3**: Add Profile Integration Tests (5 scenarios)
 - [x] **Phase 4**: Add Timer Field Mapping Tests (3 scenarios)
 - [x] **Phase 5**: Update EndReason Assertions (SKIPPED - existing tests already use EndReason enum)
-- [ ] **Phase 6**: GUI Markers + Archive Obsolete Tests
+- [x] **Phase 6**: GUI Markers + Archive Obsolete Tests
 
 **Istruzioni**: Dopo ogni commit di fase, spunta `[x]` la fase completata.
 

@@ -10,6 +10,8 @@ from unittest.mock import Mock
 from src.domain.services.game_settings import GameSettings, GameState
 from src.application.options_controller import OptionsWindowController
 
+pytestmark = pytest.mark.gui
+
 
 @pytest.fixture
 def game_state_no_game():

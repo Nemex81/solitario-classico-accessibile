@@ -8,6 +8,8 @@ from src.domain.rules.move_validator import MoveValidator
 from src.domain.services.game_service import GameService
 from src.presentation.game_formatter import GameFormatter
 
+pytestmark = pytest.mark.gui
+
 
 class TestGameController:
     """Test suite for GameController."""
