@@ -199,7 +199,7 @@ Obiettivo: tracciare cosa fa davvero il giocatore.
    from src.infrastructure.logging import game_logger as log
    ```
 
-2. Nel router centrale `handle_wx_key_event` (o equivalente):
+2. Nel router centrale `handle_wx_key_event` (corretto da handlewx_key_event, underscore obbligatorio) (o equivalente):
 
    - Per comandi significativi (non frecce di pura navigazione se si vuole evitare rumore):
      ```python
@@ -252,6 +252,7 @@ Obiettivo: tracciare cosa fa davvero il giocatore.
 ### 3.4 `src/application/options_controller.py` — settings
 
 Nota: parte del logging settings è già implementata (Commit 2 della fase 2). Qui serve solo garantirne completezza e coerenza.
+Stato attuale: 7/9 già fatti (Commit 2 PR 60), mancano modify_timer_strict_mode e modify_score_warning_level.
 
 1. Verificare che ogni metodo che modifica le impostazioni chiami `log.settings_changed(...)`:
 
@@ -301,7 +302,7 @@ Obiettivo: avere traccia coerente dell’apertura/chiusura dei dialog.
    - Tipi coerenti: `"info"`, `"error"`, `"stats"`, `"leaderboard"`.
 
 
-### 3.6 `src/application/timer_manager.py` — timer di gioco
+### 3.6 `src/application/timer_manager.py` — timer di gioco (o logica timer in GameEngine se file assente)
 
 Obiettivo: tracciare timer start/stop/expire.
 
