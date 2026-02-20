@@ -251,6 +251,276 @@ tests/                    # Test Suite (v3.2.0 modernized)
 └── conftest.py          # Pytest configuration
 ```
 
+## 🗂️ Project Structure (Complete Hierarchy)
+
+### Root Directory Overview
+
+```
+solitario-classico-accessibile/
+├── src/                    # Codice sorgente principale (Clean Architecture layers)
+├── tests/                  # Test suite completa (unit, integration, archive)
+├── docs/                   # Documentazione tecnica (API, architettura, changelog)
+├── acs_wx.py              # Entry point applicazione wxPython
+├── requirements.txt        # Dipendenze Python produzione
+├── requirements-dev.txt    # Dipendenze sviluppo (pytest, mypy, coverage)
+├── pytest.ini             # Configurazione pytest + marker @pytest.mark.gui
+├── .gitignore             # Git exclusions (venv, __pycache__, .solitario/)
+├── README.md              # Documentazione utente + quick start
+└── LICENSE                # Licenza progetto (MIT)
+```
+
+**File Root Critici:**
+
+| File | Scopo | Quando Modificare |
+|------|-------|-------------------|
+| `acs_wx.py` | Entry point wxPython, inizializzazione app, main loop | Cambio framework UI, bootstrap logic |
+| `requirements.txt` | Dipendenze runtime (wxPython, pyttsx3, accessibility) | Aggiunta/rimozione librerie produzione |
+| `requirements-dev.txt` | Tool sviluppo (pytest, mypy, coverage, black) | Aggiunta tool testing/linting |
+| `pytest.ini` | Marker `@pytest.mark.gui`, coverage paths, test discovery | Configurazione CI/CD, test isolation |
+| `.gitignore` | Esclusioni Git (venv, profili utente `~/.solitario/`) | Nuovi file temporanei da escludere |
+
+---
+
+### Complete File Tree
+
+```
+solitario-classico-accessibile/
+│
+├── acs_wx.py                           # Entry point wxPython (MainApp, bootstrap)
+├── requirements.txt                    # Dipendenze produzione
+├── requirements-dev.txt                # Dipendenze sviluppo
+├── pytest.ini                          # Configurazione pytest
+├── .gitignore                          # Git exclusions
+├── README.md                           # Documentazione utente
+├── LICENSE                             # Licenza MIT
+│
+├── src/                                # === SOURCE CODE (Clean Architecture) ===
+│   ├── __init__.py
+│   │
+│   ├── application/                    # === APPLICATION LAYER ===
+│   │   ├── __init__.py
+│   │   ├── commands.py                # Command Pattern (MoveCommand, DrawCommand, Undo/Redo)
+│   │   ├── game_controller.py         # Controller principale (use cases orchestration)
+│   │   ├── game_engine.py             # Engine business logic + ProfileService integration
+│   │   ├── profile_service.py         # Profile CRUD + stats aggregation (v3.0.0)
+│   │   ├── session_tracker.py         # Crash recovery (orphaned sessions detection)
+│   │   ├── input_handler.py           # Keyboard input → Command mapping
+│   │   ├── game_settings.py           # Configuration management (difficulty, timer, scoring)
+│   │   └── timer_manager.py           # Timer logic (STRICT/PERMISSIVE modes, overtime tracking)
+│   │
+│   ├── domain/                         # === DOMAIN LAYER (Core Business Logic) ===
+│   │   ├── __init__.py
+│   │   │
+│   │   ├── interfaces/                # Protocol interfaces (structural typing)
+│   │   │   ├── __init__.py
+│   │   │   └── protocols.py          # MoveValidatorProtocol, GameServiceProtocol, FormatterProtocol
+│   │   │
+│   │   ├── models/                    # Domain entities (immutable dataclasses)
+│   │   │   ├── __init__.py
+│   │   │   ├── card.py               # Card, Rank, Suit (mazzo francese + napoletano)
+│   │   │   ├── game_state.py         # GameState immutable (copy-on-write pattern)
+│   │   │   ├── pile.py               # Pile (tableau, foundation, stock, waste)
+│   │   │   ├── profile.py            # UserProfile, SessionOutcome (v3.0.0)
+│   │   │   ├── game_end.py           # EndReason enum (VICTORY, VICTORY_OVERTIME, ABANDON_*, TIMEOUT_STRICT)
+│   │   │   └── statistics.py         # GlobalStats, TimerStats, DifficultyStats, ScoringStats (v3.0.0)
+│   │   │
+│   │   ├── rules/                     # Business rules validation
+│   │   │   ├── __init__.py
+│   │   │   └── move_validator.py     # Klondike rules (foundation stacking, tableau stacking, King placement)
+│   │   │
+│   │   └── services/                  # Domain services (stateless logic)
+│   │       ├── __init__.py
+│   │       ├── game_service.py       # Game orchestration (draw, recycle, move execution)
+│   │       ├── scoring_service.py    # Score calculation (penalties, bonuses, thresholds)
+│   │       └── stats_aggregator.py   # Statistics aggregation logic (v3.0.0)
+│   │
+│   ├── infrastructure/                # === INFRASTRUCTURE LAYER ===
+│   │   ├── __init__.py
+│   │   │
+│   │   ├── accessibility/            # Screen reader support
+│   │   │   ├── __init__.py
+│   │   │   ├── screen_reader.py     # ScreenReader abstraction (NVDA, SAPI, macOS VoiceOver)
+│   │   │   └── tts_engine.py        # TTS wrapper (pyttsx3 integration)
+│   │   │
+│   │   ├── storage/                  # Persistence layer (v3.0.0)
+│   │   │   ├── __init__.py
+│   │   │   ├── profile_storage.py   # ProfileStorage (atomic JSON writes, temp-file-rename)
+│   │   │   └── session_storage.py   # SessionStorage (crash detection tracking)
+│   │   │
+│   │   ├── di_container.py           # Dependency Injection container (singleton factories)
+│   │   │
+│   │   └── ui/                       # User Interface (wxPython panels)
+│   │       ├── __init__.py
+│   │       ├── menu_panel.py         # Main menu panel (6 buttons: Nuova Partita, Opzioni, Ultima Partita, Leaderboard, Gestione Profili, Esci)
+│   │       ├── gameplay_panel.py     # Gameplay UI (keyboard navigation, cursor management)
+│   │       └── profile_menu_panel.py # Profile management modal (6 operations: Create, Switch, Rename, Delete, Stats, Set Default) [v3.1.0]
+│   │
+│   └── presentation/                  # === PRESENTATION LAYER ===
+│       ├── __init__.py
+│       │
+│       ├── formatters/               # Output formatting (screen reader optimized)
+│       │   ├── __init__.py
+│       │   ├── game_formatter.py    # Game state formatting (card lists, cursor position, move results)
+│       │   └── stats_formatter.py   # Statistics formatting (summary/detailed methods, NVDA-optimized) [v3.1.0]
+│       │
+│       └── dialogs/                  # Native wxPython dialogs (v3.1.0)
+│           ├── __init__.py
+│           ├── victory_dialog.py    # Victory dialog (outcome + profile summary + new records + rematch prompt)
+│           ├── abandon_dialog.py    # Abandon dialog (EndReason classification + stats impact)
+│           ├── game_info_dialog.py  # Game info dialog (progress + profile snapshot, triggered by I key)
+│           ├── detailed_stats_dialog.py  # Detailed stats dialog (3 pages: Global, Timer, Difficulty/Scoring)
+│           ├── leaderboard_dialog.py     # Leaderboard dialog (Top 10 in 5 categories)
+│           └── last_game_dialog.py       # Last game dialog (recent session summary)
+│
+├── tests/                             # === TEST SUITE (v3.2.0 - 88.2% coverage) ===
+│   ├── __init__.py
+│   ├── conftest.py                   # Pytest configuration (fixtures, shared setup)
+│   │
+│   ├── unit/                         # Unit tests (isolated layer testing)
+│   │   ├── __init__.py
+│   │   │
+│   │   ├── domain/                   # Domain layer tests (95%+ coverage)
+│   │   │   ├── __init__.py
+│   │   │   ├── models/
+│   │   │   │   ├── test_card.py     # Card logic (stacking rules, rank/suit validation)
+│   │   │   │   ├── test_game_state.py  # GameState immutability, with_move() copy-on-write
+│   │   │   │   ├── test_pile.py     # Pile operations (add, remove, get_card_count)
+│   │   │   │   └── test_profile.py  # UserProfile, SessionOutcome (v3.0.0)
+│   │   │   ├── rules/
+│   │   │   │   └── test_move_validator.py  # Klondike rules validation (foundation, tableau, King)
+│   │   │   └── services/
+│   │   │       ├── test_game_service.py  # Game orchestration logic
+│   │   │       ├── test_scoring_service.py  # Score calculation (penalties, bonuses)
+│   │   │       └── test_stats_aggregator.py  # Statistics aggregation (v3.0.0)
+│   │   │
+│   │   ├── application/              # Application layer tests (85%+ coverage)
+│   │   │   ├── __init__.py
+│   │   │   ├── test_commands.py     # Command Pattern (execute, undo, redo)
+│   │   │   ├── test_game_controller.py  # Controller use cases
+│   │   │   ├── test_game_engine.py  # Engine orchestration + ProfileService integration
+│   │   │   ├── test_profile_service.py  # Profile CRUD + session recording (v3.0.0)
+│   │   │   ├── test_session_tracker.py  # Crash recovery (orphaned sessions)
+│   │   │   └── test_timer_manager.py    # Timer logic (STRICT/PERMISSIVE, overtime)
+│   │   │
+│   │   └── presentation/             # Presentation layer tests (70%+ coverage)
+│   │       ├── __init__.py
+│   │       ├── formatters/
+│   │       │   ├── test_game_formatter.py  # Game state formatting
+│   │       │   └── test_stats_formatter.py  # Statistics formatting (15 tests, 93% coverage) [v3.1.0]
+│   │       └── dialogs/
+│   │           └── test_dialogs.py  # Dialog initialization + content validation (v3.1.0)
+│   │
+│   ├── integration/                  # Integration tests (cross-layer validation) [v3.2.0]
+│   │   ├── __init__.py
+│   │   └── test_profile_game_integration.py  # 10 tests ProfileService + GameEngine integration
+│   │       # Tests: victory updates, abandon updates, timeout handling, stats aggregation,
+│   │       #        VICTORY_OVERTIME classification, EndReason coverage, timer mode tracking,
+│   │       #        difficulty stats, scoring stats, session history FIFO limit
+│   │
+│   └── archive/                      # Archived legacy tests (preserved for reference) [v3.2.0]
+│       ├── README.md                 # Archival rationale + replacement coverage mapping
+│       └── scr/                      # 3 legacy monolithic tests (pre-Clean Architecture)
+│           ├── test_distribuisci_carte_deck_switching.py  # Deck switching logic (obsolete)
+│           ├── test_game_engine_f3_f5.py                  # Timer F3/F5 adjustments (obsolete)
+│           └── test_king_to_empty_base_pile.py            # King placement rules (obsolete)
+│
+└── docs/                              # === DOCUMENTATION ===
+    ├── API.md                        # API reference (GameController, GameEngine, Domain models, v3.1.2)
+    ├── ARCHITECTURE.md               # Architettura sistema (Clean Architecture, layers, patterns, v3.2.0)
+    ├── CHANGELOG.md                  # Version history completa (v1.0.0 → v3.2.1)
+    ├── TODO.md                       # Implementation tracking Feature 1-3 (Profile System roadmap)
+    ├── TESTING.md                    # Testing guide (pytest usage, @pytest.mark.gui marker, CI setup) [v3.2.1]
+    └── legacy/                       # Documentazione storica (archiviata)
+        ├── IMPLEMENTATION_TIMER_STRICT_MODE_SYSTEM_v2.1.md  # Timer STRICT implementation
+        ├── AUDIT_CALLAFTER_PATTERNS_v2.1.md                 # CallAfter pattern audit
+        └── ...                       # Altri documenti implementazione v2.x
+```
+
+---
+
+### Key Directory Purposes
+
+#### `/src/` - Source Code (Clean Architecture)
+
+**Layers Hierarchy:**
+```
+Presentation ──→ Application ──→ Domain ←── Infrastructure
+     ↓               ↓              ↑             ↓
+  Dialogs      GameEngine    GameService    Storage/DI
+  Formatters   Commands      Rules          UI/Accessibility
+```
+
+**Dependency Rules:**
+- ✅ **Domain**: No dependencies (pure business logic)
+- ✅ **Application**: Depends on Domain only
+- ✅ **Presentation**: Depends on Domain + Application
+- ✅ **Infrastructure**: Depends on Domain (implements interfaces)
+
+#### `/tests/` - Test Suite (v3.2.0)
+
+**Coverage Targets:**
+- **Domain**: ≥ 95% (pure logic, critical path)
+- **Application**: ≥ 85% (use cases, orchestration)
+- **Infrastructure**: ≥ 70% (external dependencies, UI)
+- **Total**: **≥ 88%** (current: **88.2%**)
+
+**Test Isolation:**
+- Unit tests: No external dependencies (fast, isolated)
+- Integration tests: Cross-layer validation (realistic scenarios)
+- `@pytest.mark.gui`: Isolates wxPython tests for CI/CD
+
+**Archival Strategy (v3.2.0):**
+- Legacy tests preserved in `/tests/archive/scr/`
+- `README.md` documents replacement coverage mapping
+- Git history intact (no deletions)
+
+#### `/docs/` - Documentation
+
+**Living Documentation:**
+- `API.md`: Public API reference (updated with code changes)
+- `ARCHITECTURE.md`: System design (updated with structural changes)
+- `CHANGELOG.md`: Version history (updated with releases)
+- `TESTING.md`: Testing practices (updated with test tooling changes)
+
+**Legacy Docs:**
+- `/docs/legacy/`: Historical implementation documents (v2.x era)
+- Preserved for reference, superseded by current docs
+
+---
+
+### File Naming Conventions
+
+**Python Modules:**
+- `snake_case.py` (standard PEP 8)
+- Suffixes: `_service.py`, `_storage.py`, `_manager.py`, `_formatter.py`
+
+**Test Files:**
+- `test_<module_name>.py` (pytest discovery)
+- Mirror src structure: `src/domain/models/card.py` → `tests/unit/domain/models/test_card.py`
+
+**Documentation:**
+- `UPPERCASE.md` for root docs (README, CHANGELOG, LICENSE)
+- `PascalCase.md` for guides (API, ARCHITECTURE, TESTING)
+
+---
+
+### Critical Path Files (Top 10)
+
+| File | Layer | Responsabilità | Complexity |
+|------|-------|---------------|------------|
+| `src/application/game_engine.py` | Application | Orchestrazione completa gioco + ProfileService | Alta (450+ LOC) |
+| `src/domain/services/game_service.py` | Domain | Logica gioco (draw, move, recycle) | Media (300+ LOC) |
+| `src/application/profile_service.py` | Application | Profile CRUD + stats aggregation | Media (280+ LOC) |
+| `src/infrastructure/ui/profile_menu_panel.py` | Infrastructure | UI gestione profili (6 operations) | Media (267 LOC) |
+| `src/presentation/formatters/stats_formatter.py` | Presentation | Statistiche formattate NVDA | Media (250+ LOC) |
+| `src/domain/rules/move_validator.py` | Domain | Validazione regole Klondike | Media (200+ LOC) |
+| `src/domain/services/scoring_service.py` | Domain | Calcolo punteggio + penalties | Media (180+ LOC) |
+| `src/infrastructure/storage/profile_storage.py` | Infrastructure | Persistence atomica JSON | Bassa (150+ LOC) |
+| `src/application/timer_manager.py` | Application | Timer STRICT/PERMISSIVE + overtime | Media (140+ LOC) |
+| `acs_wx.py` | Root | Entry point wxPython, bootstrap | Bassa (100+ LOC) |
+
+---
+
 ## 🧩 Componenti Principali
 
 ### Domain Layer
@@ -1383,5 +1653,5 @@ MenuPanel (v3.1.0 extended to 6 buttons)
 ---
 
 *Document Version: 3.2.0*  
-*Last Updated: 2026-02-19*  
-*Revision: Test metrics updated, archive structure documented, coverage targets achieved*
+*Last Updated: 2026-02-20*  
+*Revision: Added complete project structure hierarchy section*
