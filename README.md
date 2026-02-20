@@ -2,16 +2,205 @@
 
 Un gioco di carte Solitario (Klondike) in versione accessibile per non vedenti, sviluppato in Python con supporto per screen reader.
 
+**Versione Corrente**: 3.2.0 (Test Suite Modernization Complete)
+
 ## 🎯 Caratteristiche
 
 - **Accessibilità completa**: Supporto per screen reader con output testuale dettagliato
 - **Navigazione intuitiva**: Sistema di cursore per navigare tra le pile di carte
 - **Feedback vocale**: Descrizioni in italiano di ogni azione e stato del gioco
+- **Sistema profili utente** (v3.0.0): Gestione profili persistenti con statistiche aggregate
+- **Presentazione statistiche** (v3.1.0): UI completa per visualizzazione stats, leaderboard, gestione profili
+- **Timer system** (v2.7.0): Modalità STRICT/PERMISSIVE con overtime tracking
 - **Due mazzi supportati**: 
   - **Mazzo francese** (♥♦♣♠) - 52 carte: Asso, 2-10, Jack, Regina, Re per ogni seme
   - **Mazzo napoletano** (🍷🪙🗡️🏑) - 40 carte autentiche: Asso, 2-7, Regina (8), Cavallo (9), Re (10) per ogni seme
+- **Sistema punti completo**: Scoring system v1.5.2 con 5 livelli di difficoltà e statistiche persistenti
 - **Undo/Redo**: Possibilità di annullare e ripetere le mosse
-- **Architettura modulare**: Design pulito con separazione dei livelli
+- **Architettura modulare**: Design pulito con separazione dei livelli (Clean Architecture)
+
+## 👤 Profile System (v3.0.0 Backend + v3.1.0 UI)
+
+Il gioco ora supporta **profili utente persistenti** con statistiche aggregate e gestione completa da interfaccia grafica.
+
+### Funzionalità Backend (v3.0.0)
+
+- **UserProfile**: Profili JSON con metadata (nome, creazione, ultimo accesso)
+- **Statistiche aggregate**: 4 categorie (Globali, Timer, Difficoltà, Scoring)
+- **Session tracking**: Registrazione automatica di ogni partita completata
+- **Crash recovery**: Rilevamento sessioni orfane da chiusura forzata app
+- **Atomic writes**: Scritture JSON atomiche per prevenire corruzione dati
+- **Guest profile**: Profilo "Ospite" (profile_000) con protezione eliminazione
+
+### Gestione Profili UI (v3.1.0 - Phase 10)
+
+Accesso tramite menu principale: **"Gestione Profili"** (6° pulsante)
+
+**6 Operazioni Disponibili:**
+
+1. **Crea Nuovo Profilo**
+   - Input nome con validazione (no vuoti, max 30 caratteri, no duplicati)
+   - Auto-switch al nuovo profilo dopo creazione
+   - TTS: "Profilo creato: {nome}. Attivo."
+
+2. **Cambia Profilo**
+   - Dialog scelta con anteprima statistiche (vittorie/partite)
+   - Profilo corrente marcato con "[ATTIVO]"
+   - Salvataggio automatico prima del cambio
+
+3. **Rinomina Profilo**
+   - Input pre-compilato con nome corrente
+   - Validazione + protezione profilo guest
+   - Aggiornamento real-time UI
+
+4. **Elimina Profilo**
+   - Dialog conferma con safeguards:
+     - Blocco eliminazione profilo guest
+     - Blocco eliminazione ultimo profilo rimasto
+   - Auto-switch a guest dopo eliminazione
+
+5. **Statistiche Dettagliate** ⭐
+   - Apre DetailedStatsDialog (3 pagine)
+   - Navigazione PageUp/PageDown
+   - ESC torna a Gestione Profili (non menu principale)
+
+6. **Imposta Predefinito**
+   - Marca profilo per caricamento automatico all'avvio app
+   - TTS: "Profilo predefinito: {nome}"
+
+**Accessibilità NVDA:**
+- Navigazione solo tastiera (TAB, ENTER, ESC)
+- TTS announcements per tutte le operazioni
+- Focus management automatico dopo ogni azione
+- Messaggi errore chiari con audio feedback
+
+### Statistiche Presentation (v3.1.0 - Phase 1-9)
+
+**5 Dialog Statistiche:**
+
+1. **VictoryDialog** (fine partita vinta)
+   - Outcome sessione (tempo, mosse, punteggio)
+   - Riepilogo profilo (vittorie totali, winrate)
+   - Rilevamento nuovi record (miglior tempo, miglior punteggio)
+   - Prompt rivincita
+
+2. **AbandonDialog** (fine partita abbandonata)
+   - EndReason classification (nuovo gioco, uscita, timeout)
+   - Impatto su statistiche spiegato
+   - Opzione ritorno menu
+
+3. **GameInfoDialog** (durante partita - tasto **I**)
+   - Progresso partita corrente (tempo, mosse, score)
+   - Riepilogo profilo real-time
+   - Non blocca gameplay
+
+4. **DetailedStatsDialog** (3 pagine - via Gestione Profili o tasto **U**)
+   - **Pagina 1**: Statistiche globali (partite, vittorie, winrate, best time/score, media mosse)
+   - **Pagina 2**: Statistiche timer (partite con timer, vittorie, timeout, overtime, media tempo)
+   - **Pagina 3**: Statistiche scoring/difficoltà (breakdown per livello, punteggi medi)
+   - Navigazione: PageUp/PageDown, ESC per chiudere
+
+5. **LeaderboardDialog** (menu **L - Leaderboard Globale**)
+   - Top 10 giocatori in 5 categorie:
+     - Vittoria più veloce
+     - Miglior winrate
+     - Punteggio più alto
+     - Partite giocate
+     - Miglior vittoria con timer
+
+**Menu Integration (Phase 9.1-9.2):**
+- **U - Ultima Partita**: Apre LastGameDialog (riepilogo ultima partita completata)
+- **L - Leaderboard Globale**: Apre LeaderboardDialog (classifica top 10)
+- **Gestione Profili**: 6° pulsante menu principale (CRUD + stats + default)
+
+### Storage Paths
+
+```
+~/.solitario/
+├── profiles/
+│   ├── profile_000.json          # Guest profile (protected)
+│   ├── profile_{uuid}.json       # User profiles
+│   └── profiles_index.json       # Profile index (lightweight)
+├── .sessions/
+│   └── active_session.json       # Crash recovery tracking
+└── scores.json                   # Legacy score storage (deprecated)
+```
+
+### Statistics Categories
+
+**GlobalStats:**
+- Total games, victories, defeats
+- Winrate, best victory time, best score
+- Average moves, total undo/hint usage
+
+**TimerStats:**
+- Timer games, timer victories, timeouts
+- Overtime games, average time, best timed victory
+
+**DifficultyStats:**
+- Games per difficulty level (1-5)
+- Victories per level
+- Average scores per level
+
+**ScoringStats:**
+- Scoring games, total score, average score
+- Deck type usage (French/Neapolitan)
+- Draw count distribution (1/2/3 cards)
+
+## ⏱️ Timer System (v2.7.0)
+
+Modalità timer con gestione avanzata scadenza tempo.
+
+**Caratteristiche:**
+- **EndReason enum**: 6 classificazioni fine partita (VICTORY, VICTORY_OVERTIME, ABANDON_NEW_GAME, ABANDON_EXIT, ABANDON_APP_CLOSE, TIMEOUT_STRICT)
+- **Modalità STRICT**: Game over automatico allo scadere del timer (TIMEOUT_STRICT)
+- **Modalità PERMISSIVE**: Continua gameplay dopo scadenza con tracking overtime (penalità -100 punti/minuto)
+- **TTS announcements**: Notifica singola alla scadenza ("Tempo scaduto!" / "Tempo scaduto! Il gioco continua con penalità.")
+- **Overtime tracking**: Calcolo secondi oltre limite tempo (solo PERMISSIVE)
+- **Victory classification**: Vittorie in overtime auto-convertite a VICTORY_OVERTIME
+
+**Comandi:**
+- **T**: Mostra tempo (contestuale: trascorso se timer OFF, rimanente se timer ON)
+- **F2**: Attiva/disattiva timer
+- **F3/F4**: Decrementa/incrementa timer (-5/+5 minuti)
+
+### Victory Flow & Native Dialogs (v1.6.0-v1.6.1)
+
+Il gioco supporta dialog box native accessibili in **tutti i contesti interattivi**.
+
+**Contesti Dialog Nativi** (v1.6.1):
+1. ✅ **Vittoria/Sconfitta**: Report finale completo + prompt rivincita (con stats profilo v3.1.0)
+2. ✅ **ESC durante gameplay**: "Vuoi abbandonare la partita?"
+3. ✅ **N durante gameplay**: "Nuova partita?" (conferma abbandono)
+4. ✅ **ESC in menu di gioco**: "Vuoi tornare al menu principale?"
+5. ✅ **ESC in menu principale**: "Vuoi uscire dall'applicazione?"
+6. ✅ **Chiusura opzioni (modificate)**: "Salvare le modifiche?"
+
+**Caratteristiche**:
+- ✨ **Dialog native wxPython**: Accessibili a screen reader (NVDA, JAWS)
+- 📊 **Statistiche complete** (v3.1.0): Profilo, vittorie, winrate, nuovi record
+- 🎉 **Report finale dettagliato**: Timer, mosse, rimischiate, statistiche semi, punteggio
+- ⚡ **Double-ESC**: Abbandono rapido (premi ESC 2 volte entro 2 secondi)
+- 🔄 **UX coerente**: Stesso pattern di dialogs in tutta l'app
+- 🐞 **Debug command**: CTRL+ALT+W simula vittoria (solo per test)
+
+**Configurazione**:
+
+```python
+# Abilita dialog native (accessibili NVDA/JAWS)
+engine = GameEngine.create(use_native_dialogs=True)
+
+# Oppure usa solo TTS (default)
+engine = GameEngine.create(use_native_dialogs=False)
+```
+
+**Nota**: Se wxPython non è disponibile, l'applicazione degrada automaticamente a modalità TTS-only.
+
+**Accessibilità**:
+- Tutti i dialog sono navigabili solo da tastiera (Tab, Enter, ESC)
+- Compatibili con NVDA, JAWS (testato su Windows)
+- Report ottimizzato per screen reader (frasi brevi, punteggiatura chiara)
+- Shortcut keys: S=Sì, N=No, ESC=Annulla
 
 ## 📦 Installazione
 
@@ -19,6 +208,7 @@ Un gioco di carte Solitario (Klondike) in versione accessibile per non vedenti, 
 
 - Python 3.11 o superiore
 - pip (gestore pacchetti Python)
+- **wxPython 4.1+** (per interfaccia audiogame)
 
 ### Setup
 
@@ -34,196 +224,391 @@ pip install -r requirements.txt
 pip install -r requirements-dev.txt
 ```
 
-## 🎮 Utilizzo
+**Note v2.0.0**:
+- ✅ **pygame removed**: The game now uses wxPython exclusively
+- ✅ **Improved accessibility**: Better NVDA/JAWS screen reader integration
+- ✅ **Lighter dependencies**: -2 packages removed (pygame, pygame-menu)
 
-### Avvio Rapido
+### ✨ Versione Clean Architecture (Consigliata) - **v3.2.0 wxPython-only**
+
+```bash
+python test.py
+```
+
+**Caratteristiche v3.2.0**:
+- ✅ **wxPython-only**: Evento loop wxPython nativo (no pygame)
+- ✅ **Profile System completo**: CRUD profili + statistiche persistenti (v3.0.0 + v3.1.0)
+- ✅ **Stats Presentation UI**: 5 dialogs (Victory, Abandon, GameInfo, DetailedStats, Leaderboard)
+- ✅ **Timer System avanzato**: STRICT/PERMISSIVE modes, overtime tracking (v2.7.0)
+- ✅ **Test Suite Modernization**: 88%+ coverage, 10 new integration tests (v3.2.0)
+- ✅ Architettura Clean completa (`src/` modules)
+- ✅ Dependency Injection
+- ✅ Testabilità elevata (≥88% coverage)
+- ✅ Manutenibilità ottimale
+- ✅ 100% compatibile con versioni precedenti (stesso gameplay)
+- ✅ Migliore accessibilità NVDA/JAWS
+
+**Legacy pygame version** (deprecated):
+```bash
+python test_pygame_legacy.py
+```
+- ⚠️ pygame-based entry point (deprecated in v2.0.0)
+- ⚠️ Kept for reference only
+
+### 🔧 Versione Legacy (Compatibilità)
+
+```bash
+python acs.py
+```
+
+**Caratteristiche**:
+- ⚠️ Architettura monolitica (`scr/` modules)
+- ⚠️ Funzionale ma deprecata
+- ℹ️ Nessun ulteriore sviluppo
+- ℹ️ Mantenuta per backward compatibility
+
+## 🏛️ Architettura
+
+Il progetto segue una **Clean Architecture** (implementata in branch `refactoring-engine`) con separazione completa delle responsabilità:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                  PRESENTATION LAYER                      │
+│    (GameFormatter, StatsFormatter - Output Formatting)     │
+├─────────────────────────────────────────────────────────┤
+│                  APPLICATION LAYER                       │
+│    (GameEngine, ProfileService, Controllers, Timer)       │
+├─────────────────────────────────────────────────────────┤
+│                    DOMAIN LAYER                          │
+│  (Models: Card/Deck/Table/Profile, Rules, Services)      │
+├─────────────────────────────────────────────────────────┤
+│                INFRASTRUCTURE LAYER                      │
+│  (ScreenReader, TTS, wxPython UI, Storage, DI Container) │
+└─────────────────────────────────────────────────────────┘
+```
+
+### UI Architecture (v1.7.3)
+
+**Single-Frame Panel-Swap Pattern** (wxPython standard):
+- **1 Frame**: `SolitarioFrame` (600x450, visible and centered)
+- **Panel Container**: Hosts multiple panels
+- **Panel Swap**: MenuPanel ↔ GameplayPanel via Show/Hide
+- **Benefits**: Native TAB navigation, proper NVDA focus, standard wxPython UX
+
+```
+SolitarioFrame (single window)
+└── panel_container (wx.Panel)
+    ├── MenuPanel (wx.Panel - shown/hidden)
+    └── GameplayPanel (wx.Panel - shown/hidden)
+```
+
+### Struttura Directory
+
+```
+solitario-classico-accessibile/
+├── test.py                    # ✨ Entry point Clean Architecture
+├── acs.py                     # 🔧 Entry point legacy
+│
+├── src/                       # 🆕 Clean Architecture (v3.2.0)
+│   ├── domain/               # Core business logic
+│   │   ├── models/          # Card, Deck, Pile, Table, Scoring, Profile, GameEnd
+│   │   ├── rules/           # SolitaireRules, MoveValidator
+│   │   └── services/        # GameService, ScoringService
+│   ├── application/         # Use cases & orchestration
+│   │   ├── game_engine.py       # Main controller + ProfileService integration
+│   │   ├── profile_service.py   # Profile CRUD + statistics aggregation
+│   │   ├── session_tracker.py   # Crash recovery
+│   │   ├── input_handler.py     # Keyboard → Commands
+│   │   ├── game_settings.py     # Configuration
+│   │   └── timer_manager.py     # Timer logic
+│   ├── infrastructure/      # External adapters
+│   │   ├── accessibility/   # ScreenReader + TTS
+│   │   ├── storage/         # ProfileStorage, SessionStorage, ScoreStorage (JSON)
+│   │   ├── ui/             # wxPython single-frame UI + ProfileMenuPanel
+│   │   └── di_container.py # Dependency Injection
+│   └── presentation/        # Output formatting
+│       ├── formatters/      # GameFormatter, ScoreFormatter, StatsFormatter
+│       └── dialogs/         # Victory, Abandon, GameInfo, DetailedStats, Leaderboard, LastGame
+│
+├── scr/                       # Legacy monolithic (v1.3.3)
+│   ├── game_engine.py        # 43 KB monolith
+│   ├── game_table.py
+│   ├── decks.py
+│   └── ...
+│
+├── tests/
+│   ├── unit/                # Unit tests
+│   ├── integration/         # Integration tests (Clean Arch)
+│   └── archive/             # Archived legacy tests (v3.2.0)
+│       └── scr/             # 3 legacy test files with documentation
+│
+└── docs/
+    ├── ARCHITECTURE.md       # Architecture details
+    ├── API.md                # API reference
+    ├── CHANGELOG.md          # Version history
+    ├── TODO.md               # Implementation tracking
+    └── ...
+```
+
+### Dipendenze tra Layer
+
+Segue la **Dependency Rule** di Clean Architecture:
+
+```
+Infrastructure ──────┐
+                     ├──→ Application ──→ Domain (Core)
+Presentation ────────┘
+```
+
+- **Domain**: Zero dipendenze esterne (logica pura)
+- **Application**: Dipende solo da Domain
+- **Infrastructure/Presentation**: Dipendono da Application e Domain
+
+Per dettagli completi: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+
+## 🎮 Utilizzo Programmatico
+
+### API Clean Architecture
 
 ```python
 from src.infrastructure.di_container import get_container
 
-# Ottieni il controller tramite dependency injection
+# Bootstrap via Dependency Injection
 container = get_container()
-controller = container.get_game_controller()
 
-# Inizia una nuova partita
-print(controller.start_new_game())
+# Configurazione
+settings = container.get_settings()
+settings.deck_type = "neapolitan"  # o "french"
+settings.timer_enabled = True
+settings.timer_minutes = 15
+settings.scoring_enabled = True  # ✨ v1.5.2
 
-# Esegui azioni
-success, message = controller.execute_move("draw")
-print(message)
+# Crea componenti
+deck = container.get_deck()  # Usa settings.deck_type
+input_handler = container.get_input_handler()
+formatter = container.get_formatter(language="it")
+profile_service = container.get_profile_service()  # ✨ v3.0.0
 
-# Visualizza lo stato corrente
-print(controller.get_current_state_formatted())
+# Il resto viene orchestrato dall'Application layer
 ```
 
-### Azioni Disponibili
-
-| Azione | Descrizione |
-|--------|-------------|
-| `draw` | Pesca carte dal mazzo |
-| `recycle` | Rimescola gli scarti nel mazzo e pesca automaticamente |
-| `move_to_foundation` | Sposta una carta alla base |
-
-### ⌨️ Comandi Tastiera (Versione Legacy `scr/`)
+### ⌨️ Comandi Tastiera (Audiogame)
 
 #### Navigazione
-- **Frecce SU/GIÙ**: Naviga carte nella pila (pile base, scarti)
+- **Frecce SU/GIÙ**: Naviga carte nella pila
 - **Frecce SINISTRA/DESTRA**: Cambia pila
-- **HOME**: Vai alla prima carta della pila corrente
-- **END**: Vai all'ultima carta della pila corrente
-- **TAB**: Salta a tipo di pila diverso
-- **Numeri 1-7**: Vai alla pila base + **doppio tocco seleziona** ✨ NUOVO
-- **SHIFT+1-4**: Vai alla pila semi (Cuori/Quadri/Fiori/Picche) + **doppio tocco seleziona** ✨ NUOVO
-- **SHIFT+S**: Sposta cursore su scarti ✨ NUOVO
-- **SHIFT+M**: Sposta cursore su mazzo ✨ NUOVO
+- **Numeri 1-7**: Vai alla pila base + **doppio tocco seleziona** ✨
+- **SHIFT+1-4**: Vai alla pila semi + **doppio tocco seleziona** ✨
+- **SHIFT+S**: Sposta cursore su scarti ✨
+- **SHIFT+M**: Sposta cursore su mazzo ✨
 
 #### Azioni di Gioco
-- **INVIO**: Seleziona carta sotto il cursore (su mazzo: pesca carte) ✨ AGGIORNATO
-- **CTRL+INVIO**: Seleziona carta dagli scarti
-- **SPAZIO**: Sposta le carte selezionate
+- **INVIO**: Seleziona carta / Pesca dal mazzo
 - **CANC**: Annulla selezione
-- **D** o **P**: Pesca dal mazzo da qualunque posizione (con auto-draw dopo rimescolamento scarti)
+- **A**: Auto-mossa verso fondazioni
 
 #### Informazioni
-- **F**: Posizione cursore attuale
-- **G**: Stato tavolo completo
-- **R**: Report partita (tempo, mosse, rimischiate)
-- **T**: Tempo rimanente
-- **X**: Dettagli carta sotto cursore
-- **S**: Ultima carta negli scarti (read-only)
-- **M**: Numero carte nel mazzo (read-only)
-- **C**: Carte selezionate
-- **I**: Visualizza impostazioni correnti
-- **H**: Aiuto comandi
+- **H**: Aiuto comandi completo
+- **S**: Statistiche partita
+- **I**: GameInfo dialog (stats partita corrente + profilo) ✨ v3.1.0
+- **P**: Mostra punteggio corrente ✨ (v1.5.2)
+- **SHIFT+P**: Ultimi 5 eventi scoring ✨ (v1.5.2)
+- **T**: Mostra tempo (contestuale: trascorso/rimanente) ✨ v2.7.0
+
+#### Statistiche e Profili (v3.1.0)
+- **U**: Ultima Partita (LastGameDialog) ✨
+- **L**: Leaderboard Globale (top 10) ✨
+- **Menu → Gestione Profili**: ProfileMenuPanel (6 operazioni) ✨
 
 #### Impostazioni
 - **N**: Nuova partita
-- **O**: Apri/chiudi opzioni
-- **F1**: Cambia tipo mazzo (francesi/napoletane)
-- **F2**: Cambia difficoltà (1-3)
-- **F3**: Decrementa tempo limite (-5 min, min 5 min)
-- **F4**: Incrementa tempo limite (+5 min, max 60 min)
-- **F5**: Alterna modalità riciclo scarti (inversione/mescolata)
-- **CTRL+F3**: Disabilita timer
-- **ESC**: Abbandona partita / Esci dal gioco
+- **O**: Apri menu opzioni
+- **F1**: Cambia tipo mazzo (francese/napoletano)
+- **F2**: Attiva/disattiva timer
+- **F3**: Decrementa timer (-5 min)
+- **F4**: Incrementa timer (+5 min)
+- **F5**: Alterna modalità riciclo scarti
+- **ESC**: Torna al menu principale
 
-### 🎯 Double-Tap Navigation System (v1.3.0)
+## 🎴 Mazzi di Carte
 
-**Navigazione Rapida con Pattern Double-Tap** ✨ NUOVO
-
-Il sistema di double-tap permette di selezionare rapidamente le carte con due pressioni consecutive dello stesso tasto:
-
-#### Come Funziona
-
-1. **Primo tap**: Sposta il cursore sulla pila
-   - Feedback vocale con nome pila e carta in cima
-   - Hint vocale: "Premi ancora [tasto] per selezionare"
-
-2. **Secondo tap consecutivo**: Seleziona automaticamente l'ultima carta
-   - Auto-deseleziona eventuali selezioni precedenti
-   - Feedback: "Carta selezionata: [nome carta]!"
-
-#### Pile Supportate
-
-- **Tasti 1-7**: Pile base (tableau)
-  - Esempio: Premi `3` → cursore su Pila 3
-  - Premi `3` di nuovo → seleziona carta in cima
-
-- **SHIFT+1-4**: Pile semi (foundation)
-  - SHIFT+1 = Cuori (♥)
-  - SHIFT+2 = Quadri (♦)
-  - SHIFT+3 = Fiori (♣)
-  - SHIFT+4 = Picche (♠)
-
-- **SHIFT+S**: Navigazione rapida scarti
-  - Sposta cursore su pila scarti
-  - Usa frecce per navigare le carte
-  - CTRL+ENTER per selezionare ultima carta
-
-- **SHIFT+M**: Navigazione rapida mazzo
-  - Sposta cursore sul mazzo
-  - ENTER per pescare direttamente
-
-#### Reset Automatico
-
-Il tracking del double-tap si resetta automaticamente quando:
-- Usi le frecce direzionali (SU/GIÙ/SINISTRA/DESTRA)
-- Premi TAB per cambiare tipo di pila
-- Annulli una selezione (CANC)
-- Completi uno spostamento (SPAZIO)
-
-#### Backward Compatibility
-
-Tutti i comandi esistenti continuano a funzionare normalmente:
-- D/P per pescare da qualunque posizione
-- Frecce per navigazione manuale dettagliata
-- TAB per salti tra tipi di pile
-- Comandi info S e M (read-only, non spostano il cursore)
-
-### ⏱️ Gestione Timer
-
-Il timer può essere controllato durante la partita:
-- **F4**: Incrementa di 5 minuti (massimo 60 minuti)
-- **F3**: Decrementa di 5 minuti
-  - Se timer < 5 minuti: decrementa fino a 0 con avviso
-  - Se timer = 0: comando ignorato, annuncio "Timer già scaduto"
-  - Al raggiungimento del minimo: il timer viene disattivato
-- **CTRL+F3**: Disabilita completamente il timer
-- Annunci vocali per ogni modifica dello stato del timer
-
-### 🔀 Modalità Riciclo Scarti
-
-Quando il mazzo finisce, le carte degli scarti vengono riciclate automaticamente. Sono disponibili due modalità:
-
-- **INVERSIONE SEMPLICE** (default): Le carte vengono invertite (comportamento prevedibile)
-- **MESCOLATA CASUALE**: Le carte vengono mischiate casualmente (maggiore varietà)
-
-**Toggle con F5**: Alterna tra le due modalità (solo con opzioni aperte, tasto **O**)
-
-**Verifica modalità attiva**: Premi **I** per visualizzare le impostazioni correnti
-
-**🎯 Auto-Draw**: Dopo ogni rimescolamento degli scarti, viene pescata automaticamente una carta dal mazzo. Non è necessario premere nuovamente D o P per continuare a giocare.
-
-### 🃏 Mazzi di Carte
-
-Il gioco supporta due tipi di mazzo con regole di vittoria automaticamente adattate:
-
-#### Mazzo Francese (52 carte)
+### Mazzo Francese (52 carte)
 - **Semi**: Cuori (♥), Quadri (♦), Fiori (♣), Picche (♠)
-- **Valori**: Asso, 2, 3, 4, 5, 6, 7, 8, 9, 10, Jack (11), Regina (12), Re (13)
-- **Vittoria**: 13 carte per seme (52 totali nelle pile semi)
+- **Valori**: Asso (1), 2-10, Jack (11), Regina (12), Re (13)
+- **Vittoria**: 13 carte per seme × 4 semi = 52 carte totali
+- **Bonus scoring**: +150 punti ✨
 
-#### Mazzo Napoletano (40 carte)
+### Mazzo Napoletano (40 carte)
 - **Semi**: Bastoni (🏑), Coppe (🍷), Denari (🪙), Spade (🗡️)
-- **Valori**: Asso (1), 2, 3, 4, 5, 6, 7, Regina (8), Cavallo (9), Re (10)
-- **Caratteristiche autentiche**: 
-  - Eliminate le carte 8, 9, 10 numeriche
-  - Figure con valori sequenziali dopo il 7
-  - Vittoria: 10 carte per seme (40 totali nelle pile semi)
+- **Valori**: Asso (1), 2-7, Regina (8), Cavallo (9), Re (10)
+- **Vittoria**: 10 carte per seme × 4 semi = 40 carte totali
+- **Bonus scoring**: +0 punti (baseline)
 
-**Cambio mazzo**: Premi **F1** nel menu opzioni per alternare tra i due mazzi.
+**Caratteristiche**: Il gioco adatta automaticamente le regole di vittoria e la distribuzione delle carte in base al mazzo selezionato.
 
-## 🏗️ Architettura
+## 🏆 Sistema Punti v1.5.2
 
-Il progetto segue una **Clean Architecture** con quattro livelli:
+Il gioco include un sistema di punteggio completo basato sullo standard Microsoft Solitaire, con 5 livelli di difficoltà e statistiche persistenti.
+
+### Eventi Scoring
+
+| Evento | Punti | Descrizione |
+|--------|-------|-------------|
+| Scarto → Fondazione | **+10** | Carta spostata da pile scarti a fondazione |
+| Tableau → Fondazione | **+10** | Carta spostata da pile base a fondazione |
+| Carta Rivelata | **+5** | Carta scoperta dopo una mossa |
+| Fondazione → Tableau | **-15** | Penalità per spostamento indietro |
+| Riciclo Scarti | **-20** | Penalità dopo il 3° riciclo |
+
+### Sistema Difficoltà v2.4.0 (5 Livelli con Preset)
+
+Il gioco implementa un sistema di preset intelligenti che bloccano progressivamente le opzioni per garantire coerenza e fair play.
+
+| Livello | Nome | Moltiplicatore | Opzioni Bloccate | Descrizione |
+|---------|------|----------------|------------------|-------------|
+| 1 | **Principiante** | 1.0x | 1 (Timer OFF) | Ideale per imparare, nessun limite di tempo |
+| 2 | **Facile** | 1.25x | 1 (Timer PERMISSIVE) | Timer con malus punti, molto personalizzabile |
+| 3 | **Normale** | 1.5x | 1 (Draw=3) | Regole Vegas standard, 3 carte obbligatorie |
+| 4 | **Esperto** | 2.0x | 5 opzioni | Time Attack 30 minuti, senza suggerimenti |
+| 5 | **Maestro** | 2.5x | 6 opzioni | **Tournament Mode**: 15 min strict, tutto bloccato |
+
+#### Dettagli Preset
+
+**Livello 1 - Principiante**:
+- ✅ Personalizzabile: Carte pescate, Riciclo, Punti, Suggerimenti
+- 🔒 Bloccato: Timer (sempre OFF per principianti)
+- 🎯 Obiettivo: Imparare il gioco senza pressione temporale
+
+**Livello 2 - Facile**:
+- ✅ Personalizzabile: Timer durata, Carte pescate, Riciclo, Punti, Suggerimenti
+- 🔒 Bloccato: Modalità Timer (PERMISSIVE - continua con malus)
+- 🎯 Obiettivo: Partite casual con possibilità di recupero
+
+**Livello 3 - Normale**:
+- ✅ Personalizzabile: Timer, Modalità Timer, Riciclo, Punti, Suggerimenti
+- 🔒 Bloccato: Carte Pescate (3 - standard Vegas)
+- 🎯 Obiettivo: Esperienza Solitaire classica Vegas
+
+**Livello 4 - Esperto**:
+- ✅ Personalizzabile: Sistema Punti (può essere disattivato per focus su tempo)
+- 🔒 Bloccato: Timer (30 min), Draw (3), Riciclo (Inversione), Suggerimenti (OFF), Modalità Timer (PERMISSIVE)
+- 🎯 Obiettivo: Time Attack Challenge - completa in 30 minuti
+
+**Livello 5 - Maestro**:
+- ✅ Personalizzabile: Solo Tipo Mazzo (estetica)
+- 🔒 Bloccato: **TUTTO** (Timer 15min STRICT, Draw 3, Inversione, Punti ON, Suggerimenti OFF)
+- 🎯 Obiettivo: **Modalità Tournament** - regole uniformi per competizioni ufficiali
+- 🛡️ Anti-Cheat: Preset riapplicato automaticamente al caricamento salvataggi
+
+### Bonus Punti
+
+**Mazzo**:
+- Mazzo francese (52 carte): **+150 punti**
+- Mazzo napoletano (40 carte): **+0 punti** (baseline)
+
+**Carte Pescate** (solo livelli 1-3):
+- Draw 1 carta: **+0 punti** (baseline)
+- Draw 2 carte: **+100 punti**
+- Draw 3 carte: **+200 punti**
+
+**Tempo**:
+- **Timer OFF**: Bonus = √(secondi_trascorsi) × 10
+- **Timer ON**: Bonus = (tempo_rimanente / tempo_totale) × 1000
+
+**Vittoria**:
+- Partita vinta: **+500 punti**
+- Partita persa: **+0 punti**
+
+### Formula Finale
 
 ```
-┌─────────────────────────────────────┐
-│         Presentation Layer          │
-│     (GameFormatter, Output UI)      │
-├─────────────────────────────────────┤
-│         Application Layer           │
-│  (GameController, Commands, DI)     │
-├─────────────────────────────────────┤
-│           Domain Layer              │
-│ (GameState, Card, Rules, Services)  │
-├─────────────────────────────────────┤
-│        Infrastructure Layer         │
-│    (DIContainer, Accessibility)     │
-└─────────────────────────────────────┘
+Punteggio Totale = (
+    (Base + Bonus_Mazzo + Bonus_Draw) × Moltiplicatore_Difficoltà
+    + Bonus_Tempo + Bonus_Vittoria
+)
+
+Clamp a minimum 0 punti
 ```
 
-Per dettagli completi sull'architettura, consulta [ARCHITECTURE.md](ARCHITECTURE.md).
+### Vincoli Livelli Avanzati
+
+**Livello 4 (Esperto)**:
+- Timer minimo: 30 minuti
+- Carte pescate: minimo 2
+- Modalità riciclo: bloccata su inversione
+
+**Livello 5 (Maestro)**:
+- Timer range: 15-30 minuti
+- Carte pescate: fissato a 3
+- Modalità riciclo: bloccata su inversione
+
+*Nota*: Quando si cambia difficoltà, le impostazioni vengono auto-regolate per rispettare i vincoli.
+
+### Comandi Scoring
+
+- **P**: Mostra punteggio provvisorio corrente con breakdown completo
+- **SHIFT+P**: Mostra ultimi 5 eventi scoring con punti guadagnati/persi
+- **Opzione Menu #7**: Toggle sistema punti ON/OFF (free-play mode)
+
+### Storage Statistiche
+
+Le statistiche vengono salvate automaticamente in:
+```
+~/.solitario/scores.json          # Legacy (deprecated v3.0.0)
+~/.solitario/profiles/            # ✨ v3.0.0 Profile System
+```
+
+**Contenuto Profile JSON**:
+```json
+{
+  "profile_id": "profile_a1b2c3d4",
+  "profile_name": "Mario Rossi",
+  "created_at": "2026-02-17T20:00:00Z",
+  "last_played_at": "2026-02-17T21:30:00Z",
+  "is_default": true,
+  "global_stats": {
+    "total_games": 42,
+    "total_victories": 23,
+    "total_defeats": 19,
+    "winrate": 0.548,
+    "best_victory_time_seconds": 225.5,
+    "best_score": 1850,
+    "avg_moves_per_game": 87.3
+  },
+  "timer_stats": { ... },
+  "difficulty_stats": { ... },
+  "scoring_stats": { ... },
+  "recent_sessions": [ ... ]
+}
+```
+
+### Esempi Calcolo
+
+**Esempio 1: Partita Facile Vinta**
+```
+Base score: 150 punti (15 mosse × 10 punti)
+Mazzo francese: +150 punti
+Draw 3 carte: +200 punti
+Totale pre-multiplier: 500 punti
+Moltiplicatore livello 1: ×1.0 = 500 punti
+Bonus tempo (timer OFF, 8min): +87 punti
+Bonus vittoria: +500 punti
+──────────────────────────────
+TOTALE: 1087 punti
+```
+
+**Esempio 2: Partita Maestro Vinta**
+```
+Base score: 200 punti (20 mosse × 10 punti)
+Mazzo francese: +150 punti
+Draw 3 carte: +0 punti (livello 5)
+Totale pre-multiplier: 350 punti
+Moltiplicatore livello 5: ×2.5 = 875 punti
+Bonus tempo (timer ON 18/20min): +900 punti
+Bonus vittoria: +500 punti
+──────────────────────────────
+TOTALE: 2275 punti
+```
 
 ## 🧪 Testing
 
@@ -234,26 +619,72 @@ pytest tests/ -v
 # Esegui test con coverage
 pytest tests/ --cov=src --cov-report=term-missing
 
-# Esegui solo test unitari
+# Solo test unitari
 pytest tests/unit/ -v
 
-# Esegui solo test di integrazione
+# Solo test integrazione (Clean Architecture)
 pytest tests/integration/ -v
+
+# Headless CI (salta test GUI che richiedono display)
+pytest tests/ -m "not gui" -v
 ```
 
-### Coverage Target
+Per la guida completa ai marker pytest, esempi CI e troubleshooting: **[docs/TESTING.md](docs/TESTING.md)**
 
-| Metrica | Target | Attuale |
-|---------|--------|---------|
-| Coverage totale | ≥ 80% | 91.47% |
-| Test unitari | ≥ 90% | ✅ |
-| Test integrazione | ≥ 5 | 13 |
+### Coverage Target (v3.2.0)
+
+| Layer | Coverage Target | Status |
+|-------|-----------------|--------|
+| Domain | ≥ 95% | ✅ |
+| Application | ≥ 85% | ✅ |
+| Infrastructure | ≥ 70% | ✅ |
+| **Totale** | **≥ 88%** | **✅ 88%+** |
 
 ## 📚 Documentazione
 
-- [ARCHITECTURE.md](ARCHITECTURE.md) - Architettura del sistema
-- [API.md](API.md) - Documentazione API pubblica
-- [docs/ADR/](docs/ADR/) - Architecture Decision Records
+### Clean Architecture (src/)
+- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Dettagli architettura Clean
+- **[docs/API.md](docs/API.md)** - API reference (ProfileService, StatsFormatter, etc.)
+- **[docs/MIGRATION_GUIDE.md](docs/MIGRATION_GUIDE.md)** - Guida migrazione scr/ → src/
+- **[docs/REFACTORING_PLAN.md](docs/REFACTORING_PLAN.md)** - Piano 13 commits
+- **[docs/COMMITS_SUMMARY.md](docs/COMMITS_SUMMARY.md)** - Log dettagliato commits
+
+### Profile System (v3.0.0 + v3.1.0)
+- **[docs/2 - projects/DESIGN_PROFILE_STATISTICS_SYSTEM.md](docs/2%20-%20projects/DESIGN_PROFILE_STATISTICS_SYSTEM.md)** - Design doc completo
+- **[docs/3 - coding plans/IMPLEMENTATION_PROFILE_SYSTEM.md](docs/3%20-%20coding%20plans/IMPLEMENTATION_PROFILE_SYSTEM.md)** - Piano implementazione backend
+- **[docs/3 - coding plans/IMPLEMENTATION_STATS_PRESENTATION.md](docs/3%20-%20coding%20plans/IMPLEMENTATION_STATS_PRESENTATION.md)** - Piano implementazione UI
+- **[docs/TODO.md](docs/TODO.md)** - Implementation tracking (Feature 1-3 + Test Modernization complete)
+
+### Test Suite (v3.2.1)
+- **[docs/TESTING.md](docs/TESTING.md)** - Guida completa pytest marker + CI examples + troubleshooting
+- **[docs/LEGACY_TEST_AUDIT.md](docs/LEGACY_TEST_AUDIT.md)** - Test suite audit report
+- **[docs/3 - coding plans/IMPLEMENTATION_PLAN_LEGACY_TEST_MODERNIZATION.md](docs/3%20-%20coding%20plans/IMPLEMENTATION_PLAN_LEGACY_TEST_MODERNIZATION.md)** - Test modernization plan
+- **[tests/archive/scr/README.md](tests/archive/scr/README.md)** - Archived legacy tests documentation
+
+### Scoring System (v1.5.2)
+- **[docs/IMPLEMENTATION_SCORING_SYSTEM.md](docs/IMPLEMENTATION_SCORING_SYSTEM.md)** - Guida implementativa completa
+- **[docs/TODO_SCORING.md](docs/TODO_SCORING.md)** - Checklist implementazione 8 fasi
+
+### ADR
+- **[docs/ADR/](docs/ADR/)** - Architecture Decision Records
+
+## 🔄 Stato Migrazione
+
+**Branch corrente**: `refactoring-engine`
+
+✅ **COMPLETA** - Feature Stack 1-3 + Test Modernization (Feb 19, 2026)
+
+| Fase | Features | Stato |
+|------|----------|-------|
+| Feature 1 | Timer System v2.7.0 | ✅ ~17 min (4.1x faster) |
+| Feature 2 | Profile System Backend v3.0.0 | ✅ ~4 hours (1.6x faster) |
+| Feature 3 | Stats Presentation UI v3.1.0 | ✅ ~170 min (3.5x faster) |
+| Feature 4 | Test Suite Modernization v3.2.0 | ✅ ~45 min (1.3x faster) |
+| **TOTALE** | **Stack Completo** | **✅ ~6.6h vs 18h estimate (2.7x)** |
+
+**Feature Parity**: 100% con v1.3.3 legacy + Profile System + Stats UI + Modern Tests
+
+Per dettagli: [docs/TODO.md](docs/TODO.md), [CHANGELOG.md](CHANGELOG.md)
 
 ## 🛠️ Sviluppo
 
@@ -267,43 +698,36 @@ isort src/ tests/
 # Type checking
 mypy src/ --strict
 
+# Linting
+flake8 src/ tests/
+
 # Verifica complessità
-radon cc src/ -a
+radon cc src/ -a -nb
 ```
 
-### Struttura Directory
-
-```
-src/
-├── application/       # Use cases e controller
-│   ├── commands.py    # Pattern Command (undo/redo)
-│   └── game_controller.py
-├── domain/            # Logica di business
-│   ├── interfaces/    # Protocol interfaces
-│   ├── models/        # Entità (Card, Pile, GameState)
-│   ├── rules/         # Regole di validazione
-│   └── services/      # Servizi di dominio
-├── infrastructure/    # Dipendenze esterne
-│   └── di_container.py
-└── presentation/      # Formattazione output
-    └── game_formatter.py
-```
-
-## 📄 Licenza
-
-Questo progetto è rilasciato sotto licenza MIT.
-
-## 👥 Contributi
+### Contributi
 
 I contributi sono benvenuti! Per favore:
 
 1. Fai fork del repository
 2. Crea un branch per la tua feature (`git checkout -b feature/nuova-feature`)
-3. Committa le modifiche (`git commit -m 'Aggiungi nuova feature'`)
-4. Pusha il branch (`git push origin feature/nuova-feature`)
-5. Apri una Pull Request
+3. Committa le modifiche seguendo [Conventional Commits](https://www.conventionalcommits.org/)
+4. Aggiungi test per nuove funzionalità
+5. Pusha il branch (`git push origin feature/nuova-feature`)
+6. Apri una Pull Request
 
-## 📞 Contatti
+**Per contributi su Clean Architecture**: Leggi prima [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) per capire la separazione tra layer.
+
+## 📜 Licenza
+
+Questo progetto è rilasciato sotto licenza MIT.
+
+## 👥 Contatti
 
 - **Autore**: Nemex81
 - **Repository**: [GitHub](https://github.com/Nemex81/solitario-classico-accessibile)
+- **Issues**: [GitHub Issues](https://github.com/Nemex81/solitario-classico-accessibile/issues)
+
+---
+
+**🎉 v3.2.0** - Test Suite Modernization complete! 88%+ coverage achieved with 10 new integration tests.
