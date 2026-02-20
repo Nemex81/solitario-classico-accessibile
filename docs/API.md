@@ -4,7 +4,7 @@
 
 Questo documento descrive l'API pubblica del Solitario Classico Accessibile.
 
-**Versione API Corrente**: v3.1.2 (Bug Fixes - Dialog improvements + GameEngine documentation)
+**Versione API Corrente**: v3.1.3 (Audit Compliance - Fixed signatures to match implementation)
 
 ---
 
@@ -686,12 +686,13 @@ print(text)
 
 ---
 
-#### `format_timer_stats_detailed(stats: TimerStats) -> str`
+#### `format_timer_stats_detailed(stats: TimerStats, global_stats: GlobalStats) -> str`
 
 Formatta statistiche timer dettagliate (Page 2/3).
 
 **Parametri:**
-- `stats`: Oggetto `TimerStats`
+- `stats`: Oggetto `TimerStats` con timer-specific data
+- `global_stats`: Oggetto `GlobalStats` per cross-stat calculations (richiesto per calcolare `games_without_timer`)
 
 **Ritorna:**
 - Stringa formattata con:
@@ -700,9 +701,17 @@ Formatta statistiche timer dettagliate (Page 2/3).
   - Analisi overtime (media, massimo)
   - Breakdown per modalità (STRICT/PERMISSIVE)
 
+**⚠️ Breaking Change v3.1.1:**
+Parametro `global_stats` aggiunto nella versione 3.1.1 per supportare statistiche incrociate.
+Se usi versioni precedenti (≤3.1.0), consulta il codice per signature compatibile.
+
 **Esempio:**
 ```python
-text = formatter.format_timer_stats_detailed(profile.timer_stats)
+# v3.1.1+ (current)
+text = formatter.format_timer_stats_detailed(
+    profile.timer_stats,
+    profile.global_stats  # ← PARAMETRO OBBLIGATORIO
+)
 print(text)
 # ========================================================
 #     STATISTICHE TIMER
@@ -710,7 +719,7 @@ print(text)
 # 
 # UTILIZZO TIMER
 # Partite con timer attivo: 15
-# Partite senza timer: 27
+# Partite senza timer: 27  # ← Calcolato da global_stats
 # 
 # PERFORMANCE TEMPORALE
 # Entro il limite: 10
@@ -1489,21 +1498,39 @@ profile_service = container.get_profile_service()
 
 ### Metodi
 
-#### `create_profile(name: str, set_as_default: bool = False) -> UserProfile`
+#### `create_profile(name: str, is_guest: bool = False) -> Optional[UserProfile]`
 
 Crea un nuovo profilo utente con statistiche vuote.
 
 **Parametri:**
-- `name`: Nome del profilo
-- `set_as_default`: Se True, imposta come profilo predefinito
+- `name`: Nome del profilo (display name)
+- `is_guest`: Se True, crea come profilo guest protetto (default: False)
+  - **Note:** Il profilo guest (`profile_000`, nome "Ospite") ha protezione speciale:
+    - Non può essere eliminato
+    - Non può essere rinominato
+    - Usato come fallback quando nessun profilo è caricato
 
 **Ritorna:**
-- Oggetto `UserProfile` creato
+- Oggetto `UserProfile` creato, oppure `None` se creazione fallisce
+
+**⚠️ Breaking Change v3.0.0:**
+Il parametro `set_as_default` è stato rinominato in `is_guest` per riflettere meglio la semantica.
+Per impostare un profilo come predefinito, usa `profile.is_default = True` e poi `save_active_profile()`.
 
 **Esempio:**
 ```python
-profile = profile_service.create_profile("Mario Rossi", set_as_default=True)
-print(profile.profile_id)  # "profile_a1b2c3d4"
+# Crea profilo utente normale
+profile = profile_service.create_profile("Mario Rossi")
+if profile:
+    print(profile.profile_id)  # "profile_a1b2c3d4"
+
+# Crea profilo guest (uso interno)
+guest = profile_service.create_profile("Ospite", is_guest=True)
+# guest.profile_id == "profile_000" (ID fisso per guest)
+
+# Per impostare come predefinito (post-creazione):
+profile.is_default = True
+profile_service.save_active_profile()
 ```
 
 ---
@@ -1527,14 +1554,26 @@ if success:
 
 ---
 
-#### `save_active_profile() -> None`
+#### `save_active_profile() -> bool`
 
 Salva il profilo attivo corrente su disco (atomico).
+
+**Ritorna:**
+- `True` se salvato con successo
+- `False` se fallimento (es. errore I/O, profilo non attivo)
+
+**Side Effects:**
+- Scrittura atomica su `~/.solitario/profiles/profile_{uuid}.json`
+- Aggiornamento `profiles_index.json` con timestamp
 
 **Esempio:**
 ```python
 profile_service.active_profile.profile_name = "Nuovo Nome"
-profile_service.save_active_profile()
+success = profile_service.save_active_profile()
+
+if not success:
+    print("⚠️ Errore: impossibile salvare profilo!")
+    # Handle error (retry, notify user, etc.)
 ```
 
 ---
@@ -1562,12 +1601,25 @@ except ValueError as e:
 
 ---
 
-#### `record_session(outcome: SessionOutcome) -> None`
+#### `record_session(outcome: SessionOutcome) -> bool`
 
 Registra una sessione di gioco, aggiorna le statistiche e salva automaticamente.
 
 **Parametri:**
 - `outcome`: Oggetto `SessionOutcome` con i dati della partita
+
+**Ritorna:**
+- `True` se sessione registrata e salvata con successo
+- `False` se errore (validazione fallita, profilo non attivo, errore I/O)
+
+**Side Effects:**
+- Aggiornamento statistiche aggregate (GlobalStats, TimerStats, DifficultyStats, ScoringStats)
+- Aggiunta sessione a `recent_sessions` (mantiene ultime 50)
+- Salvataggio automatico profilo su disco
+
+**Validazioni:**
+- Sessione deve appartenere al profilo attivo (`session.profile_id == active_profile.profile_id`)
+- Campi obbligatori devono essere popolati (`end_reason`, `is_victory`, `elapsed_time`, ecc.)
 
 **Esempio:**
 ```python
@@ -1589,25 +1641,44 @@ outcome = SessionOutcome.create_new(
     move_count=50
 )
 
-profile_service.record_session(outcome)
-# → Statistiche aggiornate automaticamente
-# → Profilo salvato su disco (atomic write)
+success = profile_service.record_session(outcome)
+
+if success:
+    print("✅ Sessione registrata! Statistiche aggiornate.")
+else:
+    print("⚠️ Errore: sessione non registrata (controlla validazione)")
 ```
 
 ---
 
-#### `list_all_profiles() -> List[Dict[str, Any]]`
+#### `list_profiles() -> List[Dict[str, Any]]`
 
 Ottiene la lista leggera di tutti i profili dall'indice.
 
 **Ritorna:**
-- Lista di dizionari con informazioni sommarie dei profili
+- Lista di dizionari con informazioni sommarie dei profili:
+  - `profile_id`: ID profilo
+  - `profile_name`: Nome display
+  - `total_games`: Numero partite totali
+  - `winrate`: Percentuale vittorie (0.0-1.0)
+  - `is_guest`: Flag profilo guest
+  - `last_played`: Timestamp ultima partita (ISO 8601)
+
+**Note:**
+- Operazione leggera: legge solo `profiles_index.json` (non carica file profili completi)
+- Usa `get_all_profiles_with_stats()` se serve accesso completo a statistiche
 
 **Esempio:**
 ```python
-profiles = profile_service.list_all_profiles()
+profiles = profile_service.list_profiles()  # ✅ Nome corretto
+
 for p in profiles:
     print(f"{p['profile_name']}: {p['total_games']} partite, {p['winrate']:.1%} vittorie")
+
+# Output:
+# Mario Rossi: 42 partite, 54.8% vittorie
+# Luigi Bianchi: 15 partite, 60.0% vittorie
+# Ospite: 3 partite, 33.3% vittorie
 ```
 
 ---
@@ -1692,6 +1763,14 @@ Per dettagli architetturali:
 
 ---
 
-*Document Version: 3.1.2 (Revision 2)*  
-*Last Updated: 2026-02-18 14:20 CET*  
-*Revision Notes: Added GameEngine public API, Pile methods reference, debug utilities*
+*Document Version: 3.1.3 (Revision 3)*  
+*Last Updated: 2026-02-20 16:20 CET*  
+*Revision Notes: Fixed ProfileService and StatsFormatter signatures to match implementation (audit compliance)*
+
+**Changelog v3.1.3:**
+- 🔴 CRITICAL: Fixed `format_timer_stats_detailed()` signature (added missing `global_stats` parameter)
+- 🟡 Fixed `ProfileService.create_profile()` parameter (`is_guest` vs `set_as_default`)
+- 🟡 Fixed `ProfileService.save_active_profile()` return type (`bool` vs `None`)
+- 🟡 Fixed `ProfileService.record_session()` return type (`bool` vs `None`)
+- 🟢 Fixed `ProfileService.list_all_profiles()` method name → `list_profiles()`
+- Added breaking change warnings for v3.0.0 and v3.1.1 modifications
