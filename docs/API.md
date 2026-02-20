@@ -400,7 +400,7 @@ if state.is_victory():
 
 ---
 
-## 🃏 Pile (Domain Model)
+## 🎴 Pile (Domain Model)
 
 **Path**: `src/domain/models/pile.py`
 
@@ -1324,6 +1324,39 @@ EndReason.ABANDON_EXIT         # Abbandono per uscita volontaria
 EndReason.ABANDON_APP_CLOSE    # Abbandono per crash app
 EndReason.TIMEOUT_STRICT       # Timeout con timer STRICT
 ```
+
+**Esempio VICTORY_OVERTIME:**
+```python
+# Scenario: Timer PERMISSIVE mode, limite 15 minuti
+# Il giocatore vince dopo 17 minuti (2 minuti overtime)
+
+outcome = SessionOutcome.create_new(
+    profile_id="profile_123",
+    end_reason=EndReason.VICTORY_OVERTIME,  # Automatic conversion
+    is_victory=True,
+    elapsed_time=1020.0,  # 17 minuti
+    timer_enabled=True,
+    timer_limit=900,      # 15 minuti
+    timer_mode="PERMISSIVE",
+    timer_expired=True,
+    overtime_seconds=120, # 2 minuti overtime
+    # ... altri campi
+)
+
+# Formattazione automatica
+formatter.format_end_reason(outcome.end_reason)
+# Output: "Vittoria in overtime"
+
+# In victory dialog
+# "Hai vinto! (tempo scaduto: 2 minuti oltre il limite)"
+# "Tempo totale: 17 minuti."
+# "Penalità punti: -200 (2 minuti × -100 punti/min)"
+```
+
+**Conversione automatica:**
+- `GameEngine.end_game()` rileva overtime via `timer_manager.is_in_overtime()`
+- Se vittoria + overtime attivo → `EndReason.VICTORY` diventa `VICTORY_OVERTIME`
+- Stats separano vittorie normali da overtime (tracking separato)
 
 ### Suit
 
