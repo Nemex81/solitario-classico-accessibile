@@ -95,7 +95,7 @@ Implementare le modifiche in modo **incrementale** su più commit atomici e logi
 
 L'implementazione è considerata completa quando:
 
-- [ ] Nessun `print()` rimane nel codice di produzione dei file in scope
+- [x] Nessun `print()` rimane nel codice di produzione dei file in scope
 - [ ] Tutti i metodi dialog hanno `dialog_shown`/`dialog_closed`
 - [ ] `timer_manager.py` chiama `timer_started`, `timer_expired`, `timer_paused`
 - [ ] `pytest` passa senza regressioni

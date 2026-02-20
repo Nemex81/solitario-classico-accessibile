@@ -457,6 +457,8 @@ class GameEngine:
         # Import EndReason locally to avoid circular dependency
         from src.domain.models.game_end import EndReason
         
+        log.timer_expired()
+        
         # Announce expiry (TTS)
         self._announce_timer_expired(permissive=False)
         
@@ -1388,28 +1390,26 @@ class GameEngine:
                     
                     # After viewing stats, return to menu (don't start new game)
                     if self.on_game_ended:
-                        print("[DEBUG end_game] User viewed stats, calling callback(wants_rematch=False)")
+                        log.debug_state("end_game", {"action": "stats_viewed", "callback": "on_game_ended(False)"})
                         self.on_game_ended(False)  # Don't want rematch
                     else:
-                        print("[DEBUG end_game] No callback, resetting game locally")
+                        log.debug_state("end_game", {"action": "stats_viewed", "callback": "none_resetting_locally"})
                         self.service.reset_game()
                 
                 elif self.on_game_ended:
                     # ✅ CORRECT: Pass control to acs_wx.py
                     # wx.ID_YES (Rivincita) or wx.ID_OK (Nuova Partita) = wants rematch
                     wants_rematch = (result == wx.ID_OK or result == wx.ID_YES)
-                    print(f"[DEBUG end_game] Dialog result={result}, wants_rematch={wants_rematch}")
-                    print("[DEBUG end_game] Chiamando callback on_game_ended()...")
+                    log.debug_state("end_game", {"dialog_result": result, "wants_rematch": wants_rematch})
                     self.on_game_ended(wants_rematch)
-                    print("[DEBUG end_game] Callback completato")
                 else:
                     # ⚠️ FALLBACK: No callback (test mode or legacy code)
-                    print("[DEBUG end_game] ⚠️ No callback registered, handling locally")
+                    log.warning_issued("GameEngine", "end_game: no callback registered, handling locally")
                     if result == wx.ID_OK or result == wx.ID_YES:
-                        print("[DEBUG end_game] Starting new game locally...")
+                        log.debug_state("end_game", {"local_action": "new_game"})
                         self.new_game()
                     else:
-                        print("[DEBUG end_game] Resetting game locally (no UI transition)...")
+                        log.debug_state("end_game", {"local_action": "reset_game"})
                         self.service.reset_game()
                 
                 return  # Skip old dialog system below
@@ -1462,12 +1462,12 @@ class GameEngine:
                 Version:
                     v2.5.0: Created for Bug #68.4 regression fix
                 """
-                print("Statistics report closed, showing rematch prompt...")
+                log.debug_state("on_stats_closed", {"phase": "showing_rematch_prompt"})
                 # Show rematch dialog with its own callback
                 self.dialogs.show_rematch_prompt_async(on_rematch_result)
             
             # Show statistics dialog (async, non-blocking)
-            print("Showing statistics report (async)...")
+            log.debug_state("end_game", {"phase": "showing_statistics_report"})
             self.dialogs.show_statistics_report_async(
                 stats=final_stats,
                 final_score=final_score,

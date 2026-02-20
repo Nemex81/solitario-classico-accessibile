@@ -14,6 +14,18 @@ degradation if wxPython is not available.
 from typing import Optional, Callable
 
 from src.infrastructure.ui.dialog_provider import DialogProvider
+from src.infrastructure.logging import game_logger as log
+
+
+def _make_logged_callback(title: str, callback: Callable[[bool], None]) -> Callable[[bool], None]:
+    """Wrap a dialog callback to log dialog_shown and dialog_closed events."""
+    log.dialog_shown("yes_no", title)
+    
+    def _wrapped(result: bool) -> None:
+        log.dialog_closed("yes_no", "yes" if result else "no")
+        callback(result)
+    
+    return _wrapped
 
 
 class SolitarioDialogManager:
@@ -262,7 +274,7 @@ class SolitarioDialogManager:
         self.dialogs.show_yes_no_async(
             title="Abbandono Partita",
             message="Vuoi abbandonare la partita e tornare al menu di gioco?",
-            callback=callback
+            callback=_make_logged_callback("Abbandono Partita", callback)
         )
     
     def show_rematch_prompt_async(self, callback: Callable[[bool], None]) -> None:
@@ -310,7 +322,7 @@ class SolitarioDialogManager:
         self.dialogs.show_yes_no_async(
             title="Rivincita?",
             message="Vuoi giocare ancora?",
-            callback=callback
+            callback=_make_logged_callback("Rivincita?", callback)
         )
     
     def show_new_game_prompt_async(self, callback: Callable[[bool], None]) -> None:
@@ -335,7 +347,7 @@ class SolitarioDialogManager:
         self.dialogs.show_yes_no_async(
             title="Nuova Partita",
             message="Una partita è già in corso. Vuoi abbandonarla e avviarne una nuova?",
-            callback=callback
+            callback=_make_logged_callback("Nuova Partita", callback)
         )
     
     def show_exit_app_prompt_async(self, callback: Callable[[bool], None]) -> None:
@@ -359,5 +371,5 @@ class SolitarioDialogManager:
         self.dialogs.show_yes_no_async(
             title="Chiusura Applicazione",
             message="Vuoi uscire dall'applicazione?",
-            callback=callback
+            callback=_make_logged_callback("Chiusura Applicazione", callback)
         )

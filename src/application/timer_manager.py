@@ -10,6 +10,8 @@ import time
 from typing import Optional, Callable
 from dataclasses import dataclass
 
+from src.infrastructure.logging import game_logger as log
+
 
 @dataclass
 class TimerState:
@@ -101,6 +103,7 @@ class TimerManager:
         self.pause_time = None
         self.paused_duration = 0.0
         self.warnings_issued.clear()
+        log.timer_started(self.duration_seconds)
     
     def pause(self) -> None:
         """Pause the timer.
@@ -114,6 +117,7 @@ class TimerManager:
             return  # Not started or already paused
         
         self.pause_time = time.time()
+        log.timer_paused(self.get_remaining())
     
     def resume(self) -> None:
         """Resume the timer after pause.
