@@ -450,6 +450,8 @@ profile_service = container.get_profile_service()  # ✨ v3.0.0
 
 Il gioco include un sistema di punteggio completo basato sullo standard Microsoft Solitaire, con 5 livelli di difficoltà e statistiche persistenti.
 
+**Counter Duality**: Il sistema mantiene due contatori distinti per pescate (`draw_count` per azioni vs `stock_draw_count` per penalità) e ricicli (`recycle_count` statistiche vs scoring). Per dettagli: [docs/API.md#counter-duality](docs/API.md#counter-duality)
+
 ### Eventi Scoring
 
 | Evento | Punti | Descrizione |
@@ -629,7 +631,12 @@ pytest tests/integration/ -v
 pytest tests/ -m "not gui" -v
 ```
 
-Per la guida completa ai marker pytest, esempi CI e troubleshooting: **[docs/TESTING.md](docs/TESTING.md)**
+### Debug Utilities
+
+- **CTRL+ALT+W**: `_debug_force_victory()` - Simula vittoria istantanea per testare dialog/report flow con NVDA (DEBUG ONLY)
+  - Utile per verificare accessibilità VictoryDialog/AbandonDialog senza completare partita
+  - Trigger completo: end_game() → statistiche → score → dialog → rematch prompt
+  - ⚠️ Solo per development/testing, non in produzione
 
 ### Coverage Target (v3.2.0)
 
@@ -639,6 +646,8 @@ Per la guida completa ai marker pytest, esempi CI e troubleshooting: **[docs/TES
 | Application | ≥ 85% | ✅ |
 | Infrastructure | ≥ 70% | ✅ |
 | **Totale** | **≥ 88%** | **✅ 88%+** |
+
+Per la guida completa ai marker pytest, esempi CI e troubleshooting: **[docs/TESTING.md](docs/TESTING.md)**
 
 ## 📚 Documentazione
 
