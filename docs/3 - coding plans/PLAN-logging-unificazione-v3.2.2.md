@@ -4,7 +4,7 @@
 ## Obiettivo
 Garantire che **tutti** gli eventi di sistema e di gioco vengano tracciati tramite il sistema di logging centralizzato con salvataggio su file (RotatingFileHandler), eliminando ogni dipendenza da `print()`/output diretto su terminale nel branch `refactoring-engine`.
 
-Versione target progetto: v2.6.2
+Versione target progetto: v3.2.2.1
 Branch: `refactoring-engine`
 
 ---
