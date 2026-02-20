@@ -4,7 +4,7 @@
 
 Questo documento descrive l'API pubblica del Solitario Classico Accessibile.
 
-**Versione API Corrente**: v3.1.3 (Audit Compliance - Fixed signatures to match implementation)
+**Versione API Corrente**: v3.2.2
 
 ---
 
@@ -1768,9 +1768,12 @@ Per dettagli architetturali:
 *Revision Notes: Fixed ProfileService and StatsFormatter signatures to match implementation (audit compliance)*
 
 **Changelog v3.1.3:**
-- 🔴 CRITICAL: Fixed `format_timer_stats_detailed()` signature (added missing `global_stats` parameter)
+- 🔴 CRITICAL: Fixed `format_timer_stats_detailed()` signature (added missing `global_stats` 
+
+     parametri:
 - 🟡 Fixed `ProfileService.create_profile()` parameter (`is_guest` vs `set_as_default`)
 - 🟡 Fixed `ProfileService.save_active_profile()` return type (`bool` vs `None`)
 - 🟡 Fixed `ProfileService.record_session()` return type (`bool` vs `None`)
 - 🟢 Fixed `ProfileService.list_all_profiles()` method name → `list_profiles()`
+
 - Added breaking change warnings for v3.0.0 and v3.1.1 modifications

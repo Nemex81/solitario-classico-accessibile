@@ -1652,6 +1652,6 @@ MenuPanel (v3.1.0 extended to 6 buttons)
 
 ---
 
-*Document Version: 3.2.0*  
+*Document Version: 3.2.2*  
 *Last Updated: 2026-02-20*  
 *Revision: Added complete project structure hierarchy section*
