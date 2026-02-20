@@ -224,7 +224,7 @@ class SolitarioController:
         Version:
             v2.2.0: Initial bridge implementation
         """
-        print("  → Registrazione dipendenze nel DependencyContainer...")
+        log.debug_state("register_dependencies", {"phase": "start"})
         
         # 1. Infrastructure: TTS/ScreenReader
         self.container.register(
@@ -258,14 +258,14 @@ class SolitarioController:
             lambda: WindowController(container=self.container)
         )
         
-        print("  ✓ DependencyContainer configurato (bridge mode)")
+        log.debug_state("register_dependencies", {"phase": "end", "status": "configured"})
     
     def _create_dummy_sr(self):
         """Create dummy screen reader for silent mode."""
         class DummySR:
             class DummyTTS:
                 def speak(self, text, interrupt=True):
-                    print(f"[TTS] {text}")
+                    log.tts_spoken(f"[DUMMY_MODE] {text}", interrupt)
             tts = DummyTTS()
         return DummySR()
     
@@ -350,7 +350,7 @@ class SolitarioController:
             v2.0.4: Simplified after wx.CallAfter() pattern implementation
         """
         if not self.view_manager:
-            print("⚠ ViewManager not initialized")
+            log.warning_issued("SolitarioController", "ViewManager not initialized")
             return
         
         # Show menu panel (logs transition internally)
@@ -397,10 +397,6 @@ class SolitarioController:
         """
         from src.infrastructure.ui.options_dialog import OptionsDialog
         
-        print("\n" + "="*60)
-        print("APERTURA FINESTRA OPZIONI (OptionsDialog - Native Widgets)")
-        print("="*60)
-        
         self.is_options_mode = True
         
         # Initialize controller state (OPEN_CLEAN, save snapshot)
@@ -427,11 +423,6 @@ class SolitarioController:
         dlg.Destroy()
         
         self.is_options_mode = False
-        
-        # Log dialog result (for debugging)
-        result_str = "OK (saved)" if result == wx.ID_OK else "CANCEL (discarded)"
-        print(f"Finestra opzioni chiusa: {result_str}")
-        print("="*60)
     
     def show_exit_dialog(self) -> None:
         """Show exit confirmation dialog (called from MenuPanel).
@@ -443,7 +434,7 @@ class SolitarioController:
         """
         # Fallback if dialog_manager not initialized
         if not self.dialog_manager or not hasattr(self.dialog_manager, 'is_available'):
-            print("⚠ Dialog manager not available, exiting directly")
+            log.warning_issued("DialogManager", "Not available, exiting directly")
             sys.exit(0)
             return
         
@@ -648,22 +639,21 @@ class SolitarioController:
         Version:
             v3.1.3.2: Removed callback suppression (OPZIONE A fix)
         """
-        print("\n[DEBUG _safe_abandon] INIZIO")
-        print("[DEBUG _safe_abandon] Nascondo gameplay panel...")
+        log.debug_state("_safe_abandon_to_menu", {"phase": "start"})
         
         # 1. Hide gameplay panel (CRITICAL for Bug #68)
         if self.view_manager:
             gameplay_panel = self.view_manager.get_panel('gameplay')
             if gameplay_panel:
                 gameplay_panel.Hide()
-                print("[DEBUG _safe_abandon] ✅ Gameplay panel nascosto")
+                log.debug_state("_safe_abandon_to_menu", {"gameplay_panel": "hidden"})
             else:
-                print("[DEBUG _safe_abandon] ⚠️ gameplay_panel è None!")
+                log.warning_issued("SolitarioController", "_safe_abandon_to_menu: gameplay_panel è None")
         else:
-            print("[DEBUG _safe_abandon] ⚠️ view_manager è None!")
+            log.warning_issued("SolitarioController", "_safe_abandon_to_menu: view_manager è None")
         
         # 2. Call end_game() with callback ACTIVE (no suppression)
-        print("[DEBUG _safe_abandon] Chiamando end_game(ABANDON_EXIT)...")
+        log.debug_state("_safe_abandon_to_menu", {"phase": "calling_end_game"})
         from src.domain.models.game_end import EndReason
         self.engine.end_game(EndReason.ABANDON_EXIT)
         
@@ -673,8 +663,7 @@ class SolitarioController:
         #    - Call on_game_ended(wants_rematch) callback
         #    - handle_game_ended() will handle UI transition
         
-        print("[DEBUG _safe_abandon] end_game() completato")
-        print("[DEBUG _safe_abandon] FINE (UI gestita da callback)\n")
+        log.debug_state("_safe_abandon_to_menu", {"phase": "end"})
     
     def show_new_game_dialog(self) -> None:
         """Show new game confirmation dialog (non-blocking).
@@ -756,14 +745,13 @@ class SolitarioController:
             wx.MilliSleep(300)
         
         # Reset game engine (clear cards, score, timer)
-        print("\n→ Double-ESC detected - Resetting game engine")
+        log.debug_state("confirm_abandon_game", {"trigger": "double_esc"})
         self.engine.reset_game()
         
         self._timer_expired_announced = False
         self.return_to_menu()
     
     # === GAME LIFECYCLE (v2.0.1 - Updated for ViewManager) ===
-        print("Premi ESC per tornare al menu (doppio ESC per uscita rapida).")
     
     def handle_game_ended(self, wants_rematch: bool) -> None:
         """Handle game end callback from GameEngine.
@@ -783,22 +771,19 @@ class SolitarioController:
             v2.5.0: Created for async dialog callback chain
             v3.1.3.2: Added debug logging for abandon flow troubleshooting
         """
-        print(f"\n[DEBUG handle_game_ended] INIZIO: wants_rematch={wants_rematch}")
+        log.debug_state("handle_game_ended", {"phase": "start", "wants_rematch": wants_rematch})
         
         # Reset timer expiry flag
         self._timer_expired_announced = False
-        print("[DEBUG handle_game_ended] Timer expiry flag resettato")
         
         if wants_rematch:
-            print("[DEBUG handle_game_ended] Percorso REMATCH: avviando nuova partita...")
+            log.debug_state("handle_game_ended", {"route": "rematch"})
             self.start_gameplay()
-            print("[DEBUG handle_game_ended] Nuova partita avviata ✅")
         else:
-            print("[DEBUG handle_game_ended] Percorso DECLINE: tornando al menu...")
+            log.debug_state("handle_game_ended", {"route": "decline"})
             self._safe_return_to_main_menu()
-            print("[DEBUG handle_game_ended] Menu principale mostrato ✅")
         
-        print(f"[DEBUG handle_game_ended] FINE\n")
+        log.debug_state("handle_game_ended", {"phase": "end"})
     
     def _safe_decline_to_menu(self) -> None:
         """Deferred handler for decline rematch → menu transition (called via wx.CallAfter).
@@ -825,7 +810,7 @@ class SolitarioController:
             v2.0.9: Added CallAfter deferred execution
             v2.4.3: Corrected to wx.CallAfter (global function)
         """
-        print("\n→ Executing deferred decline transition...")
+        log.debug_state("_safe_decline_to_menu", {"phase": "start"})
         
         # Hide gameplay panel
         if self.view_manager:
@@ -839,7 +824,7 @@ class SolitarioController:
         # Return to menu
         self.return_to_menu()
         
-        print("→ Decline transition completed\n")
+        log.debug_state("_safe_decline_to_menu", {"phase": "end"})
     
     def _safe_return_to_main_menu(self) -> None:
         """Return to main menu after declining rematch.
@@ -856,43 +841,33 @@ class SolitarioController:
             v2.5.0: Created for Bug #68.2 fix
             v3.1.3.2: Added debug logging for abandon flow troubleshooting
         """
-        print("\n[DEBUG _safe_return_to_menu] INIZIO")
+        log.debug_state("_safe_return_to_main_menu", {"phase": "start"})
         
         # 1. Hide gameplay panel (CRITICAL FIX for Bug #68)
-        print("[DEBUG _safe_return_to_menu] Nascondo gameplay panel...")
         if self.view_manager:
             gameplay_panel = self.view_manager.get_panel('gameplay')
             if gameplay_panel:
                 gameplay_panel.Hide()
-                print("[DEBUG _safe_return_to_menu] ✅ Gameplay panel nascosto")
+                log.debug_state("_safe_return_to_main_menu", {"gameplay_panel": "hidden"})
             else:
-                print("[DEBUG _safe_return_to_menu] ⚠️ gameplay_panel è None!")
+                log.warning_issued("SolitarioController", "_safe_return_to_main_menu: gameplay_panel è None")
         else:
-            print("[DEBUG _safe_return_to_menu] ⚠️ view_manager è None!")
+            log.warning_issued("SolitarioController", "_safe_return_to_main_menu: view_manager è None")
         
         # 2. Reset game state
-        print("[DEBUG _safe_return_to_menu] Resetto game engine...")
         self.engine.service.reset_game()
-        print("[DEBUG _safe_return_to_menu] ✅ Game engine resettato")
         
         # 3. Switch to main menu panel
-        print("[DEBUG _safe_return_to_menu] Mostro menu panel...")
         self.view_manager.show_panel("menu")
-        print("[DEBUG _safe_return_to_menu] ✅ Menu panel mostrato")
         
         # 4. Announce return to menu via TTS
         if self.screen_reader:
-            print("[DEBUG _safe_return_to_menu] Annuncio TTS...")
             self.screen_reader.tts.speak(
                 "Sei tornato al menu principale. Usa le frecce per navigare.",
                 interrupt=True
             )
-            print("[DEBUG _safe_return_to_menu] ✅ TTS annunciato")
-        else:
-            print("[DEBUG _safe_return_to_menu] ⚠️ screen_reader è None, salto TTS")
         
-        print("[DEBUG _safe_return_to_menu] FINE\n")
-        print("✓ Successfully returned to main menu")
+        log.debug_state("_safe_return_to_main_menu", {"phase": "end"})
     
     # === OPTIONS HANDLING ===
     
@@ -999,9 +974,7 @@ class SolitarioController:
         """
         def on_quit_result(confirmed: bool):
             if confirmed:
-                print("\n" + "="*60)
-                print("CHIUSURA APPLICAZIONE")
-                print("="*60)
+                log.debug_state("quit_app", {"status": "confirmed"})
                 
                 if self.screen_reader:
                     self.screen_reader.tts.speak("Chiusura in corso.", interrupt=True)
@@ -1009,7 +982,7 @@ class SolitarioController:
                 
                 sys.exit(0)
             else:
-                print("[quit_app] Exit cancelled by user")
+                log.debug_state("quit_app", {"status": "cancelled"})
                 if self.screen_reader:
                     self.screen_reader.tts.speak("Uscita annullata.", interrupt=True)
         
@@ -1026,7 +999,7 @@ class SolitarioController:
         Creates wxPython app, visible frame, and starts timer.
         Blocks until application closes.
         """
-        print("\nAvvio wxPython MainLoop()...")
+        log.debug_state("run", {"phase": "start"})
         
         # Create wxPython app
         def on_init(app):
@@ -1039,24 +1012,21 @@ class SolitarioController:
             )
             
             # Initialize dialog manager with parent frame (v1.7.3 - single-frame pattern)
-            print("Inizializzazione dialog manager con parent frame...")
+            log.debug_state("run", {"phase": "dialog_manager_init"})
             from src.infrastructure.ui.wx_dialog_provider import WxDialogProvider
             dialog_provider = WxDialogProvider(parent_frame=self.frame)
             self.dialog_manager = SolitarioDialogManager(dialog_provider=dialog_provider)
-            if self.dialog_manager.is_available:
-                print("✓ Dialog nativi wxPython attivi (parent hierarchy corretto)")
-            else:
-                print("⚠ wxPython non disponibile, uso fallback TTS")
+            if not self.dialog_manager.is_available:
+                log.warning_issued("SolitarioController", "wxPython non disponibile, uso fallback TTS")
             
             # Pass dialog_manager to options_controller
             self.gameplay_controller.options_controller.dialog_manager = self.dialog_manager
             
             # Initialize ViewManager (v1.7.3 - single-frame panel-swap pattern)
-            print("Inizializzazione ViewManager...")
+            log.debug_state("run", {"phase": "view_manager_init"})
             self.view_manager = ViewManager(self.frame)
             
             # Create panels as children of frame.panel_container
-            print("Creazione panels...")
             menu_panel = MenuPanel(
                 parent=self.frame.panel_container,
                 controller=self
@@ -1069,12 +1039,9 @@ class SolitarioController:
             # Register panels with ViewManager
             self.view_manager.register_panel('menu', menu_panel)
             self.view_manager.register_panel('gameplay', gameplay_panel)
-            print("✓ ViewManager pronto (menu, gameplay panels registrati)")
             
             # Show initial menu panel
-            print("Apertura menu iniziale...")
             self.view_manager.show_panel('menu')
-            print("✓ Menu visualizzato")
             
             # Start timer (1 second interval)
             self.frame.start_timer(1000)
@@ -1084,7 +1051,7 @@ class SolitarioController:
         # Start wx main loop (blocks)
         self.app.MainLoop()
         
-        print("wxPython MainLoop terminato.")
+        log.debug_state("run", {"phase": "end"})
 
 
 def main():
@@ -1097,35 +1064,12 @@ def main():
     
     log.app_started()
     
-    print("\n" + "="*60)
-    print("🎴 SOLITARIO ACCESSIBILE - wxPython v2.0.0")
-    print("="*60)
-    print("Versione: 2.0.0 (wxPython-only)")
-    print("Architettura: Clean Architecture (COMPLETA)")
-    print("Modalità: Audiogame per non vedenti")
-    print("Entry point: wx_main.py")
-    print("")
-    print("🎉 v2.0.0: Pygame removed, wxPython-only!")
-    print("   ✓ Native wx.MainLoop() event loop")
-    print("   ✓ wx.Timer for timeout checks")
-    print("   ✓ 80+ key mappings preserved")
-    print("   ✓ 100% feature parity")
-    print("   ✓ Improved NVDA accessibility")
-    print("")
-    print("Legacy pygame version: python test_pygame_legacy.py")
-    print("="*60)
-    print("")
-    
     try:
         controller = SolitarioController()
         controller.run()
     except KeyboardInterrupt:
-        print("\n\nInterrotto dall'utente (Ctrl+C)")
         sys.exit(0)
     except Exception as e:
-        print(f"\n\n⚠ ERRORE FATALE: {e}")
-        import traceback
-        traceback.print_exc()
         log.error_occurred("Application", "Unhandled exception in main loop", e)
         sys.exit(1)
     finally:
