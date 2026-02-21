@@ -526,7 +526,7 @@ class WxDialogProvider(DialogProvider):
             dlg.Destroy()
             
             # Log closure
-            print("Statistics report closed")
+            log.debug("dialog_provider", "Statistics report closed")
             
             # Invoke callback (continue async chain)
             callback()
