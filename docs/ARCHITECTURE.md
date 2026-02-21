@@ -206,7 +206,7 @@ src/
 │   │   └── game_end.py  # EndReason enum (v2.7.0)
 │   ├── rules/           # Business rules
 │   │   ├── __init__.py
-│   │   └── move_validator.py
+│   │   └── solitaire_rules.py
 │   └── services/        # Domain services
 │       ├── __init__.py
 │       ├── game_service.py
@@ -218,21 +218,23 @@ src/
 │   ├── storage/         # ProfileStorage, SessionStorage (v3.0.0)
 │   ├── di_container.py  # Dependency injection
 │   └── ui/              # User interface
+│       ├── dialogs/     # Native wxPython dialogs (moved from presentation, v3.2.2)
+│       │   ├── victory_dialog.py
+│       │   ├── abandon_dialog.py
+│       │   ├── game_info_dialog.py
+│       │   ├── detailed_stats_dialog.py
+│       │   ├── leaderboard_dialog.py
+│       │   └── last_game_dialog.py
+│       ├── widgets/     # Custom wxPython widgets (moved from presentation, v3.2.2)
+│       │   └── timer_combobox.py
 │       ├── menu_panel.py      # Main menu (6 buttons v3.1.0)
 │       ├── gameplay_panel.py  # Gameplay UI
 │       └── profile_menu_panel.py (v3.1.0) # Profile management modal
 └── presentation/        # Presentation Layer
     ├── __init__.py
-    ├── formatters/
-    │   ├── game_formatter.py
-    │   └── stats_formatter.py (v3.1.0) # Statistiche formattate
-    └── dialogs/         (v3.1.0)
-        ├── victory_dialog.py
-        ├── abandon_dialog.py
-        ├── game_info_dialog.py
-        ├── detailed_stats_dialog.py
-        ├── leaderboard_dialog.py
-        └── last_game_dialog.py
+    └── formatters/
+        ├── game_formatter.py
+        └── stats_formatter.py (v3.1.0) # Statistiche formattate
 
 tests/                    # Test Suite (v3.2.0 modernized)
 ├── __init__.py
@@ -326,7 +328,7 @@ solitario-classico-accessibile/
 │   │   │
 │   │   ├── rules/                     # Business rules validation
 │   │   │   ├── __init__.py
-│   │   │   └── move_validator.py     # Klondike rules (foundation stacking, tableau stacking, King placement)
+│   │   │   └── solitaire_rules.py     # Klondike rules (foundation stacking, tableau stacking, King placement)
 │   │   │
 │   │   └── services/                  # Domain services (stateless logic)
 │   │       ├── __init__.py
@@ -351,6 +353,17 @@ solitario-classico-accessibile/
 │   │   │
 │   │   └── ui/                       # User Interface (wxPython panels)
 │   │       ├── __init__.py
+│   │       ├── dialogs/              # Native wxPython dialogs (moved from presentation, v3.2.2)
+│   │       │   ├── __init__.py
+│   │       │   ├── victory_dialog.py    # Victory dialog (outcome + profile summary + new records + rematch prompt)
+│   │       │   ├── abandon_dialog.py    # Abandon dialog (EndReason classification + stats impact)
+│   │       │   ├── game_info_dialog.py  # Game info dialog (progress + profile snapshot, triggered by I key)
+│   │       │   ├── detailed_stats_dialog.py  # Detailed stats dialog (3 pages: Global, Timer, Difficulty/Scoring)
+│   │       │   ├── leaderboard_dialog.py     # Leaderboard dialog (Top 10 in 5 categories)
+│   │       │   └── last_game_dialog.py       # Last game dialog (recent session summary)
+│   │       ├── widgets/              # Custom wxPython widgets (moved from presentation, v3.2.2)
+│   │       │   ├── __init__.py
+│   │       │   └── timer_combobox.py # Timer duration selector (ComboBox with 0-disabled + time options)
 │   │       ├── menu_panel.py         # Main menu panel (6 buttons: Nuova Partita, Opzioni, Ultima Partita, Leaderboard, Gestione Profili, Esci)
 │   │       ├── gameplay_panel.py     # Gameplay UI (keyboard navigation, cursor management)
 │   │       └── profile_menu_panel.py # Profile management modal (6 operations: Create, Switch, Rename, Delete, Stats, Set Default) [v3.1.0]
@@ -358,19 +371,10 @@ solitario-classico-accessibile/
 │   └── presentation/                  # === PRESENTATION LAYER ===
 │       ├── __init__.py
 │       │
-│       ├── formatters/               # Output formatting (screen reader optimized)
-│       │   ├── __init__.py
-│       │   ├── game_formatter.py    # Game state formatting (card lists, cursor position, move results)
-│       │   └── stats_formatter.py   # Statistics formatting (summary/detailed methods, NVDA-optimized) [v3.1.0]
-│       │
-│       └── dialogs/                  # Native wxPython dialogs (v3.1.0)
+│       └── formatters/               # Output formatting (screen reader optimized)
 │           ├── __init__.py
-│           ├── victory_dialog.py    # Victory dialog (outcome + profile summary + new records + rematch prompt)
-│           ├── abandon_dialog.py    # Abandon dialog (EndReason classification + stats impact)
-│           ├── game_info_dialog.py  # Game info dialog (progress + profile snapshot, triggered by I key)
-│           ├── detailed_stats_dialog.py  # Detailed stats dialog (3 pages: Global, Timer, Difficulty/Scoring)
-│           ├── leaderboard_dialog.py     # Leaderboard dialog (Top 10 in 5 categories)
-│           └── last_game_dialog.py       # Last game dialog (recent session summary)
+│           ├── game_formatter.py    # Game state formatting (card lists, cursor position, move results)
+│           └── stats_formatter.py   # Statistics formatting (summary/detailed methods, NVDA-optimized) [v3.1.0]
 │
 ├── tests/                             # === TEST SUITE (v3.2.0 - 88.2% coverage) ===
 │   ├── __init__.py
@@ -387,7 +391,7 @@ solitario-classico-accessibile/
 │   │   │   │   ├── test_pile.py     # Pile operations (add, remove, get_card_count)
 │   │   │   │   └── test_profile.py  # UserProfile, SessionOutcome (v3.0.0)
 │   │   │   ├── rules/
-│   │   │   │   └── test_move_validator.py  # Klondike rules validation (foundation, tableau, King)
+│   │   │   │   └── test_solitaire_rules.py  # Klondike rules validation (foundation, tableau, King)
 │   │   │   └── services/
 │   │   │       ├── test_game_service.py  # Game orchestration logic
 │   │   │       ├── test_scoring_service.py  # Score calculation (penalties, bonuses)
@@ -513,7 +517,7 @@ Presentation ──→ Application ──→ Domain ←── Infrastructure
 | `src/application/profile_service.py` | Application | Profile CRUD + stats aggregation | Media (280+ LOC) |
 | `src/infrastructure/ui/profile_menu_panel.py` | Infrastructure | UI gestione profili (6 operations) | Media (267 LOC) |
 | `src/presentation/formatters/stats_formatter.py` | Presentation | Statistiche formattate NVDA | Media (250+ LOC) |
-| `src/domain/rules/move_validator.py` | Domain | Validazione regole Klondike | Media (200+ LOC) |
+| `src/domain/rules/solitaire_rules.py` | Domain | Validazione regole Klondike | Media (200+ LOC) |
 | `src/domain/services/scoring_service.py` | Domain | Calcolo punteggio + penalties | Media (180+ LOC) |
 | `src/infrastructure/storage/profile_storage.py` | Infrastructure | Persistence atomica JSON | Bassa (150+ LOC) |
 | `src/application/timer_manager.py` | Application | Timer STRICT/PERMISSIVE + overtime | Media (140+ LOC) |
@@ -555,7 +559,7 @@ class GameState:
     def with_move(self, **kwargs) -> GameState: ...
 ```
 
-#### MoveValidator (`src/domain/rules/move_validator.py`)
+#### MoveValidator (`src/domain/rules/solitaire_rules.py`)
 
 Validazione delle mosse secondo le regole del Klondike.
 
@@ -969,7 +973,7 @@ tests/
 |-------------|----------------------|-------------|
 | `test_distribuisci_carte_deck_switching.py` | Deck distribution logic | `test_game_service.py` (unit) |
 | `test_game_engine_f3_f5.py` | Timer adjustment UI | `test_timer_manager.py` (unit) |
-| `test_king_to_empty_base_pile.py` | King placement rules | `test_move_validator.py` (unit) |
+| `test_king_to_empty_base_pile.py` | King placement rules | `test_solitaire_rules.py` (unit) |
 
 ## 🔒 Principi SOLID
 

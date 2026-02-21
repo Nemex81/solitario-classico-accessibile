@@ -267,5 +267,5 @@ class ScoreStorage:
                 self.storage_path.unlink()
             return True
         except Exception as e:
-            print(f"Error clearing scores: {e}")
+            log.error("score_storage", f"Error clearing scores: {e}", exc_info=True)
             return False

@@ -1350,8 +1350,8 @@ class GameEngine:
             # Use new stats-integrated dialogs
             try:
                 import wx
-                from src.presentation.dialogs.victory_dialog import VictoryDialog
-                from src.presentation.dialogs.abandon_dialog import AbandonDialog
+                from src.infrastructure.ui.dialogs.victory_dialog import VictoryDialog
+                from src.infrastructure.ui.dialogs.abandon_dialog import AbandonDialog
                 from src.domain.models.profile import SessionOutcome
                 
                 # Show appropriate dialog
@@ -1371,7 +1371,7 @@ class GameEngine:
                 if result == wx.ID_MORE:
                     # User wants to see detailed stats (timeout scenario)
                     try:
-                        from src.presentation.dialogs.detailed_stats_dialog import DetailedStatsDialog
+                        from src.infrastructure.ui.dialogs.detailed_stats_dialog import DetailedStatsDialog
                         
                         stats_dialog = DetailedStatsDialog(
                             None,
@@ -1522,7 +1522,7 @@ class GameEngine:
             v3.1.2: Fixed to use ProfileService (Single Source of Truth, persisted)
         """
         import wx
-        from src.presentation.dialogs.last_game_dialog import LastGameDialog
+        from src.infrastructure.ui.dialogs.last_game_dialog import LastGameDialog
         
         log.debug_state("last_game_query", {"trigger": "menu_button"})
         

@@ -24,6 +24,8 @@ Usage:
 import wx
 from typing import Optional, Callable
 
+from src.infrastructure.logging import game_logger as log
+
 
 class SolitarioFrame(wx.Frame):
     """Main application frame for panel-swap architecture (wxPython standard).
@@ -158,17 +160,17 @@ class SolitarioFrame(wx.Frame):
             Timer state management removed (not needed with async pattern).
             If dialog is cancelled, app simply continues with existing state.
         """
-        print("[Frame] Close event received (ALT+F4 or X button)")
+        log.debug("close_event", "Close event received (ALT+F4 or X button)")
         
         # Check if we can veto this close event
         if not event.CanVeto():
             # Forced close (can't be vetoed) - exit immediately
-            print("[Frame] Close event cannot be vetoed (forced close)")
+            log.debug("close_event", "Close event cannot be vetoed (forced close)")
             self.Destroy()
             return
         
         # ALWAYS veto initially (we'll exit programmatically if confirmed)
-        print("[Frame] Vetoing close event - showing confirmation dialog")
+        log.debug("close_event", "Vetoing close event - showing confirmation dialog")
         event.Veto()
         
         # Call on_close callback which shows async confirmation dialog
@@ -179,7 +181,7 @@ class SolitarioFrame(wx.Frame):
         else:
             # No callback registered - allow close by calling Destroy directly
             # This should never happen in normal operation
-            print("[Frame] No on_close callback registered - destroying frame")
+            log.warning("close_event", "No on_close callback registered - destroying frame")
             self.Destroy()
     
     def _on_timer_event(self, event: wx.TimerEvent) -> None:
