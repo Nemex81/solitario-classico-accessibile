@@ -225,7 +225,7 @@ class OptionsDialog(wx.Dialog):
         timer_box.Add(timer_label, 0, wx.ALL, 5)
         
         # TimerComboBox SEMPRE ATTIVO con "0 minuti - Timer disattivato" come prima voce
-        from src.presentation.widgets.timer_combobox import TimerComboBox
+        from src.infrastructure.ui.widgets.timer_combobox import TimerComboBox
         self.timer_combo = TimerComboBox(self)
         timer_box.Add(self.timer_combo, 0, wx.ALL | wx.EXPAND, 5)
         

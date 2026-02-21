@@ -683,7 +683,7 @@ class ProfileMenuPanel(wx.Dialog):
             Version: v3.1.3.3 (added stats None check for corruption safety)
         """
 
-        from src.presentation.dialogs.detailed_stats_dialog import DetailedStatsDialog
+        from src.infrastructure.ui.dialogs.detailed_stats_dialog import DetailedStatsDialog
 
         self._announce("Statistiche dettagliate.", interrupt=True)
 
