@@ -9,7 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-- Planned: Leaderboard online, achievement system, daily challenges
+### Changed
+
+- ⚠️ **Architecture refactoring**: Moved 6 dialog files (`abandon_dialog.py`, `detailed_stats_dialog.py`, `game_info_dialog.py`, `last_game_dialog.py`, `leaderboard_dialog.py`, `victory_dialog.py`) from `src/presentation/dialogs/` to `src/infrastructure/ui/dialogs/`. Dialogs depend directly on wxPython and belong to Infrastructure layer per Clean Architecture principles.
+- ⚠️ **Architecture refactoring**: Moved `timer_combobox.py` from `src/presentation/widgets/` to `src/infrastructure/ui/widgets/`. Widget depends on wxPython and belongs to Infrastructure layer.
+- Updated import paths in `game_engine.py`, `options_dialog.py`, `profile_menu_panel.py` to reflect new dialog/widget locations.
+
+### Fixed
+
+- **Logging**: Replaced 4 runtime `print()` calls in `wx_frame.py` with `game_logger` (debug/warning level). Added missing `game_logger` import to `wx_frame.py`.
+- **Logging**: Replaced `print("Statistics report closed")` in `wx_dialog_provider.py` with `log.debug()`.
+- **Logging**: Replaced `print(f"Error clearing scores: {e}")` in `score_storage.py` with `log.error(..., exc_info=True)`.
+- **docs/API.md**: Updated dialog paths from `src.presentation.dialogs` to `src.infrastructure.ui.dialogs`. Corrected `ensure_guest_profile()` return type from `None` to `bool`.
+- **docs/ARCHITECTURE.md**: Updated file organization to reflect dialogs/widgets relocation. Corrected `move_validator.py` → `solitaire_rules.py` (actual filename).
 
 ---
 

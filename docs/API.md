@@ -964,13 +964,13 @@ Dialog nativi wxPython per visualizzazione statistiche.
 
 ### VictoryDialog
 
-**Path**: `src/presentation/dialogs/victory_dialog.py`
+**Path**: `src/infrastructure/ui/dialogs/victory_dialog.py`
 
 **Trigger**: Fine partita vinta (`EndReason.VICTORY` o `VICTORY_OVERTIME`)
 
 **Inizializzazione**:
 ```python
-from src.presentation.dialogs.victory_dialog import VictoryDialog
+from src.infrastructure.ui.dialogs.victory_dialog import VictoryDialog
 
 dialog = VictoryDialog(
     parent=parent_frame,
@@ -994,13 +994,13 @@ dialog.Destroy()
 
 ### AbandonDialog
 
-**Path**: `src/presentation/dialogs/abandon_dialog.py`
+**Path**: `src/infrastructure/ui/dialogs/abandon_dialog.py`
 
 **Trigger**: Fine partita abbandonata (`ABANDON_*`, `TIMEOUT_STRICT`)
 
 **Inizializzazione**:
 ```python
-from src.presentation.dialogs.abandon_dialog import AbandonDialog
+from src.infrastructure.ui.dialogs.abandon_dialog import AbandonDialog
 
 dialog = AbandonDialog(
     parent=parent_frame,
@@ -1020,13 +1020,13 @@ dialog.Destroy()
 
 ### GameInfoDialog
 
-**Path**: `src/presentation/dialogs/game_info_dialog.py`
+**Path**: `src/infrastructure/ui/dialogs/game_info_dialog.py`
 
 **Trigger**: Tasto **I** durante gameplay
 
 **Inizializzazione**:
 ```python
-from src.presentation.dialogs.game_info_dialog import GameInfoDialog
+from src.infrastructure.ui.dialogs.game_info_dialog import GameInfoDialog
 
 dialog = GameInfoDialog(
     parent=parent_frame,
@@ -1050,13 +1050,13 @@ dialog.Destroy()
 
 ### DetailedStatsDialog
 
-**Path**: `src/presentation/dialogs/detailed_stats_dialog.py`
+**Path**: `src/infrastructure/ui/dialogs/detailed_stats_dialog.py`
 
 **Trigger**: ProfileMenuPanel button 5 o menu "U - Ultima Partita"
 
 **Inizializzazione**:
 ```python
-from src.presentation.dialogs.detailed_stats_dialog import DetailedStatsDialog
+from src.infrastructure.ui.dialogs.detailed_stats_dialog import DetailedStatsDialog
 
 # Build stats data dictionary
 profile = profile_service.active_profile
@@ -1086,13 +1086,13 @@ dialog.Destroy()
 
 ### LeaderboardDialog
 
-**Path**: `src/presentation/dialogs/leaderboard_dialog.py`
+**Path**: `src/infrastructure/ui/dialogs/leaderboard_dialog.py`
 
 **Trigger**: Menu "L - Leaderboard Globale"
 
 **Inizializzazione**:
 ```python
-from src.presentation.dialogs.leaderboard_dialog import LeaderboardDialog
+from src.infrastructure.ui.dialogs.leaderboard_dialog import LeaderboardDialog
 
 # Ottieni top 10 per categoria
 top_players = profile_service.get_top_players_by_time()  # o altre metriche
@@ -1120,13 +1120,13 @@ dialog.Destroy()
 
 ### LastGameDialog
 
-**Path**: `src/presentation/dialogs/last_game_dialog.py`
+**Path**: `src/infrastructure/ui/dialogs/last_game_dialog.py`
 
 **Trigger**: Menu "U - Ultima Partita"
 
 **Inizializzazione**:
 ```python
-from src.presentation.dialogs.last_game_dialog import LastGameDialog
+from src.infrastructure.ui.dialogs.last_game_dialog import LastGameDialog
 
 last_session = profile.recent_sessions[-1]
 
@@ -1683,7 +1683,7 @@ for p in profiles:
 
 ---
 
-#### `ensure_guest_profile() -> None`
+#### `ensure_guest_profile() -> bool`
 
 Assicura che il profilo guest (`profile_000`) esista, creandolo se necessario.
 

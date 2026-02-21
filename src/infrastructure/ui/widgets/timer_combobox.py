@@ -5,7 +5,7 @@ with preset values from 0 (disabled) to 60 minutes in 5-minute increments.
 
 Version: v2.4.0
 Pattern: Custom wx widget with domain-specific preset values
-Clean Architecture Layer: Presentation/Widgets
+Clean Architecture Layer: Infrastructure/UI/Widgets
 Dependency: wxPython 4.1.x+
 
 Features:
