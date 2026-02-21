@@ -359,6 +359,267 @@ Quando si redige il PLAN, includere obbligatoriamente:
 
 ---
 
+## 12. Strategia Low-Risk Raccomandata — ✅ APPROCCIO ALTERNATIVO
+
+### 12.1 Perché Il Decorator È Over-Engineering
+
+Dopo analisi approfondita del codice esistente, emerge un fatto cruciale: **il routing delle chiamate log è già risolto dalle variabili named logger esistenti** (`_game_logger`, `_ui_logger`, `_error_logger`). Il problema reale non è "come fare routing", ma **"come configurare gli handler per scrivere su file separati"**.
+
+Il decorator pattern nel design originale stava risolvendo un problema inesistente:
+
+```python
+# Il sistema attuale GIÀ fa routing corretto
+_game_logger = logging.getLogger('game')  # ← routing già dichiarato qui
+_game_logger.info("Victory")  # ← scrive nel logger 'game'
+
+# Il problema è che tutti i logger 'game', 'ui', 'error' condividono
+# lo stesso handler (root logger → solitario.log)
+```
+
+Quando aggiungi un `RotatingFileHandler` specifico a `logging.getLogger('game')` con `propagate=False`, **tutte le chiamate a `_game_logger.info()` iniziano automaticamente a scrivere su `game_logic.log`**, senza toccare una singola riga nelle funzioni helper.
+
+### 12.2 Architettura Low-Risk Proposta
+
+#### File Nuovo: `categorized_logger.py`
+
+```python
+"""
+Setup multi-file handler per logging categorizzato.
+Zero decorator, routing tramite named loggers esistenti.
+"""
+import logging
+from logging.handlers import RotatingFileHandler
+from pathlib import Path
+
+# Costanti (migrate da logger_setup.py)
+LOGS_DIR = Path("logs")
+LOGS_DIR.mkdir(exist_ok=True)
+
+CATEGORIES = {
+    'game': 'game_logic.log',
+    'ui': 'ui_events.log',
+    'error': 'errors.log',
+    'timer': 'timer.log',
+    # profile/scoring/storage: aggiungi quando necessario
+}
+
+def setup_categorized_logging(
+    logs_dir: Path = LOGS_DIR,
+    level: int = logging.INFO,
+    console_output: bool = False
+) -> None:
+    """
+    Configura handler separati per categorie log.
+    
+    Args:
+        logs_dir: Directory log (default: logs/)
+        level: Livello minimo logging
+        console_output: Se True, logga anche su console
+    
+    Note:
+        - Crea 1 RotatingFileHandler per categoria (5MB, 3 backup)
+        - Imposta propagate=False per evitare duplicazione
+        - Mantiene root logger per library logs (wx, PIL, urllib3)
+    """
+    formatter = logging.Formatter(
+        '%(asctime)s [%(levelname)s] %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    
+    # Setup handler per categorie
+    for category, filename in CATEGORIES.items():
+        logger = logging.getLogger(category)
+        
+        handler = RotatingFileHandler(
+            logs_dir / filename,
+            maxBytes=5 * 1024 * 1024,  # 5MB
+            backupCount=3,              # .log.1, .log.2, .log.3
+            encoding='utf-8'
+        )
+        handler.setFormatter(formatter)
+        handler.setLevel(level)
+        
+        logger.addHandler(handler)
+        logger.setLevel(level)
+        logger.propagate = False  # ← CRITICO: impedisce duplicazione
+    
+    # Root logger per library logs (wx, PIL, urllib3)
+    root_logger = logging.getLogger()
+    root_handler = RotatingFileHandler(
+        logs_dir / 'solitario.log',
+        maxBytes=5 * 1024 * 1024,
+        backupCount=3,
+        encoding='utf-8'
+    )
+    root_handler.setFormatter(formatter)
+    root_logger.addHandler(root_handler)
+    root_logger.setLevel(level)
+    
+    # Console output opzionale
+    if console_output:
+        console = logging.StreamHandler()
+        console.setFormatter(formatter)
+        root_logger.addHandler(console)
+    
+    # Silenzia library verbose
+    logging.getLogger('PIL').setLevel(logging.WARNING)
+    logging.getLogger('urllib3').setLevel(logging.WARNING)
+    logging.getLogger('wx').setLevel(logging.WARNING)
+```
+
+#### Modifiche a `logger_setup.py` (Thin Wrapper)
+
+```python
+"""
+Backward compatibility wrapper per setup_logging().
+"""
+from src.infrastructure.logging.categorized_logger import (
+    setup_categorized_logging,
+    LOGS_DIR,
+    CATEGORIES
+)
+
+# Re-export costanti per backward compat
+LOG_FILE = LOGS_DIR / 'solitario.log'
+
+def setup_logging(level: int = logging.INFO, console_output: bool = False) -> None:
+    """
+    DEPRECATED: usa setup_categorized_logging().
+    Mantenuto per compatibilità con test esistenti.
+    """
+    setup_categorized_logging(level=level, console_output=console_output)
+```
+
+#### Modifiche a `game_logger.py` (MINIMALI)
+
+```python
+# AGGIUNGI in cima file (dopo import)
+_timer_logger = logging.getLogger('timer')  # ← NUOVA categoria
+
+# CAMBIA 3 funzioni timer
+def timer_started(duration: int) -> None:
+    _timer_logger.info(f"Timer started - Duration: {duration}s")  # era _game_logger
+
+def timer_expired() -> None:
+    _timer_logger.warning("Timer EXPIRED - Game auto-abandoned")  # era _game_logger
+
+def timer_paused(remaining: int) -> None:
+    _timer_logger.debug(f"Timer PAUSED - Remaining: {remaining}s")  # era _game_logger
+
+# FIX keyboard_command (inconsistenza esistente)
+def keyboard_command(command: str, context: str) -> None:
+    _ui_logger.debug(f"Key command: {command} in context '{context}'")  # era _game_logger
+```
+
+**Totale modifiche `game_logger.py`**: 1 riga aggiunta + 4 righe cambiate = **5 righe**
+
+#### Modifiche a `acs_wx.py` (ZERO)
+
+```python
+# INVARIATO — continua a chiamare setup_logging()
+from src.infrastructure.logging.logger_setup import setup_logging
+
+setup_logging(level=logging.INFO)
+```
+
+### 12.3 Confronto Strategia Decorator vs Low-Risk
+
+| Aspetto | Decorator (Design Originale) | Low-Risk (Raccomandato) |
+|---------|------------------------------|---------------------------|
+| **File nuovi** | 2 (`categorized_logger.py`, `log_decorator.py`) | 1 (`categorized_logger.py`) |
+| **Righe modificate `game_logger.py`** | ~25 funzioni riscritte (~300 righe) | 5 righe (4 funzioni) |
+| **Test rotti** | 100% (variabili `_game_logger` spariscono) | 0% (variabili esistono ancora) |
+| **API pubblica** | Immutata ✅ | Immutata ✅ |
+| **Risultato finale** | 7 file log separati ✅ | 7 file log separati ✅ |
+| **Complessità** | Alta (decorator + registry + riscrittura) | Bassa (solo setup handler) |
+| **Rischio regressioni** | Alto (4 file riscritti) | Minimo (1 file nuovo, 2 file modifiche minori) |
+| **Tempo implementazione** | 2-3 sessioni | 30 minuti |
+| **Rollback** | Difficile (4 file da ripristinare) | Banale (cambia 1 import) |
+| **Estendibilità futura** | Identica (aggiungi categoria = 2 righe) | Identica (aggiungi categoria = 2 righe) |
+
+### 12.4 Risoluzione Problemi Critici
+
+I 3 problemi a **priorità ALTA** identificati nella sezione 9 vengono risolti:
+
+| Problema | Stato con Low-Risk |
+|----------|--------------------|
+| ~25 funzioni da riscrivere | ✅ **Scomparso** — funzioni invariate |
+| `propagate = False` mancante | ✅ **Implementato** — riga presente nel setup |
+| Test suite rotta | ✅ **Scomparso** — `_game_logger` esiste ancora |
+
+Problemi priorità MEDIA:
+
+| Problema | Stato con Low-Risk |
+|----------|--------------------|
+| `error_occurred` caso speciale | ✅ **Scomparso** — logga già direttamente, decorator non coinvolto |
+| Funzioni mancanti 3 categorie | ⚠️ **Invariato** — profile/scoring/storage aggiunti in futuro quando necessario |
+| Timer riclassificazione | ✅ **Risolto** — 3 funzioni cambiate da `_game_logger` a `_timer_logger` |
+
+### 12.5 Decisioni Pre-Implementazione Risolte
+
+**1. Gestione `error_occurred`**  
+RISPOSTA: Nessun problema — la funzione logga già direttamente con `_error_logger.error(exc_info=exception)`, continua a funzionare identica.
+
+**2. Backup count**  
+RISPOSTA: **3 backup** (allineato al design, corretto dal valore legacy 5 in `logger_setup.py`).
+
+**3. Root logger legacy**  
+RISPOSTA: **Mantieni** — continua a scrivere `solitario.log` per library logs (wx, PIL, urllib3). Utile per debug dipendenze esterne.
+
+**4. Funzioni helper mancanti**  
+RISPOSTA: **PLAN separato futuro** — profile/scoring/storage non necessari ora, aggiungi quando le feature corrispondenti saranno implementate.
+
+**5. `keyboard_command` inconsistenza**  
+RISPOSTA: **Fix nella stessa sessione** — cambia da `_game_logger` a `_ui_logger` (1 riga).
+
+### 12.6 Stima Implementazione Realistica
+
+| Task | Tempo |
+|------|-------|
+| Crea `categorized_logger.py` | 15 min |
+| Modifica `logger_setup.py` (thin wrapper) | 5 min |
+| Modifica `game_logger.py` (5 righe) | 5 min |
+| Test manuale (avvia app, verifica 7 file) | 5 min |
+| Run test suite (verifica zero regressioni) | 5 min |
+| **TOTALE** | **35 minuti** |
+
+### 12.7 Piano Rollback
+
+Se emergenza in produzione:
+
+```python
+# In logger_setup.py — torna al vecchio setup
+def setup_logging(level: int = logging.INFO, console_output: bool = False) -> None:
+    # Riattiva il codice legacy commentato (1 minuto)
+    file_handler = RotatingFileHandler(LOG_FILE, ...)
+    root_logger.addHandler(file_handler)
+```
+
+Tempo rollback: **1 minuto**  
+Impatto: App torna a scrivere `solitario.log` monolitico, zero perdita funzionalità.
+
+### 12.8 Raccomandazione Finale
+
+**ADOTTA STRATEGIA LOW-RISK** perché:
+
+✅ Risultato identico al design originale (7 file log separati)  
+✅ Rischio minimo (5 righe modificate invece di 300)  
+✅ Test esistenti continuano a funzionare senza modifiche  
+✅ Implementazione 35 minuti (vs 2-3 sessioni)  
+✅ Rollback banale (1 minuto)  
+✅ Estendibilità identica (aggiungi categoria = 2 righe)  
+✅ Zero over-engineering (usa infrastruttura Python logging nativa)  
+
+**SCARTA STRATEGIA DECORATOR** perché:
+
+❌ Rischio alto (riscrittura 4 file, 300+ righe cambiate)  
+❌ Benefit marginale (routing già centralizzato nelle variabili)  
+❌ Complessità non necessaria (decorator + registry custom)  
+❌ Test suite da riscrivere completamente  
+❌ Tempo implementazione 10x superiore  
+
+---
+
 *Fine rapporto*  
 *Documento generato da analisi statica del codice + revisione design document*  
-*Non modificare manualmente — aggiornare solo dopo nuova analisi del codice*
+*Ultima revisione: 2026-02-21 (aggiunta sezione 12: Strategia Low-Risk)*
