@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Logging**: Sistema logging multi-file categorizzato (Paradox-style). Sostituisce il monolite `solitario.log` con 4 file dedicati: `game_logic.log` (lifecycle partita, mosse), `ui_events.log` (navigazione UI, dialogs, TTS), `errors.log` (errori e warnings), `timer.log` (lifecycle timer). Root logger mantenuto per library logs (`wx`, `PIL`, `urllib3`) su `solitario.log`. Ogni file: RotatingFileHandler 5MB, 3 backup, UTF-8. API pubblica (`setup_logging()`) completamente invariata — `acs_wx.py` e test esistenti zero modifiche. Strategia: Low-Risk Multi-Handler su named loggers Python esistenti.
+- **`src/infrastructure/logging/categorized_logger.py`**: Nuovo modulo con `setup_categorized_logging()`, dict `CATEGORIES`, costanti `LOGS_DIR`/`LOG_FILE`/`LOG_FORMAT`.
+- **`game_logger.py`**: Aggiunto `_timer_logger`; `timer_started`, `timer_expired`, `timer_paused` ora loggano su `timer.log`; `keyboard_command` ora logga su `ui_events.log` (fix incongruenza precedente).
+
 ### Changed
 
 - ⚠️ **Architecture refactoring**: Moved 6 dialog files (`abandon_dialog.py`, `detailed_stats_dialog.py`, `game_info_dialog.py`, `last_game_dialog.py`, `leaderboard_dialog.py`, `victory_dialog.py`) from `src/presentation/dialogs/` to `src/infrastructure/ui/dialogs/`. Dialogs depend directly on wxPython and belong to Infrastructure layer per Clean Architecture principles.
