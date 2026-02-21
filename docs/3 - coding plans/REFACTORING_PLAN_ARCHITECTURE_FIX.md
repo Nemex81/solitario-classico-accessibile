@@ -1,7 +1,8 @@
 # Piano di Refactoring: Correzione Architetturale Clean Architecture
 
 **Data Creazione:** 2026-02-21  
-**Versione:** 1.0  
+**Versione:** 1.1  
+**Ultima Revisione:** 2026-02-21 (allineato al codice reale)  
 **Stato:** Da Implementare  
 **Priorità:** CRITICA ⚠️
 
@@ -40,19 +41,21 @@ I moduli in `src/presentation/dialogs/` e `src/presentation/widgets/` importano 
 
 ### 1. ❌ Violazione Separazione Layer (CRITICO)
 
-**File Coinvolti:**
+**File Coinvolti (verificati sul repository):**
 ```
 src/presentation/dialogs/
-├── abandon_dialog.py       → import wx
-├── detailed_stats_dialog.py → import wx
-├── last_game_dialog.py     → import wx
-└── leaderboard_dialog.py   → import wx
+├── abandon_dialog.py         → import wx  (runtime)
+├── detailed_stats_dialog.py  → import wx  (runtime)
+├── game_info_dialog.py       → import wx  (runtime)
+├── last_game_dialog.py       → import wx  (runtime)
+├── leaderboard_dialog.py     → import wx  (runtime)
+└── victory_dialog.py         → import wx  (runtime)
 
 src/presentation/widgets/
-└── timer_combobox.py       → import wx
+└── timer_combobox.py         → import wx  (runtime)
 ```
 
-**Problema:** Questi moduli dipendono direttamente da `wxPython`, quindi appartengono a Infrastructure.
+**Problema:** Tutti e 6 i dialog e il widget dipendono direttamente da `wxPython`, quindi appartengono al layer Infrastructure, non Presentation.
 
 **Soluzione:** Spostare in `src/infrastructure/ui/`.
 
@@ -60,13 +63,17 @@ src/presentation/widgets/
 
 ### 2. ⚠️ Statement `print()` in Codice di Produzione
 
-**File Coinvolti:**
-- `src/infrastructure/ui/wx_frame.py` (2 occorrenze di debug)
-- Altri file in `src/` (16 totali trovati)
+**Print runtime reali (da correggere obbligatoriamente):**
+- `src/infrastructure/ui/wx_frame.py` — righe 161, 166, 171, 182 (close event handler)
+- `src/infrastructure/ui/wx_dialog_provider.py` — riga 529 (statistics report closed)
+- `src/infrastructure/storage/score_storage.py` — riga 270 (error clearing scores)
 
-**Problema:** Le `print()` vanno bene per debug locale, ma in produzione dovrebbero usare `logging`.
+**Print in docstring/esempi (non codice eseguito — lasciare invariate):**
+- Tutte le occorrenze all'interno di blocchi `>>>` o `...` nei docstring (es. `game_engine.py`, `game_service.py`, `scoring_service.py`, `timer_combobox.py`, `report_formatter.py`)
 
-**Soluzione:** Sostituire con `logging.Logger`.
+**Problema:** Le `print()` runtime violano la regola "mai print in produzione" delle istruzioni operative del progetto.
+
+**Soluzione:** Sostituire con `game_logger` centralizzato (`src.infrastructure.logging.game_logger`), già presente e usato nel progetto. **Non** introdurre `logging.getLogger` standard — usare sempre il logger di progetto.
 
 ---
 
@@ -98,28 +105,34 @@ src/infrastructure/ui/
 
 ### Step 1.2: Spostare File `dialogs/`
 
-**Azione:** Spostare 4 file da `presentation` a `infrastructure`:
+**Azione:** Spostare **tutti e 6** i file da `presentation` a `infrastructure`:
 
 ```bash
 # Da
 src/presentation/dialogs/abandon_dialog.py
 src/presentation/dialogs/detailed_stats_dialog.py
+src/presentation/dialogs/game_info_dialog.py
 src/presentation/dialogs/last_game_dialog.py
 src/presentation/dialogs/leaderboard_dialog.py
+src/presentation/dialogs/victory_dialog.py
 
 # A
 src/infrastructure/ui/dialogs/abandon_dialog.py
 src/infrastructure/ui/dialogs/detailed_stats_dialog.py
+src/infrastructure/ui/dialogs/game_info_dialog.py
 src/infrastructure/ui/dialogs/last_game_dialog.py
 src/infrastructure/ui/dialogs/leaderboard_dialog.py
+src/infrastructure/ui/dialogs/victory_dialog.py
 ```
 
 **Comando Git:**
 ```bash
 git mv src/presentation/dialogs/abandon_dialog.py src/infrastructure/ui/dialogs/
 git mv src/presentation/dialogs/detailed_stats_dialog.py src/infrastructure/ui/dialogs/
+git mv src/presentation/dialogs/game_info_dialog.py src/infrastructure/ui/dialogs/
 git mv src/presentation/dialogs/last_game_dialog.py src/infrastructure/ui/dialogs/
 git mv src/presentation/dialogs/leaderboard_dialog.py src/infrastructure/ui/dialogs/
+git mv src/presentation/dialogs/victory_dialog.py src/infrastructure/ui/dialogs/
 ```
 
 ---
@@ -183,18 +196,51 @@ from src.infrastructure.ui.widgets.timer_combobox import TimerComboBox
 
 ---
 
-#### 3. Altri file potenzialmente coinvolti
+#### 3. `src/application/game_engine.py` (import lazy a righe 1353, 1354, 1374, 1525)
 
-**Ricerca Globale:**
-```bash
-# Trova tutti i file che importano da presentation/dialogs
-grep -r "from src.presentation.dialogs" src/
+**Cambio Import (lazy import dentro metodi):**
+```python
+# PRIMA
+from src.presentation.dialogs.victory_dialog import VictoryDialog
+from src.presentation.dialogs.abandon_dialog import AbandonDialog
+from src.presentation.dialogs.detailed_stats_dialog import DetailedStatsDialog
+from src.presentation.dialogs.last_game_dialog import LastGameDialog
 
-# Trova tutti i file che importano da presentation/widgets
-grep -r "from src.presentation.widgets" src/
+# DOPO
+from src.infrastructure.ui.dialogs.victory_dialog import VictoryDialog
+from src.infrastructure.ui.dialogs.abandon_dialog import AbandonDialog
+from src.infrastructure.ui.dialogs.detailed_stats_dialog import DetailedStatsDialog
+from src.infrastructure.ui.dialogs.last_game_dialog import LastGameDialog
 ```
 
-**Azione:** Per ogni file trovato, aggiornare gli import come sopra.
+**Nota:** Questi import sono lazy (dentro metodi) — verificare il contesto prima di modificare.
+
+---
+
+#### 4. `src/infrastructure/ui/profile_menu_panel.py` (riga 686)
+
+**Cambio Import (lazy import):**
+```python
+# PRIMA
+from src.presentation.dialogs.detailed_stats_dialog import DetailedStatsDialog
+
+# DOPO
+from src.infrastructure.ui.dialogs.detailed_stats_dialog import DetailedStatsDialog
+```
+
+---
+
+#### 5. Verifica di completezza (ricerca globale obbligatoria)
+
+```bash
+# Trova tutti i file che importano da presentation/dialogs
+grep -rn "from src.presentation.dialogs" src/
+
+# Trova tutti i file che importano da presentation/widgets
+grep -rn "from src.presentation.widgets" src/
+```
+
+**Risultato atteso post-migrazione:** zero match in entrambe le ricerche.
 
 ---
 
@@ -221,14 +267,18 @@ All dialogs depend on wxPython and belong to Infrastructure layer.
 
 from .abandon_dialog import AbandonDialog
 from .detailed_stats_dialog import DetailedStatsDialog
+from .game_info_dialog import GameInfoDialog
 from .last_game_dialog import LastGameDialog
 from .leaderboard_dialog import LeaderboardDialog
+from .victory_dialog import VictoryDialog
 
 __all__ = [
     'AbandonDialog',
     'DetailedStatsDialog',
+    'GameInfoDialog',
     'LastGameDialog',
     'LeaderboardDialog',
+    'VictoryDialog',
 ]
 ```
 
@@ -249,23 +299,21 @@ __all__ = ['TimerComboBox']
 
 ### Step 1.6: Rimuovere Directory Vuote
 
-**Azione:** Eliminare le directory vuote in `presentation/`:
+**Pre-condizione:** eseguire questo step SOLO dopo aver confermato che tutti e 6 i dialog e il widget siano stati spostati e che gli `__init__.py` di `presentation/dialogs/` e `presentation/widgets/` siano vuoti (lo sono già — verificato).
+
+**Azione:** Eliminare le directory ora vuote in `presentation/`:
 
 ```bash
-# Verificare che siano vuote
-ls -la src/presentation/dialogs/
-ls -la src/presentation/widgets/
+# Verificare che siano vuote (devono contenere solo __init__.py vuoto e __pycache__)
+Get-ChildItem src/presentation/dialogs/
+Get-ChildItem src/presentation/widgets/
 
-# Se vuote, eliminare
-rmdir src/presentation/dialogs/
-rmdir src/presentation/widgets/
-```
-
-**Comando Git:**
-```bash
+# Eliminare via Git (include __init__.py vuoti)
 git rm -r src/presentation/dialogs/
 git rm -r src/presentation/widgets/
 ```
+
+**Nota:** Non rimuovere `src/presentation/` — il layer esiste e contiene ancora `formatters/`.
 
 ---
 
@@ -290,25 +338,32 @@ grep -r "import wx" src/presentation/formatters/
 ```
 src/
 ├── presentation/
-│   └── formatters/          ✅ Nessuna dipendenza da wx
-│       └── report_formatter.py
+│   ├── formatters/          ✅ Nessuna dipendenza da wx
+│   │   └── report_formatter.py
+│   ├── game_formatter.py    ✅ Nessuna dipendenza da wx
+│   └── options_formatter.py ✅ Nessuna dipendenza da wx
 │
 ├── infrastructure/
 │   └── ui/
-│       ├── dialogs/         ✅ SPOSTATO da presentation
+│       ├── dialogs/         ✅ SPOSTATO da presentation (6 file)
 │       │   ├── __init__.py
 │       │   ├── abandon_dialog.py
 │       │   ├── detailed_stats_dialog.py
+│       │   ├── game_info_dialog.py
 │       │   ├── last_game_dialog.py
-│       │   └── leaderboard_dialog.py
+│       │   ├── leaderboard_dialog.py
+│       │   └── victory_dialog.py
 │       │
 │       ├── widgets/         ✅ SPOSTATO da presentation
 │       │   ├── __init__.py
 │       │   └── timer_combobox.py
 │       │
 │       ├── factories/       ✅ GIÀ CORRETTO
+│       ├── options_dialog.py
+│       ├── profile_menu_panel.py
 │       ├── wx_app.py
 │       ├── wx_frame.py
+│       ├── wx_dialog_provider.py
 │       └── ...
 ```
 
@@ -318,11 +373,18 @@ src/
 
 ### Priorità: **MEDIA**
 
-### Step 2.1: Sostituire `print()` in `wx_frame.py`
+### Step 2.1: Sostituire `print()` nei 3 file con occorrenze runtime
 
-**File:** `src/infrastructure/ui/wx_frame.py`
+**Regola progetto:** usare sempre `game_logger` da `src.infrastructure.logging`, già presente, **non** introdurre `logging.getLogger` standard.
 
-**Righe da Modificare:** Circa righe 160-170
+---
+
+#### File 1: `src/infrastructure/ui/wx_frame.py` (righe 161, 166, 171, 182)
+
+**Aggiungere in cima agli import (se non presente):**
+```python
+from src.infrastructure.logging import game_logger as log
+```
 
 **PRIMA:**
 ```python
@@ -346,104 +408,93 @@ def _on_close_event(self, event: wx.CloseEvent) -> None:
 
 **DOPO:**
 ```python
-import logging
-
-logger = logging.getLogger(__name__)
-
-
 def _on_close_event(self, event: wx.CloseEvent) -> None:
-    logger.debug("Close event received (ALT+F4 or X button)")
+    log.debug("close_event", "Close event received (ALT+F4 or X button)")
     
     if not event.CanVeto():
-        logger.debug("Close event cannot be vetoed (forced close)")
+        log.debug("close_event", "Close event cannot be vetoed (forced close)")
         self.Destroy()
         return
     
-    logger.debug("Vetoing close event - showing confirmation dialog")
+    log.debug("close_event", "Vetoing close event - showing confirmation dialog")
     event.Veto()
     
     if self.on_close is not None:
         self.on_close()
     else:
-        logger.warning("No on_close callback registered - destroying frame")
+        log.warning("close_event", "No on_close callback registered - destroying frame")
         self.Destroy()
 ```
 
-**Cambiamenti:**
-1. Aggiungere `import logging` in cima al file
-2. Aggiungere `logger = logging.getLogger(__name__)` dopo gli import
-3. Sostituire tutti i `print()` con `logger.debug()` o `logger.warning()`
+---
+
+#### File 2: `src/infrastructure/ui/wx_dialog_provider.py` (riga 529)
+
+**Aggiungere import se non presente:** `from src.infrastructure.logging import game_logger as log`  
+(già presente a riga 21 — verificato)
+
+**PRIMA:**
+```python
+            print("Statistics report closed")
+```
+
+**DOPO:**
+```python
+            log.debug("dialog_provider", "Statistics report closed")
+```
 
 ---
 
-### Step 2.2: Configurare Logging nel Main Entry Point
+#### File 3: `src/infrastructure/storage/score_storage.py` (riga 270)
 
-**File:** `main.py` (o entry point principale)
+**Aggiungere import se non presente:** `from src.infrastructure.logging import game_logger as log`  
+(già presente a riga 21 — verificato)
 
-**Aggiungere configurazione logging:**
+**PRIMA:**
+```python
+            print(f"Error clearing scores: {e}")
+```
+
+**DOPO:**
+```python
+            log.error("score_storage", f"Error clearing scores: {e}", exc_info=True)
+```
+
+---
+
+### Step 2.2: Verificare configurazione logging nell'entry point reale
+
+**File:** `acs_wx.py` (entry point reale del progetto — `main.py` non esiste)
+
+**Stato attuale (già corretto):** `acs_wx.py` usa già `setup_logging` e `game_logger` da `src.infrastructure.logging`:
 
 ```python
-import logging
-import sys
+# acs_wx.py — import già presenti
+from src.infrastructure.logging import setup_logging
+from src.infrastructure.logging import game_logger as log
+```
 
-def setup_logging(debug: bool = False) -> None:
-    """Configure logging for the application.
-    
-    Args:
-        debug: Enable debug logging (default: False)
-    """
-    level = logging.DEBUG if debug else logging.INFO
-    
-    # Console handler
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(level)
-    
-    # Formatter
-    formatter = logging.Formatter(
-        fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
-    )
-    console_handler.setFormatter(formatter)
-    
-    # Root logger
-    root_logger = logging.getLogger()
-    root_logger.setLevel(level)
-    root_logger.addHandler(console_handler)
-    
-    # Suppress noisy third-party loggers
-    logging.getLogger('wx').setLevel(logging.WARNING)
+**Nessuna modifica strutturale richiesta** su questo file. Verificare solo che:
+- `setup_logging()` venga chiamata prima di qualsiasi istanza di componente
+- Il livello di log sia configurabile (es. via argomento `--verbose`)
 
-
-def main():
-    # Setup logging
-    setup_logging(debug=False)  # Set to True for debug mode
-    
-    # Rest of main logic...
-    pass
+**Per avviare l'applicazione:**
+```bash
+python acs_wx.py
 ```
 
 ---
 
-### Step 2.3: Verificare Altri File con `print()`
+### Step 2.3: Verifica post-intervento — nessun print runtime residuo
 
-**Ricerca Globale:**
+**Ricerca mirata (solo print eseguiti, non docstring):**
 ```bash
-grep -rn "print(" src/ --include="*.py" | grep -v "__pycache__" | grep -v ".pyc"
+grep -rn "print(" src/ --include="*.py" | grep -v "__pycache__" | grep -v ">>>" | grep -v "\.\.\."
 ```
 
-**Per ogni file trovato:**
-1. Verificare se è codice di debug o produzione
-2. Se produzione: sostituire con `logging`
-3. Se debug/test: valutare se mantenere o rimuovere
+**Risultato atteso dopo correzioni Step 2.1:** zero occorrenze runtime.
 
-**File Prioritari:**
-- `src/application/` (logica business)
-- `src/domain/` (core domain)
-- `src/infrastructure/` (adapter esterni)
-
-**File Non Prioritari:**
-- `tests/` (print() accettabili nei test)
-- Script di utility/tools
+**Nota:** Tutti i `print(` restanti nel codebase sono dentro docstring/esempi (blocchi `>>>` o `...`) — sono accettabili e non vanno rimossi (fanno parte della documentazione inline).
 
 ---
 
@@ -488,7 +539,7 @@ mypy src/ --ignore-missing-imports
 ### Step 3.3: Test Manuale Applicazione
 
 **Procedura:**
-1. Avviare applicazione: `python main.py`
+1. Avviare applicazione: `python acs_wx.py`
 2. Verificare che tutte le dialog si aprano correttamente:
    - Menu → Nuova Partita
    - Menu → Statistiche
@@ -550,9 +601,8 @@ src/infrastructure/ui/
 
 #### `docs/API.md`
 
-**Aggiornare path dei moduli:**
+**1. Aggiornare path dei moduli:**
 
-**Ricerca e Sostituzione:**
 ```
 Find:    src.presentation.dialogs
 Replace: src.infrastructure.ui.dialogs
@@ -560,6 +610,28 @@ Replace: src.infrastructure.ui.dialogs
 Find:    src.presentation.widgets
 Replace: src.infrastructure.ui.widgets
 ```
+
+**2. Correggere firma di `ProfileService.ensure_guest_profile` (drift esistente):**
+
+```
+# Riga 1686 attuale (ERRATA):
+#### `ensure_guest_profile() -> None`
+
+# Correggere in:
+#### `ensure_guest_profile() -> bool`
+```
+
+Return type reale nel codice: `-> bool` (`src/domain/services/profile_service.py`, riga 347).
+
+---
+
+#### `docs/ARCHITECTURE.md` — Rimozione riferimenti a file inesistenti
+
+**Problema:** `docs/ARCHITECTURE.md` fa riferimento a `move_validator.py` in più sezioni (righe 209, 329, 390, 516, 558, 972), ma il file **non esiste**. La logica di validazione regole risiede in `src/domain/rules/solitaire_rules.py`.
+
+**Azione:**
+- Sostituire ogni occorrenza di `move_validator.py` con `solitaire_rules.py` nelle sezioni architetturali.
+- Aggiornare la sezione descrittiva `MoveValidator` con il nome reale della classe/modulo.
 
 ---
 
@@ -595,12 +667,15 @@ git commit -m "refactor: update imports after dialogs/widgets relocation
 **Commit 3 - Refactoring Logging:**
 ```bash
 git add src/infrastructure/ui/wx_frame.py
-git add main.py  # se modificato
-git commit -m "refactor: replace print() with logging in wx_frame
+git add src/infrastructure/ui/wx_dialog_provider.py
+git add src/infrastructure/storage/score_storage.py
+git commit -m "refactor: replace print() with game_logger in runtime code
 
-- Add logging configuration in main entry point
-- Replace debug print() statements with logger.debug()
-- Improve production logging consistency"
+- Replace print() runtime statements with game_logger semantico
+- wx_frame.py: close event handler
+- wx_dialog_provider.py: statistics report closed
+- score_storage.py: error clearing scores
+- game_logger già importato, nessuna nuova dipendenza"
 ```
 
 **Commit 4 - Documentazione:**
@@ -611,7 +686,9 @@ git commit -m "docs: update architecture documentation after refactoring
 
 - Update file organization diagrams
 - Clarify Presentation vs Infrastructure layer separation
-- Update API reference with new import paths"
+- Update API reference with new import paths (dialogs, widgets)
+- Fix ensure_guest_profile return type: None -> bool in API.md
+- Fix move_validator.py -> solitaire_rules.py in ARCHITECTURE.md"
 ```
 
 ---
@@ -621,26 +698,31 @@ git commit -m "docs: update architecture documentation after refactoring
 ### Fase 1: Riorganizzazione
 - [ ] Directory `src/infrastructure/ui/dialogs/` creata
 - [ ] Directory `src/infrastructure/ui/widgets/` creata
-- [ ] 4 file spostati da `presentation/dialogs/` a `infrastructure/ui/dialogs/`
+- [ ] **6 file** spostati da `presentation/dialogs/` a `infrastructure/ui/dialogs/` (abandon, detailed_stats, game_info, last_game, leaderboard, victory)
 - [ ] 1 file spostato da `presentation/widgets/` a `infrastructure/ui/widgets/`
 - [ ] Import aggiornati in `wx_dialog_provider.py`
-- [ ] Import aggiornati in `options_dialog.py`
-- [ ] Altri import verificati con grep
-- [ ] `__init__.py` creati/aggiornati
-- [ ] Directory vuote rimosse da `presentation/`
-- [ ] `formatters/` verificato e lasciato in `presentation/`
+- [ ] Import aggiornati in `options_dialog.py` (riga 228 — lazy import)
+- [ ] Import aggiornati in `game_engine.py` (righe 1353, 1354, 1374, 1525 — lazy imports)
+- [ ] Import aggiornati in `profile_menu_panel.py` (riga 686 — lazy import)
+- [ ] Ricerca globale grep eseguita: zero match residui `src.presentation.dialogs` / `src.presentation.widgets`
+- [ ] `__init__.py` creati/aggiornati (con tutti e 6 i dialog)
+- [ ] Directory vuote rimosse da `presentation/` (solo dopo verifica completezza)
+- [ ] `formatters/`, `game_formatter.py`, `options_formatter.py` verificati e lasciati in `presentation/`
 
 ### Fase 2: Logging
-- [ ] `print()` sostituiti con `logging` in `wx_frame.py`
-- [ ] Configurazione logging aggiunta in main entry point
-- [ ] Altri file con `print()` valutati e corretti (se necessario)
+- [ ] `print()` runtime sostituiti con `game_logger` in `wx_frame.py` (righe 161, 166, 171, 182)
+- [ ] `print()` runtime sostituito con `game_logger` in `wx_dialog_provider.py` (riga 529)
+- [ ] `print()` runtime sostituito con `game_logger` in `score_storage.py` (riga 270)
+- [ ] Verifica grep post-intervento: zero print runtime residui in `src/`
+- [ ] `acs_wx.py` (entry point reale) già usa `setup_logging` e `game_logger` — nessuna modifica necessaria
 
-### Fase 3: Verifica
-- [ ] Test suite eseguiti con successo
-- [ ] Linter/mypy eseguiti senza errori
-- [ ] Test manuale applicazione completato
-- [ ] `docs/ARCHITECTURE.md` aggiornato
-- [ ] `docs/API.md` aggiornato
+### Fase 3: Verifica e Documentazione
+- [ ] Test suite eseguiti con successo (`pytest tests/ -v --cov=src --cov-report=term-missing`)
+- [ ] Linter/mypy eseguiti senza errori (`mypy src/ --python-version 3.11`)
+- [ ] Test manuale applicazione completato (`python acs_wx.py`)
+- [ ] `docs/ARCHITECTURE.md` aggiornato (file organization + rimozione `move_validator.py`)
+- [ ] `docs/API.md` aggiornato (import paths + `ensure_guest_profile -> bool`)
+- [ ] `CHANGELOG.md` aggiornato sezione `[Unreleased]` con entry `refactor` e `fixed`
 - [ ] Commit separati creati per ogni fase
 
 ### Validazione Finale
@@ -663,11 +745,11 @@ git commit -m "docs: update architecture documentation after refactoring
 3. **FASE 2** (Logging) - Opzionale ma raccomandato
 4. **FASE 3.2-3.5** (Verifica completa e documentazione)
 
-**Modalità Sicura:**
+**Modalità Sicura (opzionale ma raccomandata):**
 - Creare branch separato: `refactor/architecture-layer-separation`
 - Eseguire ogni step sequenzialmente
-- Verificare dopo ogni commit
-- Merge a main solo dopo validazione completa
+- Verificare test suite dopo ogni fase (non solo al termine)
+- Merge a main solo dopo validazione completa e `CHANGELOG.md` aggiornato
 
 **In Caso di Errori:**
 1. NON procedere al prossimo step
