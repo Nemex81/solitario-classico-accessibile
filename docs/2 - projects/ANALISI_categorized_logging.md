@@ -640,10 +640,6 @@ Impatto: App torna a scrivere `solitario.log` monolitico, zero perdita funzional
 ---
 
 *Fine rapporto*  
-<<<<<<< HEAD
 *Documento aggiornato il 2026-02-21 con decisione Strategia Low-Risk*  
-*Per l'implementazione operativa vedere: `docs/2 - projects/PLAN_categorized_logging.md`*
-=======
-*Documento generato da analisi statica del codice + revisione design document*  
+*Per l'implementazione operativa vedere: `docs/2 - projects/PLAN_categorized_logging.md`*  
 *Ultima revisione: 2026-02-21 (aggiunta sezione 12: Strategia Low-Risk)*
->>>>>>> 07e1fbfd27cdb0fff9297dfd0720db78287d5f69

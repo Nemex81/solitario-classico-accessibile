@@ -508,7 +508,7 @@ Una volta implementato, il developer/maintainer potrà:
 ## 🎯 Status Progetto
 
 **Design**: ✅ FROZEN (strategia Low-Risk confermata dopo analisi)  
-**Piano Tecnico**: 🔄 TODO (prossimo step: `PLAN_categorized_logging.md`)  
+**Piano Tecnico**: ✅ DONE (`PLAN_categorized_logging.md` redatto)  
 **Implementazione**: ⏳ PENDING  
 **Testing**: ⏳ PENDING  
 **Deploy**: ⏳ PENDING
