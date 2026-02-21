@@ -2,13 +2,15 @@
 
 > **Data analisi**: 2026-02-21  
 > **Analista**: GitHub Copilot (Claude Sonnet 4.6)  
-> **Ramo**: sistema-log-categorizzati  
+> **Ramo**: main  
 > **File analizzato**: `docs/2 - projects/DESIGN_categorized_logging.md`  
 > **File di codice ispezionati**:
 > - `src/infrastructure/logging/game_logger.py` (430 righe)
 > - `src/infrastructure/logging/logger_setup.py` (150 righe)
 > - `tests/unit/infrastructure/logging/test_game_logger.py` (127 righe)
 > - `tests/unit/infrastructure/logging/test_logger_setup.py`
+
+> ⚠️ **AGGIORNAMENTO 2026-02-21**: A seguito dell'analisi, la Strategia Decorator è stata **abbandonata** in favore della **Strategia Low-Risk (Ibrida)**. Le sezioni che descrivono i problemi del Decorator (3, 6, 7) rimangono come documentazione storica dell'analisi. Per le decisioni finali vedere **Addendum — Sezione 12** e il file `PLAN_categorized_logging.md`.
 
 ---
 
@@ -20,7 +22,7 @@ Le scelte tecniche sono tutte ben motivate:
 
 - **RotatingFileHandler 5MB/3 backup**: basato su `logging.handlers` della stdlib Python, zero dipendenze esterne.
 - **Flush immediato**: scelta corretta per affidabilità in caso di crash improvviso.
-- **Decorator Pattern (Opzione A)**: la scelta migliore tra le 3 valutate — DRY, autodocumentante, Pythonic.
+- **Decorator Pattern (Opzione A)**: la scelta migliore tra le 3 valutate — DRY, autodocumentante, Pythonic. ⚠️ *Successivamente abbandonato — vedi Addendum sezione 12.*
 - **7 categorie**: coprono i layer esistenti del sistema (game, ui, error, timer, profile, scoring, storage).
 - **API pubblica immutata**: il codice chiamante (`log.game_won()`, ecc.) non cambia.
 
@@ -72,7 +74,9 @@ Il design prevede una categoria `timer` separata, ma il codice la tratta come so
 
 ---
 
-## 3. Il Problema Critico del Decorator — ⚠️ MAL DOCUMENTATO
+## 3. Il Problema Critico del Decorator — ⚠️ MAL DOCUMENTATO (analisi storica)
+
+> **Nota**: I problemi descritti in questa sezione hanno motivato l'abbandono del Decorator Pattern e l'adozione della Strategia Low-Risk (Addendum sezione 12), che li risolve tutti senza modifiche invasive.
 
 ### Il design assume funzioni che restituiscono `str`
 
@@ -184,7 +188,9 @@ Senza questa riga, il sistema funziona ma produce log duplicati — un bug silen
 
 ---
 
-## 6. Incompatibilità Diretta con i Test Esistenti — ❌ RISCRITTURA OBBLIGATORIA
+## 6. Incompatibilità con i Test Esistenti — ✅ RISOLTA dalla Strategia Low-Risk
+
+> **Nota**: Con la Strategia Low-Risk le variabili `_game_logger`, `_ui_logger`, `_error_logger` rimangono invariate in `game_logger.py`. I `@patch` esistenti continuano a funzionare al 100%. La riscrittura dei test descritta di seguito era necessaria **solo** con il Decorator Pattern, che è stato abbandonato.
 
 ### Strategia di test attuale
 
@@ -230,7 +236,9 @@ def test_game_won_calls_game_handler(self):
 
 ---
 
-## 7. Impatto su `logger_setup.py` — Riscrittura Necessaria
+## 7. Impatto su `logger_setup.py` — ✅ Thin Wrapper (non riscrittura)
+
+> **Nota**: Con la Strategia Low-Risk `logger_setup.py` diventa un thin wrapper che re-esporta `setup_categorized_logging`. L'API pubblica `setup_logging()` rimane identica. `acs_wx.py` non richiede modifiche.
 
 Il file attuale (`setup_logging()`) è incompatibile con il nuovo sistema:
 
@@ -273,92 +281,103 @@ Risultato: il calcolo dello spazio disco nel design ("max 140MB = 7 × 20MB") è
 
 ### Priorità ALTA (blocca il funzionamento corretto)
 
-1. **~25 funzioni da riscrivere** — `game_logger.py` richiede migrazione completa da `-> None` (log diretto) a `-> str` (return message + decorator logga). Il design lo minimizza.
-2. **`propagate = False` mancante** — senza questa riga si ha duplicazione silente su `solitario.log`.
-3. **Test suite da riscrivere** — tutti i `@patch` su variabili private rotte dopo refactoring.
+1. ~~**~25 funzioni da riscrivere**~~ ✅ **RISOLTO** — Strategia Low-Risk: le funzioni non cambiano, il routing avviene tramite named loggers già esistenti.
+2. **`propagate = False` mancante** — senza questa riga si ha duplicazione silente su `solitario.log`. ✅ **RISOLTO** — `categorized_logger.py` imposta `propagate = False` esplicitamente.
+3. ~~**Test suite da riscrivere**~~ ✅ **RISOLTO** — Strategia Low-Risk: `_game_logger`, `_ui_logger`, `_error_logger` rimangono, tutti i `@patch` funzionano invariati.
 
 ### Priorità MEDIA (degrada funzionalità)
 
-4. **`error_occurred` caso speciale** — `exc_info=exception` non può essere gestito da decorator generico. Richiede soluzione dedicata.
-5. **Funzioni mancanti per 3 categorie** — `profile`, `scoring`, `storage` non hanno helper corrispondenti. Il sistema di routing esiste ma non ha funzioni da chiamare.
-6. **Timer riclassificazione** — `timer_started/expired/paused` usa `_game_logger`, va migrato a categoria `timer`.
+4. ~~**`error_occurred` caso speciale**~~ ✅ **RISOLTO** — Strategia Low-Risk: `error_occurred` logga direttamente tramite `_error_logger`, il problema `exc_info` non si pone.
+5. **Funzioni mancanti per 3 categorie** — `profile`, `scoring`, `storage` non hanno helper corrispondenti. ⏳ *Rinviato a implementazione futura — categoria decommenta in `CATEGORIES` quando serve.*
+6. **Timer riclassificazione** — `timer_started/expired/paused` usa `_game_logger`, va migrato a `_timer_logger`. ✅ **INCLUSO nel PLAN** — 3 righe cambiate in `game_logger.py`.
 
 ### Priorità BASSA (cosmesi/manutenzione)
 
-7. **Backup count disallineato** — 3 (design) vs 5 (codice). Scegliere e allineare.
-8. **`solitario.log` legacy** — decidere se mantenerlo per library logs o eliminarlo completamente.
+7. **Backup count disallineato** — 3 (design) vs 5 (codice). ✅ **DECISO** — allineato a **3** in `categorized_logger.py`.
+8. **`solitario.log` legacy** — decidere se mantenerlo per library logs o eliminarlo. ✅ **DECISO** — mantenuto per log di librerie esterne (wx, PIL, urllib3).
 
 ---
 
 ## 10. Giudizio Finale e Raccomandazioni
 
-### Giudizio
+### Giudizio (aggiornato con Strategia Low-Risk)
 
-Il design è **concettualmente solido e correttamente impostato** per la fase PLAN. La filosofia, l'architettura, le scelte tecniche e i flussi sono tutti validi. Il documento rispetta la Clean Architecture e i vincoli del progetto.
+Il design è **concettualmente solido**. I problemi identificati nell'analisi (sezioni 3-7) hanno motivato l'adozione della **Strategia Low-Risk**, che ottiene il risultato identico (7 file log separati) con una frazione del rischio.
 
-Tuttavia il design **sottostima significativamente la portata dell'implementazione**. Non è "aggiungere un decorator sopra le funzioni esistenti" — è una riscrittura coordinata su 4 file:
+**Quadro modifiche reale con Strategia Low-Risk:**
 
 | File | Tipo di modifica |
 |---|---|
-| `src/infrastructure/logging/game_logger.py` | Riscrittura completa (~25 funzioni) |
-| `src/infrastructure/logging/logger_setup.py` | Riscrittura completa (nuova architettura multi-handler) |
-| `tests/unit/infrastructure/logging/test_game_logger.py` | Riscrittura completa (nuovo pattern di mock) |
-| `tests/unit/infrastructure/logging/test_logger_setup.py` | Riscrittura completa |
-| `acs_wx.py` (entry point) | Modifica puntuale (nuova firma `setup_categorized_logging`) |
+| `src/infrastructure/logging/categorized_logger.py` | **NUOVO** (~60 righe) |
+| `src/infrastructure/logging/logger_setup.py` | Thin wrapper (~10 righe cambiate) |
+| `src/infrastructure/logging/__init__.py` | Export ampliati (~2 righe) |
+| `src/infrastructure/logging/game_logger.py` | 4 righe (timer + keyboard_command) |
+| `acs_wx.py` | **Nessuna modifica** |
+| `tests/` | **Nessuna modifica** |
 
-### Stima realistica
+### Stima realistica (aggiornata)
 
-- Design attuale dichiara: "modifiche zero al codice chiamante" ✅ (vero per caller esterni)
-- Design sottintende: "poche modifiche interne" ❌ (in realtà è riscrittura di 4 file)
-- Stima sessioni di lavoro: **2-3 sessioni** (non 1 come potrebbe sembrare)
+- Con Decorator Pattern (abbandonato): 2-3 sessioni, riscrittura 4 file
+- Con Strategia Low-Risk (adottata): **~30 minuti**, 1 sessione
 
-### Cosa fare prima di scrivere il PLAN
+### Decisioni prese
 
-1. Decidere come gestire `error_occurred` (le 3 opzioni sono nel paragrafo 4 di questo rapporto)
-2. Decidere se mantenere `solitario.log` per library logs o eliminarlo
-3. Confermare backup count: 3 o 5?
-4. Decidere se aggiungere subito le funzioni helper mancanti (profile/scoring/storage) nel mismo PLAN o in un PLAN separato
+1. ✅ `error_occurred` — nessun trattamento speciale necessario (logga direttamente)
+2. ✅ `solitario.log` mantenuto per library logs
+3. ✅ Backup count: **3** (codice legacy 5 → allineato a design)
+4. ✅ Profile/scoring/storage rinviati a implementazione futura
 
 ---
 
-## 11. Struttura Suggerita per `PLAN_categorized_logging.md`
+## 11. Struttura del PLAN — ✅ GIÀ REDATTO
 
-Quando si redige il PLAN, includere obbligatoriamente:
+Il PLAN operativo è disponibile in `docs/2 - projects/PLAN_categorized_logging.md`.
 
-```markdown
-## Sezioni obbligatorie nel PLAN
+Contiene 7 step implementativi completi con codice pronto:  
+- Step 1: `categorized_logger.py` (codice completo)  
+- Step 2: `logger_setup.py` thin wrapper (codice completo)  
+- Step 3: `__init__.py` export  
+- Step 4: `game_logger.py` (4 modifiche con prima/dopo)  
+- Step 5: Verifica `acs_wx.py` (nessuna modifica)  
+- Step 6: Verifica test + grep per test timer  
+- Step 7: Test manuale lista file attesi  
 
-1. Decisioni pre-implementazione
-   - Strategia error_occurred (opzione A/B/C)
-   - Backup count (3 o 5)
-   - Root logger legacy (mantieni / rimuovi)
-   
-2. Schema CategorizedLogger
-   - Signature CategorizedLogger.__init__()
-   - Signature decorator @log_to()
-   - CATEGORIES dict (tutte le 7 categorie)
-   - Gestione propagate=False
-   
-3. Migration plan game_logger.py
-   - Lista completa 25+ funzioni da riscrivere
-   - Trattamento speciale error_occurred
-   
-4. Nuove funzioni helper (categorie mancanti)
-   - profile_*: create_profile, load_profile, save_profile, delete_profile
-   - scoring_*: score_calculated, penalty_applied, bonus_awarded
-   - storage_*: file_read, file_write, file_error, file_corrupted
-   
-5. Testing strategy
-   - Nuovo pattern (file temporanei vs mock registry)
-   - Elenco test da riscrivere
-   
-6. Migration path (backward compat)
-   - Come rollback se emergenza
-   - Ordine di modifica file (per evitare rotture intermedie)
-```
+---
+
+## 12. Addendum — Strategia Low-Risk Adottata
+
+**Data decisione**: 2026-02-21  
+**Motivazione**: I problemi identificati nelle sezioni 3-9 di questo rapporto hanno dimostrato che il Decorator Pattern era over-engineering per un problema già risolto dall'infrastruttura Python (named loggers).
+
+### Principio chiave
+
+Il routing dei log è già determinato dai named loggers Python (`logging.getLogger('game')`, ecc.). Il problema reale era solo la **configurazione degli handler** — non il routing delle chiamate. Il Decorator stava risolvendo un problema inesistente.
+
+### Strategia scelta: Multi-Handler senza Decorator
+
+Aggiungere `RotatingFileHandler` dedicati ai logger named esistenti, con `propagate=False`. Le funzioni in `game_logger.py` non cambiano — scrivono già sul logger corretto.
+
+### Confronto finale
+
+| Aspetto | Decorator (abbandonato) | Low-Risk (adottato) |
+|---|---|---|
+| Funzioni riscritte | ~25 | 4 (solo timer + keyboard_command) |
+| Test rotti | 100% | 0% |
+| File nuovi | 2 | 1 (`categorized_logger.py`) |
+| Risultato | 7 file log separati | 7 file log separati |
+| Tempo | 2-3 sessioni | ~30 minuti |
+| Rollback | Difficile | 1 import cambiato |
+
+### Punti risolti rispetto all'analisi originale
+
+- ✅ Sezione 3 (Decorator incompatibile `-> None`): non si applica
+- ✅ Sezione 4 (`error_occurred` speciale): non si applica
+- ✅ Sezione 6 (test rotti): non si applica
+- ✅ Sezione 7 (`logger_setup.py` riscrittura): thin wrapper invece
+- ✅ Sezione 9 priorità ALTA (1 e 3): risolte
 
 ---
 
 *Fine rapporto*  
-*Documento generato da analisi statica del codice + revisione design document*  
-*Non modificare manualmente — aggiornare solo dopo nuova analisi del codice*
+*Documento aggiornato il 2026-02-21 con decisione Strategia Low-Risk*  
+*Per l'implementazione operativa vedere: `docs/2 - projects/PLAN_categorized_logging.md`*
