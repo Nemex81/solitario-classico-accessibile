@@ -19,6 +19,32 @@
 
 ---
 
+
+## ⚠️ ATTENZIONI CRITICHE PER L'AGENTE
+
+### STOP 1: Step 1.4 - Import Lazy in game_engine.py
+**CRITICO**: Le righe 1353/1354/1374/1525 contengono **import lazy DENTRO metodi**, NON top-level.
+- **NON modificare senza prima care il contesto circostante**
+- Questi import sono dentro metodi per evitare circular dependency
+- Verifica che ogni modifica mantenga l'import DENTRO il metodo, non in cima al file
+- Test obbligatorio: `pytest tests/test_game_engine.py -v` dopo modifica
+
+### STOP 2: Step 1.6 - Eliminazione Directory
+**ESEGUI SOLO DOPO** aver verificato con `git status` che:
+- `src/presentation/dialogs/__init__.py` è vuoto (0 bytes)
+- `src/presentation/widgets/__init__.py` è vuoto (0 bytes)
+- Tutti i 6 dialog + 1 widget sono stati spostati con successo
+- **grep -rn "from src.presentation.dialogs" src/** ritorna zero match
+
+### STOP 3: Step 2.1 - Import game_logger
+**`game_logger` è già importato** in tutti e 3 i file target:
+- `wx_frame.py` — verifica riga ~20-30
+- `wx_dialog_provider.py` — già presente riga 21
+- `score_storage.py` — già presente riga 21
+- **NON aggiungere import duplicati**
+
+---
+
 ## Panoramica
 
 ### Obiettivo
