@@ -63,10 +63,6 @@ Risolvere 4 problemi bloccanti o di qualità prima del merge del branch
 
 🛠 Checklist Implementazione
 
-**Pre-requisito Task 3 — Firma setup_logging() (🔴 BLOCCANTE per i test)**
-
-- [ ] Aggiungere `logs_dir: Path = LOGS_DIR` alla firma di `setup_logging()` in `logger_setup.py`
-- [ ] Propagare `logs_dir` nella chiamata interna a `setup_categorized_logging()`
 
 **Task 1 — Risoluzione conflitto CHANGELOG.md (🔴 BLOCCANTE)**
 
@@ -83,6 +79,7 @@ Risolvere 4 problemi bloccanti o di qualità prima del merge del branch
 
 **Pre-requisito Task 3 — Firma setup_logging() (🔴 BLOCCANTE per i test)**
 
+- [ ] Aggiungere `from pathlib import Path` agli import di `logger_setup.py` (`Path` non è nel namespace — verificato)
 - [ ] Aggiungere `logs_dir: Path = LOGS_DIR` alla firma di `setup_logging()` in `logger_setup.py`
 - [ ] Propagare `logs_dir` nella chiamata interna a `setup_categorized_logging()`
 
