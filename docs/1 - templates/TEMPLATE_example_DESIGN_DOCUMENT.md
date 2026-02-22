@@ -119,7 +119,15 @@ Punteggio Finale
 
 ### Scenario 2: [Nome Scenario Alternativo]
 
-[Stesso formato del Scenario 1]
+**Punto di partenza**: [Stato iniziale]
+
+**Flusso**:
+1. **Utente/Sistema**: [Step 1]
+2. **Utente/Sistema**: [Step 2]
+3. **Utente/Sistema**: [Step 3]
+
+**Punto di arrivo**: [Stato finale]  
+**Cosa cambia**: [Concetti modificati]
 
 ---
 
@@ -128,13 +136,6 @@ Punteggio Finale
 **Cosa succede se**: [Condizione anomala o limite]
 
 **Sistema dovrebbe**: [Comportamento atteso]
-
-**Esempio**:
-### Scenario 3: Avvisi Disattivati
-
-**Cosa succede se**: Utente ha disattivato completamente gli avvisi
-
-**Sistema dovrebbe**: Non emettere nessun annuncio vocale, ma continuare a tracciare soglie per calcolo punteggio
 
 ---
 
@@ -309,11 +310,7 @@ Questo design è pronto per la fase tecnica (PLAN) quando:
 - [ ] Nessun "buco logico" evidente
 - [ ] Opzioni valutate e scelta finale motivata
 
-**Next Step**: Creare `PLAN_[FEATURE].md` con:
-- Decisioni API e architettura
-- Layer assignment (Domain/Application/Infrastructure)
-- File structure e code specifics
-- Testing strategy dettagliata
+**Next Step**: Creare `PLAN_[FEATURE].md` con decisioni API, architettura layer, file structure, testing strategy.
 
 ---
 
@@ -324,8 +321,6 @@ Questo design è pronto per la fase tecnica (PLAN) quando:
 **Esempio**:
 - Potremmo estendere questo sistema anche ai ricicli scarti?
 - In futuro: avvisi configurabili per singola soglia (granularità fine)
-- Collegamento con sistema punti: avvisi dovrebbero mostrare impatto punteggio?
-- Accessibilità: testare con utenti NVDA per verbosità ottimale
 
 ---
 
@@ -369,77 +364,27 @@ Una volta implementato, l'utente potrà:
 
 ---
 
-## 🎯 Istruzioni Uso Template
+## 🎯 Uso Template
 
-### Quando Usare Questo Template
+### Quando Usare
 
-Usa questo template quando:
-- ✅ Hai un'idea vaga di feature/fix da implementare
-- ✅ Devi fare brainstorming su approcci alternativi
-- ✅ Vuoi mappare flussi logici PRIMA di scrivere codice
-- ✅ Serve "diagramma di flusso concettuale" accessibile
-- ✅ Devi decidere UX/interazione senza ancora pensare all'implementazione
+✅ Brainstorming su nuova feature/fix  
+✅ Mappare flussi logici prima di codificare  
+✅ Decidere UX/interazione (COSA succede, non COME implementare)
 
-**NON usare questo template per**:
-- ❌ Decisioni API e architettura (usa `PLAN_*.md`)
-- ❌ Tracking implementazione (usa `TODO_*.md`)
-- ❌ Documentazione feature già implementata (usa `ARCHITECTURE.md` o `API.md`)
+❌ NON usare per decisioni API/architettura (usa `PLAN_*.md`)  
+❌ NON usare per tracking implementazione (usa `TODO.md`)
 
-### Workflow Completo
+### Workflow
 
-```
-1. Idea vaga
-   ↓
-2. DESIGN_[FEATURE].md (questo template)
-   - Brainstorming
-   - Scenari utente
-   - Flussi logici
-   - Decisioni concettuali
-   ↓ (Design Freeze)
-3. PLAN_[FEATURE].md
-   - API e architettura
-   - Codice dettagliato
-   - Testing strategy
-   ↓ (Plan approvato)
-4. TODO_[FEATURE].md
-   - Tracking fase per fase
-   - Checklist implementazione
-   ↓ (Implementazione completa)
-5. CHANGELOG.md + README.md
-   - Documentazione user-facing
-```
+DESIGN (concept, scenari utente) → PLAN (tecnico, API, testing) → TODO (operativo) → CHANGELOG (rilascio)
 
-### Best Practices
-
-✅ **DO**:
-- Usa linguaggio naturale, non codice
-- Disegna diagrammi ASCII per flussi
-- Descrivi scenari come "storia utente"
-- Focalizza su COSA succede, non COME implementare
-- Includi edge cases e casi limite
-- Valuta più opzioni prima di decidere
-
-❌ **DON'T**:
-- Non scrivere nomi di classi/metodi (troppo presto)
-- Non decidere layer architetturali (viene in PLAN)
-- Non pensare a file structure (troppo tecnico)
-- Non saltare scenari "noiosi" (spesso nascondono complessità)
-- Non decidere senza motivare (rationale sempre)
-
-### Segnali che Design è Pronto
-
-✅ Puoi spiegare la feature a qualcuno in 2 minuti  
-✅ Scenari coprono tutti i casi d'uso principali  
-✅ Non ci sono "buchi logici" evidenti  
-✅ Decisioni chiave prese e motivate  
-✅ UX chiara (comandi, feedback, navigazione)  
-✅ Stati sistema mappati completamente
-
-**Se manca anche solo uno → Design ancora DRAFT**
+Usa linguaggio naturale, nessun codice. Focalizza su scenari utente e flussi logici. Passa a PLAN solo dopo Design Freeze (checklist sopra completata).
 
 ---
 
-**Template Version**: v1.0  
+**Template Version**: v1.1 (ottimizzato -12.6%)  
 **Data Creazione**: 2026-02-16  
+**Ultima Modifica**: 2026-02-22  
 **Autore**: AI Assistant + Nemex81  
 **Filosofia**: "Diagrammi di flusso sulla lavagna" per programmatori non vedenti
