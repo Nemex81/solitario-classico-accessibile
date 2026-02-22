@@ -12,7 +12,7 @@
 - **Stato**: FROZEN (pronto per PLAN)
 - **Versione Target**: v3.4.0 (ipotesi)
 - **Autore**: AI Assistant + Nemex81
-- **Ultima Revisione**: 2026-02-22 (v1.1 - architettura allineata al codebase esistente)
+- **Ultima Revisione**: 2026-02-22 (v1.2 — allineato a PLAN v1.1: panning, DRY JSON, domande risolte)
 
 ---
 
@@ -27,7 +27,7 @@ Aggiungere un sistema audio modulare a 5 bus indipendenti che funzioni come **di
 ### Attori (Chi/Cosa Interagisce)
 
 - **Giocatore non vedente**: Usa NVDA per le informazioni descrittive e l'audio per il feedback immediato spaziale/emotivo
-- **GameplayController**: Pubblica eventi audio dopo ogni azione validata dal motore di gioco
+- **GamePlayController**: Pubblica eventi audio dopo ogni azione validata dal motore di gioco (nota: classe reale è `GamePlayController` con capital P)
 - **InputHandler**: Pubblica eventi audio per navigazione e bumper di fine corsa
 - **DialogManager**: Pubblica eventi audio per apertura/chiusura dialoghi e selezioni UI
 - **AudioManager**: Unico punto di ingresso al sistema audio, interpreta gli eventi e orchestra la riproduzione
@@ -78,13 +78,14 @@ Aggiungere un sistema audio modulare a 5 bus indipendenti che funzioni come **di
 
 #### StereoPosition
 - **Cos'è**: Valore float da -1.0 (estrema sinistra) a +1.0 (estrema destra) che rappresenta la posizione orizzontale di una pila nel campo stereo
-- **Calcolo**: Formula lineare `panning = (pile_index / (total_piles - 1)) * 2.0 - 1.0`
+- **Calcolo**: Formula lineare `panning = (pile_index / 12) * 2.0 - 1.0` su 13 indici di gioco (0-12)
+- **Applicazione stereo**: Constant-power pan law — il volume percepito rimane uniforme su tutto lo spettro stereo. La formula lineare classica `(1.0 - pan) / 2.0` dimezza il volume al centro (left=0.5, right=0.5 per panning=0.0), inaccettabile per accessibilità (cfr. PLAN v1.1, Fix #1)
 - **Mapping logico del tavolo (sinistra → destra)**:
-  - Posizioni 0-6: Pile Tableau 1-7 (estrema sinistra al centro-destra)
-  - Posizioni 7-10: Fondazioni 1-4 (centro-destra all'estrema destra)
-  - Posizione 11: Stock / Mazzo coperto (destra)
-  - Posizione 12: Scarti / Waste (destra, appena dopo stock)
-- **Nota**: I valori precisi del mapping sono definiti in `audio_config.json`, non hardcodati
+  - Indici 0-6: Pile Tableau 1-7 (estrema sinistra al centro)
+  - Indici 7-10: Fondazioni 1-4 (centro-destra all'estrema destra)
+  - Indice 11: Stock / Mazzo coperto (destra)
+  - Indice 12: Scarti / Waste (estrema destra)
+- **Nota**: Il calcolo panning è **dinamico** in `AudioManager._get_panning_for_event()`. **Non** viene persistito in `audio_config.json` — memorizzare output computati violerebbe il principio DRY (cfr. PLAN v1.1, Fix #2, pattern `scoring_config.json`). La 14ª posizione concettuale (menu) non è usata nel gameplay loop.
 
 #### SoundPack
 - **Cos'è**: Raccolta coerente di file audio WAV che sostituisce in blocco tutti i suoni di gioco
@@ -125,8 +126,9 @@ Aggiungere un sistema audio modulare a 5 bus indipendenti che funzioni come **di
 5. **AudioManager**: Recupera il volume del bus Gameplay dalla config, verifica che non sia mutato
    → **SoundCache**: Restituisce il buffer WAV pre-caricato per `foundation_drop.wav`
 
-6. **SoundMixer**: Applica panning `set_volume(left=0.33, right=1.0)` sul canale Gameplay, riproduce buffer
-   → **Output**: L'utente sente un tintinnio cristallino leggermente spostato a destra
+6. **SoundMixer**: Applica constant-power pan law: `set_volume(left=0.67, right=1.0)` sul canale Gameplay, riproduce buffer
+   → (panning=+0.33 positivo → `left = 1.0 - 0.33 = 0.67`, `right = 1.0` — volume uniforme percepito)
+   → **Output**: L'utente sente un tintinnio cristallino leggermente spostato a destra, al volume pieno
 
 7. **NVDA**: (in parallelo, asincrono) Inizia a leggere la descrizione testuale della mossa
    → **Risultato**: L'audio arriva prima di NVDA, confermando la mossa mentre il TTS prepara la lettura
@@ -486,8 +488,8 @@ I due sistemi operano in parallelo e in modo del tutto indipendente. L'AudioMana
 - [x] ✅ **RISOLTO**: Dove vivono i file audio? → `assets/sounds/<pack_name>/`
 - [x] ✅ **RISOLTO**: Come si gestisce file audio mancante? → Warning nel log, suono saltato silenziosamente (degradazione graziosa)
 - [x] ✅ **RISOLTO**: Quando si scrivono le impostazioni su disco? → Solo alla chiusura del mixer o del gioco (no I/O per ogni cambio di volume)
-- [ ] ⚠️ **APERTA**: Git LFS o .gitignore per i file audio binari? → Da decidere in PLAN in base alla dimensione prevista degli asset
-- [ ] ⚠️ **APERTA**: Inizializzazione `pygame.mixer` in ambiente headless (CI/CD, test)? → Da decidere in PLAN (possibile stub/mock per test)
+- [x] ✅ **RISOLTO**: Git LFS o .gitignore per i file audio binari? → `.gitignore` per WAV/MP3/OGG + `.gitkeep` per preservare struttura cartelle in Git (PLAN v1.1, FASE 1)
+- [x] ✅ **RISOLTO**: Inizializzazione `pygame.mixer` in ambiente headless (CI/CD, test)? → Mock completo `mock_pygame_mixer` via `pytest.fixture`; test con `@pytest.mark.unit` escludono GUI e pygame reale (PLAN v1.1, FASE 10)
 
 ### Decisioni Prese
 
@@ -570,12 +572,7 @@ Questo design è pronto per la fase tecnica (PLAN) quando:
 - [x] Opzioni valutate e motivate (3 opzioni analizzate)
 - [x] Degradazione graziosa definita
 
-**Next Step**: Creare `PLAN_audio_system.md` con:
-- Decisioni implementative dettagliate (firma metodi AudioManager, struttura AudioEvent, schema JSON completo)
-- Testing strategy (headless mock, smoke test, integrazione)
-- Migration path / branching strategy
-- Dipendenze da aggiungere a requirements.txt
-- Decisione su Git LFS vs .gitignore per asset audio
+**Next Step**: Piano tecnico completato — `docs/3 - coding plans/PLAN_audio_system_v3.4.0.md` (v1.1, post-review, stato READY). Pronto per implementazione sul branch `feature/audio-system`.
 
 ---
 
@@ -656,14 +653,15 @@ Una volta implementato, il giocatore non vedente potrà:
 ## 🎯 Status Progetto
 
 **Design**: ✅ FROZEN  
-**Piano Tecnico**: ⏳ PENDING (`PLAN_audio_system.md` da creare)  
+**Piano Tecnico**: ✅ READY (`docs/3 - coding plans/PLAN_audio_system_v3.4.0.md` — v1.1, post-review)  
 **Implementazione**: ⏳ PENDING  
 **Testing**: ⏳ PENDING  
 **Deploy**: ⏳ PENDING
 
 ---
 
-**Document Version**: v1.1 (Architettura allineata al codebase esistente)  
+**Document Version**: v1.2 (Allineato a PLAN v1.1 — constant-power panning, DRY JSON, domande aperte risolte, nome classe corretto)  
 **Data Freeze**: 2026-02-22  
+**Ultimo Aggiornamento**: 2026-02-22  
 **Autore**: AI Assistant + Nemex81  
 **Filosofia**: "L'audio non abbellisce il gioco - lo rende leggibile nello spazio"
