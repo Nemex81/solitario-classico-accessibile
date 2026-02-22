@@ -67,20 +67,6 @@ def end_game(self, is_victory: bool) -> None:
 * **Private/Protected**: Prefisso `_` (es. `_handle_crash_recovery`, `_debug_force_victory`)
 * **Type Hints**: Sempre obbligatori per metodi pubblici
 
-**Esempio di firma corretta:**
-```python
-def record_session(self, session: SessionOutcome) -> bool:
-    """
-    Registra sessione e aggiorna statistiche.
-    
-    Args:
-        session: Oggetto SessionOutcome validato
-        
-    Returns:
-        True se salvato con successo, False altrimenti
-    """
-```
-
 ---
 
 ### Type Hints Enforcement
@@ -94,20 +80,6 @@ def record_session(self, session: SessionOutcome) -> bool:
 - ✅ `pile.get_card_count() -> int`
 - ✅ Ogni public method con return type esplicito
 - ✅ Parametri con type hints anche per metodi privati
-
-**Esempio fix completo:**
-```python
-# ❌ ERRATO
-def check_pile(pile):
-    if pile.count() > 0:  # AttributeError!
-        return True
-
-# ✅ CORRETTO  
-def check_pile(pile: Pile) -> bool:
-    if pile.get_card_count() > 0:
-        return True
-    return False
-```
 
 ---
 
@@ -136,13 +108,7 @@ _timer_logger = logging.getLogger('timer')  # lifecycle timer, scadenza, pausa
 NON finiscono su `solitario.log`. Questo è intenzionale. Non modificare mai
 questo comportamento senza aggiornare `categorized_logger.py`.
 
-**Usare i semantic helpers di `game_logger.py`:**
-```python
-from src.infrastructure.logging.game_logger import (
-    log_game_start, log_move, log_error, log_keyboard_command,
-    log_timer_started, log_timer_expired,
-)
-```
+**Usare i semantic helpers di `game_logger.py`** (`log_game_start`, `log_move`, `log_error`, `log_keyboard_command`, `log_timer_started`, `log_timer_expired`).
 
 **Vietato:**
 - ❌ `print(f"Debug: {variable}")` → usa `logging.getLogger('game').debug()`
@@ -165,35 +131,21 @@ Ogni componente UI (`wx.Dialog`, `wx.Panel`, `wx.Button`) deve rispettare:
 - [ ] TAB naviga tutti i controlli in ordine logico
 - [ ] No elementi puramente decorativi (spacer con label vuote)
 
-**Esempio corretto:**
-```python
-class VictoryDialog(wx.Dialog):
-    def __init__(self, parent, outcome, profile):
-        super().__init__(parent, title="Partita Vinta!")  # NVDA legge "Partita Vinta!"
-        
-        # TTS announcement (se screen_reader disponibile)
-        if self.screen_reader:
-            self.screen_reader.speak("Hai vinto! Partita completata.")
-        
-        # Text control con summary (navigabile)
-        self.summary_text = wx.TextCtrl(
-            self, 
-            value=formatter.format_session_outcome(outcome),
-            style=wx.TE_MULTILINE | wx.TE_READONLY
-        )
-        self.summary_text.SetFocus()  # Focus su contenuto principale
-        
-        # Bottoni con acceleratori
-        btn_rematch = wx.Button(self, wx.ID_YES, "&Rivincita")  # ALT+R
-        btn_menu = wx.Button(self, wx.ID_NO, "&Menu")            # ALT+M
-        
-        # ESC = torna al menu
-        self.Bind(wx.EVT_BUTTON, self.on_close, id=wx.ID_CANCEL)
-```
+---
+
+## � Critical Warnings (Non Ignorare Mai)
+
+1. **Guest Profile Protection**: Il profilo `profile_000` (Ospite) è **intoccabile**: non eliminare, non rinominare, usato come fallback.
+
+2. **Timer Overtime**: `EndReason.VICTORY` = vittoria entro tempo limite. `EndReason.VICTORY_OVERTIME` = vittoria oltre tempo (PERMISSIVE mode). Non confonderli.
+
+3. **Draw Count Duality**: `GameService.draw_count` = azioni di pescata (per stats). `ScoringService.stock_draw_count` = carte pescate (per penalità). Sono contatori separati.
+
+4. **Pile.count() Bug**: il metodo **NON ESISTE** → usa sempre `pile.get_card_count()`. `pile.count()` genera `AttributeError`.
 
 ---
 
-## 📚 Protocollo Allineamento Documentazione (Mandatorio)
+## �📚 Protocollo Allineamento Documentazione (Mandatorio)
 
 ### Struttura Cartella `docs/`
 
@@ -445,66 +397,19 @@ Utente: "Inizia l'implementazione del sistema audio"
 
 Dopo **ogni modifica al codice** (`.py`), esegui questo audit:
 
-**1. API.md**  
-Aggiorna se modifichi:
-- Signature metodi pubblici (parametri, return type, nome)
-- Classi esportate da `__init__.py`
-- Enum/costanti pubbliche
-- Comportamento documentato (side effects, validazioni)
-
-**Esempio:**
-```python
-# Prima
-def create_profile(self, name: str, set_as_default: bool = False) -> Optional[UserProfile]:
-
-# Dopo
-def create_profile(self, name: str, is_guest: bool = False) -> Optional[UserProfile]:
-```
-→ **Aggiorna `docs/API.md`**: sezione `## ProfileService.create_profile` — parametro `set_as_default` → `is_guest`, aggiorna esempio d'uso
+**1. API.md** — Aggiorna se modifichi signature metodi pubblici, classi esportate da `__init__.py`, enum/costanti pubbliche, comportamento documentato.
 
 ---
 
-**2. ARCHITECTURE.md**  
-Aggiorna se modifichi:
-- Struttura cartelle (`src/`, `docs/`, `tests/`)
-- Data flow tra layer (nuovi adapter, repositories)
-- Design patterns adottati (nuovi command, observers)
-- Dipendenze esterne (nuove librerie in `requirements.txt`)
-
-**Esempio:**
-- Aggiungi `src/domain/events/` per event sourcing
-→ **Aggiorna `docs/ARCHITECTURE.md`**: sezione "Domain Layer" + diagramma struttura cartelle
+**2. ARCHITECTURE.md** — Aggiorna se modifichi struttura cartelle, data flow tra layer, design patterns, dipendenze esterne (`requirements.txt`).
 
 ---
 
-**3. CHANGELOG.md**  
-Aggiorna **sempre** dopo merge su `main`:
-- Nuove feature → sezione `## [Unreleased] - Added`
-- Bug fix → `## [Unreleased] - Fixed`
-- Breaking changes → `## [Unreleased] - Changed` + ⚠️ warning
-
-**Formato:**
-```markdown
-## [Unreleased]
-
-### Added
-- ProfileService: Aggiunto metodo `get_leaderboard()` per top 10 giocatori (#PR)
-
-### Fixed
-- API.md: Corretto return type `ensure_guest_profile()` (None → bool) (#Issue)
-
-### Changed
-- ⚠️ BREAKING: `create_profile()` parametro `set_as_default` rinominato `is_guest`
-```
+**3. CHANGELOG.md** — Aggiorna **sempre** dopo merge su `main`: nuove feature → `Added`, bug fix → `Fixed`, breaking changes → `Changed` + ⚠️.
 
 ---
 
-**4. README.md**  
-Aggiorna se modifichi:
-- Entry point (`acs.py` → `acs_wx.py`)
-- Comandi CLI (nuove opzioni `--verbose`, `--profile`)
-- Requisiti sistema (Python 3.9 → 3.11, nuove dipendenze)
-- Setup environment (nuovi passi installazione)
+**4. README.md** — Aggiorna se modifichi entry point, comandi CLI, requisiti sistema, passi di setup.
 
 ---
 
@@ -513,32 +418,10 @@ Aggiorna se modifichi:
 Quando l'utente dice *"applica le modifiche"*:
 
 1. **Esegui modifiche codice** (`.py` files)
-2. **Audit immediato**:
-   ```
-   Modifiche a src/domain/services/profile_service.py (line 260):
-   - Cambiato return type: None → bool
-   
-   📋 Impatto documentazione:
-   - docs/API.md: ✅ Richiede aggiornamento (sezione ProfileService.ensure_guest_profile)
-   - docs/ARCHITECTURE.md: ⬜ Nessun impatto
-   - CHANGELOG.md: ✅ Aggiungi entry [Unreleased] - Fixed
-   ```
-3. **Proposta aggiornamento**:
-   ```
-   Vuoi che aggiorni:
-   1. docs/API.md (fix return type + esempio)
-   2. CHANGELOG.md (entry Fixed)
-   
-   Rispondi "sì" per procedere, "solo 1" per docs/API.md, "no" per saltare.
-   ```
+2. **Audit immediato**: elenca file modificati, dichiara impatto su API.md / ARCHITECTURE.md / CHANGELOG.md (richiede aggiornamento / nessun impatto)
+3. **Proposta aggiornamento**: chiedi conferma per ogni doc da aggiornare
 4. **Applica aggiornamenti docs** se confermato
-5. **Verifica finale**:
-   ```
-   ✅ Codice e documentazione sincronizzati:
-   - src/domain/services/profile_service.py (modified)
-   - docs/API.md (updated, sezione ProfileService.ensure_guest_profile)
-   - CHANGELOG.md (updated, [Unreleased] section)
-   ```
+5. **Verifica finale**: conferma che codice e documentazione sono sincronizzati
 
 ---
 
@@ -627,14 +510,8 @@ class TestProfileService:
 
 **Comandi standard:**
 ```bash
-# CI-safe (headless, niente display): smoke test obbligatorio pre-merge
-pytest -m "not gui" -v
-
-# Test completi (richiede display o Xvfb)
-pytest -v
-
-# Solo unit test di un modulo specifico (esempio)
-pytest tests/infrastructure/test_categorized_logger.py -v
+pytest -m "not gui" -v        # CI-safe (headless): obbligatorio pre-merge
+pytest -v                     # Test completi (richiede display o Xvfb)
 ```
 
 **Isolamento test logging:** il modulo `logging` di Python è un singleton di
@@ -659,11 +536,6 @@ Prima di ogni commit, verifica silentemente:
 ```bash
 # Ottenere SHA prima di update file
 git ls-tree HEAD src/domain/services/profile_service.py
-
-# Output:
-# 100644 blob 47f9717e9064973963357a3cbf64eac57b4a8fe3	src/domain/services/profile_service.py
-#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-#              Questo è il SHA da usare in create_or_update_file
 ```
 
 **Se uno fallisce:**
@@ -771,51 +643,6 @@ Refs: #42, docs/3 - coding plans/PLAN-docs-allineamento-v3.2.2.md
 - `MINOR` (Y): nuove feature retrocompatibili
 - `PATCH` (Z): bug fix retrocompatibili
 - `BUILD` (W) *(facoltativo)*: bugfix minori o aggiornamenti di documentazione pura (es. `v3.3.0.1`)
-
----
-
-## 🚨 Critical Warnings (Non Ignorare Mai)
-
-1. **Guest Profile Protection**: Il profilo `profile_000` (Ospite) è **intoccabile**:
-   - Non eliminare
-   - Non rinominare
-   - Usato come fallback
-   
-2. **Timer Overtime**: Distingui sempre:
-   - `EndReason.VICTORY` = vittoria entro tempo limite
-   - `EndReason.VICTORY_OVERTIME` = vittoria oltre tempo (PERMISSIVE mode)
-   
-3. **Draw Count Duality**: Esistono **due contatori separati**:
-   - `GameService.draw_count` = azioni di pescata (per stats)
-   - `ScoringService.stock_draw_count` = carte pescate (per penaltà)
-   
-4. **Pile.count() Bug**: Il metodo **NON ESISTE**. Usa sempre:
-   - ✅ `pile.get_card_count()`
-   - ❌ `pile.count()` → AttributeError
-
----
-
-## 🎯 TTS Feedback Tracking (Experimental - v2.4+)
-
-```python
-def tts_spoken(message: str, interrupt: bool) -> None:
-    """
-    Log TTS vocalization (DEBUG level).
-    
-    Args:
-        message: Text vocalized
-        interrupt: Whether previous speech interrupted
-    
-    Note:
-        **Experimental feature** - not yet integrated in all dialogs.
-        Call this after `screen_reader.speak()` for analytics and UX testing.
-        Molto verboso (ogni azione genera TTS) - solo per accessibility audits.
-    
-    Example:
-        >>> tts_spoken("7 di cuori su 8 di picche", True)
-        2026-02-14 15:15:00 - DEBUG - ui - TTS: "7 di cuori su 8 di picche" (interrupt=True)
-    """
-```
 
 ---
 
