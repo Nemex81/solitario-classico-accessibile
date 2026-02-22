@@ -72,15 +72,15 @@ This document provides a **reference guide for public APIs** across system layer
 **Constructor**:
 ```python
 GameEngine(settings: GameSettings = None)
-```
-
-**Parameters**:
-- `settings` (GameSettings, optional): Game configuration (difficulty, rules). Defaults to standard settings if None.
-
-**Example**:
-```python
-settings = GameSettings(difficulty=DifficultyLevel.NORMAL)
-engine = GameEngine(settings)
+    """Initialize game engine.
+    
+    Args:
+        settings: Game configuration (difficulty, rules). Defaults to standard settings if None.
+    
+    Example:
+        >>> settings = GameSettings(difficulty=DifficultyLevel.NORMAL)
+        >>> engine = GameEngine(settings)
+    """
 ```
 
 ---
@@ -89,38 +89,29 @@ engine = GameEngine(settings)
 
 ```python
 def move_card(from_pile: str, to_pile: str) -> MoveResult:
+    """Valida ed esegue spostamento carta tra pile.
+    
+    Args:
+        from_pile: Source pile ID ('tableau_0', 'stock', 'waste')
+        to_pile: Target pile ID ('foundation_hearts', 'tableau_3')
+    
+    Returns:
+        MoveResult(success: bool, reason: str)
+    
+    Example:
+        >>> result = engine.move_card('waste', 'foundation_hearts')
+        >>> if result.success: print("Mossa eseguita")
+        >>> else: print(f"Errore: {result.reason}")
+    
+    Note:
+        Modifica stato interno. Business rules:
+        - Tableau: colori alternati, rank discendente (King → Ace)
+        - Foundation: stesso seme, rank crescente (Ace → King)
+        - Waste: solo top card movibile
+    
+    Version: v1.0.0
+    """
 ```
-
-**Purpose**: Validates and executes card move between piles according to game rules.
-
-**Parameters**:
-- `from_pile` (str): Source pile ID (e.g., `'tableau_0'`, `'stock'`, `'waste'`)
-- `to_pile` (str): Target pile ID (e.g., `'foundation_hearts'`, `'tableau_3'`)
-
-**Returns**:
-- `MoveResult`: Object with:
-  - `success` (bool): True if move valid and executed
-  - `reason` (str): Error description if failed, empty string if success
-
-**Business Rules**:
-- **Tableau**: Alternating colors, descending rank (King → Ace)
-- **Foundation**: Same suit, ascending rank (Ace → King)
-- **Waste**: Only top card is movable
-
-**Example**:
-```python
-engine = GameEngine()
-result = engine.move_card('waste', 'foundation_hearts')
-
-if result.success:
-    print("Move executed successfully")
-else:
-    print(f"Invalid move: {result.reason}")
-```
-
-**⚠️ Note**: Method modifies internal game state. Call `get_state()` to retrieve updated state.
-
-**Version**: Added in v1.0.0
 
 ---
 
@@ -128,32 +119,23 @@ else:
 
 ```python
 def draw_from_stock() -> DrawResult:
+    """Pesca carta/e da stock a waste.
+    
+    Returns:
+        DrawResult(cards_drawn: List[Card], stock_empty: bool)
+    
+    Example:
+        >>> result = engine.draw_from_stock()
+        >>> print(f"Pescate {len(result.cards_drawn)} carte")
+        >>> if result.stock_empty: print("Stock esaurito")
+    
+    Note:
+        Numero carte pescate dipende da settings (draw-1 o draw-3).
+        Incrementa contatore interno (impatta scoring).
+    
+    Version: v1.0.0, Modified v2.0.0 (scoring integration)
+    """
 ```
-
-**Purpose**: Draws card(s) from stock pile to waste pile. Number of cards drawn depends on game settings (draw-1 or draw-3 mode).
-
-**Parameters**: None
-
-**Returns**:
-- `DrawResult`: Object with:
-  - `cards_drawn` (List[Card]): Cards moved to waste (1 or 3 cards)
-  - `stock_empty` (bool): True if stock pile is now empty
-
-**Side Effects**:
-- Increments internal draw counter (affects scoring)
-- Moves cards from stock to waste pile
-- If stock empty, may trigger recycle logic (depending on rules)
-
-**Example**:
-```python
-result = engine.draw_from_stock()
-print(f"Drew {len(result.cards_drawn)} cards")
-
-if result.stock_empty:
-    print("Stock depleted, recycle available")
-```
-
-**Version**: Added in v1.0.0, Modified in v2.0.0 (scoring integration)
 
 ---
 
@@ -161,25 +143,20 @@ if result.stock_empty:
 
 ```python
 def check_victory() -> bool:
+    """Verifica vittoria (tutte le foundations complete).
+    
+    Returns:
+        bool: True se tutte e 4 le foundations hanno 13 carte (Ace → King)
+    
+    Example:
+        >>> if engine.check_victory():
+        ...     print("Hai vinto!")
+    
+    Note: Pure query, nessun side effect. Safe da chiamare ripetutamente.
+    
+    Version: v1.0.0
+    """
 ```
-
-**Purpose**: Checks if game is won (all foundations complete).
-
-**Parameters**: None
-
-**Returns**:
-- `bool`: True if all 4 foundations have 13 cards (Ace → King), False otherwise
-
-**Example**:
-```python
-if engine.check_victory():
-    print("You won!")
-    # Trigger victory UI/dialog
-```
-
-**⚠️ Note**: Pure query, no side effects. Safe to call repeatedly.
-
-**Version**: Added in v1.0.0
 
 ---
 
@@ -187,27 +164,19 @@ if engine.check_victory():
 
 ```python
 def new_game() -> None:
+    """Reset stato e distribuisce nuovo mazzo mescolato.
+    
+    Example:
+        >>> engine.new_game()
+        >>> print("Nuova partita iniziata")
+    
+    Note:
+        Side effects: shuffle deck, distribuzione tableau (7 pile),
+        reset stock/waste/foundations, reset counters/score/timer.
+    
+    Version: v1.0.0
+    """
 ```
-
-**Purpose**: Resets game state and deals a new shuffled deck.
-
-**Parameters**: None
-
-**Returns**: None
-
-**Side Effects**:
-- Shuffles deck (random seed-based)
-- Distributes cards to tableau (7 piles)
-- Resets stock, waste, foundations
-- Resets move counter, score, timer
-
-**Example**:
-```python
-engine.new_game()
-print("New game started")
-```
-
-**Version**: Added in v1.0.0
 
 ---
 
@@ -215,29 +184,19 @@ print("New game started")
 
 ```python
 def get_state() -> GameState:
+    """Ritorna snapshot stato corrente per UI rendering o persistence.
+    
+    Returns:
+        GameState: dataclass con tableau, foundations, stock, waste, move_count, score
+    
+    Example:
+        >>> state = engine.get_state()
+        >>> print(f"Mosse: {state.move_count}, Score: {state.score}")
+        >>> print(f"Tableau 0: {len(state.tableau[0])} carte")
+    
+    Version: v1.0.0
+    """
 ```
-
-**Purpose**: Returns current game state snapshot for UI rendering or persistence.
-
-**Parameters**: None
-
-**Returns**:
-- `GameState`: Dataclass with:
-  - `tableau` (List[List[Card]]): 7 tableau piles
-  - `foundations` (Dict[str, List[Card]]): 4 foundation piles
-  - `stock` (List[Card]): Stock pile
-  - `waste` (List[Card]): Waste pile
-  - `move_count` (int): Total moves made
-  - `score` (int): Current score
-
-**Example**:
-```python
-state = engine.get_state()
-print(f"Moves: {state.move_count}, Score: {state.score}")
-print(f"Tableau 0 has {len(state.tableau[0])} cards")
-```
-
-**Version**: Added in v1.0.0
 
 ---
 
@@ -250,27 +209,25 @@ print(f"Tableau 0 has {len(state.tableau[0])} cards")
 **Constructor**:
 ```python
 Card(rank: str, suit: str, face_up: bool = False)
+    """Crea carta immutabile.
+    
+    Args:
+        rank: Rank carta ('A', '2'-'10', 'J', 'Q', 'K')
+        suit: Seme ('hearts', 'diamonds', 'clubs', 'spades')
+        face_up: Stato visibilità (default False)
+    
+    Properties (read-only):
+        color (str): 'red' o 'black' (derivato da suit)
+        value (int): Valore numerico (A=1, 2-10=face, J=11, Q=12, K=13)
+    
+    Example:
+        >>> card = Card('A', 'hearts', face_up=True)
+        >>> print(card.rank, card.suit, card.color, card.value)
+        'A' 'hearts' 'red' 1
+    
+    Version: v1.0.0
+    """
 ```
-
-**Parameters**:
-- `rank` (str): Card rank (`'A'`, `'2'`-`'10'`, `'J'`, `'Q'`, `'K'`)
-- `suit` (str): Card suit (`'hearts'`, `'diamonds'`, `'clubs'`, `'spades'`)
-- `face_up` (bool): Visibility state (default False)
-
-**Properties** (read-only):
-- `color` (str): `'red'` or `'black'` (derived from suit)
-- `value` (int): Numeric value (A=1, 2-10=face, J=11, Q=12, K=13)
-
-**Example**:
-```python
-card = Card('A', 'hearts', face_up=True)
-print(card.rank)   # 'A'
-print(card.suit)   # 'hearts'
-print(card.color)  # 'red'
-print(card.value)  # 1
-```
-
-**Version**: Added in v1.0.0
 
 ---
 
@@ -278,26 +235,22 @@ print(card.value)  # 1
 
 ```python
 def is_valid_tableau_move(target: Card) -> bool:
+    """Verifica validità spostamento su tableau.
+    
+    Args:
+        target: Carta target su cui impilare
+    
+    Returns:
+        bool: True se colore opposto e rank = target.rank - 1
+    
+    Example:
+        >>> card1 = Card('7', 'hearts')    # 7 Rosso
+        >>> card2 = Card('8', 'spades')    # 8 Nero
+        >>> assert card1.is_valid_tableau_move(card2) is True
+    
+    Version: v1.0.0
+    """
 ```
-
-**Purpose**: Checks if this card can be placed on target card in tableau (alternating colors, descending rank).
-
-**Parameters**:
-- `target` (Card): Target card to stack on
-
-**Returns**:
-- `bool`: True if move valid (opposite color, rank = target.rank - 1)
-
-**Example**:
-```python
-card1 = Card('7', 'hearts')    # 7 Red
-card2 = Card('8', 'spades')    # 8 Black
-
-assert card1.is_valid_tableau_move(card2) is True   # OK: Red on Black, 7 on 8
-assert card2.is_valid_tableau_move(card1) is False  # Wrong: Black on Red
-```
-
-**Version**: Added in v1.0.0
 
 ---
 
@@ -305,29 +258,23 @@ assert card2.is_valid_tableau_move(card1) is False  # Wrong: Black on Red
 
 ```python
 def is_valid_foundation_move(target: Optional[Card]) -> bool:
+    """Verifica validità spostamento su foundation.
+    
+    Args:
+        target: Top card foundation, o None se foundation vuota
+    
+    Returns:
+        bool: True se (foundation vuota AND card è Ace) OR (stesso seme AND rank = target.rank + 1)
+    
+    Example:
+        >>> ace = Card('A', 'hearts')
+        >>> two = Card('2', 'hearts')
+        >>> assert ace.is_valid_foundation_move(None) is True    # Ace su vuoto
+        >>> assert two.is_valid_foundation_move(ace) is True     # 2 su Ace
+    
+    Version: v1.0.0
+    """
 ```
-
-**Purpose**: Checks if this card can be placed on foundation pile.
-
-**Parameters**:
-- `target` (Optional[Card]): Top card of foundation, or None if foundation empty
-
-**Returns**:
-- `bool`: True if:
-  - Foundation empty AND card is Ace, OR
-  - Same suit AND rank = target.rank + 1
-
-**Example**:
-```python
-ace = Card('A', 'hearts')
-two = Card('2', 'hearts')
-
-assert ace.is_valid_foundation_move(None) is True    # Ace on empty
-assert two.is_valid_foundation_move(ace) is True     # 2 on Ace
-assert ace.is_valid_foundation_move(two) is False    # Wrong direction
-```
-
-**Version**: Added in v1.0.0
 
 ---
 
@@ -340,13 +287,13 @@ assert ace.is_valid_foundation_move(two) is False    # Wrong direction
 **Constructor**:
 ```python
 Deck()
-```
-
-**Example**:
-```python
-deck = Deck()
-deck.shuffle()
-cards = deck.deal(7)  # Deal 7 cards
+    """Crea mazzo standard 52 carte.
+    
+    Example:
+        >>> deck = Deck()
+        >>> deck.shuffle()
+        >>> cards = deck.deal(7)
+    """
 ```
 
 ---
@@ -355,17 +302,13 @@ cards = deck.deal(7)  # Deal 7 cards
 
 ```python
 def shuffle() -> None:
+    """Mescola mazzo usando random.shuffle().
+    
+    Note: Modifica ordine interno carte.
+    
+    Version: v1.0.0
+    """
 ```
-
-**Purpose**: Randomizes deck order using Python's random.shuffle().
-
-**Parameters**: None
-
-**Returns**: None
-
-**Side Effects**: Modifies internal card order
-
-**Version**: Added in v1.0.0
 
 ---
 
@@ -373,25 +316,21 @@ def shuffle() -> None:
 
 ```python
 def deal(count: int) -> List[Card]:
+    """Rimuove e ritorna N carte dal mazzo.
+    
+    Args:
+        count: Numero carte da distribuire
+    
+    Returns:
+        List[Card]: Carte distribuite (può essere < count se mazzo esaurito)
+    
+    Example:
+        >>> hand = deck.deal(5)
+        >>> print(f"Distribuite {len(hand)} carte")
+    
+    Version: v1.0.0
+    """
 ```
-
-**Purpose**: Removes and returns specified number of cards from deck.
-
-**Parameters**:
-- `count` (int): Number of cards to deal
-
-**Returns**:
-- `List[Card]`: Dealt cards (may be fewer than requested if deck exhausted)
-
-**Example**:
-```python
-deck = Deck()
-deck.shuffle()
-hand = deck.deal(5)
-print(f"Dealt {len(hand)} cards")
-```
-
-**Version**: Added in v1.0.0
 
 ---
 
@@ -404,10 +343,12 @@ print(f"Dealt {len(hand)} cards")
 **Constructor**:
 ```python
 Scoring(settings: GameSettings)
+    """Inizializza scoring service.
+    
+    Args:
+        settings: Configurazione che impatta regole scoring
+    """
 ```
-
-**Parameters**:
-- `settings` (GameSettings): Game configuration affecting scoring rules
 
 ---
 
@@ -415,31 +356,23 @@ Scoring(settings: GameSettings)
 
 ```python
 def calculate_score() -> int:
+    """Calcola punteggio corrente basato su eventi registrati.
+    
+    Returns:
+        int: Punteggio totale (minimo 0)
+    
+    Example:
+        >>> scoring.record_event(ScoreEventType.CARD_TO_FOUNDATION)
+        >>> score = scoring.calculate_score()
+        >>> print(f"Score: {score}")
+    
+    Note:
+        Formula esempio: Base 100 + 10/card in foundation - 1/stock draw oltre soglia
+        - 15/recycle oltre limite + time bonus se timer attivo.
+    
+    Version: v1.5.0
+    """
 ```
-
-**Purpose**: Computes current score based on recorded events and game state.
-
-**Parameters**: None
-
-**Returns**:
-- `int`: Total score (clamped to minimum 0)
-
-**Scoring Formula** (example):
-- Base: 100 points
-- +10 per card in foundation
-- -1 per stock draw beyond threshold
-- -15 per waste recycle beyond limit
-- Time bonus if timer enabled
-
-**Example**:
-```python
-scoring = Scoring(settings)
-scoring.record_event(ScoreEventType.CARD_TO_FOUNDATION)
-score = scoring.calculate_score()
-print(f"Current score: {score}")
-```
-
-**Version**: Added in v1.5.0
 
 ---
 
@@ -447,24 +380,16 @@ print(f"Current score: {score}")
 
 ```python
 def record_event(event_type: ScoreEventType) -> None:
+    """Registra evento scoring per calcolo successivo.
+    
+    Args:
+        event_type: Tipo evento (STOCK_DRAW, CARD_TO_FOUNDATION, etc.)
+    
+    Note: Incrementa contatori interni eventi.
+    
+    Version: v1.5.0
+    """
 ```
-
-**Purpose**: Records scoring event for later calculation.
-
-**Parameters**:
-- `event_type` (ScoreEventType): Event type (STOCK_DRAW, CARD_TO_FOUNDATION, etc.)
-
-**Returns**: None
-
-**Side Effects**: Increments internal event counters
-
-**Example**:
-```python
-scoring.record_event(ScoreEventType.STOCK_DRAW)
-scoring.record_event(ScoreEventType.CARD_TO_FOUNDATION)
-```
-
-**Version**: Added in v1.5.0
 
 ---
 
@@ -484,28 +409,27 @@ GameSettings(
     score_warning_level: ScoreWarningLevel = ScoreWarningLevel.BALANCED,
     # ... other fields
 )
+    """Configurazione gioco immutabile.
+    
+    Key Fields:
+        difficulty: Preset difficoltà (impatta multiple settings)
+        draw_count: Carte pescate per stock draw (1 o 3)
+        timer_enabled: Se timer è attivo
+        timer_duration: Limite timer in secondi (0 = infinito)
+        score_warning_level: Verbosità TTS per soglie score
+    
+    Example:
+        >>> settings = GameSettings(
+        ...     difficulty=DifficultyLevel.EXPERT,
+        ...     draw_count=1,
+        ...     timer_enabled=True,
+        ...     timer_duration=1800  # 30 minuti
+        ... )
+        >>> engine = GameEngine(settings)
+    
+    Version: v1.0.0, Extended v2.4.0 (difficulty presets)
+    """
 ```
-
-**Key Fields**:
-- `difficulty` (DifficultyLevel): Preset difficulty (affects multiple settings)
-- `draw_count` (int): Cards drawn per stock draw (1 or 3)
-- `timer_enabled` (bool): Whether timer is active
-- `timer_duration` (int): Timer limit in seconds (0 = infinite)
-- `score_warning_level` (ScoreWarningLevel): TTS verbosity for score thresholds
-
-**Example**:
-```python
-settings = GameSettings(
-    difficulty=DifficultyLevel.EXPERT,
-    draw_count=1,
-    timer_enabled=True,
-    timer_duration=1800  # 30 minutes
-)
-
-engine = GameEngine(settings)
-```
-
-**Version**: Added in v1.0.0, Extended in v2.4.0 (difficulty presets)
 
 ---
 
@@ -524,12 +448,14 @@ GameplayController(
     formatter: CardFormatter,
     scoring: Scoring
 )
+    """Inizializza gameplay controller.
+    
+    Dependencies:
+        engine: Domain service per game logic
+        formatter: Formatta domain data per display
+        scoring: Traccia scoring events
+    """
 ```
-
-**Dependencies**:
-- `engine` (GameEngine): Domain service for game logic
-- `formatter` (CardFormatter): Formats domain data for display
-- `scoring` (Scoring): Tracks scoring events
 
 ---
 
@@ -537,32 +463,25 @@ GameplayController(
 
 ```python
 def handle_move_card(from_pile: str, to_pile: str) -> CommandResult:
+    """Processa richiesta move carta, esegue via domain, ritorna feedback formattato.
+    
+    Args:
+        from_pile: Source pile ID
+        to_pile: Target pile ID
+    
+    Returns:
+        CommandResult(success: bool, message: str, state_changed: bool)
+    
+    Example:
+        >>> result = controller.handle_move_card('waste', 'tableau_0')
+        >>> if result.success:
+        ...     speak(result.message)  # "7 di Coppe spostato su 8 di Picche"
+        >>> else:
+        ...     speak(result.message)  # "Mossa non valida: colore sbagliato"
+    
+    Version: v2.0.0
+    """
 ```
-
-**Purpose**: Processes card move request, executes via domain, returns formatted feedback.
-
-**Parameters**:
-- `from_pile` (str): Source pile ID
-- `to_pile` (str): Target pile ID
-
-**Returns**:
-- `CommandResult`: Object with:
-  - `success` (bool): If move succeeded
-  - `message` (str): TTS feedback message (Italian)
-  - `state_changed` (bool): If game state modified
-
-**Example**:
-```python
-controller = GameplayController(engine, formatter, scoring)
-result = controller.handle_move_card('waste', 'tableau_0')
-
-if result.success:
-    speak(result.message)  # "7 di Coppe spostato su 8 di Picche"
-else:
-    speak(result.message)  # "Mossa non valida: colore sbagliato"
-```
-
-**Version**: Added in v2.0.0
 
 ---
 
@@ -570,22 +489,18 @@ else:
 
 ```python
 def handle_draw_stock() -> CommandResult:
+    """Processa azione draw stock, annuncia carte pescate.
+    
+    Returns:
+        CommandResult con messaggio TTS formattato
+    
+    Example:
+        >>> result = controller.handle_draw_stock()
+        >>> speak(result.message)  # "Hai pescato: Asso di Cuori, 7 di Picche, Regina di Fiori"
+    
+    Version: v2.0.0
+    """
 ```
-
-**Purpose**: Processes stock draw action, announces cards drawn.
-
-**Parameters**: None
-
-**Returns**:
-- `CommandResult`: Object with formatted TTS message
-
-**Example**:
-```python
-result = controller.handle_draw_stock()
-speak(result.message)  # "Hai pescato: Asso di Cuori, 7 di Picche, Regina di Fiori"
-```
-
-**Version**: Added in v2.0.0
 
 ---
 
@@ -593,26 +508,17 @@ speak(result.message)  # "Hai pescato: Asso di Cuori, 7 di Picche, Regina di Fio
 
 ```python
 def new_game() -> None:
+    """Inizia nuova partita (reset engine, scoring, timer).
+    
+    Example:
+        >>> controller.new_game()
+        >>> speak("Nuova partita iniziata")
+    
+    Note: Side effects: chiama engine.new_game(), reset scoring counters, restart timer se enabled.
+    
+    Version: v2.0.0
+    """
 ```
-
-**Purpose**: Starts new game (resets engine, scoring, timer).
-
-**Parameters**: None
-
-**Returns**: None
-
-**Side Effects**:
-- Calls `engine.new_game()`
-- Resets scoring counters
-- Restarts timer if enabled
-
-**Example**:
-```python
-controller.new_game()
-speak("Nuova partita iniziata")
-```
-
-**Version**: Added in v2.0.0
 
 ---
 
@@ -625,10 +531,12 @@ speak("Nuova partita iniziata")
 **Constructor**:
 ```python
 OptionsController(settings: GameSettings)
+    """Inizializza options controller.
+    
+    Args:
+        settings: Current game settings
+    """
 ```
-
-**Parameters**:
-- `settings` (GameSettings): Current game settings
 
 ---
 
@@ -636,25 +544,20 @@ OptionsController(settings: GameSettings)
 
 ```python
 def cycle_difficulty() -> DifficultyLevel:
+    """Cicla a prossimo preset difficoltà (wrap around).
+    
+    Returns:
+        DifficultyLevel: Nuovo livello difficoltà
+    
+    Example:
+        >>> new_level = controller.cycle_difficulty()
+        >>> speak(f"Difficoltà: {new_level.name}")
+    
+    Note: Aggiorna settings interni, può lock/unlock opzioni.
+    
+    Version: v2.4.0
+    """
 ```
-
-**Purpose**: Cycles to next difficulty preset (wraps around).
-
-**Parameters**: None
-
-**Returns**:
-- `DifficultyLevel`: New difficulty level
-
-**Side Effects**: Updates internal settings, may lock/unlock options
-
-**Example**:
-```python
-controller = OptionsController(settings)
-new_level = controller.cycle_difficulty()
-speak(f"Difficoltà: {new_level.name}")
-```
-
-**Version**: Added in v2.4.0
 
 ---
 
@@ -662,22 +565,18 @@ speak(f"Difficoltà: {new_level.name}")
 
 ```python
 def modify_draw_count() -> int:
+    """Toggle draw count tra 1 e 3.
+    
+    Returns:
+        int: Nuovo draw count (1 o 3)
+    
+    Example:
+        >>> new_count = controller.modify_draw_count()
+        >>> speak(f"Pescate per turno: {new_count}")
+    
+    Version: v1.0.0
+    """
 ```
-
-**Purpose**: Toggles draw count between 1 and 3.
-
-**Parameters**: None
-
-**Returns**:
-- `int`: New draw count (1 or 3)
-
-**Example**:
-```python
-new_count = controller.modify_draw_count()
-speak(f"Pescate per turno: {new_count}")
-```
-
-**Version**: Added in v1.0.0
 
 ---
 
@@ -695,29 +594,23 @@ speak(f"Pescate per turno: {new_count}")
 
 ```python
 def format_card(card: Card) -> str:
+    """Formatta singola carta per annuncio TTS.
+    
+    Args:
+        card: Domain card entity
+    
+    Returns:
+        str: Descrizione italiana carta (es. "Asso di Cuori", "7 di Picche")
+    
+    Example:
+        >>> card = Card('A', 'hearts', face_up=True)
+        >>> print(formatter.format_card(card))  # "Asso di Cuori"
+    
+    Note: Localizzazione Italian only (attualmente).
+    
+    Version: v1.0.0
+    """
 ```
-
-**Purpose**: Formats single card for TTS announcement.
-
-**Parameters**:
-- `card` (Card): Domain card entity
-
-**Returns**:
-- `str`: Italian card description (e.g., `"Asso di Cuori"`, `"7 di Picche"`)
-
-**Localization**: Italian only (currently)
-
-**Example**:
-```python
-formatter = CardFormatter()
-card = Card('A', 'hearts', face_up=True)
-print(formatter.format_card(card))  # "Asso di Cuori"
-
-card2 = Card('K', 'spades')
-print(formatter.format_card(card2))  # "Re di Picche"
-```
-
-**Version**: Added in v1.0.0
 
 ---
 
@@ -725,27 +618,25 @@ print(formatter.format_card(card2))  # "Re di Picche"
 
 ```python
 def format_move_result(result: MoveResult, card: Card, target_pile: str) -> str:
+    """Formatta move result per TTS feedback.
+    
+    Args:
+        result: Move outcome da domain
+        card: Carta spostata
+        target_pile: Destination pile ID
+    
+    Returns:
+        str: Messaggio feedback italiano
+    
+    Example:
+        >>> result = MoveResult(success=True)
+        >>> card = Card('7', 'hearts')
+        >>> message = formatter.format_move_result(result, card, 'tableau_0')
+        # "7 di Cuori spostato su Tableau 1"
+    
+    Version: v2.0.0
+    """
 ```
-
-**Purpose**: Formats move result for TTS feedback.
-
-**Parameters**:
-- `result` (MoveResult): Move outcome from domain
-- `card` (Card): Card that was moved
-- `target_pile` (str): Destination pile ID
-
-**Returns**:
-- `str`: Italian feedback message
-
-**Example**:
-```python
-result = MoveResult(success=True)
-card = Card('7', 'hearts')
-message = formatter.format_move_result(result, card, 'tableau_0')
-# "7 di Cuori spostato su Tableau 1"
-```
-
-**Version**: Added in v2.0.0
 
 ---
 
@@ -761,23 +652,20 @@ message = formatter.format_move_result(result, card, 'tableau_0')
 
 ```python
 def format_score(score: int) -> str:
+    """Formatta punteggio per annuncio.
+    
+    Args:
+        score: Punteggio corrente
+    
+    Returns:
+        str: Stringa formattata (es. "Punteggio: 245 punti")
+    
+    Example:
+        >>> print(formatter.format_score(245))  # "Punteggio: 245 punti"
+    
+    Version: v1.5.0
+    """
 ```
-
-**Purpose**: Formats score value for announcement.
-
-**Parameters**:
-- `score` (int): Current score
-
-**Returns**:
-- `str`: Formatted score string (e.g., `"Punteggio: 245 punti"`)
-
-**Example**:
-```python
-formatter = ScoreFormatter()
-print(formatter.format_score(245))  # "Punteggio: 245 punti"
-```
-
-**Version**: Added in v1.5.0
 
 ---
 
@@ -796,7 +684,7 @@ class GameStatus(Enum):
 
 **Usage**: Returned by `GameEngine.get_status()`
 
-**Version**: Added in v1.0.0
+**Version**: v1.0.0
 
 ---
 
@@ -813,7 +701,7 @@ class DifficultyLevel(Enum):
 
 **Usage**: Set in `GameSettings.difficulty`
 
-**Version**: Added in v2.4.0
+**Version**: v2.4.0
 
 ---
 
@@ -829,7 +717,7 @@ class ScoreWarningLevel(Enum):
 
 **Usage**: Set in `GameSettings.score_warning_level`
 
-**Version**: Added in v2.6.0
+**Version**: v2.6.0
 
 ---
 
@@ -845,7 +733,7 @@ class ScoreEventType(Enum):
 
 **Usage**: Passed to `Scoring.record_event()`
 
-**Version**: Added in v1.5.0
+**Version**: v1.5.0
 
 ---
 
@@ -866,7 +754,7 @@ class MoveResult:
 
 **Usage**: Returned by `GameEngine.move_card()`
 
-**Version**: Added in v2.0.0
+**Version**: v2.0.0
 
 ---
 
@@ -885,7 +773,7 @@ class DrawResult:
 
 **Usage**: Returned by `GameEngine.draw_from_stock()`
 
-**Version**: Added in v2.0.0
+**Version**: v2.0.0
 
 ---
 
@@ -904,7 +792,7 @@ class GameState:
 
 **Usage**: Returned by `GameEngine.get_state()`
 
-**Version**: Added in v1.0.0
+**Version**: v1.0.0
 
 ---
 
@@ -925,7 +813,7 @@ class CommandResult:
 
 **Usage**: Returned by application controllers
 
-**Version**: Added in v2.0.0
+**Version**: v2.0.0
 
 ---
 
@@ -1148,38 +1036,14 @@ engine.move_card('tableau_2', 'foundation_hearts')
 
 ---
 
-## 🤝 Contributing to API
+## 🤝 Aggiornamento API.md
 
-### When to Update This Document
+**Aggiorna quando**: nuova public class, signature changed, breaking change, nuovo enum/dataclass.  
+**Non aggiornare per**: private methods, docstring typo, internal refactoring.
 
-**Update Required** (✅):
-- New public class added to domain/application layer
-- Public method signature changed (parameters, return type)
-- Method deprecated or removed
-- New enum/dataclass added to type reference
-- Breaking change in existing API
+**Workflow**: Code + tests → Aggiorna sezione metodo → Version History se breaking → Commit `docs(api): [change]`
 
-**Update NOT Required** (❌):
-- Private method added (prefixed with `_`)
-- Implementation detail changed (no API impact)
-- Docstring typo fixed in source code
-- Internal refactoring without signature change
-- UI event handler added (presentation layer internal)
-
-### How to Update
-
-1. **Make code changes first** (implementation + tests)
-2. **Identify impacted APIs** (what methods changed?)
-3. **Update relevant sections**:
-   - Method signature if changed
-   - Example if behavior changed
-   - Type reference if new types added
-4. **Add to Version History** if breaking change or major addition
-5. **Mark as deprecated** if replacing old API (don't remove immediately)
-6. **Update "Last Updated"** in document header
-7. **Commit message**: `docs(api): [what changed]`
-
-**Example Commit Message**:
+**Esempio commit**:
 ```
 docs(api): Add cycle_difficulty method to OptionsController
 
@@ -1188,127 +1052,34 @@ docs(api): Add cycle_difficulty method to OptionsController
 - Updated Example 3 with difficulty management
 ```
 
-### Review Checklist
-
-Before committing API.md updates:
-
-- [ ] All code examples compile and run
-- [ ] Method signatures match actual implementation
-- [ ] Return types accurate (check source code)
-- [ ] Examples use realistic scenarios
-- [ ] Type Reference includes all new enums/dataclasses
-- [ ] Deprecated APIs marked clearly with migration path
-- [ ] Version History updated if breaking change
-- [ ] No broken links to non-existent sections
-
 ---
 
 ## 📌 Template Metadata
 
-**Template Version**: v1.0  
+**Template Version**: v1.1 (ottimizzato -25.8%)  
 **Created**: 2026-02-16  
+**Last Updated**: 2026-02-22  
 **Maintainer**: AI Assistant + Nemex81  
 **Based On**: solitario-classico-accessibile project  
 **Philosophy**: "Lightweight & Focused" - Document only essential public APIs
 
 ---
 
-## 🎯 Instructions for Using This Template
+## 🎯 Uso Template
 
-### How to Use
+1. **Copia template**: `cp TEMPLATE_API.md API.md`
+2. **Sostituisci placeholder**: `[Project Name]`, version, etc.
+3. **Documenta 5-6 classi critiche**: Domain (core logic), Application (controllers), Type Reference (enums/dataclasses)
+4. **Aggiungi 3-4 esempi realistici** dalla codebase (copy-pasteable)
+5. **Aggiorna ad ogni MINOR version bump** (v2.5 → v2.6)
 
-1. **Copy template**: `cp TEMPLATE_API.md API.md`
-2. **Fill in project-specific info**: Replace `[Project Name]`, version, etc.
-3. **Document 5-6 critical classes first**:
-   - Domain: GameEngine, Card, Scoring (core logic)
-   - Application: Main controllers
-   - Presentation: Key formatters (if used by others)
-4. **Add real examples**: Copy actual code snippets from your project
-5. **Expand Type Reference**: Add all enums/dataclasses
-6. **Create Examples Gallery**: 3-4 realistic scenarios
-7. **Keep updated**: Review every MINOR version bump (v2.5 → v2.6)
+**Priorità Documentazione**:
+- **MUST**: Domain APIs, Type Reference, Common Patterns
+- **OPTIONAL**: Presentation APIs (solo se cross-layer), Deprecated APIs
 
-### Priority: What to Document
+Documenta solo public APIs chiamate da altri layer. Skip private methods (`_internal`), getters semplici, event handlers UI-specific.
 
-**🔴 HIGH Priority** (document fully):
-- Classes with >5 public methods
-- APIs called across layer boundaries
-- Complex business logic (non-obvious behavior)
-- Methods with side effects
-
-**🟡 MEDIUM Priority** (document briefly):
-- Simple getters/setters (if not self-explanatory)
-- Utility methods used by multiple components
-- Coordinators with straightforward orchestration
-
-**🟢 LOW Priority** (skip or minimal mention):
-- Private methods (`_internal`)
-- Property accessors for simple fields
-- UI event handlers (presentation layer internal)
-- Infrastructure helpers (framework-specific)
-
-### Sections Priority
-
-**MUST HAVE** (always):
-- Document Purpose
-- API Index
-- Domain Layer APIs (core 3-5 classes)
-- Type Reference (enums, dataclasses)
-- Common Patterns
-
-**SHOULD HAVE** (most projects):
-- Application Layer APIs (controllers)
-- Examples Gallery (3-4 scenarios)
-- Version History (major changes)
-
-**OPTIONAL** (nice to have):
-- Presentation Layer APIs (if used cross-layer)
-- Deprecated APIs section (if applicable)
-- Extensive version history (keep recent only)
-
-### Best Practices
-
-✅ **DO**:
-- Use real code examples from your project (copy-pasteable)
-- Keep examples short (3-7 lines, no boilerplate)
-- Explain non-obvious behavior in "⚠️ Note" sections
-- Link to source files when details needed
-- Include return types in signatures (type hints)
-- Show both success and error paths in examples
-
-❌ **DON'T**:
-- Don't document every method (only essential APIs)
-- Don't duplicate source code comments (link instead)
-- Don't include implementation details (how it works internally)
-- Don't use placeholder examples (`foo`, `bar` variables)
-- Don't let it get stale (update regularly)
-- Don't document private methods
-
-### Target Length
-
-**Good Range**: 500-800 lines (readable in 15-20 minutes)
-
-**Breakdown**:
-- Header + Index: ~50 lines
-- Domain APIs: ~300 lines (3-5 classes, key methods)
-- Application APIs: ~150 lines (2-3 controllers)
-- Type Reference: ~100 lines (all enums/dataclasses)
-- Examples: ~100 lines (3-4 scenarios)
-- Patterns + Footer: ~100 lines
-
-**Too Short** (<300): Missing essential APIs  
-**Too Long** (>1200): Over-documenting, dilutes focus
-
-### When API Documentation Is "Good Enough"
-
-API.md is sufficient when:
-
-- ✅ Developer can use any public API without reading source code
-- ✅ All domain/application layer public classes documented
-- ✅ Type Reference complete (all enums/dataclasses)
-- ✅ Examples show realistic usage patterns
-- ✅ Error handling patterns clear
-- ✅ No obvious gaps in critical APIs
+**Target**: 500-800 lines, readable in 15-20 minutes.
 
 ---
 
