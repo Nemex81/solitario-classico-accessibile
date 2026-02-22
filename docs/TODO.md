@@ -1,4 +1,3 @@
-```markdown
 📋 TODO – Fix Pre-Merge Branch → main (v3.3.0)
 Branch: sistema-log-categorizzati
 Tipo: FIX
@@ -149,4 +148,3 @@ L'implementazione è considerata completa quando:
 Snello, consultabile in 30 secondi, zero fronzoli.
 Il documento lungo (`PLAN_premerge_fixes_v3.3.0.md`) è la fonte di verità tecnica.
 Questo è il cruscotto operativo.
-```
