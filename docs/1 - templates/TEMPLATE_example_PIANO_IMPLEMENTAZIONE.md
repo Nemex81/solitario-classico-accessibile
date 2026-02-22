@@ -109,39 +109,18 @@ GameplayPanel.on_key_down()          (wxPython event)
 ### Layer Diagram
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     PRESENTATION LAYER                       │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │ [ComponentName]                                       │   │
-│  │ - metodo1()                                           │   │
-│  │ - metodo2()                                           │   │
-│  └──────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-                            ▲
-                            │
-┌─────────────────────────────────────────────────────────────┐
-│                    APPLICATION LAYER                         │
-│  ┌────────────────────────┐  ┌─────────────────────────┐    │
-│  │ [Controller]           │  │ [Controller]            │    │
-│  └────────────────────────┘  └─────────────────────────┘    │
-└─────────────────────────────────────────────────────────────┘
-                            ▲
-                            │
-┌─────────────────────────────────────────────────────────────┐
-│                      DOMAIN LAYER                            │
-│  ┌────────────────────────┐  ┌─────────────────────────┐    │
-│  │ [Models]               │  │ [Services]              │    │
-│  └────────────────────────┘  └─────────────────────────┘    │
-└─────────────────────────────────────────────────────────────┘
-                            ▲
-                            │
-┌─────────────────────────────────────────────────────────────┐
-│                  INFRASTRUCTURE LAYER                        │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │ [Storage/UI/External]                                 │   │
-│  └──────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
+PRESENTATION (UI, Dialogs, Formatters)
+       ↓
+APPLICATION (Controllers, Use Cases, Game Engine)
+       ↓
+DOMAIN (Models, Services, Business Rules)
+       ↓
+INFRASTRUCTURE (Storage, External Services, UI Framework)
 ```
+
+**Regole dipendenze**: Domain zero dipendenze esterne, Application dipende solo da Domain, Infrastructure implementa interfacce Domain.
+
+Vedi `docs/ARCHITECTURE.md` per diagramma dettagliato e regole layer.
 
 ### File Structure
 
@@ -317,27 +296,13 @@ def test_scenario_completo():
 
 ---
 
-## 🎓 Architectural Patterns Reference
+## 🎓 Architectural Patterns Reference (se applicabile)
 
 ### [Nome Pattern]
 
-**Quando Usare**: [Contesto applicabilità]
-
-**Pattern**:
-```python
-# Codice template pattern
-def pattern_template():
-    """Esempio implementazione pattern."""
-    pass
-```
-
-**Caratteristiche**:
-- [Caratteristica 1]
-- [Caratteristica 2]
-
-**Pro/Contro**:
-- ✅ Pro: [Vantaggio]
-- ⚠️ Contro: [Limitazione]
+**Quando Usare**: [contesto applicabilità]  
+**Descrizione**: [pattern in 2-3 righe o link docs]  
+**Pro/Contro**: [trade-off chiave]
 
 ---
 
@@ -529,7 +494,7 @@ Per domande o problemi durante l'implementazione:
 
 ---
 
-## 📊 Progress Tracking (opzionale)
+## 📊 Progress Tracking
 
 | Fase | Status | Commit | Data Completamento | Note |
 |------|--------|--------|-------------------|------|
@@ -543,84 +508,52 @@ Per domande o problemi durante l'implementazione:
 
 **Fine Template Piano Implementazione**
 
-**Template Version**: v1.0  
-**Ultima Modifica**: 2026-02-14  
+**Template Version**: v1.1 (ottimizzato -15.7%)  
+**Ultima Modifica**: 2026-02-22  
 **Autore**: AI Assistant + Nemex81  
 **Basato su**: 20+ piani completati nel progetto solitario-classico-accessibile  
 
 ---
 
-## 🎯 Istruzioni Uso Template
+## 🎯 Uso Template
 
-### Come Usare Questo Template
+### Quando Usare
 
-1. **Duplica file**: `cp TEMPLATE_PIANO_IMPLEMENTAZIONE.md PLAN_[FEATURE_NAME].md`
-2. **Rimuovi sezioni irrilevanti**:
-   - Feature: Rimuovi "Root Cause"
-   - Bugfix: Rimuovi "Architettura", enfatizza "Root Cause"
-   - Refactoring: Mantieni tutto, enfatizza "Testing Strategy"
-3. **Personalizza header**: Compila Executive Summary con valori reali
-4. **Espandi sezioni**: Aggiungi dettagli specifici per la tua implementazione
-5. **Mantieni struttura**: Non riordinare sezioni, mantieni coerenza
-6. **Usa emoji**: Mantieni emoji per leggibilità (🔴🟠🟡🟢✅❌⚠️)
+✅ Feature richiede >2 ore sviluppo  
+✅ Modifica tocca >3 file  
+✅ Introduce nuovo pattern architetturale  
+✅ Ha rischio regressione MEDIO/ALTO  
+✅ Richiede coordinamento multi-fase
 
-### Sezioni Obbligatorie (sempre)
+❌ NON serve per typo fix, doc-only updates, test singoli, rename variabili
+
+### Come Usare
+
+1. Duplica: `cp TEMPLATE_PIANO_IMPLEMENTAZIONE.md PLAN_[FEATURE_NAME].md`
+2. Rimuovi sezioni irrilevanti (Feature: rimuovi Root Cause; Bugfix: rimuovi Architettura)
+3. Compila Executive Summary con valori reali
+4. Espandi Piano Implementazione con fasi specifiche
+5. Mantieni struttura e emoji per accessibilità
+
+### Workflow
+
+DESIGN (concept) → PLAN (questo template, decisioni tecniche) → TODO (tracking operativo) → Implementazione per fasi → Test → Merge → CHANGELOG
+
+Usa PLAN per API, layer assignment, file structure, testing strategy. Dopo PLAN approvato (stato READY), crea TODO.md per tracking.
+
+### Sezioni Obbligatorie
 
 - Executive Summary
-- Piano di Implementazione (almeno 1 fase)
-- Testing Strategy (almeno unit tests)
+- Piano di Implementazione (≥1 fase)
+- Testing Strategy (≥unit tests)
 - Commit Strategy (conventional commits)
 
-### Sezioni Opzionali (usa se rilevanti)
+### Sezioni Opzionali
 
 - Root Cause (solo bugfix)
 - Architettura (solo feature/refactoring complessi)
-- Patterns Reference (solo se introduci nuovo pattern)
-- Progress Tracking (per piani multi-settimana)
-
-### Best Practices
-
-✅ **DO**:
-- Usa code blocks con syntax highlighting
-- Includi esempi concreti (non placeholder vaghi)
-- Specifica file:linee esatte per modifiche
-- Documenta rationale decisioni architetturali
-- Scrivi test PRIMA di implementare (TDD)
-- Commit atomici con message conventional commits
-
-❌ **DON'T**:
-- Non lasciare TODO vaghi ("implementare feature")
-- Non dimenticare testing strategy
-- Non assumere conoscenza implicita (spiega tutto)
-- Non mischiare feature diverse nello stesso piano
-- Non skippare documentazione docstring
-
-### Quando Creare Nuovo Piano
-
-**Crea piano se**:
-- Feature richiede >2 ore sviluppo
-- Modifica tocca >3 file
-- Introduce nuovo pattern architetturale
-- Ha rischio regressione MEDIO/ALTO
-- Richiede coordinamento multi-fase
-
-**Non serve piano se**:
-- Typo fix (<5 linee)
-- Aggiornamento documentazione solo
-- Aggiunta test singolo
-- Refactoring cosmetico (rename variabile)
-
-### Esempio Workflow Completo
-
-1. **Discussione iniziale** → Identifica problema/feature
-2. **Crea piano** → Usa questo template
-3. **Review piano** → Valida approccio (non implementazione)
-4. **Implementa fase 1** → Segui piano, commit atomico
-5. **Test fase 1** → Verifica success criteria
-6. **Ripeti 4-5** per fasi successive
-7. **Final review** → Test completo end-to-end
-8. **Merge branch** → Aggiorna piano → sposta in `completed - [NOME].md`
-9. **Update CHANGELOG** → Documenta versione release
+- Patterns Reference (solo se nuovo pattern)
+- Progress Tracking (backup stato implementazione)
 
 ---
 
