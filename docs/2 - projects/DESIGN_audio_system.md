@@ -12,7 +12,7 @@
 - **Stato**: FROZEN (pronto per PLAN)
 - **Versione Target**: v3.4.0 (ipotesi)
 - **Autore**: AI Assistant + Nemex81
-- **Ultima Revisione**: 2026-02-22 (v1.2 — allineato a PLAN v1.1: panning, DRY JSON, domande risolte)
+- **Ultima Revisione**: 2026-02-22 (v1.3 — disambiguazione 13 indici vs 14 posizioni, convenzione indexing Scenario 1, aggiunto Scenario 9 timer)
 
 ---
 
@@ -687,7 +687,7 @@ Una volta implementato, il giocatore non vedente potrà:
 
 ---
 
-**Document Version**: v1.2 (Allineato a PLAN v1.1 — constant-power panning, DRY JSON, domande aperte risolte, nome classe corretto)  
+**Document Version**: v1.3 (Chiarezza: 13 indici vs 14 posizioni, indexing convention Scenario 1, Scenario 9 timer)  
 **Data Freeze**: 2026-02-22  
 **Ultimo Aggiornamento**: 2026-02-22  
 **Autore**: AI Assistant + Nemex81  
