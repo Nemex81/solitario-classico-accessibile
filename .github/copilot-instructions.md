@@ -111,35 +111,43 @@ def check_pile(pile: Pile) -> bool:
 
 ---
 
-### Logging (Sistema Centralizzato)
+### Logging (Sistema Categorizzato v3.3.0)
 
-**MAI usare `print()` nel codice di produzione.** Usa esclusivamente `game_logger`:
+**MAI usare `print()` nel codice di produzione.** Usa i named logger dedicati per categoria:
 
 ```python
-from src.infrastructure.logging.game_logger import game_logger
+import logging
 
-# Livelli disponibili
-game_logger.info("operation_name", "Detailed message", extra_context={"key": "value"})
-game_logger.warning("edge_case", "Warning message")
-game_logger.error("failure_type", "Error details", exc_info=True)
-game_logger.debug("trace", "Debug info")  # Solo se verbose >= 2
+# Named logger per categoria — scegli quello corretto per contesto
+_game_logger  = logging.getLogger('game')   # lifecycle partita, mosse, stato
+_ui_logger    = logging.getLogger('ui')     # navigazione UI, dialogs, TTS
+_error_logger = logging.getLogger('error')  # errori, warnings, eccezioni
+_timer_logger = logging.getLogger('timer')  # lifecycle timer, scadenza, pausa
 ```
 
-**Semantic Helpers (usa questi):**
+**Routing dei file di output:**
+- `game`  → `logs/game_logic.log`
+- `ui`    → `logs/ui_events.log`
+- `error` → `logs/errors.log`
+- `timer` → `logs/timer.log`
+- root    → `logs/solitario.log` (library logs: wx, PIL, urllib3)
+
+**Regola propagate=False:** ogni named logger ha `propagate=False` — i messaggi
+NON finiscono su `solitario.log`. Questo è intenzionale. Non modificare mai
+questo comportamento senza aggiornare `categorized_logger.py`.
+
+**Usare i semantic helpers di `game_logger.py`:**
 ```python
-# State transitions
-game_logger.log_state_change("game_started", old_state, new_state)
-
-# Validations
-game_logger.log_validation_error("invalid_move", reason="Card not movable")
-
-# Performance
-game_logger.log_performance("deal_cards", duration_ms=15.3)
+from src.infrastructure.logging.game_logger import (
+    log_game_start, log_move, log_error, log_keyboard_command,
+    log_timer_started, log_timer_expired,
+)
 ```
 
 **Vietato:**
-- ❌ `print(f"Debug: {variable}")`  # Usa `game_logger.debug()`
-- ❌ Log decorativi con emoji/box ASCII  # Screen reader unfriendly
+- ❌ `print(f"Debug: {variable}")` → usa `logging.getLogger('game').debug()`
+- ❌ Log con emoji o box ASCII → screen reader unfriendly
+- ❌ `logging.getLogger()` (root logger) nel codice applicativo → usa named loggers
 - ❌ Log in Domain layer senza dependency injection
 
 ---
@@ -186,6 +194,29 @@ class VictoryDialog(wx.Dialog):
 ---
 
 ## 📚 Protocollo Allineamento Documentazione (Mandatorio)
+
+### Struttura Cartella `docs/`
+
+```
+docs/
+├── 1 - templates/          # Template riutilizzabili (PR body, design doc, TODO)
+├── 2 - projects/           # Design doc e piani pre-merge per feature attive
+│   ├── DESIGN_*.md         # Analisi architetturale di una feature
+│   └── PLAN_*.md           # Piano di implementazione/fix con checklist
+├── 3 - coding plans/       # Piani di coding dettagliati (step-by-step implementazione)
+├── API.md                  # Riferimento API pubblica di tutti i moduli
+├── ARCHITECTURE.md         # Architettura del sistema e data flow
+├── TESTING.md              # Guida testing e convenzioni
+└── TODO.md                 # Cruscotto operativo del branch attivo (stato: IN PROGRESS / DONE)
+```
+
+**Regole di posizionamento:**
+- Un nuovo design doc → `docs/2 - projects/DESIGN_<feature>.md`
+- Un piano di fix/implementazione → `docs/2 - projects/PLAN_<descrizione>_vX.Y.Z.md`
+- `docs/TODO.md` esiste solo durante un branch di lavoro attivo; è il cruscotto
+  operativo da spuntare durante l'implementazione. Va aggiornato dopo ogni commit.
+
+---
 
 ### Trigger Events (quando aggiornare docs)
 
@@ -357,6 +388,39 @@ class TestProfileService:
 
 ---
 
+### Marker Pytest e CI Strategy
+
+**Marker obbligatori — applicali sempre:**
+
+```python
+@pytest.mark.unit   # Test senza dipendenze esterne (no wx, no filesystem reale)
+@pytest.mark.gui    # Test che richiedono wx e display (Xvfb o Windows)
+```
+
+**Regole di assegnazione:**
+- Test che usano solo `tmp_path`, mock, o oggetti puri → `@pytest.mark.unit`
+- Test che istanziano `wx.App`, dialog, o frame → `@pytest.mark.gui`
+- Test di integrazione tra layer senza UI → `@pytest.mark.unit`
+
+**Comandi standard:**
+```bash
+# CI-safe (headless, niente display): smoke test obbligatorio pre-merge
+pytest -m "not gui" -v
+
+# Test completi (richiede display o Xvfb)
+pytest -v
+
+# Solo unit test di un modulo specifico (esempio)
+pytest tests/infrastructure/test_categorized_logger.py -v
+```
+
+**Isolamento test logging:** il modulo `logging` di Python è un singleton di
+processo. Qualsiasi test che chiama `setup_logging()` o `setup_categorized_logging()`
+**deve** avere una fixture `reset_logging` con cleanup pre+post yield. Vedi
+`tests/infrastructure/test_categorized_logger.py` come riferimento canonico.
+
+---
+
 ## 🔍 Pre-Commit Checklist (Auto-Eseguita)
 
 Prima di ogni commit, verifica silentemente:
@@ -392,6 +456,24 @@ Vuoi che fixo automaticamente o preferisci revisione manuale?
 
 ## 📝 Convenzioni Git Commit
 
+### Atomic Commits Policy
+
+**Un commit = una unità logica di cambiamento.** Regole operative:
+
+- ✅ Un commit per file modificato se le modifiche hanno motivazioni diverse
+- ✅ Un commit per task logico (es. "fix firma", "aggiunta test", "fix docstring")
+- ❌ No mega-commit che mescolano fix di codice + aggiornamenti docs + test
+- ❌ No commit "WIP" o "fix fix fix" su branch destinati alla PR
+
+**Ordine di commit consigliato** quando si lavora su un task con dipendenze:
+1. Pre-requisiti (es. aggiungere un parametro a una firma)
+2. Implementazione principale
+3. Test
+4. Aggiornamento documentazione (API.md, CHANGELOG.md)
+5. Aggiornamento cruscotto operativo (TODO.md)
+
+---
+
 **Format obbligatorio:**
 ```
 <type>(<scope>): <subject>
@@ -424,6 +506,51 @@ Refs: #42, docs/3 - coding plans/PLAN-docs-allineamento-v3.2.2.md
 
 ---
 
+## 🌿 Branch Workflow e Release Process
+
+### Naming branch
+
+| Tipo | Pattern | Esempio |
+|---|---|---|
+| Feature | `feature/<slug>` | `feature/timer-overtime` |
+| Fix | `fix/<slug>` | `fix/pile-count-crash` |
+| Hotfix | `hotfix/<slug>` | `hotfix/guest-profile-null` |
+| Refactor | `refactor/<slug>` | `refactor/clean-arch-domain` |
+| Docs | `docs/<slug>` | `docs/api-update-v3.3` |
+
+### Quando creare un branch vs committare su `main`
+
+- **Branch separato**: qualsiasi feature, fix non banale, refactor, o lavoro
+  che richiede più di 1 commit.
+- **Commit diretto su `main`**: solo hotfix monocommit urgenti o aggiornamenti
+  di documentazione pura (nessun `.py` modificato).
+
+### Release process (step obbligatori)
+
+1. Tutti i fix e i task del branch completati e verificati
+2. PR aperta verso `main` con body che linka design doc e piano (se esistono)
+3. Checklist PR spuntata (vedi template `docs/1 - templates/`)
+4. Merge con **merge commit** (`--no-ff`) — preserva storia del branch
+5. Subito dopo il merge, creare il tag di versione:
+   ```bash
+   git checkout main && git pull origin main
+   git tag vX.Y.Z
+   git push origin vX.Y.Z
+   ```
+6. Aggiornare footer `CHANGELOG.md`:
+   - Rinominare `## [Unreleased]` in `## [X.Y.Z] — YYYY-MM-DD`
+   - Aggiungere nuovo `## [Unreleased]` vuoto in cima
+   - Aggiornare i link di comparazione in fondo al file
+
+### Versionamento (SemVer)
+
+- `MAJOR` (X): breaking changes all'API pubblica
+- `MINOR` (Y): nuove feature retrocompatibili
+- `PATCH` (Z): bug fix retrocompatibili
+- `BUILD` (W) *(facoltativo)*: bugfix minori o aggiornamenti di documentazione pura (es. `v3.3.0.1`)
+
+---
+
 ## 🚨 Critical Warnings (Non Ignorare Mai)
 
 1. **Guest Profile Protection**: Il profilo `profile_000` (Ospite) è **intoccabile**:
@@ -437,7 +564,7 @@ Refs: #42, docs/3 - coding plans/PLAN-docs-allineamento-v3.2.2.md
    
 3. **Draw Count Duality**: Esistono **due contatori separati**:
    - `GameService.draw_count` = azioni di pescata (per stats)
-   - `ScoringService.stock_draw_count` = carte pescate (per penalità)
+   - `ScoringService.stock_draw_count` = carte pescate (per penaltà)
    
 4. **Pile.count() Bug**: Il metodo **NON ESISTE**. Usa sempre:
    - ✅ `pile.get_card_count()`
