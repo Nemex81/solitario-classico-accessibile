@@ -392,7 +392,7 @@ Prima di aprire la PR verso `main`, verificare nell'ordine:
 | Task 2 — Docstring versione | Editing manuale | 2 minuti |
 | Task 3 — Test logging | Scrittura codice | 20-30 minuti |
 | Verifica smoke test | Esecuzione pytest | 5 minuti |
-| **Totale** | | **~35-45 minuti** |
+| **Totale** | | **~15-25 minuti** |
 
 ---
 
