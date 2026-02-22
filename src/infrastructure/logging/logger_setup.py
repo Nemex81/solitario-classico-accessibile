@@ -15,6 +15,7 @@ Author:
 """
 
 import logging
+from pathlib import Path
 
 # Re-export per backward compatibility
 from .categorized_logger import (
@@ -24,7 +25,11 @@ from .categorized_logger import (
 )
 
 
-def setup_logging(level: int = logging.INFO, console_output: bool = False) -> None:
+def setup_logging(
+    level: int = logging.INFO,
+    console_output: bool = False,
+    logs_dir: Path = LOGS_DIR,
+) -> None:
     """
     Configura logging globale dell'applicazione.
 
@@ -34,15 +39,18 @@ def setup_logging(level: int = logging.INFO, console_output: bool = False) -> No
     Args:
         level:          Livello minimo (default: logging.INFO)
         console_output: Se True, log anche su console
+        logs_dir:       Directory log (default: LOGS_DIR = Path("logs"))
 
     Example:
         >>> setup_logging(level=logging.DEBUG, console_output=True)
+        >>> setup_logging(logs_dir=Path("/tmp/test_logs"))  # per i test
 
     Version:
         v2.3.0: Initial implementation
         v3.2.0: Thin wrapper → categorized_logger.py
+        v3.3.0: Added logs_dir param for testability
     """
-    setup_categorized_logging(level=level, console_output=console_output)
+    setup_categorized_logging(level=level, console_output=console_output, logs_dir=logs_dir)
 
 
 def get_logger(name: str) -> logging.Logger:
