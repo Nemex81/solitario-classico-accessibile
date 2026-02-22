@@ -501,93 +501,13 @@ project-root/
 
 ### Directory Responsibilities
 
-#### `src/domain/`
-
-**What Goes Here**:
-- Pure business logic
-- Entities (Card, Deck, Pile)
-- Domain services (GameEngine, Scoring)
-- Business rules (validation, calculations)
-- Domain events (if event-driven)
-
-**What Doesn't Go Here**:
-- ❌ UI code (wxPython, dialogs, panels)
-- ❌ Database/file I/O
-- ❌ External library imports (except stdlib)
-- ❌ User-facing strings (localization)
-
-**Naming Conventions**:
-- Files: `lowercase_with_underscores.py`
-- Classes: `PascalCase` (e.g., `GameEngine`)
-- Methods: `snake_case` (e.g., `move_card()`)
-
----
-
-#### `src/application/`
-
-**What Goes Here**:
-- Use case orchestration
-- Controllers (coordinate domain + presentation)
-- Application services (cross-cutting concerns)
-- Workflow management
-
-**What Doesn't Go Here**:
-- ❌ Business logic (belongs in domain)
-- ❌ UI rendering (belongs in presentation)
-- ❌ Framework-specific code (belongs in infrastructure)
-
-**Naming Conventions**:
-- Controllers: `*_controller.py`
-- Managers: `*_manager.py`
-
----
-
-#### `src/infrastructure/`
-
-**What Goes Here**:
-- Framework integrations (wxPython, pyttsx3)
-- Persistence (JSON, database adapters)
-- External APIs
-- All "replaceable" components
-
-**What Doesn't Go Here**:
-- ❌ Business logic
-- ❌ Domain entities
-
-**Naming Conventions**:
-- Prefix with framework: `wx_*`, `json_*`
-- Suffix with role: `*_provider.py`, `*_adapter.py`
-
----
-
-#### `src/presentation/`
-
-**What Goes Here**:
-- UI panels/views
-- Formatters (domain data → user-facing strings)
-- TTS message templates
-- Event handlers (delegate to application)
-
-**What Doesn't Go Here**:
-- ❌ Business logic
-- ❌ Direct domain manipulation
-
-**Naming Conventions**:
-- Panels: `*_panel.py`
-- Formatters: `*_formatter.py`
-
----
-
-#### `tests/`
-
-**What Goes Here**:
-- **unit/**: Tests for single components (domain, services)
-- **integration/**: Tests for component interactions
-- Fixtures, mocks, test utilities
-
-**Naming Conventions**:
-- Test files: `test_*.py` (pytest discovery)
-- Test functions: `test_*()` (pytest convention)
+| Directory | Goes Here | Doesn't Go Here | Naming |
+|-----------|-----------|-----------------|--------|
+| `src/domain/` | Business logic, entities, domain services, business rules | ❌ UI code, DB/file I/O, external lib imports (except stdlib), localized strings | `PascalCase` classes, `snake_case` methods |
+| `src/application/` | Use case orchestration, controllers, application services, workflow management | ❌ Business logic (in domain), UI rendering (in presentation), framework code (in infrastructure) | `*_controller.py`, `*_manager.py` |
+| `src/infrastructure/` | Framework integrations (wxPython, pyttsx3), persistence (JSON, DB), external APIs | ❌ Business logic, domain entities | Prefix framework: `wx_*`, `json_*`. Suffix role: `*_provider.py`, `*_adapter.py` |
+| `src/presentation/` | UI panels/views, formatters (domain → user strings), TTS templates, event handlers | ❌ Business logic, direct domain manipulation | `*_panel.py`, `*_formatter.py` |
+| `tests/` | **unit/**: Single component tests (domain, services). **integration/**: Multi-component tests. Fixtures, mocks. | N/A | `test_*.py` files, `test_*()` functions (pytest) |
 
 ---
 
@@ -920,33 +840,14 @@ dialog_manager.show_yes_no_async(message, callback)
 
 ---
 
-## 🤝 Contributing to Architecture
+## 🤝 Aggiornamento ARCHITECTURE.md
 
-### When to Update This Document
+**Aggiorna quando**: nuovo layer, nuovo pattern architetturale, dependency rules changed, major refactoring (>10 file), directory reorganization.  
+**Non aggiornare per**: singolo file added, bug fix, doc typo, test additions (a meno che nuova testing strategy).
 
-**Update Required**:
-- ✅ New layer added to system
-- ✅ New architectural pattern introduced
-- ✅ Dependency rules changed
-- ✅ Major refactoring completed (>10 files)
-- ✅ Directory structure reorganized
-- ✅ Tech stack component added/removed
+**Workflow**: Code changes → Aggiorna sezioni rilevanti → Update "Last Major Update" se significativo → Review consistency (diagrammi match reality) → Commit `docs(architecture): [change]`
 
-**Update NOT Required**:
-- ❌ Single file added to existing directory
-- ❌ Bug fix without architectural impact
-- ❌ Documentation typo fixes
-- ❌ Test additions (unless new testing strategy)
-
-### How to Update
-
-1. **Make code changes first** (implementation)
-2. **Update relevant section(s)** in this document
-3. **Update "Last Major Update"** in header (if significant)
-4. **Review for consistency** (diagrams match reality)
-5. **Commit with message**: `docs(architecture): [what changed]`
-
-**Example Commit Message**:
+**Esempio commit**:
 ```
 docs(architecture): Add deferred UI transition pattern
 
@@ -955,87 +856,32 @@ docs(architecture): Add deferred UI transition pattern
 - Added rationale for CallAfter() usage
 ```
 
-### Review Checklist
-
-Before committing ARCHITECTURE.md updates:
-
-- [ ] All code examples compile/run
-- [ ] Directory tree matches actual structure
-- [ ] Dependency diagram reflects current reality
-- [ ] No broken links to other docs
-- [ ] New patterns have rationale section
-- [ ] Deprecated patterns marked clearly
-
 ---
 
 ## 📌 Template Metadata
 
-**Template Version**: v1.0  
+**Template Version**: v1.1 (ottimizzato -12.6%)  
 **Created**: 2026-02-16  
+**Last Updated**: 2026-02-22  
 **Maintainer**: AI Assistant + Nemex81  
 **Based On**: solitario-classico-accessibile project architecture  
 **Philosophy**: Living document, evolves with codebase
 
 ---
 
-## 🎯 Instructions for Using This Template
+## 🎯 Uso Template
 
-### How to Use
+1. **Copia**: `cp TEMPLATE_ARCHITECTURE.md ARCHITECTURE.md`
+2. **Sostituisci placeholder**: `[Project Name]`, tech stack, layer details
+3. **Rimuovi sezioni irrilevanti**: No ADRs? Rimuovi Decision Records. No accessibility core? Rimuovi Accessibility Architecture.
+4. **Mantieni aggiornato**: Living document, evolve con codebase
 
-1. **Copy template**: `cp TEMPLATE_ARCHITECTURE.md ARCHITECTURE.md`
-2. **Fill in bracketed sections**: Replace `[Project Name]`, `[Language]`, etc.
-3. **Remove irrelevant sections**: 
-   - No event system? Remove that section
-   - Simple error handling? Simplify that section
-   - No ADRs? Remove Decision Records section
-4. **Expand with project-specific content**: Add diagrams, examples, patterns
-5. **Keep updated**: This is a living document, update as architecture evolves
+**Sezioni MUST**: System Overview, Layer Architecture, Dependency Rules, Directory Structure  
+**Sezioni OPTIONAL**: Accessibility (solo se core requirement), ADRs (solo se formal decisions), Event System (solo se event-driven)
 
-### Sections Priority
+Usa esempi codice reali dalla codebase, diagrammi ASCII semplici (non complex images), spiega WHY decisioni prese (rationale). Aggiorna quando architettura cambia: nuovo layer, dependency rules changed, major refactoring (>10 file).
 
-**MUST HAVE** (always):
-- System Overview
-- Layer Architecture
-- Dependency Rules
-- Directory Structure
-
-**SHOULD HAVE** (most projects):
-- Key Patterns
-- Data Flow
-- Testing Strategy
-
-**OPTIONAL** (project-specific):
-- Accessibility Architecture (only if core requirement)
-- Decision Records (only if formal ADRs needed)
-- Event System (only if event-driven)
-- Performance Considerations (only if critical)
-
-### Best Practices
-
-✅ **DO**:
-- Use real code examples from your project
-- Keep diagrams simple (ASCII art, not complex images)
-- Explain WHY decisions were made (rationale)
-- Update when architecture changes
-- Link to actual source files
-- Include anti-patterns (what NOT to do)
-
-❌ **DON'T**:
-- Don't duplicate API documentation (link to API.md)
-- Don't include implementation tutorials (README.md)
-- Don't let it get stale (update regularly)
-- Don't over-engineer if project is simple
-- Don't use placeholder text ("TODO: fill this")
-
-### When Architecture Is "Done"
-
-Architecture documentation is NEVER done (living document), but it's "good enough" when:
-
-- ✅ New developer can understand system in 30 minutes
-- ✅ All major patterns documented with examples
-- ✅ Dependency rules clear and enforced
-- ✅ Directory structure matches reality
-- ✅ No obvious gaps in explanations
+**Good enough quando**: New developer capisce sistema in 30 min, major patterns documentati con esempi, dependency rules chiare, directory structure matches reality.
 
 ---
 
