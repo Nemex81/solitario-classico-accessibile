@@ -1744,7 +1744,129 @@ for session in orphaned:
 
 ---
 
-## 🔒 Type Hints
+## � Infrastructure Logging
+
+**Modulo**: `src/infrastructure/logging/`  
+**Versione**: v3.2.0 (sistema categorizzato Paradox-style)
+
+### Setup
+
+#### `setup_logging(level: int = logging.INFO, console_output: bool = False) -> None`
+
+Configura il logging globale dell'applicazione. Thin wrapper backward-compatible
+su `setup_categorized_logging()`. Chiamata da `acs_wx.py` all'avvio.
+
+**Parametri:**
+- `level`: Livello minimo (`logging.DEBUG`, `logging.INFO`, ecc.) — default `INFO`
+- `console_output`: Se `True`, log anche su console (utile in sviluppo)
+
+**Importazione:**
+```python
+from src.infrastructure.logging import setup_logging
+setup_logging(level=logging.INFO, console_output=False)
+```
+
+---
+
+#### `setup_categorized_logging(logs_dir: Path = Path("logs"), level: int = logging.INFO, console_output: bool = False) -> None`
+
+Implementazione reale del sistema di logging. Crea un `RotatingFileHandler`
+dedicato per ogni categoria (5 MB, 3 backup, UTF-8), con `propagate=False`
+per evitare duplicazione. Il root logger mantiene `solitario.log` per le
+librerie esterne (`wx`, `PIL`, `urllib3`).
+
+**Parametri:**
+- `logs_dir`: Directory di destinazione (default: `Path("logs")`)
+- `level`: Livello minimo
+- `console_output`: Se `True`, aggiunge handler console
+
+**Categorie attive → file prodotti:**
+
+| Categoria | File | Contenuto |
+|-----------|------|-----------|
+| `game`    | `logs/game_logic.log`  | Lifecycle partita, mosse, settings |
+| `ui`      | `logs/ui_events.log`   | Navigazione UI, dialogs, TTS, keyboard |
+| `error`   | `logs/errors.log`      | Errori, warnings, eccezioni |
+| `timer`   | `logs/timer.log`       | Avvio/scadenza/pausa timer |
+| *(root)*  | `logs/solitario.log`   | Library logs (wx, PIL, urllib3) |
+
+**Importazione:**
+```python
+from src.infrastructure.logging import setup_categorized_logging
+setup_categorized_logging(level=logging.DEBUG, console_output=True)
+```
+
+---
+
+### Helper Semantici (`game_logger`)
+
+Usare sempre gli helper semantici invece dei logger diretti.
+
+```python
+from src.infrastructure.logging import game_logger as log
+```
+
+#### Categoria `game` → `game_logic.log`
+
+| Funzione | Livello | Descrizione |
+|----------|---------|-------------|
+| `log.game_started(deck_type, difficulty, timer_enabled)` | INFO | Inizio partita |
+| `log.game_won(elapsed_time, moves_count, score)` | INFO | Vittoria |
+| `log.game_abandoned(elapsed_time, moves_count)` | INFO | Abbandono |
+| `log.card_moved(from_pile, to_pile, card, success)` | INFO/WARNING | Mossa carta |
+| `log.cards_drawn(count)` | DEBUG | Pesca da mazzo |
+| `log.waste_recycled(recycle_count)` | INFO | Riciclo scarti |
+| `log.invalid_action(action, reason)` | WARNING | Azione non valida |
+| `log.settings_changed(name, old_value, new_value)` | INFO | Cambio impostazione |
+| `log.cursor_moved(from_pos, to_pos)` | DEBUG | Spostamento cursore |
+| `log.pile_jumped(from_pile, to_pile)` | DEBUG | Salto diretto pila |
+| `log.info_query_requested(query_type, context)` | INFO | Query informativa |
+
+#### Categoria `ui` → `ui_events.log`
+
+| Funzione | Livello | Descrizione |
+|----------|---------|-------------|
+| `log.panel_switched(from_panel, to_panel)` | INFO | Cambio panel |
+| `log.dialog_shown(dialog_type, title)` | DEBUG | Apertura dialog |
+| `log.dialog_closed(dialog_type, result)` | DEBUG | Chiusura dialog |
+| `log.keyboard_command(command, context)` | DEBUG | Comando tastiera |
+| `log.tts_spoken(message, interrupt)` | DEBUG | Vocalizzo TTS |
+
+#### Categoria `error` → `errors.log`
+
+| Funzione | Livello | Descrizione |
+|----------|---------|-------------|
+| `log.error_occurred(error_type, details, exception)` | ERROR | Errore con traceback |
+| `log.warning_issued(warning_type, message)` | WARNING | Warning gestito |
+
+#### Categoria `timer` → `timer.log`
+
+| Funzione | Livello | Descrizione |
+|----------|---------|-------------|
+| `log.timer_started(duration)` | INFO | Avvio timer |
+| `log.timer_expired()` | WARNING | Scadenza timer |
+| `log.timer_paused(remaining)` | DEBUG | Pausa timer |
+
+**Esempio completo:**
+```python
+from src.infrastructure.logging import game_logger as log
+
+# Fine partita con vittoria
+log.game_won(elapsed_time=120, moves_count=45, score=850)
+# → logs/game_logic.log: 2026-02-21 14:30:15 [INFO] Game WON - Time: 120s, Moves: 45, Score: 850
+
+# Errore con eccezione
+try:
+    load_profile()
+except IOError as e:
+    log.error_occurred("FileIO", "Profile corrupted", e)
+# → logs/errors.log: 2026-02-21 14:30:16 [ERROR] ERROR [FileIO]: Profile corrupted
+#                     Traceback (most recent call last): ...
+```
+
+---
+
+## �🔒 Type Hints
 
 Tutti i metodi pubblici sono completamente tipizzati. Per verificare:
 
@@ -1763,9 +1885,9 @@ Per dettagli architetturali:
 
 ---
 
-*Document Version: 3.1.3 (Revision 3)*  
-*Last Updated: 2026-02-20 16:20 CET*  
-*Revision Notes: Fixed ProfileService and StatsFormatter signatures to match implementation (audit compliance)*
+*Document Version: 3.2.0*  
+*Last Updated: 2026-02-22*  
+*Revision Notes: Added Infrastructure Logging section (setup_categorized_logging, game_logger helpers)*
 
 **Changelog v3.1.3:**
 - 🔴 CRITICAL: Fixed `format_timer_stats_detailed()` signature (added missing `global_stats` 
