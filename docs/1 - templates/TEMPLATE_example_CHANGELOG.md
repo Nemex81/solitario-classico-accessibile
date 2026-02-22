@@ -53,98 +53,24 @@ Group changes under these standard categories (use only relevant ones):
 
 ### ✏️ Writing Rules
 
-#### ✅ DO
+| DO ✅ | DON'T ❌ |
+|-------|----------|
+| **One line per change** (max 2 for breaking) | **No paragraphs/essays** (move to docs) |
+| **User perspective** (what changed for user) | **No implementation details** ("refactored to use X pattern") |
+| **Action verbs** (Added, Fixed, Improved, Changed, Removed) | **No vague descriptions** ("various improvements", "bug fixes") |
+| **Include impact/benefit** ("reduced startup by 40%") | **No technical jargon** ("fixed race condition in async dispatcher") |
+| **Mark breaking**: `**BREAKING**: renamed X → Y` | **No commit duplication** (verbose git format with WIP/closes) |
+| **Link references**: (#234), (commit abc), (see docs/X.md) | **No tiny changes** (typo in comment, copyright year, code format) |
 
-**1. One line per change** (max 2 for complex breaking changes)
+**Examples**:
 ```markdown
-### Added
-- Score warning system with 4 verbosity levels.
-- TTS announcements for score milestones (100, 200, 300+ points).
-```
-
-**2. User perspective** (what changes for the user)
-```markdown
-✅ Fixed crash when rapidly switching between menu and gameplay.
-❌ Fixed null pointer exception in GameEngine.java:234.
-     ^ Too technical, what did user experience?
-```
-
-**3. Start with action verb** (Added, Fixed, Improved, Changed, Removed)
-```markdown
-✅ Added undo/redo system with Ctrl+Z/Ctrl+Y hotkeys.
-✅ Fixed timer not resetting between games.
-✅ Improved keyboard navigation focus management.
-```
-
-**4. Include impact/benefit** (why it matters)
-```markdown
+✅ Added score warning system with 4 verbosity levels.
+✅ Fixed crash when rapidly switching panels. (#234)
 ✅ Improved TTS clarity for better screen reader compatibility.
-✅ Reduced game startup time by 40%.
-```
 
-**5. Mark breaking changes clearly**
-```markdown
-### Changed
-- **BREAKING**: Renamed `move()` → `move_card()` for API clarity.
-- **BREAKING**: Minimum Python version now 3.10 (was 3.8).
-```
-
-**6. Link to references** (optional but recommended)
-```markdown
-- Added score warning system. (#234)
-- Fixed memory leak in timer. (see commit abc1234)
-- Improved performance. (see docs/PERFORMANCE.md)
-```
-
----
-
-#### ❌ DON'T
-
-**1. Don't include implementation details**
-```markdown
-❌ Refactored GameEngine to use state machine pattern.
-   ^ Internal detail, user doesn't care HOW
-✅ Improved game state reliability and reduced crashes.
-   ^ User-facing benefit
-```
-
-**2. Don't use technical jargon**
-```markdown
-❌ Fixed race condition in asynchronous event dispatcher.
-✅ Fixed rare crash when multiple actions triggered simultaneously.
-```
-
-**3. Don't write paragraphs**
-```markdown
-❌ We have implemented a new sophisticated scoring system 
-   that takes into account multiple factors including...
-   [3 more paragraphs]
-   
-✅ Added scoring system based on moves, time, and penalties.
-```
-
-**4. Don't duplicate commit messages verbatim**
-```markdown
-❌ fix: resolve issue where focus was lost on panel transition
-   when user pressed ESC during modal dialog [WIP] (closes #123)
-   
-✅ Fixed focus loss when canceling dialogs. (#123)
-```
-
-**5. Don't include every tiny change**
-```markdown
-❌ Fixed typo in comment
-❌ Updated copyright year
-❌ Reformatted code with Black
-   ^ Skip these, not user-facing
-```
-
-**6. Don't use vague descriptions**
-```markdown
-❌ Various improvements
-❌ Bug fixes
-❌ Updated stuff
-   ^ Too vague, be specific
+❌ Refactored GameEngine to use state machine pattern. (internal detail)
+❌ Fixed null pointer exception in GameEngine.java:234. (what did user see?)
+❌ Various improvements. (too vague)
 ```
 
 ---
@@ -182,11 +108,7 @@ Group changes under these standard categories (use only relevant ones):
 - Fixed score calculation edge case when rapidly moving multiple cards.
 ```
 
-**Why good**:
-- Scannable in 10 seconds
-- User-facing changes only
-- Clear categories
-- Benefit implicit ("TTS clarity")
+**Why good**: Scannable in 10 seconds, user-facing only, clear categories, benefit implicit.
 
 ---
 
@@ -199,24 +121,11 @@ Group changes under these standard categories (use only relevant ones):
 
 #### Score Warning System
 We have implemented a comprehensive score warning system that allows
-users to configure the verbosity of TTS announcements related to score
-milestones. The system includes four distinct levels:
-
-1. **Disabled**: No warnings (for experienced players)
-2. **Minimal**: Only critical thresholds (100, 300, 500)
-3. **Balanced**: Standard milestones every 100 points (default)
-4. **Complete**: All warnings plus pre-warnings at 90% threshold
-
-This feature was designed to improve accessibility for players who
-rely on audio feedback while avoiding information overload...
-[continues for 3 more paragraphs]
+users to configure the verbosity of TTS announcements...
+[continues for 3 more paragraphs with implementation details]
 ```
 
-**Why bad**:
-- Too long (essay format)
-- Implementation details
-- Hard to scan quickly
-- Belongs in docs/feature-guide
+**Why bad**: Essay format, too long, implementation details, hard to scan. Belongs in docs/feature-guide.
 
 ---
 
@@ -459,36 +368,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## ⚖️ Detailed vs Concise: Two-File Strategy
 
-### Recommended Approach
+**Recommended**: Maintain two separate changelogs:
 
-Maintain **two separate changelogs**:
+**1. `CHANGELOG.md` (Root)**: Concise, user-facing (1 line/change, user perspective, scannable in 2-3 min, public-facing)
 
-**1. `CHANGELOG.md` (Root)**: Concise, user-facing
-- 1 line per change
-- User perspective
-- Scannable in 2-3 minutes
-- Public-facing (GitHub, releases)
+**2. `docs/DETAILED_CHANGELOG.md` (Optional)**: Verbose, technical (implementation details, rationale, metrics, internal reference)
 
-**2. `docs/DETAILED_CHANGELOG.md` (Optional)**: Verbose, technical
-- Implementation details
-- Technical rationale
-- Performance metrics
-- Internal reference
+**Link**: `## [2.6.0] - 2025-02-05` **[See detailed notes](docs/DETAILED_CHANGELOG.md#260)**
 
-**Link between them**:
-```markdown
-## [2.6.0] - 2025-02-05
-**[See detailed technical notes](docs/DETAILED_CHANGELOG.md#260)**
-
-### Added
-- Score warning system with 4 levels.
-```
-
-**Benefits**:
-- ✅ Best of both worlds
-- ✅ Professional public changelog
-- ✅ Detailed archive for maintainers
-- ✅ No information loss
+**Benefits**: Professional public changelog + detailed archive for maintainers, no information loss.
 
 ---
 
@@ -592,42 +480,26 @@ Ask yourself:
 
 ## 📌 Template Metadata
 
-**Template Version**: v1.0  
+**Template Version**: v1.1 (ottimizzato -19.5%)  
 **Created**: 2026-02-16  
+**Last Updated**: 2026-02-22  
 **Standard**: Keep a Changelog v1.0.0  
 **Maintainer**: AI Assistant + Nemex81  
 **Philosophy**: "Concise, scannable, user-focused. Details in commits."
 
 ---
 
-## 🎯 How to Use This Template
+## 🎯 Uso Template
 
-### Quick Start
+1. **Copia struttura** da § Template Structure
+2. **Aggiungi versioni** (più recente in alto)
+3. **Regola 1-line-per-change**, BREAKING prefix per breaking changes
+4. **Aggiungi comparison links** in fondo
+5. **Review**: User può scannare in <5 min? Se no, taglia.
 
-1. **Copy structure** from "Template Structure" section above
-2. **Add your versions** starting with most recent
-3. **Follow 1-line-per-change rule**
-4. **Mark breaking changes** with BREAKING prefix
-5. **Add links** at bottom for version comparisons
-6. **Review**: Can user scan in <5 min? If no, trim.
+**Workflow**: Aggiorna [Unreleased] ad ogni merge user-facing → On release: muovi a versioned section + aggiungi comparison links → Commit `docs(changelog): Release vX.Y.Z`
 
-### Maintenance
-
-- **Update [Unreleased]** with each user-facing change
-- **Release**: Move Unreleased to versioned section
-- **Review quarterly**: Ensure consistency, trim if too long
-
-### Quality Check
-
-Before committing CHANGELOG update:
-
-- [ ] All entries 1-2 lines (no paragraphs)
-- [ ] User perspective (no implementation details)
-- [ ] Breaking changes marked clearly
-- [ ] Categories in standard order (Added, Changed, Deprecated, Removed, Fixed, Security)
-- [ ] Version follows SemVer
-- [ ] Date in ISO format (YYYY-MM-DD)
-- [ ] Links to tags/releases added at bottom
+**Quality check**: Entries 1-2 righe ✓ User perspective ✓ Breaking marked ✓ Categorie ordinate (Added/Changed/Deprecated/Removed/Fixed/Security) ✓ SemVer ✓ Date ISO ✓ Links ✓
 
 ---
 
