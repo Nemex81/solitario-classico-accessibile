@@ -21,6 +21,52 @@ Sono emerse 3 segnalazioni da risolvere prima del merge su `main`:
 | 1 | 🔴 BLOCCANTE | `CHANGELOG.md` | Conflitto di merge non risolto (marker Git presenti) |
 | 2 | 🟡 Minore | `categorized_logger.py` | Docstring versione non allineata (v3.2.0 → v3.3.0) |
 | 3 | 🟠 Quality | `tests/infrastructure/` | Nessun test per il nuovo modulo logging |
+| 4 | 🔴 BLOCCANTE per Test 3 | `logger_setup.py` | `setup_logging()` non accetta `logs_dir`: il Test 4 fallisce senza questa modifica |
+
+---
+
+## Sommario Operativo — Checklist Pre-Merge
+
+Usare questa sezione come cruscotto durante l'implementazione. Spuntare ogni item non appena completato.
+
+### Task 1 — Risoluzione conflitto CHANGELOG.md (🔴 BLOCCANTE)
+
+- [ ] Rimuovere i marker di conflitto (`<<<`, `===`, `>>>`) dalla sezione `[Unreleased]`
+- [ ] Mantenere il blocco HEAD (versione più dettagliata)
+- [ ] Rimuovere il testo `` (`v3.2.0` infrastruttura) `` dal bullet logging nel blocco HEAD *(vedi Operazione 1b)*
+- [ ] Aggiornare link footer al momento del merge: aggiungere `[3.3.0]`, modificare `[Unreleased]`
+- [ ] Verificare pulizia con `grep -n "^<<<\|^===\|^>>>" CHANGELOG.md` → 0 risultati
+- [ ] Commit: `fix: resolve merge conflict in CHANGELOG.md [Unreleased] section`
+
+### Task 2 — Docstring versione `categorized_logger.py` (🟡 MINORE)
+
+- [ ] Sostituire `v3.2.0` → `v3.3.0` nel docstring del modulo (riga ~32)
+- [ ] Sostituire `v3.2.0` → `v3.3.0` nel docstring di `setup_categorized_logging()` (riga ~88)
+- [ ] Commit: `docs: align version strings in categorized_logger.py to v3.3.0`
+
+### Pre-requisito Task 3 — Firma `setup_logging()` (🔴 BLOCCANTE per i test)
+
+- [ ] Aggiungere `logs_dir: Path = LOGS_DIR` alla firma di `setup_logging()` in `logger_setup.py`
+- [ ] Propagare `logs_dir` nella chiamata interna a `setup_categorized_logging()`
+- [ ] Commit: `fix(infrastructure): add logs_dir param to setup_logging() wrapper for testability`
+
+### Task 3 — Test unitari logging categorizzato (🟠 QUALITY)
+
+- [ ] Creare `tests/infrastructure/test_categorized_logger.py`
+- [ ] Fixture `reset_logging` con cleanup sia prima che dopo ogni test
+- [ ] `test_setup_creates_log_files_for_all_categories` presente e verde
+- [ ] `test_setup_idempotent_no_duplicate_handlers` presente e verde
+- [ ] `test_setup_sets_propagate_false_on_all_category_loggers` presente e verde
+- [ ] `test_setup_logging_wrapper_creates_same_files` presente e verde
+- [ ] `test_setup_suppresses_external_library_loggers` presente e verde
+- [ ] `pytest tests/infrastructure/test_categorized_logger.py -v` → 5 passed
+- [ ] Smoke test: `pytest -m "not gui"` senza regressioni
+- [ ] Commit: `test: add unit tests for categorized logging system (5 tests, CI-safe)`
+
+### PR finale
+
+- [ ] PR title: `feat: sistema logging categorizzato v3.3.0 (#XX)`
+- [ ] PR body: linkare `PLAN_premerge_fixes_v3.3.0.md` e `DESIGN_categorized_logging.md`
 
 ---
 
@@ -78,6 +124,20 @@ La sezione `[Unreleased]` corretta deve risultare così dopo la pulizia:
   `timer_started`, `timer_expired`, `timer_paused` ora loggano su `timer.log`;
   `keyboard_command` ora logga su `ui_events.log` (fix incongruenza precedente: usava
   `_game_logger`).
+```
+
+**Operazione 1b — Rimozione riferimento di versione fuorviante nel body:**
+
+Nel bullet `- **Logging**: ...` conservato dal blocco HEAD, il testo riporta `` (`v3.2.0` infrastruttura) ``.
+Questo riferimento è incoerente con il Task 2 che allinea i docstring a `v3.3.0` e non aggiunge
+informazione utile al lettore del CHANGELOG. Rimuovere l'inciso:
+
+```markdown
+# PRIMA (primo bullet della sezione ### Added)
+- **Logging**: Sistema logging multi-file categorizzato Paradox-style (`v3.2.0` infrastruttura). ...
+
+# DOPO
+- **Logging**: Sistema logging multi-file categorizzato Paradox-style. ...
 ```
 
 **Operazione 2 — Aggiornamento link in fondo al file:**
@@ -180,6 +240,41 @@ Il CHANGELOG afferma che "API pubblica (`setup_logging()`) completamente invaria
 
 In caso di refactor futuro o aggiunta di categorie, non c'è rete di sicurezza.
 
+### Pre-requisito — Aggiornamento firma `setup_logging()` in `logger_setup.py`
+
+Il **Test 4** (`test_setup_logging_wrapper_creates_same_files`) invoca `setup_logging(logs_dir=tmp_path)`,
+ma la firma attuale in `src/infrastructure/logging/logger_setup.py` è:
+
+```python
+def setup_logging(level: int = logging.INFO, console_output: bool = False) -> None:
+```
+
+Il parametro `logs_dir` **non è presente**: il test fallirebbe con `TypeError` senza questa modifica.
+Applicare prima di creare il file di test:
+
+```python
+# PRIMA
+def setup_logging(level: int = logging.INFO, console_output: bool = False) -> None:
+    setup_categorized_logging(level=level, console_output=console_output)
+
+# DOPO
+def setup_logging(
+    level: int = logging.INFO,
+    console_output: bool = False,
+    logs_dir: Path = LOGS_DIR,
+) -> None:
+    setup_categorized_logging(level=level, console_output=console_output, logs_dir=logs_dir)
+```
+
+> **Nota**: `Path` e `LOGS_DIR` sono già disponibili tramite il re-export esistente
+> `from .categorized_logger import setup_categorized_logging, LOGS_DIR, LOG_FILE`.
+> Aggiungere `from pathlib import Path` solo se risultasse non disponibile nel namespace.
+
+**Commit dedicato:**
+```
+fix(infrastructure): add logs_dir param to setup_logging() wrapper for testability
+```
+
 ### Soluzione
 
 **File da creare:** `tests/infrastructure/test_categorized_logger.py`
@@ -220,21 +315,26 @@ from src.infrastructure.logging.logger_setup import setup_logging
 def reset_logging():
     """
     Rimuove i handler aggiunti dai test dai named logger e dal root logger,
-    garantendo isolamento tra i test.
+    garantendo isolamento tra i test. Cleanup eseguito sia PRIMA che DOPO ogni
+    test per prevenire contaminazioni quando i test vengono eseguiti in ordine
+    arbitrario (es. pytest-randomly).
     """
-    yield
-    # Cleanup: rimuovi handler da tutti i logger coinvolti
-    for category in CATEGORIES:
-        logger = logging.getLogger(category)
-        for handler in logger.handlers[:]:
-            handler.close()
-            logger.removeHandler(handler)
-        logger.propagate = True  # ripristina default
+    def _cleanup():
+        for category in CATEGORIES:
+            logger = logging.getLogger(category)
+            for handler in logger.handlers[:]:
+                handler.close()
+                logger.removeHandler(handler)
+            logger.propagate = True  # ripristina default
 
-    root = logging.getLogger()
-    for handler in root.handlers[:]:
-        handler.close()
-        root.removeHandler(handler)
+        root = logging.getLogger()
+        for handler in root.handlers[:]:
+            handler.close()
+            root.removeHandler(handler)
+
+    _cleanup()  # Pre-test: stato pulito indipendentemente dall'ordine di esecuzione
+    yield
+    _cleanup()  # Post-test: cleanup per i test successivi
 
 
 # ---------------------------------------------------------------------------
@@ -348,9 +448,9 @@ def test_setup_suppresses_external_library_loggers(tmp_path):
 - I test usano `tmp_path` (pytest built-in): nessun file viene scritto nella
   directory del progetto durante i test.
 - Zero import da `wx` — il file è CI-safe senza Xvfb e senza `@pytest.mark.gui`.
-- La fixture `logger_setup.py` deve esporre `setup_logging(logs_dir=...)` con
-  la stessa signature di `setup_categorized_logging()`. Verificare prima di
-  eseguire il test 4.
+- La firma di `setup_logging()` in `logger_setup.py` è stata aggiornata nel
+  pre-requisito di questo task per accettare `logs_dir`. Il Test 4 dipende da
+  questa modifica — applicare il pre-requisito prima di eseguire i test.
 
 ### Verifica
 
@@ -374,10 +474,12 @@ test: add unit tests for categorized logging system (5 tests, CI-safe)
 Prima di aprire la PR verso `main`, verificare nell'ordine:
 
 - [ ] **Task 1** — `CHANGELOG.md` privo di marker `<<<`, `===`, `>>>` (`grep` pulito)
+- [ ] **Task 1** — Testo `` (`v3.2.0` infrastruttura) `` rimosso dal bullet logging in `[Unreleased]`
 - [ ] **Task 1** — Link footer CHANGELOG aggiornato con `v3.3.0`
-- [ ] **Task 2** — Docstring `categorized_logger.py` riporta `v3.3.0`
+- [ ] **Task 2** — Docstring `categorized_logger.py` riporta `v3.3.0` in entrambi i punti
+- [ ] **Pre-req Task 3** — `setup_logging()` in `logger_setup.py` accetta parametro `logs_dir`
 - [ ] **Task 3** — File `tests/infrastructure/test_categorized_logger.py` presente
-- [ ] **Task 3** — `pytest tests/infrastructure/test_categorized_logger.py` → 5 passed
+- [ ] **Task 3** — `pytest tests/infrastructure/test_categorized_logger.py -v` → 5 passed
 - [ ] **Smoke test** — `pytest -m "not gui"` passa senza regressioni
 - [ ] **PR title** — Esempio: `feat: sistema logging categorizzato v3.3.0 (#XX)`
 - [ ] **PR body** — Linkare questo documento e il `DESIGN_categorized_logging.md`
@@ -388,11 +490,12 @@ Prima di aprire la PR verso `main`, verificare nell'ordine:
 
 | Task | Tipo | Stima |
 |---|---|---|
-| Task 1 — Conflict CHANGELOG | Editing manuale | 5 minuti |
+| Task 1 — Conflict CHANGELOG + Operazione 1b | Editing manuale | 5 minuti |
 | Task 2 — Docstring versione | Editing manuale | 2 minuti |
-| Task 3 — Test logging | Scrittura codice | 20-30 minuti |
+| Pre-requisito Task 3 — Firma `setup_logging()` | Editing manuale | 3 minuti |
+| Task 3 — Test logging (con fixture corretta) | Scrittura codice | 20-30 minuti |
 | Verifica smoke test | Esecuzione pytest | 5 minuti |
-| **Totale** | | **~15-25 minuti** |
+| **Totale** | | **~35-45 minuti** |
 
 ---
 
