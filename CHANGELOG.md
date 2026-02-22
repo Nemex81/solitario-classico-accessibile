@@ -9,21 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] — targeting v3.3.0
 
-<<<<<<< HEAD
 ### Added
 
-- **Logging**: Sistema logging multi-file categorizzato Paradox-style (`v3.2.0` infrastruttura). Sostituisce il monolite `solitario.log` con 4 file dedicati: `game_logic.log` (lifecycle partita, mosse), `ui_events.log` (navigazione UI, dialogs, TTS), `errors.log` (errori e warnings), `timer.log` (lifecycle timer). Root logger mantenuto per library logs (`wx`, `PIL`, `urllib3`) su `solitario.log`. Ogni file: `RotatingFileHandler` 5 MB, 3 backup, UTF-8. API pubblica (`setup_logging()`) completamente invariata — `acs_wx.py` e test esistenti zero modifiche. Strategia: Low-Risk Multi-Handler su named loggers Python esistenti (`propagate=False`).
+- **Logging**: Sistema logging multi-file categorizzato Paradox-style. Sostituisce il monolite `solitario.log` con 4 file dedicati: `game_logic.log` (lifecycle partita, mosse), `ui_events.log` (navigazione UI, dialogs, TTS), `errors.log` (errori e warnings), `timer.log` (lifecycle timer). Root logger mantenuto per library logs (`wx`, `PIL`, `urllib3`) su `solitario.log`. Ogni file: `RotatingFileHandler` 5 MB, 3 backup, UTF-8. API pubblica (`setup_logging()`) completamente invariata — `acs_wx.py` e test esistenti zero modifiche. Strategia: Low-Risk Multi-Handler su named loggers Python esistenti (`propagate=False`).
 - **`src/infrastructure/logging/categorized_logger.py`**: Nuovo modulo con `setup_categorized_logging()`, dict `CATEGORIES` (4 categorie attive + 3 future commentate: `profile`, `scoring`, `storage`), costanti `LOGS_DIR` / `LOG_FILE` / `LOG_FORMAT`.
 - **`game_logger.py`**: Aggiunto `_timer_logger = logging.getLogger('timer')`; `timer_started`, `timer_expired`, `timer_paused` ora loggano su `timer.log`; `keyboard_command` ora logga su `ui_events.log` (fix incongruenza precedente: usava `_game_logger`).
 
-=======
-### Added
-
-- **Logging**: Sistema logging multi-file categorizzato (Paradox-style). Sostituisce il monolite `solitario.log` con 4 file dedicati: `game_logic.log` (lifecycle partita, mosse), `ui_events.log` (navigazione UI, dialogs, TTS), `errors.log` (errori e warnings), `timer.log` (lifecycle timer). Root logger mantenuto per library logs (`wx`, `PIL`, `urllib3`) su `solitario.log`. Ogni file: RotatingFileHandler 5MB, 3 backup, UTF-8. API pubblica (`setup_logging()`) completamente invariata — `acs_wx.py` e test esistenti zero modifiche. Strategia: Low-Risk Multi-Handler su named loggers Python esistenti.
-- **`src/infrastructure/logging/categorized_logger.py`**: Nuovo modulo con `setup_categorized_logging()`, dict `CATEGORIES`, costanti `LOGS_DIR`/`LOG_FILE`/`LOG_FORMAT`.
-- **`game_logger.py`**: Aggiunto `_timer_logger`; `timer_started`, `timer_expired`, `timer_paused` ora loggano su `timer.log`; `keyboard_command` ora logga su `ui_events.log` (fix incongruenza precedente).
-
->>>>>>> 5ee89a39d3295b0d6b9b53aa51ceed727e8bc91f
 ### Changed
 
 - ⚠️ **Architecture refactoring**: Moved 6 dialog files (`abandon_dialog.py`, `detailed_stats_dialog.py`, `game_info_dialog.py`, `last_game_dialog.py`, `leaderboard_dialog.py`, `victory_dialog.py`) from `src/presentation/dialogs/` to `src/infrastructure/ui/dialogs/`. Dialogs depend directly on wxPython and belong to Infrastructure layer per Clean Architecture principles.
@@ -1028,7 +1019,8 @@ None - All changes are additive. Existing functionality preserved.
 
 **For detailed technical changes, see commit history or [docs/DETAILED_CHANGELOG.md](docs/DETAILED_CHANGELOG.md)**
 
-[Unreleased]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v3.2.2...HEAD
+[Unreleased]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v3.3.0...HEAD
+[3.3.0]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v3.2.2...v3.3.0
 [3.2.2]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v3.2.1...v3.2.2
 [3.2.1]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v3.2.0...v3.2.1
 [3.2.0]: https://github.com/Nemex81/solitario-classico-accessibile/compare/v3.1.2.1...v3.2.0
