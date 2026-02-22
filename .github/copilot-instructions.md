@@ -218,6 +218,135 @@ docs/
 
 ---
 
+### Creazione File di Progetto (Design Doc, Piano, TODO)
+
+Ogni nuovo task non banale richiede la creazione di uno o più file di progetto **prima** di scrivere codice. I modelli si trovano in `docs/1 - templates/`.
+
+#### Quando creare un DESIGN Document
+
+**Trigger (almeno uno dei seguenti):**
+- L'utente descrive una nuova feature con comportamento non ovvio
+- Il task implica decisioni architetturali (nuovo layer, nuovo pattern, nuovi attori)
+- La feature coinvolge più di 3 file distinti in layer diversi
+- Ci sono alternative di design da confrontare
+
+**Template da usare:** `docs/1 - templates/TEMPLATE_example_DESIGN_DOCUMENT.md`
+
+**Nome file output:** `docs/2 - projects/DESIGN_<feature-slug>.md`
+
+**Contenuto minimo obbligatorio:**
+- Metadata (data, stato, versione target)
+- Idea in 3 righe (cosa, perché, problema risolto)
+- Attori e concetti chiave
+- Flussi concettuali (no decisioni tecniche in questa fase)
+
+**Esempio creazione:**
+```
+Utente: "Voglio aggiungere un sistema audio con varianti per difficoltà"
+→ Crea: docs/2 - projects/DESIGN_audio_system.md
+→ Usa: TEMPLATE_example_DESIGN_DOCUMENT.md come base
+→ Stato iniziale: DRAFT
+```
+
+---
+
+#### Quando creare un PLAN (Piano di Implementazione)
+
+**Trigger (almeno uno dei seguenti):**
+- Il task richiede più di 2 commit atomici
+- Esiste già un DESIGN doc approvato da implementare
+- Si tratta di un bugfix con root cause analisi richiesta
+- Il task è un refactoring su più file
+
+**Template da usare:** `docs/1 - templates/TEMPLATE_example_PIANO_IMPLEMENTAZIONE.md`
+
+**Nome file output:** `docs/2 - projects/PLAN_<descrizione-slug>_vX.Y.Z.md`
+
+**Contenuto minimo obbligatorio:**
+- Executive Summary (tipo, priorità, stato, branch, versione target)
+- Problema/Obiettivo (o Root Cause se bugfix)
+- Lista file coinvolti con tipo operazione (CREATE / MODIFY / DELETE)
+- Fasi di implementazione in ordine sequenziale
+- Test plan (unit + integration)
+- Criteri di completamento
+
+**Esempio creazione:**
+```
+Utente: "Implementa il sistema audio descritto nel DESIGN"
+→ Crea: docs/2 - projects/PLAN_audio-system_v3.4.0.md
+→ Usa: TEMPLATE_example_PIANO_IMPLEMENTAZIONE.md come base
+→ Stato iniziale: DRAFT → poi READY prima del primo commit
+```
+
+---
+
+#### Quando creare/aggiornare il TODO
+
+**Trigger creazione (tutti devono essere veri):**
+- Esiste un PLAN approvato (stato READY)
+- Il branch di lavoro è attivo
+- L'implementazione multi-fase è appena iniziata
+
+**Template da usare:** `docs/1 - templates/TEMPLATE_exaple_TODO.md`
+
+**Nome file output:** `docs/TODO.md` (uno solo, sostituisce il precedente ad ogni branch)
+
+**Regole operative:**
+- Il TODO è un **cruscotto**, non un documento tecnico: sommario operativo consultabile in 30 secondi
+- Il link al PLAN completo (fonte di verità) deve essere in cima al TODO
+- Ogni checkbox spuntata corrisponde a un commit già eseguito
+- Va aggiornato **dopo ogni commit**, non in batch a fine lavoro
+- Al merge su `main` il TODO viene archiviato o eliminato
+
+**Contenuto minimo obbligatorio:**
+- Riferimento al PLAN completo (link relativo)
+- Istruzioni per Copilot Agent (workflow incrementale)
+- Obiettivo in 3-5 righe
+- Lista file coinvolti
+- Checklist implementazione per layer
+- Criteri di completamento
+
+**Esempio aggiornamento post-commit:**
+```
+Dopo commit "feat(domain): aggiunto AudioEvent model":
+→ Apri docs/TODO.md
+→ Spunta: [x] Modifica modello / entità (Domain layer)
+→ Salva e includi nel commit successivo (o commit separato "docs: aggiorna TODO fase 1")
+```
+
+---
+
+#### Relazione tra i Tre File (Flusso Canonico)
+
+```
+DESIGN_<feature>.md          (CONCEPT - "cosa vogliamo")
+      ↓  approva
+PLAN_<feature>_vX.Y.Z.md     (TECNICO - "come lo facciamo")
+      ↓  inizia
+docs/TODO.md                 (OPERATIVO - "dove siamo")
+      ↓  aggiorna dopo ogni commit
+      ↓  a merge completato → archivia/elimina TODO
+```
+
+**Vincoli di sequenza:**
+- Non creare un PLAN senza aver prima chiarito i requisiti (DESIGN o discussione esplicita)
+- Non iniziare commit di codice senza un TODO aggiornato se il task ha più di 2 fasi
+- Non modificare uno DESIGN doc a FROZEN senza aggiornare il PLAN corrispondente
+
+#### Workflow Completo di Creazione (Step-by-Step)
+
+Quando l'utente introduce un nuovo task significativo:
+
+1. **Valuta la complessità**: meno di 2 file e 1 commit → nessun file di progetto necessario
+2. **Crea DESIGN** (se architetturale): copia `TEMPLATE_example_DESIGN_DOCUMENT.md`, compila sezioni obbligatorie, salva in `docs/2 - projects/`
+3. **Crea PLAN**: copia `TEMPLATE_example_PIANO_IMPLEMENTAZIONE.md`, collega al DESIGN se esiste, definisci fasi, salva in `docs/2 - projects/`
+4. **Crea TODO**: copia `TEMPLATE_exaple_TODO.md`, metti link al PLAN in cima, trascrivi le fasi come checklist, salva come `docs/TODO.md`
+5. **Inizia implementazione**: segui il workflow incrementale descritto nel TODO
+6. **Aggiorna TODO** dopo ogni commit (spunta checkbox)
+7. **A merge completato**: aggiorna CHANGELOG, archivia o elimina `docs/TODO.md`
+
+---
+
 ### Trigger Events (quando aggiornare docs)
 
 Dopo **ogni modifica al codice** (`.py`), esegui questo audit:
