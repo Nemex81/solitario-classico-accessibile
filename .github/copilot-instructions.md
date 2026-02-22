@@ -347,6 +347,100 @@ Quando l'utente introduce un nuovo task significativo:
 
 ---
 
+### Protocollo Obbligatorio Pre-Codifica (TODO Gate)
+
+> **Questo protocollo è un gate bloccante.** Prima di scrivere qualsiasi riga di codice, Copilot DEVE eseguire i seguenti check nell'ordine indicato.
+
+#### Trigger di attivazione
+
+Il protocollo si attiva quando l'utente emette una richiesta di implementazione che soddisfa **almeno uno** dei seguenti criteri:
+- Richiede modifica o creazione di file `.py`
+- Fa riferimento esplicito a un DESIGN doc o a un PLAN esistente
+- Usa parole come "implementa", "codifica", "inizia", "procedi con", "sviluppa"
+- Coinvolge più di 2 file o più di 1 commit
+
+#### Step 1 — Verifica esistenza `docs/TODO.md`
+
+```
+Se docs/TODO.md NON esiste:
+    → Crea docs/TODO.md da TEMPLATE_exaple_TODO.md
+    → Compila: link al PLAN attivo, obiettivo, lista file, checklist fasi
+    → Comunica all'utente: "Ho creato docs/TODO.md per tracciare questa implementazione."
+    → Procedi allo Step 3
+
+Se docs/TODO.md ESISTE:
+    → Procedi allo Step 2
+```
+
+#### Step 2 — Verifica coerenza del TODO esistente
+
+Leggi le prime righe di `docs/TODO.md` e verifica che il link al PLAN corrisponda al PLAN attivo per il task corrente.
+
+```
+Se docs/TODO.md appartiene a un PLAN DIVERSO dal task corrente:
+    → NON sovrascrivere silenziosamente
+    → Notifica l'utente:
+      "docs/TODO.md è riferito a [nome PLAN precedente] e potrebbe essere obsoleto.
+       Vuoi che lo sostituisca con un TODO per [nome PLAN corrente]?"
+    → Attendi conferma prima di procedere
+
+Se docs/TODO.md corrisponde al task corrente ma ha checkbox già spuntate:
+    → È un TODO in corso: identifica la prima fase non completata
+    → Riprendi da quella fase (non ricominciare dall'inizio)
+    → Comunica all'utente: "Riprendo dall'ultima fase completata: [nome fase]."
+
+Se docs/TODO.md corrisponde e tutte le checkbox sono vuote:
+    → Tutto in ordine: procedi allo Step 3
+```
+
+#### Step 3 — Caricamento documenti di riferimento
+
+Prima di codificare il primo step, leggi (o rileggi se già letti in sessione):
+
+1. `docs/TODO.md` → identifica la **prima fase non completata** (prima checkbox vuota)
+2. Il PLAN linkato nel TODO → recupera i dettagli tecnici della fase da implementare
+3. Il DESIGN linkato nel PLAN (se esiste) → verifica che i concetti architetturali siano allineati
+
+#### Step 4 — Loop incrementale di implementazione
+
+Per ogni fase/step del TODO, esegui questo ciclo senza eccezioni:
+
+```
+Per ogni fase non completata in docs/TODO.md:
+
+    1. LEGGI  → La descrizione della fase nel TODO + i dettagli nel PLAN
+    2. CODIFICA → Implementa solo quella fase (non anticipare la successiva)
+    3. VERIFICA → Esegui pre-commit checklist (syntax, type hints, logging)
+    4. COMMIT  → Commit atomico con messaggio convenzionale
+    5. SPUNTA  → Aggiorna docs/TODO.md: [x] per la fase appena completata
+    6. COMUNICA → Notifica l'utente: "Fase N completata: [descrizione]. Proseguo con Fase N+1?"
+    7. ATTENDI  → Ricevi conferma prima di passare alla fase successiva
+                  (oppure procedi automaticamente se l'utente ha detto "procedi senza chiedere")
+```
+
+**Regola di atomicità**: ogni commit copre esattamente una fase del TODO. Non accorpare fasi, non anticipare fasi future.
+
+**Regola di consultazione**: tra un commit e l'altro, rileggi sempre il TODO aggiornato e il PLAN prima di iniziare la fase successiva. Non procedere a memoria.
+
+#### Esempio operativo
+
+```
+Utente: "Inizia l'implementazione del sistema audio"
+
+→ Step 1: Verifico docs/TODO.md...
+  ASSENTE → Lo creo da TEMPLATE_exaple_TODO.md con link a PLAN_audio_system_v3.4.0.md
+
+→ Step 3: Leggo TODO (FASE 1: dipendenze), PLAN (dettagli requirements.txt + assets)
+
+→ Step 4, ciclo FASE 1:
+  Codifica: aggiungo pygame a requirements.txt, creo struttura assets/sounds/
+  Commit: chore(deps): re-aggiunge pygame per sistema audio + crea struttura assets
+  Spunta: [x] FASE 1 in docs/TODO.md
+  Comunicazione: "FASE 1 completata. Procedo con FASE 2 (AudioEvent dataclass)?"
+```
+
+---
+
 ### Trigger Events (quando aggiornare docs)
 
 Dopo **ogni modifica al codice** (`.py`), esegui questo audit:
@@ -728,6 +822,7 @@ def tts_spoken(message: str, interrupt: bool) -> None:
 ## 🎯 Promemoria Finale
 
 **Quando l'utente chiede modifiche:**
+0. ✅ **Verifica TODO Gate** (se task multi-file/multi-commit): controlla `docs/TODO.md`, crealo se assente, riprendi dall'ultima fase completata se in corso
 1. ✅ Applica modifiche con type hints completi
 2. ✅ Aggiungi logging semantico (no print)
 3. ✅ Verifica accessibilità (ARIA, keyboard, screen reader)
