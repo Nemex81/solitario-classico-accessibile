@@ -118,7 +118,15 @@ def setup_categorized_logging(
 
     # ── Root logger: solitario.log (library logs: wx, PIL, urllib3) ────────────
     root_logger = logging.getLogger()
-    if not root_logger.handlers:
+    root_log_path = str((logs_dir / 'solitario.log').resolve())
+    # Guard precisa: controlla solo RotatingFileHandler per solitario.log,
+    # ignorando gli handler di pytest o altri framework di test.
+    already_has_root_file = any(
+        isinstance(h, RotatingFileHandler)
+        and getattr(h, 'baseFilename', None) == root_log_path
+        for h in root_logger.handlers
+    )
+    if not already_has_root_file:
         root_handler = RotatingFileHandler(
             logs_dir / 'solitario.log',
             maxBytes=5 * 1024 * 1024,
