@@ -27,7 +27,7 @@ Compatibilità:
     acs_wx.py e i test esistenti non richiedono modifiche.
 
 Version:
-    v3.2.0: Initial implementation (replaces monolithic solitario.log)
+    v3.3.0: Initial implementation (replaces monolithic solitario.log)
 
 Author:
     Nemex81
@@ -89,7 +89,7 @@ def setup_categorized_logging(
         >>> #   game_logic.log, ui_events.log, errors.log, timer.log, solitario.log
 
     Version:
-        v3.2.0: Initial implementation
+        v3.3.0: Initial implementation
     """
     logs_dir.mkdir(exist_ok=True)
 
