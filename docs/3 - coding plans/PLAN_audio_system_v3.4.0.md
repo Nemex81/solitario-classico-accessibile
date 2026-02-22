@@ -9,8 +9,8 @@
 
 **Tipo**: FEATURE  
 **Priorità**: 🟠 ALTA  
-**Stato**: DRAFT  
-**Branch**: `feature/audio-system`  
+**Stato**: READY (v1.1 — post-review)
+**Branch**: `feature/audio-system`
 **Versione Target**: `v3.4.0`  
 **Data Creazione**: 2026-02-22  
 **Autore**: AI Assistant + Nemex81  
@@ -357,21 +357,6 @@ class AudioEvent:
     "music": false,
     "voice": false
   },
-  "pile_panning": {
-    "tableau_0": -1.0,
-    "tableau_1": -0.67,
-    "tableau_2": -0.33,
-    "tableau_3": 0.0,
-    "tableau_4": 0.33,
-    "tableau_5": 0.67,
-    "tableau_6": 1.0,
-    "foundation_0": 0.42,
-    "foundation_1": 0.58,
-    "foundation_2": 0.75,
-    "foundation_3": 0.92,
-    "stock": 0.83,
-    "waste": 1.0
-  },
   "mixer_params": {
     "frequency": 44100,
     "size": -16,
@@ -393,11 +378,14 @@ class AudioConfig:
         active_sound_pack: Name of the active sound pack folder
         bus_volumes: Dict bus_name -> volume int 0-100
         bus_muted: Dict bus_name -> bool
-        pile_panning: Dict pile_key -> float -1.0 to +1.0
         mixer_params: Dict with frequency, size, channels, buffer
         
+    Note:
+        pile_panning rimosso in v1.1: il calcolo è dinamico in
+        AudioManager._get_panning_for_event() tramite formula lineare.
+        
     Version:
-        v3.4.0: Initial implementation
+        v3.4.0: Initial implementation | v1.1: rimosso pile_panning
     """
     version: str = "1.0"
     active_sound_pack: str = "default"
@@ -407,7 +395,8 @@ class AudioConfig:
     bus_muted: Dict[str, bool] = field(default_factory=lambda: {
         "gameplay": False, "ui": False, "ambient": False, "music": False, "voice": False
     })
-    pile_panning: Dict[str, float] = field(default_factory=dict)
+    # pile_panning rimosso (v1.1): il calcolo è dinamico in AudioManager._get_panning_for_event()
+    # Non persistere valori derivati nel JSON — violazione DRY (cfr. scoring_config.json pattern)
     mixer_params: Dict[str, int] = field(default_factory=lambda: {
         "frequency": 44100, "size": -16, "channels": 2, "buffer": 512
     })
@@ -514,20 +503,39 @@ class SoundMixer:
 
 #### Calcolo panning per canale stereo
 
+> **Fix v1.1**: Sostituita formula lineare classica con constant-power pan law.
+> La formula precedente dimezzava il volume percepito al centro (left=0.5, right=0.5 con panning=0.0).
+> Con la formula corretta il volume è uniforme su tutto lo spettro stereo — essenziale per un
+> sistema audio accessibile dove l'audio è un canale informativo critico.
+
 ```python
 def _apply_panning(channel: pygame.mixer.Channel, panning: float) -> None:
-    """Applica panning stereo al canale.
+    """Applica panning stereo al canale con constant-power pan law.
     
     Args:
         channel: pygame.mixer.Channel
         panning: float -1.0 (sinistra) ... +1.0 (destra)
     
-    Formula:
-        left  = (1.0 - panning) / 2.0  → clamp 0.0-1.0
-        right = (1.0 + panning) / 2.0  → clamp 0.0-1.0
+    Formula (constant-power lineare):
+        - Quando panning < 0 (sinistra): left=1.0, right ridotto proporzionalmente
+        - Quando panning > 0 (destra): right=1.0, left ridotto proporzionalmente
+        - Quando panning = 0 (centro): left=1.0, right=1.0 (volume massimo)
+    
+    Mantiene il volume percepito costante su tutto lo spettro stereo.
+    La formula lineare classica (1.0-pan)/2.0 produce left=0.5/right=0.5 al centro
+    (-6dB totale percepito) che è inaccettabile per feedback audio accessibile.
     """
-    left  = max(0.0, min(1.0, (1.0 - panning) / 2.0))
-    right = max(0.0, min(1.0, (1.0 + panning) / 2.0))
+    if panning < 0.0:  # Suono verso sinistra
+        left = 1.0
+        right = 1.0 + panning  # panning negativo riduce right (es. -0.5 → right=0.5)
+    else:  # Suono verso destra o centro (panning=0)
+        left = 1.0 - panning   # panning positivo riduce left (es. +0.5 → left=0.5)
+        right = 1.0
+    
+    # Clamp per sicurezza
+    left = max(0.0, min(1.0, left))
+    right = max(0.0, min(1.0, right))
+    
     channel.set_volume(left, right)
 ```
 
@@ -587,15 +595,113 @@ class AudioManager:
 
 #### Calcolo panning da AudioEvent
 
+> **Fix v1.1**: Il panning non viene più letto da `config.pile_panning` (rimosso dal JSON).
+> Viene calcolato dinamicamente con la formula lineare `(pile_index / 12) * 2.0 - 1.0`.
+> Questo elimina la duplicazione logica formula-JSON e garantisce DRY.
+
 ```python
 def _get_panning_for_event(self, event: AudioEvent) -> float:
-    """Determina il panning dall'evento.
+    """Determina il panning dall'evento usando formula lineare.
     
     Priorità: destination_pile > source_pile > 0.0 (centro)
-    Il pile_index è la chiave per cercare in config.pile_panning.
+    
+    Args:
+        event: AudioEvent con indici pile 0-12
+        
+    Returns:
+        float da -1.0 (sinistra) a +1.0 (destra)
+    
+    Formula:
+        panning = (pile_index / 12) * 2.0 - 1.0
+        
+        Mapping logico:
+        - pile_index 0 (Tableau 1) → -1.0 (estrema sinistra)
+        - pile_index 6 (Tableau 7) → 0.0 (centro)
+        - pile_index 12 (Waste)    → +1.0 (estrema destra)
     """
-    pile_key = self._pile_index_to_key(event.destination_pile or event.source_pile)
-    return self._config.pile_panning.get(pile_key, 0.0)
+    pile_index = event.destination_pile if event.destination_pile is not None else event.source_pile
+    
+    if pile_index is None:
+        return 0.0  # Default al centro per eventi senza posizione spaziale
+    
+    # Formula lineare — single source of truth per il calcolo
+    panning = (pile_index / 12.0) * 2.0 - 1.0
+    
+    # Clamp per sicurezza (pile_index dovrebbe essere già 0-12)
+    return max(-1.0, min(1.0, panning))
+```
+
+#### Classe Stub per Degradazione Graziosa
+
+> **Fix v1.1**: La classe `_AudioManagerStub` era referenziata nella FASE 7 (DIContainer)
+> ma non definita in questa fase. Aggiunta qui per completezza.
+
+```python
+class _AudioManagerStub:
+    """No-op stub per AudioManager quando pygame non è disponibile.
+    
+    Implementa la stessa interfaccia pubblica di AudioManager ma tutti
+    i metodi sono no-op safe. Permette al resto del codice di chiamare
+    audio_manager.play_event() senza crash anche se pygame manca.
+    
+    Pattern identico a TtsProvider nel codebase esistente.
+    
+    Version:
+        v3.4.0: Initial implementation
+    """
+    
+    @property
+    def is_available(self) -> bool:
+        """Sempre False per lo stub."""
+        return False
+    
+    def initialize(self) -> bool:
+        """No-op. Restituisce False."""
+        return False
+    
+    def play_event(self, event: "AudioEvent") -> None:
+        """No-op. Ignora silenziosamente l'evento."""
+        pass
+    
+    def pause_all_loops(self) -> None:
+        """No-op."""
+        pass
+    
+    def resume_all_loops(self) -> None:
+        """No-op."""
+        pass
+    
+    def set_bus_volume(self, bus_name: str, volume: int) -> None:
+        """No-op."""
+        pass
+    
+    def toggle_bus_mute(self, bus_name: str) -> bool:
+        """No-op. Restituisce sempre False."""
+        return False
+    
+    def get_bus_volume(self, bus_name: str) -> int:
+        """Restituisce sempre 0."""
+        return 0
+    
+    def is_bus_muted(self, bus_name: str) -> bool:
+        """Restituisce sempre False."""
+        return False
+    
+    def save_settings(self) -> None:
+        """No-op."""
+        pass
+    
+    def shutdown(self) -> None:
+        """No-op."""
+        pass
+```
+
+**Pattern di utilizzo nel codice chiamante**:
+
+```python
+# Controller code — None check sufficiente, anche se è uno stub non crasha
+if self._audio:
+    self._audio.play_event(event)
 ```
 
 ---
@@ -697,6 +803,59 @@ def _handle_move_success(self, source_idx: int, dest_idx: int) -> None:
 - Auto-move → `AUTO_MOVE`
 - Vittoria → `GAME_WON` (poi `pause_all_loops()`)
 
+#### Integrazione eventi Timer
+
+> **Fix v1.1**: `TIMER_WARNING` e `TIMER_EXPIRED` erano definiti in `AudioEventType` e mappati
+> in `SoundCache`, ma nessun codice li emetteva. Corretti di seguito.
+
+**Nota API reale `TimerManager`** (versione corrente del codebase):
+- `warning_callback: Optional[Callable[[int], None]]` — passato in `__init__` (riceve minuti rimanenti)
+- Nessun `expired_callback` e **nessun setter method** `set_warning_callback()`
+
+**Per `TIMER_WARNING`**: passare un callback al sito di costruzione del `TimerManager`
+(tipicamente in `GameEngine` o nel controller che crea il timer). Esempio:
+
+```python
+# Nel controller/engine che crea TimerManager:
+def _create_timer(self, minutes: int) -> TimerManager:
+    def _on_timer_warning(minutes_left: int) -> None:
+        if self._audio:
+            from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+            self._audio.play_event(AudioEvent(event_type=AudioEventType.TIMER_WARNING))
+    
+    return TimerManager(
+        minutes=minutes,
+        warning_callback=_on_timer_warning
+    )
+```
+
+**Per `TIMER_EXPIRED`**: aggiungere `expired_callback` a `TimerManager` (piccola modifica al costruttore):
+
+```python
+# Modifica minima in timer_manager.py (FASE 8 estesa):
+def __init__(
+    self,
+    minutes: int = 10,
+    warning_callback: Optional[Callable[[int], None]] = None,
+    expired_callback: Optional[Callable[[], None]] = None,  # NEW v3.4.0
+    warning_intervals: Optional[list[int]] = None
+) -> None:
+    ...
+    self.expired_callback = expired_callback
+    self._expired_fired: bool = False  # NEW — evita firing ripetuto
+```
+
+E in `check_warnings()` aggiungere:
+
+```python
+# In TimerManager.check_warnings() — aggiungere PRIMA del return:
+if self.is_expired() and not self._expired_fired and self.expired_callback is not None:
+    self._expired_fired = True
+    self.expired_callback()
+```
+
+Il `reset()` deve anche resettare `self._expired_fired = False`.
+
 #### InputHandler
 
 Aggiungere parametro `audio_manager` e metodo:
@@ -727,6 +886,50 @@ TOGGLE_AUDIO_MIXER = auto()  # Tasto M
 E nel mapping tasti in `input_handler.py`:
 ```python
 pygame.K_m: GameCommand.TOGGLE_AUDIO_MIXER,
+```
+
+#### Gestione `TOGGLE_AUDIO_MIXER` in `GamePlayController`
+
+> **Fix v1.1**: Il tasto `M` viene mappato al comando ma nessun branch lo gestiva.
+> Aggiunto qui il metodo di gestione esplicito.
+
+Nel metodo `_build_commands()` di `GamePlayController`, aggiungere la voce:
+
+```python
+# Nel dizionario costruito da _build_commands():
+GameCommand.TOGGLE_AUDIO_MIXER: self._show_audio_mixer_dialog,
+```
+
+Aggiungere il metodo:
+
+```python
+def _show_audio_mixer_dialog(self) -> None:
+    """Apre AccessibleMixerDialog in modalità modale.
+    
+    Chiamato quando il giocatore preme il tasto M durante il gameplay.
+    Il dialog riceve l'AudioManager per leggere/modificare i volumi dei 5 bus.
+    Al termine chiama audio_manager.save_settings() e resume_all_loops().
+    
+    Degradazione graziosa: se AudioManager non disponibile, notifica via TTS.
+    """
+    if not self._audio or not self._audio.is_available:
+        if self.sr:
+            self.sr.speak("Sistema audio non disponibile", interrupt=True)
+        return
+    
+    from src.presentation.dialogs.accessible_mixer_dialog import AccessibleMixerDialog
+    
+    # Nota: GamePlayController non ha _frame direttamente — il frame viene
+    # recuperato dal SolitarioDialogManager o passato via __init__ (da verificare
+    # nella struttura effettiva al momento dell'implementazione)
+    parent_frame = getattr(self, '_frame', None) or getattr(self, '_parent', None)
+    
+    dialog = AccessibleMixerDialog(
+        parent=parent_frame,
+        audio_manager=self._audio
+    )
+    dialog.ShowModal()
+    dialog.Destroy()
 ```
 
 #### SolitarioDialogManager
@@ -1025,8 +1228,23 @@ Una volta completata l'implementazione:
 
 ---
 
-**Document Version**: v1.0  
+## 📋 Changelog Documento
+
+### v1.1 — 2026-02-22 (post-review)
+
+Correzioni applicate a seguito della review tecnica `REVIEW_audio_system_v3.4.0.md`:
+
+- **[CRITICO] Fix #1**: Formula `_apply_panning` in FASE 5 sostituita con constant-power pan law. La formula precedente dimezzava il volume percepito al centro del campo stereo.
+- **[ALTO] Fix #2**: Rimosso `pile_panning` da `audio_config.json` e `AudioConfig` dataclass. Il calcolo è ora dinamico in `AudioManager._get_panning_for_event()` tramite formula lineare — elimina violazione DRY.
+- **[MEDIO] Fix #3**: Aggiunto pseudocodice per emissione `TIMER_WARNING`/`TIMER_EXPIRED` in FASE 8, con nota esplicita sull'API reale di `TimerManager` (nessun setter method, solo `warning_callback` in `__init__`; proposta aggiunta `expired_callback`).
+- **[MEDIO] Fix #4**: Aggiunto handler `_show_audio_mixer_dialog()` e mapping in `_build_commands()` per il comando `TOGGLE_AUDIO_MIXER` in FASE 8.
+- **[BASSO] Fix #5**: Aggiunta definizione completa di `_AudioManagerStub` in FASE 6, referenziata ma mancante nella bozza originale.
+
+---
+
+**Document Version**: v1.1  
 **Data Creazione**: 2026-02-22  
-**Stato**: DRAFT  
+**Data Revisione**: 2026-02-22  
+**Stato**: READY (per implementazione)  
 **Autore**: AI Assistant + Nemex81  
 **Design di Riferimento**: `DESIGN_audio_system.md` v1.1 (FROZEN)
