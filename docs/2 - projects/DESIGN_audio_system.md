@@ -107,15 +107,15 @@ Aggiungere un sistema audio modulare a 5 bus indipendenti che funzioni come **di
 
 ### Scenario 1: Spostamento Carta su Fondazione (Flusso Normale Principale)
 
-**Punto di partenza**: Giocatore sposta una carta dalla Pila Tableau 3 alla Fondazione 2 con tasto Enter.
+**Punto di partenza**: Giocatore sposta una carta dalla **Pila Tableau 3** (terza pila, UI 1-indexed) alla **Fondazione 2** (seconda fondazione, UI 1-indexed) con tasto Enter.
 
 **Flusso**:
 
-1. **GameplayController**: Invia comando al GameEngine, che valida la mossa
-   → **GameEngine**: Restituisce esito SUCCESS con sorgente (Tableau 3, indice 2) e destinazione (Fondazione 2, indice 8)
+1. **GamePlayController**: Invia comando al GameEngine, che valida la mossa
+   → **GameEngine**: Restituisce esito SUCCESS con sorgente (Tableau 3 = **indice 2** in array 0-indexed) e destinazione (Fondazione 2 = **indice 8** in array 0-indexed, Tableau occupa indici 0-6 e le Fondazioni partono dall'indice 7)
 
-2. **GameplayController**: Crea `AudioEvent(event_type=FOUNDATION_DROP, source_pile=2, destination_pile=8)`
-   → **GameplayController**: Chiama `audio_manager.play_event(event)`
+2. **GamePlayController**: Crea `AudioEvent(event_type=FOUNDATION_DROP, source_pile=2, destination_pile=8)`
+   → **GamePlayController**: Chiama `audio_manager.play_event(event)`
 
 3. **AudioManager**: Riceve l'evento, consulta la mappa dei timbre
    → **AudioManager**: Destinazione è fondazione → seleziona timbre `foundation` (cristallino)
@@ -280,6 +280,33 @@ Aggiungere un sistema audio modulare a 5 bus indipendenti che funzioni come **di
    → **AudioManager**: Stop tutti i canali, `pygame.mixer.quit()`
 
 **Cosa cambia**: Preferenze audio persistite. Nessun leak di risorse audio.
+
+---
+
+### Scenario 9: Eventi Timer (Warning/Expired)
+
+**Punto di partenza**: Giocatore ha una partita attiva con timer a 60 secondi rimanenti.
+
+**Flusso**:
+
+1. **TimerManager**: Raggiunge la soglia di warning (60 secondi rimanenti)
+   → **TimerManager**: Invoca callback `warning_callback()` registrato
+
+2. **GamePlayController._on_timer_warning()**: Riceve callback
+   → **GamePlayController**: Crea `AudioEvent(event_type=TIMER_WARNING)`
+   → **GamePlayController**: Chiama `audio_manager.play_event(event)`
+
+3. **AudioManager**: Tipo TIMER_WARNING → seleziona `ui/navigate.wav`, bus UI, panning centro
+   → **Output**: Suono di avviso neutro al centro dello spazio stereo
+
+4. **(Dopo 60 secondi)** **TimerManager**: Timer scade (0 secondi)
+   → **TimerManager**: Invoca callback `expired_callback()`
+
+5. **GamePlayController._on_timer_expired()**: Riceve callback
+   → **GamePlayController**: Crea `AudioEvent(event_type=TIMER_EXPIRED)`
+   → **AudioManager**: Tipo TIMER_EXPIRED → seleziona `ui/cancel.wav`, bus UI
+
+**Nota**: Il `TimerManager` (Application layer) non conosce `AudioManager` (Infrastructure). La comunicazione avviene tramite callback registrati dal `GamePlayController` all'init (pattern identico a `on_new_game_request`). Vedi PLAN v1.1, Fix #3.
 
 ---
 
@@ -482,7 +509,7 @@ I due sistemi operano in parallelo e in modo del tutto indipendente. L'AudioMana
 
 - [x] ✅ **RISOLTO**: Quale libreria audio? → `pygame.mixer` (panning nativo, canali indipendenti, loop nativi, thread-safe con wxPython)
 - [x] ✅ **RISOLTO**: Event bus globale o chiamata diretta? → Chiamata diretta tramite `AudioEvent` dataclass (coerente con architettura esistente, no overengineering)
-- [x] ✅ **RISOLTO**: Quante posizioni stereo? → 14 posizioni (7 tableau + 4 fondazioni + stock + waste + menu), formula lineare
+- [x] ✅ **RISOLTO**: Quante posizioni stereo? → **13 indici fisici (0-12)** per le pile di gioco (7 tableau + 4 fondazioni + stock + waste), più 1 posizione logica riservata per menu (non implementata in v3.4.0). Formula lineare su 13 posizioni.
 - [x] ✅ **RISOLTO**: Il bus Voice si sovrappone a NVDA? → No. Voice = clip pre-registrate statiche. NVDA = testo dinamico a runtime. Sistemi ortogonali.
 - [x] ✅ **RISOLTO**: Pattern configurazione JSON? → Identico a `scoring_config.json` + `scoring_config_loader.py`
 - [x] ✅ **RISOLTO**: Dove vivono i file audio? → `assets/sounds/<pack_name>/`
