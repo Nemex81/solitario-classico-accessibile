@@ -349,6 +349,12 @@ solitario-classico-accessibile/
 │   │   │   ├── profile_storage.py   # ProfileStorage (atomic JSON writes, temp-file-rename)
 │   │   │   └── session_storage.py   # SessionStorage (crash detection tracking)
 │   │   │
+│   │   ├── logging/                  # Logging categorizzato (v3.2.0)
+│   │   │   ├── __init__.py          # Re-export: setup_logging, setup_categorized_logging, LOGS_DIR, LOG_FILE
+│   │   │   ├── categorized_logger.py # setup_categorized_logging() — multi-file RotatingFileHandler (Paradox-style)
+│   │   │   ├── logger_setup.py      # Thin wrapper backward-compat → categorized_logger.py (DEPRECATED v3.2.0)
+│   │   │   └── game_logger.py       # Helper semantici: ~30 funzioni named per categoria (game/ui/error/timer)
+│   │   │
 │   │   ├── di_container.py           # Dependency Injection container (singleton factories)
 │   │   │
 │   │   └── ui/                       # User Interface (wxPython panels)
@@ -677,6 +683,49 @@ def format_end_reason(reason: EndReason) -> str: ...  # "Vittoria", "Tempo scadu
 - 15 unit tests, 93% coverage
 
 ### Infrastructure Layer
+
+#### Logging Categorizzato (`src/infrastructure/logging/`) (v3.2.0)
+
+Sistema di logging multi-file categorizzato in stile Paradox Interactive.
+Sostituisce il monolite `solitario.log` con file dedicati per categoria.
+
+**Strategia**: Multi-handler su named loggers Python esistenti. Il routing è
+nativo del modulo `logging` — `setup_categorized_logging()` aggiunge solo
+i `RotatingFileHandler` dedicati a ciascun logger.
+
+```
+acs_wx.py
+  └─ setup_logging()  [logger_setup.py — thin wrapper backward-compat]
+       └─ setup_categorized_logging()  [categorized_logger.py]
+            ├─ logging.getLogger('game')  → logs/game_logic.log   (partita, mosse)
+            ├─ logging.getLogger('ui')    → logs/ui_events.log    (UI, dialogs, TTS)
+            ├─ logging.getLogger('error') → logs/errors.log       (errori, warnings)
+            ├─ logging.getLogger('timer') → logs/timer.log        (lifecycle timer)
+            └─ root logger               → logs/solitario.log    (wx, PIL, urllib3)
+```
+
+**Proprietà di ogni handler:**
+- `RotatingFileHandler`: 5 MB max, 3 backup (`.log.1` / `.log.2` / `.log.3`)
+- `propagate = False`: evita duplicazione su `solitario.log`
+- Flush immediato (affidabilità in caso di crash)
+- Guard anti-doppia-registrazione (`if logger.handlers: continue`)
+
+**Helper semantici (`game_logger.py`):**
+```python
+from src.infrastructure.logging import game_logger as log
+
+log.game_won(elapsed_time=120, moves_count=45, score=850)   # → game_logic.log
+log.panel_switched("menu", "gameplay")                       # → ui_events.log
+log.timer_expired()                                          # → timer.log
+log.error_occurred("FileIO", "Profile corrupted", exc)      # → errors.log
+```
+
+**Estendibilità futura:** decommentare entry in `CATEGORIES` dict + aggiungere
+named logger in `game_logger.py`. Zero altre modifiche necessarie.
+
+*Ref: `docs/2 - projects/DESIGN_categorized_logging.md`*
+
+---
 
 #### DIContainer (`src/infrastructure/di_container.py`)
 

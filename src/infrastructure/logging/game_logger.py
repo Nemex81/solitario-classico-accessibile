@@ -25,6 +25,7 @@ from typing import Optional
 _game_logger = logging.getLogger('game')
 _ui_logger = logging.getLogger('ui')
 _error_logger = logging.getLogger('error')
+_timer_logger = logging.getLogger('timer')
 
 
 # ===== LIFECYCLE APPLICAZIONE =====
@@ -214,9 +215,9 @@ def keyboard_command(command: str, context: str) -> None:
     
     Example:
         >>> keyboard_command("CTRL+ENTER", "gameplay")
-        2026-02-14 14:30:30 - DEBUG - game - Key command: CTRL+ENTER in context 'gameplay'
+        2026-02-14 14:30:30 - DEBUG - ui - Key command: CTRL+ENTER in context 'gameplay'
     """
-    _game_logger.debug(f"Key command: {command} in context '{context}'")
+    _ui_logger.debug(f"Key command: {command} in context '{context}'")
 
 
 # ===== ERRORI E WARNINGS =====
@@ -321,9 +322,9 @@ def timer_started(duration: int) -> None:
     
     Example:
         >>> timer_started(600)
-        2026-02-14 15:00:00 - INFO - game - Timer started - Duration: 600s
+        2026-02-14 15:00:00 - INFO - timer - Timer started - Duration: 600s
     """
-    _game_logger.info(f"Timer started - Duration: {duration}s")
+    _timer_logger.info(f"Timer started - Duration: {duration}s")
 
 
 def timer_expired() -> None:
@@ -331,9 +332,9 @@ def timer_expired() -> None:
     
     Example:
         >>> timer_expired()
-        2026-02-14 15:10:00 - WARNING - game - Timer EXPIRED - Game auto-abandoned
+        2026-02-14 15:10:00 - WARNING - timer - Timer EXPIRED - Game auto-abandoned
     """
-    _game_logger.warning("Timer EXPIRED - Game auto-abandoned")
+    _timer_logger.warning("Timer EXPIRED - Game auto-abandoned")
 
 
 def timer_paused(remaining: int) -> None:
@@ -345,7 +346,7 @@ def timer_paused(remaining: int) -> None:
     Note:
         Optional feature - only log if pause functionality is implemented
     """
-    _game_logger.debug(f"Timer paused - Remaining: {remaining}s")
+    _timer_logger.debug(f"Timer paused - Remaining: {remaining}s")
 
 
 # ===== NAVIGATION TRACKING (DEBUG LEVEL) =====

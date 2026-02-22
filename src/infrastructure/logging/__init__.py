@@ -11,5 +11,6 @@ Version:
 """
 
 from .logger_setup import setup_logging, get_logger
+from .categorized_logger import setup_categorized_logging, LOGS_DIR, LOG_FILE
 
-__all__ = ['setup_logging', 'get_logger']
+__all__ = ['setup_logging', 'get_logger', 'setup_categorized_logging', 'LOGS_DIR', 'LOG_FILE']
