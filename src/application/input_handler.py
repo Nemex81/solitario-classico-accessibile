@@ -100,6 +100,10 @@ class GameCommand(Enum):
 class InputHandler:
     """Handles keyboard input and command dispatch.
     
+    **v3.4.0:** riceve un `audio_manager` opzionale per la generazione di
+    AudioEvent (navigazione, selezione, cancellazione). Se non fornito,
+    il comportamento è identico a prima (degradazione graziosa).
+    
     Translates low-level PyGame keyboard events into high-level
     GameCommand enums. Supports modifiers (SHIFT, CTRL) and
     provides extensible key binding system.
@@ -118,9 +122,15 @@ class InputHandler:
         ...     game.move_cursor_up()
     """
     
-    def __init__(self) -> None:
-        """Initialize input handler with default bindings."""
+    def __init__(self, audio_manager: Optional[object] = None) -> None:
+        """Initialize input handler with default bindings.
+
+        Args:
+            audio_manager: Optional AudioManager instance (DI). Se fornito,
+                verranno emessi AudioEvent per alcune azioni di navigazione e UI.
+        """
         self.key_bindings: Dict[tuple, GameCommand] = {}
+        self._audio = audio_manager
         self._initialize_bindings()
     
     def _initialize_bindings(self) -> None:
@@ -214,7 +224,26 @@ class InputHandler:
         key = event.key
         binding_key = (key, shift, ctrl)
         
-        return self.key_bindings.get(binding_key, None)
+        command = self.key_bindings.get(binding_key, None)
+        # Emit audio feedback for navigation / UI events if available
+        if self._audio and command is not None:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                if command in (
+                    GameCommand.MOVE_UP,
+                    GameCommand.MOVE_DOWN,
+                    GameCommand.MOVE_LEFT,
+                    GameCommand.MOVE_RIGHT,
+                ):
+                    # generic navigation sound
+                    self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_NAVIGATE))
+                elif command == GameCommand.SELECT_CARD:
+                    self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_SELECT))
+                elif command == GameCommand.CANCEL_SELECTION:
+                    self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_CANCEL))
+            except Exception:
+                pass  # degrade gracefully if audio subsystem fails
+        return command
     
     def add_binding(
         self,

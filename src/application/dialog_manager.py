@@ -31,6 +31,9 @@ def _make_logged_callback(title: str, callback: Callable[[bool], None]) -> Calla
 class SolitarioDialogManager:
     """Centralized manager for application-wide confirmation dialogs.
     
+    **v3.4.0**: riceve facoltativamente un AudioManager per riprodurre
+    effetti sonori quando i dialoghi vengono mostrati o chiusi.
+    
     Provides semantic methods for common dialog scenarios:
     - Abandon current game
     - Start new game (with active game confirmation)
@@ -52,14 +55,16 @@ class SolitarioDialogManager:
         ...         abandon_current_game()
     """
     
-    def __init__(self, dialog_provider: Optional[DialogProvider] = None):
-        """Initialize dialog manager with optional provider.
+    def __init__(self, dialog_provider: Optional[DialogProvider] = None, audio_manager: Optional[object] = None):
+        """Initialize dialog manager with optional provider and audio.
         
         Args:
             dialog_provider: Optional DialogProvider instance.
                 If None, attempts to create WxDialogProvider.
                 If ImportError (wxPython unavailable), sets to None.
+            audio_manager: Optional AudioManager instance for effects.
         """
+        self._audio = audio_manager
         if dialog_provider is not None:
             self.dialogs = dialog_provider
         else:
@@ -105,12 +110,19 @@ class SolitarioDialogManager:
             ...     abandon_and_return_to_menu()
         """
         if not self.is_available:
-            return False
-        
-        return self.dialogs.show_yes_no(
-            "Vuoi abbandonare la partita e tornare al menu di gioco?",
-            "Abbandono Partita"
-        )
+            result = False
+        else:
+            result = self.dialogs.show_yes_no(
+                "Vuoi abbandonare la partita e tornare al menu di gioco?",
+                "Abbandono Partita"
+            )
+        if self._audio:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_SELECT))
+            except Exception:
+                pass
+        return result
     
     def show_new_game_prompt(self) -> bool:
         """DEPRECATED: Use show_new_game_prompt_async().

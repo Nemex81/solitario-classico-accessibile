@@ -46,22 +46,30 @@ class AudioManager:
             return False
 
     def play_event(self, event: AudioEvent) -> None:
-        """Riproduce il suono associato all'evento con panning spaziale. No-op se non inizializzato o suono assente."""
+        """Riproduce il suono associato all'evento con panning spaziale.
+        
+        Design v3.4.1: un evento = un suono fisso per pack. Nessuna
+        selezione casuale tra varianti; varietà solo tramite cambio pack.
+
+        Args:
+            event: AudioEvent con tipo evento e metadata spaziale
+        """
         if not self._initialized:
+            _game_logger.debug(f"AudioManager not initialized, skipping event: {event.event_type}")
             return
-        sounds = self.sound_cache.get(event.event_type)
-        if sounds is None:
-            _game_logger.warning(f"No sound for event: {event.event_type}")
-            return
-        # Gestione varianti: se lista, seleziona random
-        import random
-        sound = random.choice(sounds) if isinstance(sounds, list) else sounds
+        sound = self.sound_cache.get(event.event_type)
         if sound is None:
-            _game_logger.warning(f"Sound asset missing for event: {event.event_type}")
+            _game_logger.warning(f"No sound mapped for event: {event.event_type}")
             return
+        # Calcola panning stereo basato su posizione pile (0-12)
         panning = self._get_panning_for_event(event)
+        # Determina bus audio
         bus_name = self._get_bus_for_event(event.event_type)
+        # Riproduci il suono
         self.sound_mixer.play_one_shot(sound, bus_name, panning)
+        _game_logger.debug(
+            f"Played event: {event.event_type} → bus: {bus_name}, panning: {panning:.2f}"
+        )
 
     def pause_all_loops(self) -> None:
         """Sospende bus Ambient e Music (chiamato da Presentation su EVT_ACTIVATE)."""

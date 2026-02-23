@@ -434,6 +434,32 @@ Sound pack developers: creare un file WAV per evento (no varianti multiple neces
 
 **Action Item:** Controllare esistenza file audio per UI/Ambient/Music/Voice bus.
 
+### MODIFICA 5: Aggiunta Test Unitari
+
+**Obiettivo:** Coprire i cambiamenti introdotti con test automatici per preservare la qualità e la copertura.
+
+**File interessati:**
+- `tests/infrastructure/audio/test_sound_cache.py`
+- `tests/infrastructure/audio/test_audio_manager.py`
+
+**Contenuti suggeriti:**
+
+1. `test_sound_cache_get_returns_sound_or_none()`:
+   - Creare una cache temporanea con pack `default`.
+   - Mockare `pygame.mixer.Sound` per evitare dipendenze audio.
+   - Verificare che `get()` ritorni un `pygame.mixer.Sound` o `None`, **mai** una lista.
+   - Simulare file mancante e vedere che logga warning (usare caplog).
+
+2. `test_audio_manager_play_event_no_random()`:
+   - Inizializzare un `AudioManager` con una `SoundCache` stub.
+   - Chiamare `play_event()` con evento noto.
+   - Assicurare che il metodo non importi `random` (grep) e che il sound mixer venga chiamato con il suono esatto.
+   - Utilizzare un mock per `sound_mixer.play_one_shot` e verificare argomenti.
+
+**Verifica Copertura:**
+- Eseguire `pytest tests/infrastructure/audio/ --cov=src/infrastructure/audio` per confermare nuove linee coperte e che la copertura rimanga ≥ 85 %.
+
+
 #### 4.1 Script di Verifica
 
 ```bash
@@ -638,7 +664,14 @@ python acs_wx.py
 [ ] Carta su fondazione → Suono "foundation_drop" riprodotto ✅
 [ ] Panning stereo funzionante (carta sinistra → audio left, destra → audio right) ✅
 [ ] Controlli volume bus indipendenti (se implementato mixer UI) ✅
+[ ] *(nuovo)* Test unitari aggiunti ed eseguiti (SoundCache, AudioManager)
 ```
+
+# Esegui i test unitari appena creati
+```
+pytest tests/infrastructure/audio/ --cov=src/infrastructure/audio
+```
+Assicurati che i due nuovi casi siano passati e la copertura resti ≥ 85 %.
 
 **Controlla Log:**
 ```bash
@@ -742,6 +775,7 @@ git push origin supporto-audio-centralizzato
 
 - [ ] Test manuale gameplay: tutti gli effetti sonori riproducono
 - [ ] Test deterministico: stessa azione = stesso suono (3+ ripetizioni)
+- [ ] Test unitari creati per SoundCache e AudioManager
 - [ ] Test log: nessun warning inatteso
 - [ ] Test type check: mypy passa
 

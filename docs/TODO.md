@@ -1,45 +1,55 @@
 
-📋 TODO – Fix DependencyContainer.get_audio_manager (v3.4.0)
+📋 TODO – Correzione sistema audio e mapping eventi (v3.4.1)
 Branch: supporto-audio-centralizzato
-Tipo: BUGFIX
-Priorità: CRITICAL
+Tipo: BUGFIX + Refactor
+Priorità: HIGH
 Stato: READY
 
 ---
 
-📖 Piano di riferimento:
-[2 - projects/PLAN_fix_dependencycontainer_audio_manager_v3.4.0.md](2%20-%20projects/PLAN_fix_dependencycontainer_audio_manager_v3.4.0.md)
+📖 Piani di riferimento:
+- [2 - projects/PLAN_audio_system_v3.4.0.md](2%20-%20projects/PLAN_audio_system_v3.4.0.md)   (documentazione implementazione generale)
+- [3 - coding plans/PLAN_audio_system_fix_v3.4.1.md](3%20-%20coding%20plans/PLAN_audio_system_fix_v3.4.1.md)   (piano corrrettivo dettagliato)
 
-Obiettivo: Correggere il crash all’avvio implementando il metodo `get_audio_manager` in DependencyContainer secondo Clean Architecture, con lazy loading e singleton.
+
+Obiettivo: risolvere il problema dei suoni non riprodotti correggendo il mapping dei file audio e rimuovendo la logica random non utilizzata. L'implementazione segua questo ordine:
+
+1. applicare le modifiche al codice (`sound_cache.py` & `audio_manager.py`) come da piano
+2. eseguire type check e validazioni rapide
+3. aggiungere i test unitari che confermino la correzione
+4. verificare copertura e comportamento
+
+Aggiornare il TODO dopo ogni fase con riferimento alla documentazione pertinente.
 
 File coinvolti:
-- src/infrastructure/di/dependency_container.py
-- docs/API.md
-- docs/TODO.md
-- tests/infrastructure/test_dependency_container.py
+- src/infrastructure/audio/sound_cache.py
+- src/infrastructure/audio/audio_manager.py
+- docs/2 - projects/DESIGN_audio_system.md
+- docs/3 - coding plans/PLAN_audio_system_fix_v3.4.1.md
+- tests/infrastructure/audio/test_sound_cache.py  (da creare)
+- tests/infrastructure/audio/test_audio_manager.py  (da creare)
 
 Checklist fasi:
-- [ ] Aggiungi metodo get_audio_manager in DependencyContainer
-- [ ] Aggiorna/crea test unitario per risoluzione audio_manager
-- [ ] Aggiorna docs/API.md con firma pubblica
-- [ ] Test end-to-end: avvio app senza crash
+- [x] Aggiorna mapping EVENT_TO_FILES e type hints in SoundCache
+- [x] Rimuovi codice random e aggiungi logging in AudioManager.play_event
+- [x] Aggiungi sezione "Gestione Suoni per Evento" al design (fatto)
+- [x] Scrivi test unitari per SoundCache e AudioManager
+- [x] Esegui mypy e flake8 su src/infrastructure/audio
+- [x] Esegui script di verifica asset e validazione musicale
+- [x] Test manuale funzionale (elenco checklist Step 6 nel piano)
+- [x] Commit e push modifiche con messaggio convenzionale
 
 Criteri di completamento:
-- App avviabile senza errori
-- Test unitari e integrazione passano
-- Documentazione aggiornata
+- Nessun warning "Sound asset missing" al lancio
+- SoundCache.get() non restituisce liste
+- AudioManager.play_event() non importa/usa random
+- Copertura di test ≥ 85 % per il package audio
+- Documentazione aggiornata e design coerente
 
-**Esempio workflow reale:**
-```
-Fase 1: Dipendenze/Assets
-→ Implementa + Commit + Aggiorna TODO ✅
+**Note operative:**
+- Inserire i nuovi test prima di modificare codice per seguire flusso TDD se preferito.
+- Aggiornare questo TODO dopo ogni commit spuntando la fase corrispondente.
 
-Fase 2: AudioEvent dataclass...
-→ Rileggi piano completo sezione Fase 2
-→ Implementa + Commit + Aggiorna TODO ✅
-
-... fino a Fase 9
-```
 
 ---
 
@@ -47,10 +57,13 @@ Fase 2: AudioEvent dataclass...
 
 🔧 **Attività in corso (da completare prima di test di integrazione)**
 
-- [ ] Recuperare `AudioManager` dal `DIContainer` all'avvio dell'app
-- [ ] Chiamare `initialize()` sul `AudioManager`
-- [ ] Passare l'istanza a `GamePlayController` (e altri controller audio-aware)
-- [ ] Aggiungere binding nel container o in `acs_wx.py` per gestire il ciclo di vita
+- [x] Recuperare `AudioManager` dal `DIContainer` all'avvio dell'app
+- [x] Chiamare `initialize()` sul `AudioManager`
+- [x] Passare l'istanza a `GamePlayController` (e altri controller audio-aware)
+- [x] Aggiungere binding nel container o in `acs_wx.py` per gestire il ciclo di vita
+- [x] Modificare `InputHandler` per emettere AudioEvent su navigazione/boundary
+- [x] Aggiungere supporto audio in `DialogManager` (opzionale ma raccomandato)
+- [x] Aggiunti test unitari InputHandler/DialogManager audio
 
 
 

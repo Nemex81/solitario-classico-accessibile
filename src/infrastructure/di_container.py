@@ -128,6 +128,7 @@ class DIContainer:
         """Get or create InputHandler singleton.
         
         InputHandler is stateless and can be shared across games.
+        Optionally receives the AudioManager for sound effects.
         
         Returns:
             InputHandler singleton
@@ -135,7 +136,13 @@ class DIContainer:
         from src.application.input_handler import InputHandler
         
         if "input_handler" not in self._instances:
-            self._instances["input_handler"] = InputHandler()
+            # resolve audio manager lazily; fall back to stub if unavailable
+            audio_mgr = None
+            try:
+                audio_mgr = self.get_audio_manager()
+            except Exception:
+                audio_mgr = None
+            self._instances["input_handler"] = InputHandler(audio_manager=audio_mgr)
         return cast(InputHandler, self._instances["input_handler"])
     
     # ========================================================================

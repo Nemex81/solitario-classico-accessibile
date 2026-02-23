@@ -4,7 +4,7 @@ Carica tutti i file WAV del sound pack attivo in RAM come pygame.Sound.
 Degradazione graziosa: file mancante → warning log, entry None.
 """
 
-from typing import Dict, Optional, List, Union
+from typing import Dict, Optional
 from pathlib import Path
 import pygame
 import logging
@@ -14,7 +14,7 @@ _game_logger = logging.getLogger('game')
 class SoundCache:
     def __init__(self, sounds_base_path: Path) -> None:
         self.sounds_base_path = sounds_base_path
-        self._cache: Dict[str, Union[pygame.mixer.Sound, None, List[pygame.mixer.Sound]]] = {}
+        self._cache: Dict[str, Optional[pygame.mixer.Sound]] = {}
         self._pack_name: Optional[str] = None
 
     def load_pack(self, pack_name: str) -> None:
@@ -24,47 +24,62 @@ class SoundCache:
         self._cache.clear()
         self._pack_name = pack_name
         pack_path = self.sounds_base_path / pack_name
-        # Mapping evento → file(s) WAV
+        # Mapping evento → file WAV singolo (design v3.4.1)
         EVENT_TO_FILES = {
-            # Gameplay bus
-            "card_move": ["gameplay/card_move_1.wav", "gameplay/card_move_2.wav", "gameplay/card_move_3.wav"],
-            "card_select": ["gameplay/card_select.wav"],
-            "card_drop": ["gameplay/card_drop.wav"],
-            "foundation_drop": ["gameplay/foundation_drop.wav"],
-            "invalid_move": ["gameplay/invalid_move.wav"],
-            "tableau_bumper": ["gameplay/bumper.wav"],
-            "stock_draw": ["gameplay/stock_draw.wav"],
-            "waste_drop": ["gameplay/waste_drop.wav"],
-            # UI bus
-            "ui_navigate": ["ui/navigate.wav"],
-            "ui_select": ["ui/select.wav"],
-            "ui_cancel": ["ui/cancel.wav"],
-            "mixer_opened": ["ui/mixer_opened.wav"],
-            # Ambient bus
-            "ambient_loop": ["ambient/room_loop.wav"],
-            # Music bus
-            "music_loop": ["music/music_loop.wav"],
-            # Voice bus
-            "game_won": ["voice/victory.wav"],
-            # Timer events
-            "timer_warning": ["ui/navigate.wav"],
-            "timer_expired": ["ui/cancel.wav"],
+            # ========================================
+            # GAMEPLAY BUS
+            # ========================================
+            "card_move": "gameplay/card_move.wav",
+            "card_select": "gameplay/card_place.wav",      # riuso file
+            "card_drop": "gameplay/card_place.wav",        # riuso file
+            "foundation_drop": "gameplay/foundation_drop.wav",
+            "invalid_move": "gameplay/invalid_move.wav",
+            "tableau_bumper": "gameplay/invalid_move.wav", # riuso invalid_move
+            "stock_draw": "gameplay/stock_draw.wav",
+            "waste_drop": "gameplay/tableau_drop.wav",     # riuso tableau_drop
+            # ========================================
+            # UI BUS
+            # ========================================
+            "ui_navigate": "ui/navigate.wav",
+            "ui_select": "ui/select.wav",
+            "ui_cancel": "ui/cancel.wav",
+            "mixer_opened": "ui/mixer_opened.wav",
+            # ========================================
+            # AMBIENT BUS
+            # ========================================
+            "ambient_loop": "ambient/room_loop.wav",
+            # ========================================
+            # MUSIC BUS
+            # ========================================
+            "music_loop": "music/music_loop.wav",
+            # ========================================
+            # VOICE BUS
+            # ========================================
+            "game_won": "voice/victory.wav",
+            # ========================================
+            # TIMER EVENTS
+            # ========================================
+            "timer_warning": "ui/navigate.wav",
+            "timer_expired": "ui/cancel.wav",
         }
-        for event_type, files in EVENT_TO_FILES.items():
-            loaded_sounds = []
-            for rel_path in files:
-                file_path = pack_path / rel_path
-                try:
-                    sound = pygame.mixer.Sound(str(file_path))
-                    loaded_sounds.append(sound)
-                except Exception:
-                    _game_logger.warning(f"Sound asset missing: {file_path}")
-                    loaded_sounds.append(None)
-            # Se solo una variante, salva direttamente; se più, salva lista
-            self._cache[event_type] = loaded_sounds if len(loaded_sounds) > 1 else loaded_sounds[0]
 
-    def get(self, event_type: str) -> Optional[Union[pygame.mixer.Sound, List[pygame.mixer.Sound]]]:
-        """Restituisce il Sound pre-caricato per il tipo evento, o None se assente."""
+        # Carica ogni file WAV singolo
+        for event_type, rel_path in EVENT_TO_FILES.items():
+            file_path = pack_path / rel_path
+            try:
+                sound = pygame.mixer.Sound(str(file_path))
+                self._cache[event_type] = sound
+                _game_logger.debug(f"Loaded sound: {event_type} → {rel_path}")
+            except Exception as e:
+                _game_logger.warning(f"Sound asset missing: {file_path} (event: {event_type})")
+                self._cache[event_type] = None
+
+    def get(self, event_type: str) -> Optional[pygame.mixer.Sound]:
+        """Restituisce il Sound pre-caricato per il tipo evento, o None se assente.
+        
+        Returns:
+            pygame.mixer.Sound singolo (design v3.4.1: nessuna lista)
+        """
         return self._cache.get(event_type)
 
     def clear(self) -> None:

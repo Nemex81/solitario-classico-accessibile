@@ -53,6 +53,7 @@ Il Solitario Classico Accessibile utilizza una **Clean Architecture** (architett
 │  │  - Orchestrazione │  │  - MoveCommand             │     │
 │  │  - Use cases      │  │  - DrawCommand             │     │
 │  │  - State mgmt     │  │  - CommandHistory          │     │
+│  │  - AudioEvent emission for feedback   │          │
 │  └───────────────────┘  └────────────────────────────┘     │
 │  ┌───────────────────┐  ┌────────────────────────────┐     │
 │  │  ProfileService   │  │  SessionTracker (v3.0.0)   │     │
@@ -82,6 +83,7 @@ Il Solitario Classico Accessibile utilizza una **Clean Architecture** (architett
 │  │  - Dependency Injection                             │   │
 │  │  - Component lifecycle                              │   │
 │  │  - Configuration                                    │   │
+│  │  - Provides AudioManager singleton to controllers    │   │
 │  └─────────────────────────────────────────────────────────┘   │
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │     Storage (v3.0.0)                                │   │

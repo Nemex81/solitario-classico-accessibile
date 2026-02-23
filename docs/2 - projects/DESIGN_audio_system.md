@@ -86,9 +86,97 @@ Aggiungere un sistema audio modulare a 5 bus indipendenti che funzioni come **di
   - `ui_confirm`: Tono positivo, corto
   - `ui_cancel`: Tono neutro/negativo, corto
   - `boundary_hit`: Thud smorzato, fisico - comunica il confine del tavolo
-- **Variazioni**: alcuni eventi (card_move, shuffle, ui_navigate) hanno più file
-  associati. L'implementazione dovrà scegliere una variante in modo pseudo‑random
-  per evitare ripetitività; questa logica è gestita a livello di SoundCache.
+- **Variazioni**: a partire da v3.4.1 il design elimina la selezione casuale tra varianti. Ogni evento ha un file WAV singolo per pack; le varianti audio sono possibili **solo cambiando pack**. (Per future estensioni, la randomizzazione potrà essere introdotta come feature opt‑in per pack speciali.)
+
+### 6.4 Gestione Suoni per Evento
+
+**Design Definitivo (v3.4.1): Un Evento = Un Suono Fisso per Pack**
+
+Il sistema audio **non implementa selezione casuale** tra varianti.
+Ogni evento ha **un solo file WAV** associato nel pack attivo.
+
+#### Principio Architetturale
+
+```
+Evento Audio → Sound Pack → File WAV singolo → Riproduzione
+              ↓
+       (Unico punto di variazione)
+```
+
+**Esempio:**
+
+```
+Pack "default":
+  card_move → assets/sounds/default/gameplay/card_move.wav (suono legno)
+
+Pack "retro":
+  card_move → assets/sounds/retro/gameplay/card_move.wav (suono 8-bit)
+
+Pack "luxury":
+  card_move → assets/sounds/luxury/gameplay/card_move.wav (suono cristallo)
+```
+
+Spostare una carta riproduce **sempre** lo stesso suono all'interno del pack attivo.
+Per cambiare suono, l'utente cambia pack (via settings o `audio_config.json`).
+
+#### Rationale
+
+1. **Consistenza UX**
+   - Il giocatore sviluppa associazioni mentali forti: "Questo suono = Questa azione"
+   - Comportamento predittivo migliora l'esperienza di gioco
+   - Fondamentale per utenti non vedenti che si affidano a feedback sonoro coerente
+
+2. **Accessibilità**
+   - Variazioni casuali possono generare confusione o incertezza sull'esito azione
+   - Feedback deterministico facilita apprendimento pattern di gioco
+   - Screen reader users beneficiano di ambiente sonoro stabile
+
+3. **Semplicità Implementativa**
+   - Mapping diretto evento → file (no logica condizionale)
+   - Debugging facilitato (sempre lo stesso output per stesso input)
+   - Test automatizzati possono verificare suono atteso
+
+4. **Manutenibilità**
+   - Sound pack developers creano un file per evento (no varianti obbligatorie)
+   - Struttura directory semplificata
+   - Caricamento RAM ridotto (1 file vs 3+ varianti)
+
+#### Implementazione Cambio Pack
+
+```python
+# In runtime (via settings UI o API):
+audio_manager = container.get_audio_manager()
+audio_manager.load_sound_pack("retro")
+
+# In configurazione (persistente):
+# config/audio_config.json
+{
+    "active_sound_pack": "retro",
+    "sounds_path": "assets/sounds"
+}
+```
+
+#### Riuso File Audio
+
+Per ottimizzare asset, eventi semanticamente simili condividono file:
+
+| Evento | File Usato | Rationale |
+|--------|-----------|-----------|
+| `card_select` | `card_place.wav` | Selezionare = iniziare a posare |
+| `card_drop` | `card_place.wav` | Drop = azione di posare |
+| `tableau_bumper` | `invalid_move.wav` | Bumper = feedback errore |
+| `waste_drop` | `tableau_drop.wav` | Drop generico pile |
+
+Questo riduce duplicazione asset mantenendo consistenza semantica.
+
+#### Decisione Architetturale: No Random
+
+**Deprecato:** Il concetto di "varianti multiple con selezione casuale" è stato **escluso dal design** nella v3.4.1.
+
+**Motivo:** Non allineato con obiettivi di accessibilità e consistenza UX.
+
+**Se necessario in futuro:** Implementare come feature opt-in per pack specifici (es. pack "variety" con flag dedicato), non come comportamento default.
+
 
 #### StereoPosition
 - **Cos'è**: Valore float da -1.0 (estrema sinistra) a +1.0 (estrema destra) che rappresenta la posizione orizzontale di una pila nel campo stereo
