@@ -34,11 +34,12 @@ class GamePlayController:
     """
     
     def __init__(
-        self, 
-        engine: GameEngine, 
-        screen_reader, 
+        self,
+        engine: GameEngine,
+        screen_reader,
         settings: Optional[GameSettings] = None,  # NEW PARAMETER (v1.4.2.1)
-        on_new_game_request: Optional[Callable[[], None]] = None  # NEW PARAMETER (v1.4.3)
+        on_new_game_request: Optional[Callable[[], None]] = None,  # NEW PARAMETER (v1.4.3)
+        audio_manager: Optional[object] = None  # NEW v3.4.0: AudioManager DI
     ):
         """Initialize gameplay controller.
         
@@ -51,12 +52,16 @@ class GamePlayController:
             on_new_game_request: Callback when user requests new game with game active (v1.4.3)
                 If None, starts directly (backward compatible)
                 If provided, callback should show confirmation dialog
+            audio_manager: Optional AudioManager instance (DI, v3.4.0)
         """
         self.engine = engine
         self.sr = screen_reader
         
         # Store callback for new game confirmation (v1.4.3)
         self.on_new_game_request = on_new_game_request
+
+        # NEW v3.4.0: AudioManager DI
+        self._audio = audio_manager
         
         # Use provided settings or create new (backward compatibility)
         # NEW in v1.4.2.1: Proper settings binding
@@ -408,7 +413,7 @@ class GamePlayController:
         """SPACE: Move selected cards to target pile."""
         success, message = self.engine.execute_move()
         # Message already vocalized by engine
-        
+
         # Log card move for analytics
         if success:
             try:
@@ -416,7 +421,6 @@ class GamePlayController:
                 dest_name = self._get_pile_name(dest_pile)
                 origin_pile = self.engine.selection.origin_pile if self.engine.selection.has_selection() else None
                 origin_name = self._get_pile_name(origin_pile) if origin_pile else "unknown"
-                
                 # Get card names from selection
                 card_names = "unknown"
                 if self.engine.selection.has_selection():
@@ -426,7 +430,6 @@ class GamePlayController:
                             card_names = cards[0].get_name()
                         else:
                             card_names = f"{len(cards)} cards ({cards[0].get_name()} + {len(cards)-1} more)"
-                
                 log.card_moved(
                     from_pile=origin_name,
                     to_pile=dest_name,
@@ -435,12 +438,32 @@ class GamePlayController:
                 )
             except:
                 pass  # Don't crash on logging errors
+            # NEW v3.4.0: Emissione evento audio per mossa valida
+            if self._audio:
+                try:
+                    from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                    self._audio.play_event(AudioEvent(
+                        event_type=AudioEventType.CARD_MOVE,
+                        source_pile=None,  # TODO: mappare indici reali se disponibili
+                        destination_pile=None
+                    ))
+                except Exception:
+                    pass
         elif "Invalid" in message or "Non" in message:
             # Failed move - log as invalid action
             log.invalid_action(
                 action="move_cards",
                 reason=message[:100]  # Truncate if too long
             )
+            # NEW v3.4.0: Emissione evento audio per mossa non valida
+            if self._audio:
+                try:
+                    from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                    self._audio.play_event(AudioEvent(
+                        event_type=AudioEventType.INVALID_MOVE
+                    ))
+                except Exception:
+                    pass
     
     def _cancel_selection(self) -> None:
         """DELETE: Cancel current card selection."""
@@ -450,12 +473,21 @@ class GamePlayController:
         """D or P: Draw cards from stock pile."""
         success, message = self.engine.draw_from_stock()
         # Message already vocalized by engine
-        
+
         # Log card draw (DEBUG level - high frequency event)
         if success:
             # Determine draw count from settings
             draw_count = 3 if self.settings.deck_type == "draw_three" else 1
             log.cards_drawn(count=draw_count)
+            # NEW v3.4.0: Emissione evento audio per pesca
+            if self._audio:
+                try:
+                    from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                    self._audio.play_event(AudioEvent(
+                        event_type=AudioEventType.STOCK_DRAW
+                    ))
+                except Exception:
+                    pass
     
     # === QUERY INFORMAZIONI ===
     

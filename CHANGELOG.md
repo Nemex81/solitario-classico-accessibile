@@ -1,3 +1,7 @@
+### Added
+- [infra] AudioManager integrato in DIContainer come singleton lazy-loaded con shutdown hook (`get_audio_manager`, `shutdown_audio_manager`).
+  - Accesso centralizzato, nessuna dipendenza verso Domain/Application.
+  - Aggiornata documentazione API e architettura.
 # Changelog
 
 All notable changes to this project will be documented in this file.
@@ -9,31 +13,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] — targeting v3.3.0
 
+## [Unreleased] — targeting v3.4.0
+
 ### Added
 
-- **Logging**: Sistema logging multi-file categorizzato Paradox-style. Sostituisce il monolite `solitario.log` con 4 file dedicati: `game_logic.log` (lifecycle partita, mosse), `ui_events.log` (navigazione UI, dialogs, TTS), `errors.log` (errori e warnings), `timer.log` (lifecycle timer). Root logger mantenuto per library logs (`wx`, `PIL`, `urllib3`) su `solitario.log`. Ogni file: `RotatingFileHandler` 5 MB, 3 backup, UTF-8. API pubblica (`setup_logging()`) completamente invariata — `acs_wx.py` e test esistenti zero modifiche. Strategia: Low-Risk Multi-Handler su named loggers Python esistenti (`propagate=False`).
-- **`src/infrastructure/logging/categorized_logger.py`**: Nuovo modulo con `setup_categorized_logging()`, dict `CATEGORIES` (4 categorie attive + 3 future commentate: `profile`, `scoring`, `storage`), costanti `LOGS_DIR` / `LOG_FILE` / `LOG_FORMAT`.
-- **`game_logger.py`**: Aggiunto `_timer_logger = logging.getLogger('timer')`; `timer_started`, `timer_expired`, `timer_paused` ora loggano su `timer.log`; `keyboard_command` ora logga su `ui_events.log` (fix incongruenza precedente: usava `_game_logger`).
+- **AudioManager**: Orchestratore principale sistema audio, gestione ciclo di vita, eventi, bus, panning, salvataggio settings, shutdown. Documentato in [docs/API.md](docs/API.md) e [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- **SoundMixer**: Nuovo orchestratore bus audio, gestione volumi, mute, panning, loop. Documentato in [docs/API.md](docs/API.md) e [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- **SoundCache**: Nuovo asset manager audio per caricamento WAV, gestione varianti, fallback e warning log. Documentato in [docs/API.md](docs/API.md) e [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- **AudioEventType & AudioEvent**: Nuova API pubblica per eventi audio, con dataclass immutabile e costanti stringa. Entry point dati per Application → AudioManager. Documentato in [docs/API.md](docs/API.md) e [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ### Changed
 
-- ⚠️ **Architecture refactoring**: Moved 6 dialog files (`abandon_dialog.py`, `detailed_stats_dialog.py`, `game_info_dialog.py`, `last_game_dialog.py`, `leaderboard_dialog.py`, `victory_dialog.py`) from `src/presentation/dialogs/` to `src/infrastructure/ui/dialogs/`. Dialogs depend directly on wxPython and belong to Infrastructure layer per Clean Architecture principles.
-- ⚠️ **Architecture refactoring**: Moved `timer_combobox.py` from `src/presentation/widgets/` to `src/infrastructure/ui/widgets/`. Widget depends on wxPython and belongs to Infrastructure layer.
-- Updated import paths in `game_engine.py`, `options_dialog.py`, `profile_menu_panel.py` to reflect new dialog/widget locations.
-- **`src/infrastructure/logging/logger_setup.py`**: Convertito in thin wrapper backward-compatible su `setup_categorized_logging()`. `backupCount` corretto da 5 (legacy) a 3 (allineato al design). Costanti `LOGS_DIR` / `LOG_FILE` ri-esportate da `categorized_logger.py`.
-- **`src/infrastructure/logging/__init__.py`**: Aggiunti export pubblici `setup_categorized_logging`, `LOGS_DIR`, `LOG_FILE`.
+- Aggiornata struttura Infrastructure Layer in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) per includere audio_events.py come entry point dati.
 
 ### Fixed
 
-- **Logging**: Replaced 4 runtime `print()` calls in `wx_frame.py` with `game_logger` (debug/warning level). Added missing `game_logger` import to `wx_frame.py`.
-- **Logging**: Replaced `print("Statistics report closed")` in `wx_dialog_provider.py` with `log.debug()`.
-- **Logging**: Replaced `print(f"Error clearing scores: {e}")` in `score_storage.py` with `log.error(..., exc_info=True)`.
-- **docs/API.md**: Updated dialog paths from `src.presentation.dialogs` to `src.infrastructure.ui.dialogs`. Corrected `ensure_guest_profile()` return type from `None` to `bool`. Added full `## Infrastructure Logging` section (`setup_categorized_logging`, tabelle helper semantici per categoria). Version bump `3.1.3` → `3.2.0`.
-- **docs/ARCHITECTURE.md**: Updated file organization to reflect dialogs/widgets relocation. Corrected `move_validator.py` → `solitaire_rules.py` (actual filename). Added `logging/` subtree to Infrastructure Layer file tree. Added "Logging Categorizzato" subsection with data flow diagram, handler properties, usage examples.
-- **docs/TODO.md**: Created operational dashboard for `sistema-log-categorizzati` branch with references to `DESIGN_categorized_logging.md` and `PLAN_categorized_logging.md`.
+- Aggiornata [docs/API.md](docs/API.md) con sezione AudioEventType & AudioEvent, signature, type hints, esempio d’uso.
 
 ---
-
 ## [3.2.2] - 2026-02-19
 
 ### Fixed

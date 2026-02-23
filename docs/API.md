@@ -1,4 +1,237 @@
+
+# LeaderboardDialog (Presentation Layer)
+
+
+**Modulo:** `src/presentation/dialogs/leaderboard_dialog.py`  
+**Layer:** Presentation
+
+Dialog accessibile per la visualizzazione della classifica (leaderboard). Compatibile con screen reader e navigazione da tastiera secondo checklist WAI-ARIA del progetto.
+
+### API pubblica
+
+- `LeaderboardDialog(parent: wx.Window, profiles_with_stats: list = None, current_profile_id: str = None, metric: str = "victories")`
+    - Crea un dialog per mostrare la classifica. Accetta:
+        - `profiles_with_stats`: lista di dict o oggetti con dati classifica
+        - `current_profile_id`: profilo attivo da evidenziare
+        - `metric`: metrica di ordinamento/visualizzazione (es. "victories")
+    - Navigabile da tastiera, titolo e label descrittivi, focus su primo controllo, ESC chiude dialog.
+
+**Esempio d’uso:**
+```python
+from src.presentation.dialogs.leaderboard_dialog import LeaderboardDialog
+dlg = LeaderboardDialog(parent, profiles_with_stats=profiles, current_profile_id="profile_001", metric="victories")
+dlg.ShowModal()
+```
+
+**Note:**
+- Non contiene logica di business/statistiche, solo presentazione dati.
+- Evidenzia il profilo attivo con un asterisco.
+- Aggiornare questa sezione se vengono aggiunte funzionalità di filtro, ordinamento o esportazione.
+
+
+# DependencyContainer (Infrastructure Layer)
+
+**Modulo:** `src/infrastructure/di/dependency_container.py`
+**Layer:** Infrastructure
+
+Contenitore IoC per la risoluzione centralizzata delle dipendenze secondo Clean Architecture.
+
+### API pubblica
+
+- `get_audio_manager() -> AudioManager | _AudioManagerStub`
+    - Restituisce l'istanza singleton di AudioManager (lazy-load). Se fallisce, ritorna uno stub no-op.
+    - Non accetta parametri. Nessuna dipendenza da Presentation/Application layer.
+
+**Note:**
+- Singleton per sessione. Fallback automatico a stub in caso di errore.
+- Logging su logger 'error' in caso di fallimento.
+
+# AudioManager (Infrastructure Layer)
+
+**Modulo:** `src/infrastructure/audio/audio_manager.py`  
+**Accesso via DI:** `container.get_audio_manager()` (singleton lazy-loaded)
+
+Orchestratore principale del sistema audio. Riceve `AudioEvent` dai controller Application, consulta `SoundCache`, calcola panning, delega la riproduzione a `SoundMixer`. Gestisce ciclo di vita, pause, resume, shutdown, salvataggio settings.
+
+### Metodi principali
+
+- `AudioManager(config: AudioConfig, sounds_base_path: Optional[Path] = None)`
+- `initialize() -> bool`
+- `play_event(event: AudioEvent) -> None`
+- `pause_all_loops() -> None`
+- `resume_all_loops() -> None`
+- `set_bus_volume(bus_name: str, volume: int) -> None`
+- `toggle_bus_mute(bus_name: str) -> bool`
+- `get_bus_volume(bus_name: str) -> int`
+- `is_bus_muted(bus_name: str) -> bool`
+- `save_settings() -> None`
+- `shutdown() -> None`
+- `is_available: bool`
+
+#### Accesso tramite DIContainer
+
+- `container.get_audio_manager() -> AudioManager`
+- `container.shutdown_audio_manager() -> None`
+
+**Note:**
+- Singleton, lazy-loaded. Non importare mai direttamente nel Domain/Application layer.
+- Cross-reference: [ARCHITECTURE.md](ARCHITECTURE.md#audio-manager)
+
 # API Documentation
+## 🟦 AudioManager
+
+Classe orchestratore principale del sistema audio.
+Riceve `AudioEvent` dai controller Application, consulta `SoundCache`, calcola panning, delega la riproduzione a `SoundMixer`. Gestisce ciclo di vita, pause, resume, shutdown, salvataggio settings.
+
+**API pubblica:**
+- `__init__(config: AudioConfig, sounds_base_path: Optional[Path] = None)`: Costruttore, inizializza cache e mixer.
+- `initialize() -> bool`: Inizializza pygame.mixer e SoundCache. Ritorna True se successo, False con fallback.
+- `play_event(event: AudioEvent) -> None`: Riproduce il suono associato all'evento con panning spaziale.
+- `pause_all_loops() -> None`: Sospende bus Ambient e Music.
+- `resume_all_loops() -> None`: Riprende bus Ambient e Music.
+- `set_bus_volume(bus_name: str, volume: int) -> None`: Imposta volume bus.
+- `toggle_bus_mute(bus_name: str) -> bool`: Toggle mute bus.
+- `get_bus_volume(bus_name: str) -> int`: Restituisce volume bus.
+- `is_bus_muted(bus_name: str) -> bool`: Stato mute bus.
+- `save_settings() -> None`: Salva volumi e stato mute in audio_config.json.
+- `shutdown() -> None`: Salva settings, ferma tutti i canali, chiama pygame.mixer.quit().
+- `is_available`: Proprietà, True se pygame.mixer è inizializzato.
+
+**Esempio d’uso:**
+```python
+from src.infrastructure.audio.audio_manager import AudioManager
+from src.infrastructure.config.audio_config_loader import AudioConfig
+from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+
+config = AudioConfig.load_from_file("config/audio_config.json")
+audio_manager = AudioManager(config)
+audio_manager.initialize()
+
+event = AudioEvent(event_type=AudioEventType.CARD_MOVE, source_pile=2, destination_pile=8)
+audio_manager.play_event(event)
+audio_manager.set_bus_volume("gameplay", 80)
+audio_manager.toggle_bus_mute("ambient")
+audio_manager.save_settings()
+audio_manager.shutdown()
+```
+
+**Note tecniche:**
+- Mapping evento→bus secondo tabella (gameplay, ui, ambient, music, voice)
+- Gestione varianti: selezione randomica se lista asset
+- Panning calcolato da destination_pile/source_pile (range -1.0 a +1.0)
+- Fallback robusto: warning log se asset mancante, nessun crash
+- Logging semantico su azioni critiche (inizializzazione, errori, salvataggio)
+- Policy bus: Ambient/Music sospesi in pausa, one-shot sempre attivi
+- Salvataggio settings persistente in JSON
+
+**Cross-reference:**
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): architettura layer, orchestrazione audio
+- [CHANGELOG.md](CHANGELOG.md): voce Added AudioManager orchestratore audio
+
+---
+## 🟦 SoundMixer
+
+Classe per la gestione dei 5 bus audio, volumi, mute, panning stereo constant-power, loop.
+Gestisce i canali pygame.mixer.Channel, policy di mute, volumi, loop e panning.
+
+**API pubblica:**
+- `play_one_shot(sound, bus_name, panning=0.0)`: Riproduce suono one-shot con panning.
+- `play_loop(sound, bus_name)`: Avvia loop infinito su bus.
+- `pause_loops()`: Sospende bus ambient e music.
+- `resume_loops()`: Riprende bus ambient e music.
+- `stop_all()`: Ferma tutti i canali.
+- `set_bus_volume(bus_name, volume)`: Imposta volume bus.
+- `toggle_bus_mute(bus_name)`: Toggle mute bus.
+- `get_bus_volume(bus_name)`: Restituisce volume bus.
+- `is_bus_muted(bus_name)`: Stato mute bus.
+
+**Esempio d’uso:**
+```python
+from src.infrastructure.audio.sound_mixer import SoundMixer
+mixer = SoundMixer(config)
+mixer.play_one_shot(sound, "gameplay", panning=0.5)
+mixer.set_bus_volume("ui", 60)
+mixer.toggle_bus_mute("ambient")
+```
+
+**Note:**
+- Panning stereo constant-power: volume uniforme su tutto lo spettro
+- Policy mute/loop: bus ambient/music sospesi, one-shot sempre attivi
+- Logging semantico su azioni critiche
+
+---
+## 🟦 SoundCache
+
+Classe per il caricamento e gestione asset audio in RAM.
+Carica tutti i file WAV del sound pack attivo come oggetti pygame.Sound.
+Gestisce varianti, fallback e warning log per asset mancanti.
+
+**API pubblica:**
+- `load_pack(pack_name: str) -> None`: Carica tutti i WAV del pack in RAM.
+- `get(event_type: str) -> Optional[Union[pygame.mixer.Sound, List[pygame.mixer.Sound]]]`: Restituisce il sound pre-caricato per l’evento.
+- `clear() -> None`: Svuota la cache.
+
+**Esempio d’uso:**
+```python
+from src.infrastructure.audio.sound_cache import SoundCache
+cache = SoundCache(Path("assets/sounds"))
+cache.load_pack("default")
+sound = cache.get("card_move")
+```
+
+**Note:**
+- Asset mancante → warning log, entry None (degradazione graziosa)
+- Varianti: lista di sound, selezione randomica a runtime
+
+---
+## 🟦 AudioEventType & AudioEvent
+
+### AudioEventType
+
+Classe di costanti stringa per i tipi di evento audio. Usata dai controller Application per descrivere azioni, feedback e eventi di gioco.
+
+**Esempio:**
+```python
+from src.infrastructure.audio.audio_events import AudioEventType
+event_type = AudioEventType.CARD_MOVE
+```
+
+**Principali costanti:**
+- CARD_MOVE, CARD_SELECT, CARD_DROP, FOUNDATION_DROP, INVALID_MOVE, TABLEAU_BUMPER, STOCK_DRAW, WASTE_DROP
+- UI_NAVIGATE, UI_SELECT, UI_CANCEL, MIXER_OPENED
+- AMBIENT_LOOP, MUSIC_LOOP
+- GAME_WON
+- TIMER_WARNING, TIMER_EXPIRED
+
+### AudioEvent
+
+Dataclass immutabile che rappresenta un evento audio. Creato dai controller Application, consumato dall’AudioManager.
+
+**Signature:**
+```python
+@dataclass(frozen=True)
+class AudioEvent:
+    event_type: str
+    source_pile: Optional[int] = None
+    destination_pile: Optional[int] = None
+    context: Dict[str, Any] = field(default_factory=dict)
+```
+
+**Esempio d’uso:**
+```python
+from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+event = AudioEvent(
+    event_type=AudioEventType.FOUNDATION_DROP,
+    source_pile=2,
+    destination_pile=8
+)
+```
+
+**Note:**
+- I controller descrivono solo COSA è successo, non COME il suono sarà riprodotto.
+- Il campo context permette estensioni future (es. info extra per bus, varianti, ecc).
+
+---
 
 ## 📚 Panoramica
 

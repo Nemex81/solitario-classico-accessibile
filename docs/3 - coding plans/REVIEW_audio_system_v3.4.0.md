@@ -559,6 +559,55 @@ Ma la FASE 6, che descrive il file `audio_manager.py`, **non include la definizi
 
 ---
 
+### Problema #6: AudioManager creato ma mai usato in avvio
+
+**Sezione**: FASE 7 (DIContainer) + FASE 8 (Application Layer)  
+
+Dopo aver definito correttamente il singleton nel container, il documento non
+spiega **quando e dove** l'applicazione lo ottiene e lo passa ai controller.
+La logica di esempio per `acs_wx.py` manca. Di conseguenza, un'implementazione
+iniziale completa può compilare e passare tutti i test, ma in esecuzione reale
+nessun suono viene mai riprodotto perché `GamePlayController._audio` resta `None`.
+
+#### Impatto
+
+- Il codice audio esiste e funziona in isolamento, ma non è mai invocato.  
+- L'utente lamenta «suoni non riprodotti» pur avendo seguito tutte le altre fasi.
+
+#### Soluzione proposta
+
+Aggiungere un paragrafo esplicativo in FASE 7, come già inserito nel piano:
+
+```markdown
+**Startup integration reminder**
+
+Dopo aver implementato `get_audio_manager()` il codice dell'applicazione deve
+ricordarsi di ottenere l'istanza, inizializzarla e passarla ai controller che
+emetteranno eventi audio. Questo è il passaggio mancante durante i test
+manuali: senza di esso il sistema è presente ma mai utilizzato.
+
+Esempio da aggiungere in `acs_wx.py` o equivalentemente in `App.on_startup()`:
+
+```python
+# acs_wx.py (setup iniziale)
+self.audio_manager = self.container.get_audio_manager()
+self.audio_manager.initialize()
+
+self.gameplay_controller = GamePlayController(
+    engine=self.engine,
+    screen_reader=self.screen_reader,
+    settings=self.settings,
+    on_new_game_request=self.show_new_game_dialog,
+    audio_manager=self.audio_manager     # <<<<< pass it here
+)
+```
+
+Allo stesso modo, se altri controller (es. `DialogManager`) ricevono l'audio
+manager passare lo stesso oggetto.
+```
+
+---
+
 ### Soluzione Proposta
 
 Aggiungere la definizione completa di `_AudioManagerStub` alla fine della FASE 6.

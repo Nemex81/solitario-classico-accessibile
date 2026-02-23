@@ -23,6 +23,35 @@ from src.presentation.game_formatter import GameFormatter
 
 
 class DIContainer:
+    def get_audio_manager(self) -> Any:
+        """Get or create AudioManager singleton (lazy-loaded).
+        AudioManager è l'orchestratore del sistema audio, gestisce SoundCache e SoundMixer.
+        Ritorna sempre la stessa istanza per l'intera sessione. Se pygame non è
+        disponibile o l'inizializzazione fallisce, viene restituito uno stub
+        (no-op) per evitare crash.
+        """
+        if "audio_manager" not in self._instances:
+            try:
+                from src.infrastructure.config.audio_config_loader import AudioConfigLoader
+                from src.infrastructure.audio.audio_manager import AudioManager
+
+                config = AudioConfigLoader.load()
+                manager = AudioManager(config)
+                # initialize mixer now so controllers can play immediately
+                manager.initialize()
+                self._instances["audio_manager"] = manager
+            except Exception:
+                # graceful degradation: provide stub implementation
+                from src.infrastructure.audio.audio_manager import _AudioManagerStub
+                self._instances["audio_manager"] = _AudioManagerStub()
+        return self._instances["audio_manager"]
+
+    def shutdown_audio_manager(self) -> None:
+        """Shutdown sicuro di AudioManager (salva settings, ferma mixer, rilascia risorse)."""
+        am = self._instances.get("audio_manager")
+        if am is not None:
+            am.shutdown()
+            del self._instances["audio_manager"]
     """Dependency Injection container for all application components.
     
     Manages object creation, lifecycle, and dependency resolution

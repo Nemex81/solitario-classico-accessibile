@@ -172,13 +172,21 @@ class SolitarioController:
         self.engine.on_game_ended = self.handle_game_ended
         log.debug_state("game_engine_ready", {"status": "initialized"})
         
+        # Prepare audio subsystem
+        log.debug_state("audio_manager_init", {"status": "starting"})
+        self.audio_manager = self.container.get_audio_manager()
+        if hasattr(self.audio_manager, 'initialize'):
+            self.audio_manager.initialize()
+        log.debug_state("audio_manager_ready", {"status": "initialized"})
+        
         # Application: Gameplay controller
         log.debug_state("gameplay_controller_init", {"status": "starting"})
         self.gameplay_controller = GamePlayController(
             engine=self.engine,
             screen_reader=self.screen_reader,
             settings=self.settings,
-            on_new_game_request=self.show_new_game_dialog
+            on_new_game_request=self.show_new_game_dialog,
+            audio_manager=self.audio_manager  # pass audio manager for effects
         )
         log.debug_state("gameplay_controller_ready", {"status": "initialized"})
         
@@ -250,6 +258,11 @@ class SolitarioController:
         self.container.register(
             "gameplay_controller",
             lambda: self.gameplay_controller  # Use existing instance
+        )
+        # register audio manager so other components may request it
+        self.container.register(
+            "audio_manager",
+            lambda: getattr(self, 'audio_manager', None)
         )
         
         # 4. Infrastructure: WindowController (for future async dialog integration)

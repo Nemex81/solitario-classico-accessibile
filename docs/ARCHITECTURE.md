@@ -1,3 +1,22 @@
+    ## AudioManager e DIContainer (Infrastructure Layer)
+
+    **AudioManager** è l'orchestratore del sistema audio:
+    - Riceve `AudioEvent` dai controller Application
+    - Consulta `SoundCache` per asset e mapping
+    - Delega la riproduzione a `SoundMixer` (bus, panning, mute)
+    - Gestisce ciclo di vita, pause, resume, shutdown, salvataggio settings
+
+    **Pattern DIContainer:**
+    - Accesso singleton lazy-loaded: `container.get_audio_manager()`
+    - Shutdown sicuro: `container.shutdown_audio_manager()`
+    - Nessuna dipendenza verso Domain/Application
+
+    **Cross-reference:** vedi [API.md](API.md#audiomanager)
+
+    │   ├── audio/
+    │   │   ├── audio_events.py    # AudioEventType & AudioEvent (entry point dati eventi audio, v3.4.0)
+    │   │   ├── audio_manager.py   # AudioManager orchestratore audio (gestione eventi, bus, panning, v3.4.0)
+    │   │   └── ...                # Altri moduli audio (SoundCache, SoundMixer)
 # Architettura del Sistema
 
 ## 📀 Panoramica
@@ -684,6 +703,21 @@ def format_end_reason(reason: EndReason) -> str: ...  # "Vittoria", "Tempo scadu
 
 ### Infrastructure Layer
 
+#### AudioManager (`src/infrastructure/audio/audio_manager.py`) (v3.4.0)
+
+Orchestratore principale del sistema audio. Riceve `AudioEvent` dai controller Application, consulta `SoundCache`, calcola panning, delega la riproduzione a `SoundMixer`. Gestisce ciclo di vita, pause, resume, shutdown, salvataggio settings.
+
+**Ruolo architetturale:**
+- Unico punto di ingresso per la riproduzione audio
+- Gestione mapping evento→bus, varianti, fallback, logging
+- Policy bus: Ambient/Music sospesi in pausa, one-shot sempre attivi
+- Salvataggio settings persistente in JSON
+
+**Cross-reference:**
+- [docs/API.md](docs/API.md): dettagli API pubblica, metodi, signature
+- [CHANGELOG.md](CHANGELOG.md): voce Added AudioManager orchestratore audio
+
+---
 #### Logging Categorizzato (`src/infrastructure/logging/`) (v3.2.0)
 
 Sistema di logging multi-file categorizzato in stile Paradox Interactive.

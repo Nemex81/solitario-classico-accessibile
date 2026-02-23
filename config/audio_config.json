@@ -1,0 +1,24 @@
+{
+  "version": "1.0",
+  "active_sound_pack": "default",
+  "bus_volumes": {
+    "gameplay": 80,
+    "ui": 70,
+    "ambient": 40,
+    "music": 30,
+    "voice": 90
+  },
+  "bus_muted": {
+    "gameplay": false,
+    "ui": false,
+    "ambient": false,
+    "music": false,
+    "voice": false
+  },
+  "mixer_params": {
+    "frequency": 44100,
+    "size": -16,
+    "channels": 2,
+    "buffer": 512
+  }
+}

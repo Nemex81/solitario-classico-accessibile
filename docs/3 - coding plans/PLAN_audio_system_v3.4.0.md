@@ -844,6 +844,34 @@ if self._audio:
 
 ### FASE 7: DIContainer integration
 
+**Startup integration reminder**
+
+Dopo aver implementato `get_audio_manager()` il codice dell'applicazione deve
+ricordarsi di ottenere l'istanza, inizializzarla e passarla ai controller che
+emetteranno eventi audio. Questo è il passaggio mancante durante i test
+manuali: senza di esso il sistema è presente ma mai utilizzato.
+
+Esempio da aggiungere in `acs_wx.py` o equivalentemente in `App.on_startup()`:
+
+```python
+# acs_wx.py (setup iniziale)
+self.audio_manager = self.container.get_audio_manager()
+self.audio_manager.initialize()             # garantisce pygame.mixer attivo
+
+self.gameplay_controller = GamePlayController(
+    engine=self.engine,
+    screen_reader=self.screen_reader,
+    settings=self.settings,
+    on_new_game_request=self.show_new_game_dialog,
+    audio_manager=self.audio_manager     # ← fondamentale
+)
+```
+
+Allo stesso modo, se altri controller (es. `DialogManager`) ricevono l'audio
+manager passare lo stesso oggetto.
+
+
+
 **Priorità**: 🟠 ALTA  
 **Commit**: `feat(infra): integra AudioManager in DIContainer come singleton`  
 **File**: `src/infrastructure/di_container.py`
