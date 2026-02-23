@@ -164,10 +164,8 @@ logs/
 
 # Audio assets - file binari WAV/OGG non tracciati in git standard (v3.4.0)
 # Distribuzione separata o Git LFS; mantenere la struttura cartelle via .gitkeep
-assets/sounds/**/*.wav
-assets/sounds/**/*.mp3
-assets/sounds/**/*.ogg
-# Backup riorganizzazione audio (temporaneo, da eliminare dopo test)
-sounds_backup/
+#assets/sounds/**/*.wav
+#assets/sounds/**/*.mp3
+#assets/sounds/**/*.ogg
 # Eccezione: .gitkeep mantiene la struttura cartelle in git
 !assets/sounds/**/.gitkeep
