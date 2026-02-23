@@ -94,6 +94,16 @@ sound = random.choice(sounds) if isinstance(sounds, list) else sounds
 
 ---
 
+# Note di Integrazione
+
+Il fix v3.4.1 si concentra esclusivamente sulla correzione del mapping dei file
+audio e sulla rimozione della logica random. L'integrazione completa del sistema
+audio nel container e nei controller (GamePlayController, InputHandler, DialogManager)
+è documentata nel piano principale `PLAN_audio_system_v3.4.0.md`.
+
+Per le modifiche infrastrutturali e i passaggi di iniezione, fare riferimento a
+quella fonte; il presente documento non necessita di ulteriori modifiche in quell'area.
+
 ## 🛠️ MODIFICHE DETTAGLIATE
 
 ### MODIFICA 1: Refactoring SoundCache

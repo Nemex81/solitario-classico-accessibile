@@ -967,6 +967,61 @@ def _handle_move_success(self, source_idx: int, dest_idx: int) -> None:
 - Auto-move → `AUTO_MOVE`
 - Vittoria → `GAME_WON` (poi `pause_all_loops()`)
 
+#### InputHandler
+
+L'`InputHandler` è responsabile della trasformazione di eventi tastiera in
+`GameCommand`. Poiché il feedback sonoro per navigazione e bordo non dipende
+dalla logica di gioco, l'audio può essere generato direttamente qui per diminuire
+la latenza.
+
+Modifiche:
+
+1. Aggiungere `audio_manager: Optional[Any] = None` al costruttore e memorizzarlo.
+2. Al termine di `handle_event()` (dopo aver tradotto l'evento in `GameCommand`),
+   emettere AudioEvent per i seguenti casi:
+   - Qualsiasi comando di spostamento (`MOVE_UP/DOWN/LEFT/RIGHT`) →
+     `UI_NAVIGATE` (o specifico `CARD_MOVE` se preferito) con panning basato sulla
+     posizione corrente del cursore (passata come campo nel `AudioEvent`).
+   - Comando non valido dove il cursore è al bordo (si dovrebbe raffinare la logica
+     con il `CursorManager`) → `TABLEAU_BUMPER`.
+   - Comando `SELECT_CARD`, `CANCEL_SELECTION` → `UI_SELECT`/`UI_CANCEL`.
+
+Esempio:
+
+```python
+def handle_event(self, event):
+    cmd = ...  # esistente
+    if cmd in (GameCommand.MOVE_LEFT, GameCommand.MOVE_RIGHT):
+        if self._audio:
+            from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+            self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_NAVIGATE))
+    if cmd == GameCommand.MOVE_LEFT and at_left_boundary:
+        if self._audio:
+            self._audio.play_event(AudioEvent(event_type=AudioEventType.TABLEAU_BUMPER))
+    return cmd
+```
+
+L'iniezione dell'`audio_manager` avviene nello stesso punto in cui l'`InputHandler`
+è creato (tipicamente nel bootstrap dell'app o in `DIContainer.get_input_handler()`).
+
+#### DialogManager
+
+L'integrazione in `SolitarioDialogManager` è secondaria ma consigliata per fornire
+feedback sonoro quando viene mostrato un dialogo o quando l'utente conferma/nega.
+
+1. Aggiungere parametro `audio_manager: Optional[Any] = None` al costruttore.
+2. In metodi come `show_abandon_game_prompt()` e simili, dopo la chiamata al dialogo:
+
+```python
+result = self.dialogs.show_yes_no(...)
+if self._audio:
+    self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_SELECT))
+return result
+```
+
+3. Il comportamento può essere reso asincrono per eventi non bloccanti (v3.5.0).
+
+---
 #### Integrazione eventi Timer
 
 > **Fix v1.1**: `TIMER_WARNING` e `TIMER_EXPIRED` erano definiti in `AudioEventType` e mappati

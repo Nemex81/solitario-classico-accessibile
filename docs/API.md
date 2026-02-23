@@ -46,7 +46,53 @@ Contenitore IoC per la risoluzione centralizzata delle dipendenze secondo Clean 
 - Singleton per sessione. Fallback automatico a stub in caso di errore.
 - Logging su logger 'error' in caso di fallimento.
 
+# InputHandler (Application Layer)
+
+**Modulo:** `src/application/input_handler.py`
+**Layer:** Application
+
+Gestisce la traduzione di eventi tastiera pygame in `GameCommand`.
+
+### API pubblica
+
+- `__init__(audio_manager: Optional[Any] = None)`
+  - `audio_manager`: opzionale, istanza di `AudioManager` iniettata via DI.
+    Se fornito, l'handler emette `AudioEvent` per navigazione e azioni UI.
+
+- `handle_event(event: pygame.event.Event) -> Optional[GameCommand]`
+  - Traduce l'evento in `GameCommand` secondo la tabella di binding.
+  - Se `audio_manager` è presente, chiama `audio_manager.play_event(...)`
+    con `AudioEventType.UI_NAVIGATE`, `UI_SELECT` o `UI_CANCEL` come appropriato.
+
+- `add_binding(...)`, `remove_binding(...)` (restano invariate)
+
+**Note:**
+- L'handler è stateless e condivisibile. Riceve AudioManager solo per effetti sonori;
+  non lo usa per decisioni logiche.
+
+# DialogManager (Application Layer)
+
+**Modulo:** `src/application/dialog_manager.py`
+**Layer:** Application
+
+Gestisce finestre di dialogo accessibili (abbandona, nuova partita, etc.).
+
+### API pubblica
+
+- `__init__(dialog_provider: Optional[DialogProvider] = None, audio_manager: Optional[Any] = None)`
+  - `audio_manager`: opzionale, riproduce un effetto sonoro `UI_SELECT` ogni volta che
+    un dialogo sincrono viene mostrato o chiuso.
+
+- `show_abandon_game_prompt() -> bool`, `show_new_game_prompt() -> bool`, ...
+  - Ogni metodo ora invoca il `audio_manager` se disponibile.
+
+**Note:**
+- L'audio è completamente opzionale per la gestione dei dialoghi; la funzionalità
+  degrada in assenza di manager.
+
 # AudioManager (Infrastructure Layer)
+
+[...existing lines...]
 
 **Modulo:** `src/infrastructure/audio/audio_manager.py`  
 **Accesso via DI:** `container.get_audio_manager()` (singleton lazy-loaded)
