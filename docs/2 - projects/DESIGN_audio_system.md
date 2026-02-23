@@ -724,7 +724,7 @@ Questo design è pronto per la fase tecnica (PLAN) quando:
 - [x] Opzioni valutate e motivate (3 opzioni analizzate)
 - [x] Degradazione graziosa definita
 
-**Next Step**: Piano tecnico completato — `docs/3 - coding plans/PLAN_audio_system_v3.4.0.md` (v1.1, post-review, stato READY). Pronto per implementazione sul branch `feature/audio-system`.
+**Next Step**: Piano tecnico completato — `docs/3 - coding plans/PLAN_audio_system_v3.4.1.md` (v1.1, post-review, stato READY). Pronto per implementazione sul branch `feature/audio-system`.
 
 ---
 
@@ -783,7 +783,7 @@ Questo design è pronto per la fase tecnica (PLAN) quando:
    - La mappatura è definita in una struttura Python (dict) e documentata qui e nel PLAN.
    - Esempio: `CARD_MOVE` → `["gameplay/card_move_1.wav", "gameplay/card_move_2.wav"]`
 
-**2. Varianti**: Se una lista di file è associata a un evento, la selezione è randomica tra le varianti disponibili (pattern: anti-ripetitività).
+**2. Varianti**: *(deprecato)* l’idea di caricare più file e scegliere randomicamente è stata abbandonata in v3.4.1.
 
 **3. Bus assignment**: Ogni evento è assegnato a un bus (`Gameplay`, `UI`, `Ambient`, `Music`, `Voice`) secondo tabella seguente.
 
@@ -880,7 +880,7 @@ Una volta implementato, il giocatore non vedente potrà:
 ## 🎯 Status Progetto
 
 **Design**: ✅ FROZEN  
-**Piano Tecnico**: ✅ READY (`docs/3 - coding plans/PLAN_audio_system_v3.4.0.md` — v1.1, post-review)  
+**Piano Tecnico**: ✅ READY (`docs/3 - coding plans/PLAN_audio_system_v3.4.1.md` — v1.1, post-review)  
 **Implementazione**: ⏳ PENDING  
 **Testing**: ⏳ PENDING  
 **Deploy**: ⏳ PENDING

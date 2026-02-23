@@ -380,7 +380,7 @@ Per ogni fase non completata in docs/TODO.md:
 Utente: "Inizia l'implementazione del sistema audio"
 
 → Step 1: Verifico docs/TODO.md...
-  ASSENTE → Lo creo da TEMPLATE_exaple_TODO.md con link a PLAN_audio_system_v3.4.0.md
+  ASSENTE → Lo creo da TEMPLATE_exaple_TODO.md con link a PLAN_audio_system_v3.4.1.md
 
 → Step 3: Leggo TODO (FASE 1: dipendenze), PLAN (dettagli requirements.txt + assets)
 

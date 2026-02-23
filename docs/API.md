@@ -163,7 +163,7 @@ audio_manager.shutdown()
 
 **Note tecniche:**
 - Mapping evento→bus secondo tabella (gameplay, ui, ambient, music, voice)
-- Gestione varianti: selezione randomica se lista asset
+- Gestione varianti: **non utilizzata** in versione v3.4.1, il mapping è semplice evento→file
 - Panning calcolato da destination_pile/source_pile (range -1.0 a +1.0)
 - Fallback robusto: warning log se asset mancante, nessun crash
 - Logging semantico su azioni critiche (inizializzazione, errori, salvataggio)
@@ -227,7 +227,7 @@ sound = cache.get("card_move")
 
 **Note:**
 - Asset mancante → warning log, entry None (degradazione graziosa)
-- Varianti: lista di sound, selezione randomica a runtime
+- Varianti: lista di sound (deprecated, non usata; ora un solo file per evento)
 
 ---
 ## 🟦 AudioEventType & AudioEvent
@@ -287,6 +287,31 @@ Questo documento descrive l'API pubblica del Solitario Classico Accessibile.
 
 ---
 
+### TimerManager
+
+Utility per la gestione di un conto alla rovescia con callback.
+Non è usato direttamente dall'utente finale ma viene creato
+automaticamente dal `GameEngine` quando una partita inizia con timer
+abilitato.  Parametri principali:
+
+```python
+TimerManager(
+    minutes: int = 10,
+    warning_callback: Optional[Callable[[int], None]] = None,
+    warning_intervals: Optional[list[int]] = None,
+    expired_callback: Optional[Callable[[], None]] = None  # v3.4.2
+)
+```
+
+- `warning_callback(minutes_left)` invocato una volta per ciascun
+  intervallo configurato (default 5,2,1 minuti).
+- `expired_callback()` invocato una sola volta al termine del timer.
+
+Metodi utili: `start()`, `pause()`, `resume()`, `reset()`,
+`check_warnings()`.
+
+---
+
 ## 🎮 GameController
 
 Il `GameController` è il punto di ingresso principale per interagire con il gioco.
@@ -303,6 +328,8 @@ controller = container.get_game_controller()
 ### Metodi
 
 #### `start_new_game(difficulty: str = "easy", deck_type: str = "french") -> str`
+
+Note: when a game is started via controller the underlying `GameEngine` will also initialize an internal `TimerManager` (minutes derived from `settings.max_time_game`).
 
 Inizia una nuova partita.
 

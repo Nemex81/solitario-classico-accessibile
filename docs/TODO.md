@@ -8,7 +8,7 @@ Stato: READY
 ---
 
 📖 Piani di riferimento:
-- [2 - projects/PLAN_audio_system_v3.4.0.md](2%20-%20projects/PLAN_audio_system_v3.4.0.md)   (documentazione implementazione generale)
+- [2 - projects/PLAN_audio_system_v3.4.1.md](2%20-%20projects/PLAN_audio_system_v3.4.1.md)   (documentazione implementazione generale)
 - [3 - coding plans/PLAN_audio_system_fix_v3.4.1.md](3%20-%20coding%20plans/PLAN_audio_system_fix_v3.4.1.md)   (piano corrrettivo dettagliato)
 
 
@@ -21,13 +21,24 @@ Obiettivo: risolvere il problema dei suoni non riprodotti correggendo il mapping
 
 Aggiornare il TODO dopo ogni fase con riferimento alla documentazione pertinente.
 
+**Nuovo requisito:** Inserire anche task per migliorare il supporto timer audio.
+- Modificare `TimerManager` per callback `expired_callback`
+- Integrare un `TimerManager` nel `GameEngine` con audio events
+- Aggiornare `DIContainer.get_timer_manager` con parametri callback
+- Creare test per audio events sui timer
+
 File coinvolti:
 - src/infrastructure/audio/sound_cache.py
 - src/infrastructure/audio/audio_manager.py
+- src/application/timer_manager.py
+- src/application/game_engine.py
+- src/infrastructure/di_container.py
 - docs/2 - projects/DESIGN_audio_system.md
 - docs/3 - coding plans/PLAN_audio_system_fix_v3.4.1.md
 - tests/infrastructure/audio/test_sound_cache.py  (da creare)
 - tests/infrastructure/audio/test_audio_manager.py  (da creare)
+- tests/unit/application/test_timer_manager.py  (da creare)
+- tests/integration/test_timer_integration.py  (aggiornare)
 
 Checklist fasi:
 - [x] Aggiorna mapping EVENT_TO_FILES e type hints in SoundCache
@@ -39,6 +50,7 @@ Checklist fasi:
 - [x] Test manuale funzionale (elenco checklist Step 6 nel piano)
 - [x] Commit e push modifiche con messaggio convenzionale
 
+- [x] **BUG #1:** Eliminare metodo duplicato `resume_all_loops()` in `audio_manager.py`
 Criteri di completamento:
 - Nessun warning "Sound asset missing" al lancio
 - SoundCache.get() non restituisce liste
@@ -80,7 +92,7 @@ Criteri di completamento:
 1. Mappatura esplicita: Ogni `AudioEventType` è mappato a una o più path di file WAV (solo WAV, no OGG/MP3) nella struttura `assets/sounds/default/`.
    - La mappatura è definita in una struttura Python (dict) e documentata qui e nel DESIGN.
    - Esempio: `CARD_MOVE` → `["gameplay/card_move_1.wav", "gameplay/card_move_2.wav"]`
-2. Varianti: Se una lista di file è associata a un evento, la selezione è randomica tra le varianti disponibili (anti-ripetitività).
+2. Varianti: *(deprecated)* in v3.4.1 la selezione casuale è stata rimossa; ogni evento ha un unico file per pack.
 3. Bus assignment: Ogni evento è assegnato a un bus (`Gameplay`, `UI`, `Ambient`, `Music`, `Voice`) secondo tabella seguente.
 4. Eventi opzionali: Alcuni eventi (es. `TIMER_WARNING`, `TIMER_EXPIRED`, `MIXER_OPENED`) sono disattivabili via config JSON (`audio_config.json`).
 5. Degradazione: Se un file manca, warning nel log e nessun crash. Se nessuna variante disponibile, l'evento è silenziato.
@@ -89,7 +101,7 @@ Criteri di completamento:
 
 | AudioEventType         | File(s) WAV (relativo a assets/sounds/default/)         | Bus        | Varianti | Note |
 |-----------------------|--------------------------------------------------------|------------|----------|------|
-| CARD_MOVE             | gameplay/card_move_1.wav, ..._2.wav, ..._3.wav         | Gameplay   | Sì (3)   | Random |
+| CARD_MOVE             | gameplay/card_move.wav                                  | Gameplay   | No       |       |
 | CARD_SELECT           | gameplay/card_select.wav                               | Gameplay   | No       |       |
 | CARD_DROP             | gameplay/card_drop.wav                                 | Gameplay   | No       |       |
 | FOUNDATION_DROP       | gameplay/foundation_drop.wav                           | Gameplay   | No       |       |

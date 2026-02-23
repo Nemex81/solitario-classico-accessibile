@@ -102,7 +102,12 @@ class DIContainer:
         """
         self._settings = settings
     
-    def get_timer_manager(self, settings=None):
+    def get_timer_manager(
+        self,
+        settings=None,
+        warning_callback=None,
+        expired_callback=None,
+    ):
         """Create new TimerManager instance.
         
         TimerManager is per-game (not singleton) to allow proper
@@ -110,6 +115,8 @@ class DIContainer:
         
         Args:
             settings: GameSettings to use (None = use container's settings)
+            warning_callback: Optional callback(minutes_left) for warnings
+            expired_callback: Optional callback() for expiration
         
         Returns:
             New TimerManager instance
@@ -121,7 +128,8 @@ class DIContainer:
         
         return TimerManager(
             minutes=settings.timer_minutes,
-            warning_callback=None  # Set by caller if needed
+            warning_callback=warning_callback,
+            expired_callback=expired_callback,
         )
     
     def get_input_handler(self):

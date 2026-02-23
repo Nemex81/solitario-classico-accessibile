@@ -1,10 +1,10 @@
-# 🔍 Review Critico - PLAN_audio_system_v3.4.0.md
+# 🔍 Review Critico - PLAN_audio_system_v3.4.1.md
 
-> **Documento Analizzato**: `PLAN_audio_system_v3.4.0.md`  
+> **Documento Analizzato**: `PLAN_audio_system_v3.4.1.md`  
 > **Data Review**: 2026-02-22  
 > **Reviewer**: AI Assistant  
 > **Stato Documento**: DRAFT → NEEDS REVISION (5 correzioni richieste)  
-> **Versione Target**: v3.4.0
+> **Versione Target**: v3.4.1
 
 ---
 
@@ -88,7 +88,7 @@ Il documento è **strutturalmente solido** e allineato al design concettuale FRO
 
 ### Posizione nel Documento
 
-**File**: `PLAN_audio_system_v3.4.0.md`  
+**File**: `PLAN_audio_system_v3.4.1.md`  
 **Sezione**: FASE 5 - SoundMixer  
 **Sottosezione**: "Calcolo panning per canale stereo"  
 **Righe**: Circa 450-460 (nel blocco codice `_apply_panning`)
@@ -197,7 +197,7 @@ Per un gioco accessibile dove l'audio è un canale informativo critico, avere un
 
 ### Posizione nel Documento
 
-**File**: `PLAN_audio_system_v3.4.0.md`  
+**File**: `PLAN_audio_system_v3.4.1.md`  
 **Sezione**: FASE 3 - AudioConfig dataclass e AudioConfigLoader  
 **Sottosezione**: `config/audio_config.json` - schema completo  
 **Righe**: Circa 300-320 (blocco JSON con `pile_panning`)
@@ -348,8 +348,8 @@ Identico ragionamento si applica qui: `audio_config.json` deve contenere paramet
 
 ### Posizione nel Documento
 
-**File**: `PLAN_audio_system_v3.4.0.md`  
-**Sezione**: FASE 2 - AudioEvent dataclass  
+**File**: `PLAN_audio_system_v3.4.1.md`  
+**Sezione**: FASE 2 - AudioEvent dataclass
 **Sottosezione**: `AudioEventType` class  
 **Righe**: Circa 220-240 (costanti `TIMER_WARNING`, `TIMER_EXPIRED`)
 
@@ -401,7 +401,7 @@ def __init__(
     settings: Optional[GameSettings] = None,
     on_new_game_request: Optional[Callable[[], None]] = None,
     audio_manager: Optional[Any] = None,
-    timer_manager: Optional[TimerManager] = None  # NEW v3.4.0 - ricevuto dal container
+    timer_manager: Optional[TimerManager] = None  # NEW v3.4.1 - ricevuto dal container
 ) -> None:
     ...
     self._audio = audio_manager
@@ -445,7 +445,7 @@ Questo approccio rispetta la separazione layer:
 
 ### Posizione nel Documento
 
-**File**: `PLAN_audio_system_v3.4.0.md`  
+**File**: `PLAN_audio_system_v3.4.1.md`  
 **Sezione**: FASE 8 - Application Layer  
 **Sottosezione**: InputHandler.GameCommand  
 **Righe**: Circa 600-610 (enum `TOGGLE_AUDIO_MIXER`)
@@ -457,7 +457,7 @@ Questo approccio rispetta la separazione layer:
 La FASE 8 aggiunge il nuovo comando al `GameCommand` enum:
 
 ```python
-# Audio (v3.4.0)
+# Audio (v3.4.1)
 TOGGLE_AUDIO_MIXER = auto()  # Tasto M
 ```
 
@@ -538,7 +538,7 @@ Questo evita "buchi" nel flusso di implementazione e riduce il rischio di interp
 
 ### Posizione nel Documento
 
-**File**: `PLAN_audio_system_v3.4.0.md`  
+**File**: `PLAN_audio_system_v3.4.1.md`  
 **Sezioni**: FASE 7 (DIContainer integration) referenzia `_AudioManagerStub`, ma FASE 6 (AudioManager) non la definisce  
 **Righe**: Circa 550 (FASE 7, blocco except) e assente in FASE 6
 
@@ -631,7 +631,7 @@ class _AudioManagerStub:
     audio_manager.play_event() senza crash anche se pygame manca.
     
     Version:
-        v3.4.0: Initial implementation
+        v3.4.1: Initial implementation
     """
     
     @property
@@ -711,7 +711,7 @@ Questo è identico al pattern usato in `TtsProvider` del codebase esistente, dov
 
 ### Posizione nel Documento
 
-**File**: `PLAN_audio_system_v3.4.0.md`  
+**File**: `PLAN_audio_system_v3.4.1.md`  
 **Sezione**: FASE 2 - AudioEvent dataclass & FASE 4 - SoundCache  
 **Sottosezione**: definizione `AudioEventType` e dizionario `SOUND_FILES`  
 **Righe**: numerose (event_type e mapping)
@@ -776,7 +776,7 @@ Le correzioni sono tutte **localizzate** e non richiedono riscrittura di fasi in
 
 ## ✅ Conclusione
 
-Il PLAN `PLAN_audio_system_v3.4.0.md` è di **alta qualità strutturale** e dimostra ottima comprensione dell'architettura del progetto. Le 5 correzioni richieste sono tutte **risolvibili rapidamente** e non intaccano la validità complessiva del documento.
+Il PLAN `PLAN_audio_system_v3.4.1.md` è di **alta qualità strutturale** e dimostra ottima comprensione dell'architettura del progetto. Le 5 correzioni richieste sono tutte **risolvibili rapidamente** e non intaccano la validità complessiva del documento.
 
 **Raccomandazione Finale**: Applicare le correzioni indicate (45 minuti di lavoro), poi procedere con l'implementazione seguendo l'ordine delle 10 fasi. Il PLAN così revisionato sarà **production-ready** e minimizzerà il rischio di ambiguità durante il coding.
 
@@ -796,7 +796,7 @@ Il PLAN `PLAN_audio_system_v3.4.0.md` è di **alta qualità strutturale** e dimo
     - La mappatura è definita in una struttura Python (dict) e documentata qui e nel DESIGN.
     - Esempio: `CARD_MOVE` → `["gameplay/card_move_1.wav", "gameplay/card_move_2.wav"]`
 
-**2. Varianti**: Se una lista di file è associata a un evento, la selezione è randomica tra le varianti disponibili (pattern: anti-ripetitività).
+**2. Varianti**: *(deprecato)* la fase di revisione raccomandava random, ma v3.4.1 rimuove quel requisito.
 
 **3. Bus assignment**: Ogni evento è assegnato a un bus (`Gameplay`, `UI`, `Ambient`, `Music`, `Voice`) secondo tabella seguente.
 

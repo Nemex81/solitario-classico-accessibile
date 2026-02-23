@@ -380,7 +380,7 @@ def play_event(self, event: AudioEvent) -> None:
 | Documento | Dimensione | Completezza | Quality |
 |-----------|-----------|-------------|---------||
 | `DESIGN_audio_system.md` | 52 KB | 100% | ⭐⭐⭐⭐⭐ |
-| `PLAN_audio_system_v3.4.0.md` | 52 KB | 100% | ⭐⭐⭐⭐⭐ |
+| `PLAN_audio_system_v3.4.1.md` | 52 KB | 100% | ⭐⭐⭐⭐⭐ |
 | `PLAN_audio_system_fix_v3.4.1.md` | 29 KB | 100% | ⭐⭐⭐⭐⭐ |
 | Docstrings inline | ~2 KB | 95% | ⭐⭐⭐⭐⭐ |
 

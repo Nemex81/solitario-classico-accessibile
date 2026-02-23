@@ -95,7 +95,9 @@ class GameEngine:
         score_storage: Optional[ScoreStorage] = None,  # NEW (Phase 8/8)
         dialog_provider: Optional['DialogProvider'] = None,  # ✨ NEW v1.6.0
         on_game_ended: Optional[Callable[[bool], None]] = None,  # 🆕 NEW v1.6.2
-        profile_service: Optional['ProfileService'] = None  # 🆕 NEW v3.1.0
+        profile_service: Optional['ProfileService'] = None,  # 🆕 NEW v3.1.0
+        audio_manager: Optional[object] = None,  # NEW v3.4.2: inject AudioManager for timer events
+        timer_manager: Optional['TimerManager'] = None,  # NEW v3.4.2: optional external TimerManager
     ):
         """Initialize game engine.
         
@@ -118,7 +120,11 @@ class GameEngine:
         self.cursor = cursor
         self.selection = selection
         self.screen_reader = screen_reader
+        # AudioManager may be injected for playing events (v3.4.2)
+        self._audio = audio_manager
         self.audio_enabled = screen_reader is not None
+        # TimerManager instance used for warning/expiration callbacks (may be None)
+        self._timer_manager = timer_manager
         
         # Settings integration (Phase 1/7 - Bug #3)
         self.settings = settings
@@ -388,6 +394,23 @@ class GameEngine:
         
         # 6️⃣ Start game timer
         self.service.start_game()
+        # Setup internal TimerManager (used for audio warnings/expired events)
+        if self.settings and self.settings.max_time_game > 0:
+            minutes = max(1, int(self.settings.max_time_game // 60))
+            from src.application.timer_manager import TimerManager
+            if self._timer_manager is None:
+                # create new manager with our callbacks
+                self._timer_manager = TimerManager(
+                    minutes=minutes,
+                    warning_callback=self._on_timer_warning,
+                    expired_callback=self._on_timer_expired,
+                )
+            else:
+                # reconfigure existing manager
+                self._timer_manager.reset(minutes=minutes)
+                self._timer_manager.warning_callback = self._on_timer_warning
+                self._timer_manager.expired_callback = self._on_timer_expired
+            self._timer_manager.start()
         
         # 7️⃣ Announce game start
         if self.screen_reader:
@@ -416,6 +439,31 @@ class GameEngine:
         return self.service.is_game_running
     
     # ========================================
+    # TIMER CALLBACKS (v3.4.2)
+    # ========================================
+    def _on_timer_warning(self, minutes_left: int) -> None:
+        """Handler invoked by internal TimerManager on warning.
+        Emits an audio event if an AudioManager was injected.
+        """
+        if self._audio:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                self._audio.play_event(AudioEvent(event_type=AudioEventType.TIMER_WARNING))
+            except Exception:
+                log.error("Failed to play timer warning audio", exc_info=True)
+
+    def _on_timer_expired(self) -> None:
+        """Handler invoked by internal TimerManager when timer expires.
+        Emits an audio event if an AudioManager was injected.
+        """
+        if self._audio:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                self._audio.play_event(AudioEvent(event_type=AudioEventType.TIMER_EXPIRED))
+            except Exception:
+                log.error("Failed to play timer expired audio", exc_info=True)
+
+    # ========================================
     # TIMER TICK HANDLING (v2.7.0)
     # ========================================
     
@@ -426,6 +474,14 @@ class GameEngine:
         This method is designed to be called by wx.Timer or similar
         mechanism in the UI layer.
         """
+        # Before anything else, let our TimerManager check its callbacks
+        if self._timer_manager:
+            try:
+                self._timer_manager.check_warnings()
+            except Exception:
+                # ensure timer issues don't crash engine
+                log.error("Error in TimerManager callbacks", exc_info=True)
+        
         # Only check if game is running and timer is enabled
         if not self.service.is_game_running:
             return

@@ -86,10 +86,6 @@ class AudioManager:
         if self.sound_mixer:
             self.sound_mixer.resume_loops()
 
-    def resume_all_loops(self) -> None:
-        """Riprende bus Ambient e Music."""
-        self.sound_mixer.resume_loops()
-
     def set_bus_volume(self, bus_name: str, volume: int) -> None:
         if self.sound_mixer:
             self.sound_mixer.set_bus_volume(bus_name, volume)

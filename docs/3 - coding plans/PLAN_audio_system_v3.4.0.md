@@ -9,8 +9,8 @@
 
 **Priorità**: 🟠 ALTA  
 **Stato**: READY (v1.2 — post-review, asset alignment)
-**Branch**: `feature/audio-system`
-**Versione Target**: `v3.4.0`  
+**Branch**: `supporto-audio-centralizzato`  # aggiornato per fix v3.4.1
+**Versione Target**: `v3.4.1`  
 **Data Creazione**: 2026-02-22  
 **Ultima Revisione**: 2026-02-23 (v1.2 allineamento asset)
 **Autore**: AI Assistant + Nemex81  
@@ -40,7 +40,7 @@ Aggiungere interamente all'**Infrastructure Layer** il sottosistema audio compos
     - La mappatura è definita in una struttura Python (dict) e documentata qui e nel DESIGN.
     - Esempio: `CARD_MOVE` → `["gameplay/card_move_1.wav", "gameplay/card_move_2.wav"]`
 
-**2. Varianti**: Se una lista di file è associata a un evento, la selezione è randomica tra le varianti disponibili (pattern: anti-ripetitività).
+**2. Varianti**: *(deprecato)* precedentemente si pensava a file multipli + scelta randomica; progettazione finale elimina questo concetto.
 
 **3. Bus assignment**: Ogni evento è assegnato a un bus (`Gameplay`, `UI`, `Ambient`, `Music`, `Voice`) secondo tabella seguente.
 

@@ -24,11 +24,23 @@
 - **File Coinvolto:** `src/infrastructure/audio/audio_manager.py`
 - **Impatto:** MEDIO - Codice inutilizzato, complessità superflua
 
+#### Problema 3: TimerManager non utilizzato / callback mancanti
+- **Stato:** Audio events `TIMER_WARNING` e `TIMER_EXPIRED` non vengono mai emessi
+- **Causa:** `TimerManager` manca di `expired_callback` e il codice base non lo istanzia mai;
+  il timer interno è gestito manualmente da `GameEngine`/`GameService`
+- **File Coinvolti:** `src/application/timer_manager.py`, `src/application/game_engine.py`
+- **Impatto:** BASSO/MEDIO – funzionalità audio disallineata, report automatici segnalano omessa integrazione; non impatta il funzionamento attuale ma riduce coesione e impedisce avviso audio di scadenza
+
 ### Soluzione Proposta
 
 **Design Definitivo:** Un evento = un suono fisso per pack. Nessuna variazione casuale.
 
 **Principio:** La varietà sonora viene ottenuta **solo** tramite cambio sound pack (es. "default" → "retro"), non tramite randomizzazione per evento.
+
+**Aggiunta:** la logica di warning/expired timer deve essere supportata da callback.
+Il `TimerManager` sarà aggiornato con un parametro `expired_callback` e il
+`GameEngine` (o controller) otterrà una istanza per lanciare eventi audio
+quando il timer avvicina la scadenza o scade. Questo risolve Problema 3.
 
 ---
 
@@ -99,7 +111,7 @@ sound = random.choice(sounds) if isinstance(sounds, list) else sounds
 Il fix v3.4.1 si concentra esclusivamente sulla correzione del mapping dei file
 audio e sulla rimozione della logica random. L'integrazione completa del sistema
 audio nel container e nei controller (GamePlayController, InputHandler, DialogManager)
-è documentata nel piano principale `PLAN_audio_system_v3.4.0.md`.
+è documentata nel piano principale `PLAN_audio_system_v3.4.1.md`.
 
 Per le modifiche infrastrutturali e i passaggi di iniezione, fare riferimento a
 quella fonte; il presente documento non necessita di ulteriori modifiche in quell'area.
@@ -437,6 +449,38 @@ Questo riduce duplicazione asset mantenendo consistenza semantica.
 Nessuna azione richiesta per codice esistente. Le modifiche sono interne al layer Infrastructure.
 Sound pack developers: creare un file WAV per evento (no varianti multiple necessarie).
 ```
+
+---
+
+### MODIFICA 3: TimerManager & GameEngine integration
+
+**File:**
+- `src/application/timer_manager.py`
+- `src/application/game_engine.py`
+- `src/infrastructure/di_container.py`
+
+#### 3.1 TimerManager changes
+
+- Add `expired_callback` parameter to constructor.
+- Maintain `_expired_fired` flag to prevent repeated firing.
+- Update `check_warnings()` to call `expired_callback` when timer expires.
+- Reset flag in `reset()`.
+
+#### 3.2 GameEngine updates
+
+- Accept `audio_manager` and optional external `timer_manager` in constructor.
+- During new game initialization, instantiate or reconfigure `TimerManager` with
+  callbacks bound to `_on_timer_warning` and `_on_timer_expired`.
+- Implement `_on_timer_warning`/`_on_timer_expired` methods that forward
+  `AudioEventType.TIMER_WARNING`/`TIMER_EXPIRED` to injected AudioManager.
+- Call `self._timer_manager.check_warnings()` at the start of `on_timer_tick()`
+  so audio callbacks fire even if the service handles expiry separately.
+
+#### 3.3 DIContainer enhancements
+
+- `get_timer_manager()` now accepts `warning_callback` and `expired_callback`
+  and forwards them to the `TimerManager` constructor.
+- Integration tests updated accordingly.
 
 ---
 
@@ -956,7 +1000,7 @@ Committa con: "fix(audio): Align sound mapping, remove unused random logic v3.4.
 
 ### Documentazione Collegata
 - `docs/2 - projects/DESIGN_audio_system.md` (Design sistema completo)
-- `docs/3 - coding plans/PLAN_audio_system_v3.4.0.md` (Piano implementazione iniziale)
+- `docs/3 - coding plans/PLAN_audio_system_v3.4.1.md` (Piano implementazione iniziale)
 - `docs/3 - coding plans/REVIEW_audio_system_v3.4.0.md` (Review implementazione)
 
 ### Issue/Discussion
