@@ -14,7 +14,7 @@
 
 Il documento è **strutturalmente solido** e allineato al design concettuale FROZEN. L'architettura rispetta perfettamente la Clean Architecture del progetto, il pattern di configurazione JSON è identico a `scoring_config_loader.py`, la degradazione graziosa è implementata su tutti i livelli, e la commit strategy è atomica e rollback-safe.
 
-**Tuttavia**, sono stati individuati **5 problemi tecnici** che richiedono correzione prima dell'implementazione. Di questi, **1 è critico** (formula panning errata che abbassa il volume), **3 sono ad alta/media priorità** (anti-pattern, eventi mancanti, handler incompleto), e **1 è minore** (classe stub non definita).
+**Tuttavia**, sono stati individuati **6 problemi tecnici** che richiedono correzione prima dell'implementazione. Di questi, **1 è critico** (formula panning errata che abbassa il volume), **3 sono ad alta/media priorità** (anti-pattern, eventi mancanti, handler incompleto), **1 è medio** (mappatura asset non allineata ai file reali), e **1 è minore** (classe stub non definita).
 
 **Raccomandazione**: Applicare le correzioni indicate nelle sezioni seguenti prima di passare all'implementazione. Con queste modifiche, il PLAN diventa esecutivo al 100% senza ambiguità.
 
@@ -656,7 +656,45 @@ Questo è identico al pattern usato in `TtsProvider` del codebase esistente, dov
 
 ---
 
-## 📋 Checklist Correzioni Richieste
+## � PROBLEMA #6: mappatura suoni non allineata agli asset reali
+
+### Severità: 🟡 MEDIA
+
+### Posizione nel Documento
+
+**File**: `PLAN_audio_system_v3.4.0.md`  
+**Sezione**: FASE 2 - AudioEvent dataclass & FASE 4 - SoundCache  
+**Sottosezione**: definizione `AudioEventType` e dizionario `SOUND_FILES`  
+**Righe**: numerose (event_type e mapping)
+
+---
+
+### Descrizione del Problema
+
+La cartella `assets/sounds/default` contiene un elenco di file **reali** che supera e differisce rispetto ai nomi fittizi utilizzati nel piano. Esempi:
+
+- Esistono `card_place.wav`, `tableau_drop.wav`, `card_shuffle.wav` e `card_shuffle_alt.wav` ma il `SOUND_FILES` mappa soltanto `card_move.wav` per tutti i movimenti.
+- I suoni UI (`button_click.wav`, `menu_open.wav`, `error.wav`, `focus_change.wav`, `navigate_alt.wav`, `notification.wav`, `select.wav`, ecc.) non sono nemmeno rappresentati in `AudioEventType`.
+- Alcune risorse (es. `card_move.wav`) vengono riutilizzate per eventi diversi (`AUTO_MOVE`) senza spiegazione, mentre varianti possibili non vengono sfruttate.
+
+Di fatto, molte tracce audio rimarrebbero inutilizzate e l'implementazione rischia di ignorare risorse già disponibili; inoltre la denominazione degli eventi non corrisponde ai nomi dei file, creando confusione per i futuri manutentori.
+
+---
+
+### Soluzione Proposta
+
+Allineare il piano agli asset reali:
+
+- Estendere `AudioEventType` con costanti per i suoni aggiuntivi (card_place, tableau_drop, shuffle, UI_BUTTON_CLICK, UI_MENU_OPEN/ CLOSE, UI_ERROR, UI_FOCUS_CHANGE, UI_NAVIGATE_ALT, UI_NOTIFICATION, UI_SELECT, ecc.).
+- Modificare `SOUND_FILES` in FASE 4 per usare i percorsi esatti e supportare liste di file per varianti. La classe `SoundCache` dovrà gestire un valore `Union[str, List[str]]` scegliendo un elemento a caso.
+- Inserire una nota nella fase 4/5 riguardo alla “variazione dinamica dei timbri” e come implementarla (pick random) per sfruttare file multipli.
+- Aggiungere ai requisiti funzionali una RF‑7 generica per feedback sonoro di eventi shuffle/menu/pulsanti, lasciando la possibilità di implementare il trigger in futuro.
+
+Queste modifiche rendono il piano coerente con la struttura `assets/sounds/default` e garantiscono che nessuna traccia rimanga orphan.
+
+---
+
+
 
 Prima di procedere all'implementazione, applicare queste modifiche al PLAN:
 
@@ -665,6 +703,7 @@ Prima di procedere all'implementazione, applicare queste modifiche al PLAN:
 - [ ] **MEDIO**: Aggiungere callback timer in FASE 8 GamePlayController
 - [ ] **MEDIO**: Aggiungere handler `TOGGLE_AUDIO_MIXER` in FASE 8 GamePlayController
 - [ ] **BASSO**: Definire `_AudioManagerStub` in FASE 6 AudioManager
+- [ ] **MEDIO**: Riallineare mappatura suoni agli asset reali e aggiungere eventuali nuovi eventi
 
 ---
 
@@ -679,7 +718,8 @@ Prima di procedere all'implementazione, applicare queste modifiche al PLAN:
 | #3 Callback timer | 15 minuti | Aggiungi 2 metodi in GamePlayController |
 | #4 Handler mixer | 10 minuti | Aggiungi 1 metodo + elif branch |
 | #5 Stub definition | 5 minuti | Copia classe stub in audio_manager.py |
-| **TOTALE** | **45 minuti** | Nessun impatto sulla commit strategy o testing |
+| #6 Mappatura asset | 20 minuti | Aggiorna AudioEventType ed elenchi SOUND_FILES, aggiungi note varianti |
+| **TOTALE** | **65 minuti** | Nessun impatto sulla commit strategy o testing |
 
 Le correzioni sono tutte **localizzate** e non richiedono riscrittura di fasi intere. L'effort stimato originale (12-16 ore) rimane valido.
 
@@ -693,7 +733,7 @@ Il PLAN `PLAN_audio_system_v3.4.0.md` è di **alta qualità strutturale** e dimo
 
 ---
 
-**Review Version**: v1.0  
+**Review Version**: v1.1  
 **Data Review**: 2026-02-22  
 **Reviewer**: AI Assistant (analisi tecnica assistita)  
 **Prossimo Step**: Applicare correzioni e aggiornare PLAN a versione v1.1 (READY FOR IMPLEMENTATION)

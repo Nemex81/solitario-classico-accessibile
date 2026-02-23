@@ -66,6 +66,17 @@ Aggiungere un sistema audio modulare a 5 bus indipendenti che funzioni come **di
 
 #### SoundTimbre (Firma Sonora)
 - **Cos'è**: Associazione tra categoria strutturale del tavolo e file audio corrispondente
+- **Risorse effettive**: il pack `default` sotto `assets/sounds/` contiene i seguenti file utili al sistema audio:
+  - *gameplay*: `card_flip.wav`, `card_move.wav`, `card_place.wav`, `card_shuffle.wav`,
+    `card_shuffle_alt.wav`, `foundation_drop.wav`, `invalid_move.wav`,
+    `stock_draw.wav`, `tableau_drop.wav`
+  - *ui*: `navigate.wav`, `navigate_alt.wav`, `confirm.wav`, `cancel.wav`,
+    `boundary_hit.wav`, `button_click.wav`, `button_hover.wav`,
+    `menu_open.wav`, `menu_close.wav`, `error.wav`, `focus_change.wav`,
+    `notification.wav`, `select.wav`
+  - *ambient*: `room_tone.wav`
+  - *voice*: `victory.wav`
+  (il folder `music/` è attualmente vuoto; potrà contenere loop futuri)
 - **Proprietà**:
   - `tableau`: Suono carta/legno - naturale, secco, attacco percussivo deciso
   - `foundation`: Suono cristallino/metallico - acuto, risonante brevemente, gratificante
@@ -75,6 +86,9 @@ Aggiungere un sistema audio modulare a 5 bus indipendenti che funzioni come **di
   - `ui_confirm`: Tono positivo, corto
   - `ui_cancel`: Tono neutro/negativo, corto
   - `boundary_hit`: Thud smorzato, fisico - comunica il confine del tavolo
+- **Variazioni**: alcuni eventi (card_move, shuffle, ui_navigate) hanno più file
+  associati. L'implementazione dovrà scegliere una variante in modo pseudo‑random
+  per evitare ripetitività; questa logica è gestita a livello di SoundCache.
 
 #### StereoPosition
 - **Cos'è**: Valore float da -1.0 (estrema sinistra) a +1.0 (estrema destra) che rappresenta la posizione orizzontale di una pila nel campo stereo

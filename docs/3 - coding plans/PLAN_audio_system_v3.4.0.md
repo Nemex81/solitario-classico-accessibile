@@ -9,10 +9,11 @@
 
 **Tipo**: FEATURE  
 **Priorità**: 🟠 ALTA  
-**Stato**: READY (v1.1 — post-review)
+**Stato**: READY (v1.2 — post-review, asset alignment)
 **Branch**: `feature/audio-system`
 **Versione Target**: `v3.4.0`  
 **Data Creazione**: 2026-02-22  
+**Ultima Revisione**: 2026-02-23 (v1.2 allineamento asset)
 **Autore**: AI Assistant + Nemex81  
 **Effort Stimato**: 12-16 ore totali  
 **Commits Previsti**: 10 commit atomici
@@ -107,6 +108,14 @@ Il mapping fisico del tavolo ha 13 posizioni (indici 0-12): 7 tableau + 4 fondaz
 1. Se `pygame.mixer` non disponibile (import error): `AudioManager` in modalità stub (no crash)
 2. Se un file WAV mancante in `assets/sounds/`: warning nel log, suono saltato silenziosamente
 3. Se `audio_config.json` assente: valori di default hardcodati
+
+### RF-7: Feedback sonoro esteso per shuffle/menu/pulsanti
+
+**Comportamento Atteso**:
+1. Eventi come mischiamento mazzo, apertura/chiusura menu, click/hover pulsante generano AudioEvent appropriati
+2. Mapping contestuale ai file presenti in `assets/sounds/default/ui` e `gameplay` (vedi mappatura reale nel piano)
+3. SoundCache supporta liste di file per varianti sonore, scelto pseudo‑random
+4. Il requisito è generico: trigger dell'evento può essere aggiunto successivamente senza modificare il sistema audio.
 
 ---
 
@@ -218,19 +227,44 @@ tests/unit/infrastructure/
 pygame>=2.1.2
 ```
 
-**Struttura `assets/sounds/default/`** — creare le cartelle vuote con `.gitkeep`:
+**Struttura `assets/sounds/default/`** — nel repository esistono già numerosi file audio, quindi il passo consiste piuttosto
+nell'allineare il piano ai file reali e assicurarsi che la struttura sia tracciata correttamente. I file presenti sono:
 
 ```
-assets/
-    sounds/
-        .gitkeep                 (file vuoto per tracciare la dir in git)
-        default/
-            gameplay/.gitkeep
-            ui/.gitkeep
-            ambient/.gitkeep
-            music/.gitkeep
-            voice/.gitkeep
+assets/sounds/default/
+    gameplay/
+        card_flip.wav
+        card_move.wav
+        card_place.wav
+        card_shuffle.wav
+        card_shuffle_alt.wav
+        foundation_drop.wav
+        invalid_move.wav
+        stock_draw.wav
+        tableau_drop.wav
+    ui/
+        boundary_hit.wav
+        button_click.wav
+        button_hover.wav
+        cancel.wav
+        confirm.wav
+        error.wav
+        focus_change.wav
+        menu_close.wav
+        menu_open.wav
+        navigate.wav
+        navigate_alt.wav
+        notification.wav
+        select.wav
+    ambient/
+        room_tone.wav
+    music/
+        (vuota, riservata feature futura)
+    voice/
+        victory.wav
 ```
+
+Se durante lo sviluppo si aggiungono nuovi asset, crearne le sottocartelle (o aggiungere file) e committare solo i `.gitkeep` nelle directory vuote. La regola Git LFS disregola i WAV binari (see `.gitignore`).
 
 **`.gitignore`** — aggiungere regola per file audio binari (mantenendo la struttura):
 
@@ -263,7 +297,7 @@ AudioManager consumes them.
 """
 
 from dataclasses import dataclass, field
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Union, List
 
 
 class AudioEventType:
@@ -274,18 +308,30 @@ class AudioEventType:
     """
     # Gameplay bus - azioni sulle carte
     CARD_MOVE_SUCCESS = "card_move_success"
+    CARD_PLACE = "card_place"            # variante di movimento all'interno del tableau
+    TABLEAU_DROP = "tableau_drop"        # spostamento carta da pila a pila
     CARD_FLIP = "card_flip"
     FOUNDATION_DROP = "foundation_drop"
     STOCK_DRAW = "stock_draw"
     INVALID_MOVE = "invalid_move"
     AUTO_MOVE = "auto_move"
+    SHUFFLE = "shuffle"                  # suono di mischiamento (due varianti)
     GAME_WON = "game_won"
     GAME_LOST = "game_lost"
     
     # UI bus - navigazione menu e dialogs
     UI_NAVIGATE = "ui_navigate"
+    UI_NAVIGATE_ALT = "ui_navigate_alt"  # variante di navigazione
     UI_CONFIRM = "ui_confirm"
     UI_CANCEL = "ui_cancel"
+    UI_BUTTON_CLICK = "ui_button_click"
+    UI_BUTTON_HOVER = "ui_button_hover"
+    UI_MENU_OPEN = "ui_menu_open"
+    UI_MENU_CLOSE = "ui_menu_close"
+    UI_ERROR = "ui_error"
+    UI_FOCUS_CHANGE = "ui_focus_change"
+    UI_NOTIFICATION = "ui_notification"
+    UI_SELECT = "ui_select"
     BOUNDARY_HIT_LEFT = "boundary_hit_left"
     BOUNDARY_HIT_RIGHT = "boundary_hit_right"
     DIALOG_OPEN = "dialog_open"
@@ -432,21 +478,40 @@ class SoundCache:
 **File mapping** (event_type → file WAV relativo):
 
 ```python
-SOUND_FILES: Dict[str, str] = {
-    AudioEventType.CARD_MOVE_SUCCESS:   "gameplay/card_move.wav",
+SOUND_FILES: Dict[str, Union[str, List[str]]] = {
+    # Gameplay bus
+    AudioEventType.CARD_MOVE_SUCCESS:   ["gameplay/card_move.wav", "gameplay/card_place.wav"],
+    AudioEventType.CARD_PLACE:          "gameplay/card_place.wav",
+    AudioEventType.TABLEAU_DROP:        "gameplay/tableau_drop.wav",
     AudioEventType.CARD_FLIP:           "gameplay/card_flip.wav",
     AudioEventType.FOUNDATION_DROP:     "gameplay/foundation_drop.wav",
     AudioEventType.STOCK_DRAW:          "gameplay/stock_draw.wav",
     AudioEventType.INVALID_MOVE:        "gameplay/invalid_move.wav",
-    AudioEventType.AUTO_MOVE:           "gameplay/card_move.wav",  # riusa
-    AudioEventType.UI_NAVIGATE:         "ui/navigate.wav",
+    AudioEventType.AUTO_MOVE:           "gameplay/card_move.wav",  # riusa lo stesso suono
+    AudioEventType.SHUFFLE:             ["gameplay/card_shuffle.wav", "gameplay/card_shuffle_alt.wav"],
+
+    # UI bus
+    AudioEventType.UI_NAVIGATE:         ["ui/navigate.wav", "ui/navigate_alt.wav"],
+    AudioEventType.UI_NAVIGATE_ALT:     "ui/navigate_alt.wav",
     AudioEventType.UI_CONFIRM:          "ui/confirm.wav",
     AudioEventType.UI_CANCEL:           "ui/cancel.wav",
+    AudioEventType.UI_BUTTON_CLICK:     "ui/button_click.wav",
+    AudioEventType.UI_BUTTON_HOVER:     "ui/button_hover.wav",
+    AudioEventType.UI_MENU_OPEN:        "ui/menu_open.wav",
+    AudioEventType.UI_MENU_CLOSE:       "ui/menu_close.wav",
+    AudioEventType.UI_ERROR:            "ui/error.wav",
+    AudioEventType.UI_FOCUS_CHANGE:     "ui/focus_change.wav",
+    AudioEventType.UI_NOTIFICATION:     "ui/notification.wav",
+    AudioEventType.UI_SELECT:           "ui/select.wav",
     AudioEventType.BOUNDARY_HIT_LEFT:   "ui/boundary_hit.wav",
     AudioEventType.BOUNDARY_HIT_RIGHT:  "ui/boundary_hit.wav",
     AudioEventType.DIALOG_OPEN:         "ui/confirm.wav",
     AudioEventType.DIALOG_CLOSE:        "ui/cancel.wav",
+
+    # Voice bus
     AudioEventType.GAME_WON:            "voice/victory.wav",
+
+    # Timer
     AudioEventType.TIMER_WARNING:       "ui/navigate.wav",
     AudioEventType.TIMER_EXPIRED:       "ui/cancel.wav",
 }
