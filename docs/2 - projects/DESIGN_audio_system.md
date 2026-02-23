@@ -661,6 +661,81 @@ Questo design è pronto per la fase tecnica (PLAN) quando:
 | `src/application/input_handler.py` | Punto di integrazione per navigazione e bumper |
 | `src/application/dialog_manager.py` | Punto di integrazione per eventi UI |
 
+
+---
+
+## 🔊 Mappatura Eventi → File Audio, Varianti e Opzioni
+
+### Strategia di Mapping e Gestione Varianti
+
+**1. Mappatura esplicita**: Ogni `AudioEventType` è mappato a una o più path di file WAV (solo WAV, no OGG/MP3) nella struttura `assets/sounds/default/`.
+   - La mappatura è definita in una struttura Python (dict) e documentata qui e nel PLAN.
+   - Esempio: `CARD_MOVE` → `["gameplay/card_move_1.wav", "gameplay/card_move_2.wav"]`
+
+**2. Varianti**: Se una lista di file è associata a un evento, la selezione è randomica tra le varianti disponibili (pattern: anti-ripetitività).
+
+**3. Bus assignment**: Ogni evento è assegnato a un bus (`Gameplay`, `UI`, `Ambient`, `Music`, `Voice`) secondo tabella seguente.
+
+**4. Eventi opzionali**: Alcuni eventi (es. `TIMER_WARNING`, `TIMER_EXPIRED`, `MIXER_OPENED`) sono disattivabili via config JSON (`audio_config.json`).
+
+**5. Degradazione**: Se un file manca, warning nel log e nessun crash. Se nessuna variante disponibile, l'evento è silenziato.
+
+### Tabella Mapping Eventi → File e Bus
+
+| AudioEventType         | File(s) WAV (relativo a assets/sounds/default/)         | Bus        | Varianti | Note |
+|-----------------------|--------------------------------------------------------|------------|----------|------|
+| CARD_MOVE             | gameplay/card_move_1.wav, ..._2.wav, ..._3.wav         | Gameplay   | Sì (3)   | Random |
+| CARD_SELECT           | gameplay/card_select.wav                               | Gameplay   | No       |       |
+| CARD_DROP             | gameplay/card_drop.wav                                 | Gameplay   | No       |       |
+| FOUNDATION_DROP       | gameplay/foundation_drop.wav                           | Gameplay   | No       |       |
+| INVALID_MOVE          | gameplay/invalid_move.wav                              | Gameplay   | No       |       |
+| TABLEAU_BUMPER        | gameplay/bumper.wav                                    | Gameplay   | No       |       |
+| STOCK_DRAW            | gameplay/stock_draw.wav                                | Gameplay   | No       |       |
+| WASTE_DROP            | gameplay/waste_drop.wav                                | Gameplay   | No       |       |
+| UI_NAVIGATE           | ui/navigate.wav                                        | UI         | No       |       |
+| UI_SELECT             | ui/select.wav                                          | UI         | No       |       |
+| UI_CANCEL             | ui/cancel.wav                                          | UI         | No       |       |
+| MIXER_OPENED          | ui/mixer_opened.wav                                    | UI         | No       | Opzionale |
+| AMBIENT_LOOP          | ambient/room_loop.wav                                  | Ambient    | No       | Loop |
+| MUSIC_LOOP            | music/music_loop.wav                                   | Music      | No       | Loop |
+| GAME_WON              | voice/victory.wav                                      | Voice      | No       |       |
+| TIMER_WARNING         | ui/navigate.wav                                        | UI         | No       | Opzionale |
+| TIMER_EXPIRED         | ui/cancel.wav                                          | UI         | No       | Opzionale |
+
+**Nota**: La lista completa e aggiornata dei file disponibili è mantenuta nel PLAN e nel README. Eventuali nuovi eventi o varianti vanno aggiunti sia qui che nel mapping Python.
+
+### Esempio di struttura mapping Python
+
+```python
+EVENT_TO_FILES = {
+      AudioEventType.CARD_MOVE: [
+            "gameplay/card_move_1.wav",
+            "gameplay/card_move_2.wav",
+            "gameplay/card_move_3.wav",
+      ],
+      AudioEventType.CARD_SELECT: ["gameplay/card_select.wav"],
+      # ... altri eventi ...
+}
+```
+
+### Gestione Varianti
+
+- Se la lista associata a un evento contiene più file, la selezione è randomica (`random.choice`).
+- Se la lista è vuota o tutti i file mancano, l'evento è silenziato (nessun errore).
+
+### Eventi Opzionali e Configurazione
+
+- Gli eventi marcati come "Opzionale" possono essere abilitati/disabilitati dall'utente tramite `audio_config.json`.
+- Il loader carica la config e filtra gli eventi disabilitati a runtime.
+
+### Bus Assignment e Policy
+
+- Ogni evento è assegnato a un bus secondo la tabella sopra.
+- I bus sono gestiti da `SoundMixer` e possono essere mutati/regolati indipendentemente.
+- I bus loop (Ambient, Music) sono sospesi in pausa/focus out; i bus one-shot (Gameplay, UI, Voice) restano sempre attivi.
+
+---
+
 ### Vincoli da Rispettare
 
 - **Zero modifiche al Domain Layer**: La logica di gioco non sa che esiste un sistema audio
