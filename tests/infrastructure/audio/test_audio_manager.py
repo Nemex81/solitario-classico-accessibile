@@ -64,7 +64,10 @@ def config():
 def test_play_event_no_random(monkeypatch, config, caplog):
     caplog.set_level("DEBUG")
     am = AudioManager(config)
+    # before initialization mixer should be None
+    assert am.sound_mixer is None
     assert am.initialize()  # should succeed with stub
+    assert am.sound_mixer is not None
     ev = AudioEvent(event_type="event1")
     am.play_event(ev)
     # verify playback occurred with sound from stub cache

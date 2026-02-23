@@ -27,9 +27,9 @@ Aggiungere un sistema audio modulare a 5 bus indipendenti che funzioni come **di
 ### Attori (Chi/Cosa Interagisce)
 
 - **Giocatore non vedente**: Usa NVDA per le informazioni descrittive e l'audio per il feedback immediato spaziale/emotivo
-- **GamePlayController**: Pubblica eventi audio dopo ogni azione validata dal motore di gioco (nota: classe reale è `GamePlayController` con capital P)
-- **InputHandler**: Pubblica eventi audio per navigazione e bumper di fine corsa
-- **DialogManager**: Pubblica eventi audio per apertura/chiusura dialoghi e selezioni UI
+- **GamePlayController**: Pubblica eventi audio dopo ogni azione validata dal motore di gioco (nota: classe reale è `GamePlayController` con capital P). Riceve istanza di `AudioManager` tramite Dependency Injection.
+- **InputHandler**: Pubblica eventi audio per navigazione e bumper di fine corsa. Anche questo controller è costruito con un parametro opzionale `audio_manager` ottenuto dal container.
+- **DialogManager**: Pubblica eventi audio per apertura/chiusura dialoghi e selezioni UI; ottiene `AudioManager` via DI per fornire feedback sonoro alle azioni dell'utente.
 - **AudioManager**: Unico punto di ingresso al sistema audio, interpreta gli eventi e orchestra la riproduzione
 - **SoundMixer**: Gestisce i 5 bus pygame.mixer con volumi e mute indipendenti
 - **SoundCache**: Carica e mantiene i campioni WAV in RAM all'avvio
@@ -202,6 +202,29 @@ Questo riduce duplicazione asset mantenendo consistenza semantica.
 - **Cos'è**: Struttura dati deserializzata da `config/audio_config.json` con tutte le preferenze utente
 - **Proprietà**: volumi per bus (0-100), stato mute per bus, pack attivo, mapping spaziale pile
 - **Ciclo di vita**: Caricata all'init, aggiornata in memoria durante sessione, scritta su disco solo alla chiusura del mixer o del gioco
+
+#### Troubleshooting Audio Failures
+Se i suoni non vengono riprodotti, verificare i seguenti punti:
+
+1. **Inizializzazione Mixer**: consultare `logs/game_logic.log` per eventuali messaggi `AudioManager initialization failed`.
+   - Se presente, il traceback contiene la causa (es. mancanza di dispositivo audio o dipendenze SDL).
+   - In Python REPL si può eseguire:
+     ```python
+     from src.infrastructure.di.dependency_container import DIContainer
+     am = DIContainer().get_audio_manager()
+     print("available", am.is_available)
+     ```
+2. **SoundCache**: verificare che la cache contenga oggetti `pygame.mixer.Sound` non None.
+   - `am.sound_cache._cache` può essere ispezionato in REPL.
+   - Un warning `Sound asset missing` nel log indica pack sbagliato o file mancanti.
+3. **Configurazione**: controllare `config/audio_config.json`.
+   - `active_sound_pack` deve puntare a una cartella esistente sotto `assets/sounds`.
+   - I volumi non devono essere tutti a 0 e nessun bus deve essere mutato.
+4. **Ambiente**: alcuni ambienti virtualizzati (container, WSL senza server audio) non forniscono dispositivo.
+   - In tali casi il manager ritorna stub; i log mostreranno `is_available False`.
+   - Usare un player esterno (`ffplay assets/sounds/default/gameplay/card_move.wav`) per verificare la presenza di un driver audio.
+
+Queste linee guida aiutano a isolare problemi prima di modificare il codice.
 
 ---
 

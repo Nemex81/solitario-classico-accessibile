@@ -24,7 +24,9 @@ class AudioManager:
         self.config = config
         self.sounds_base_path = sounds_base_path or Path("assets/sounds")
         self.sound_cache = SoundCache(self.sounds_base_path)
-        self.sound_mixer = SoundMixer(config)
+        # sound_mixer cannot be created until pygame.mixer.init() succeeds;
+        # instantiate lazily in initialize()
+        self.sound_mixer: Optional[SoundMixer] = None
         self._initialized = False
 
     def initialize(self) -> bool:
@@ -36,12 +38,15 @@ class AudioManager:
                 channels=self.config.mixer_params["channels"],
                 buffer=self.config.mixer_params["buffer"]
             )
+            # create mixer helper now that mixer is ready
+            self.sound_mixer = SoundMixer(self.config)
             self.sound_cache.load_pack(self.config.active_sound_pack)
             self._initialized = True
             _game_logger.info("AudioManager initialized successfully.")
             return True
         except Exception as e:
-            _game_logger.warning(f"AudioManager initialization failed: {e}")
+            _game_logger.exception(f"AudioManager initialization failed: {e}")
+            # if mixer fails, leave in uninitialized state so subsequent calls are no-op
             self._initialized = False
             return False
 
@@ -73,23 +78,30 @@ class AudioManager:
 
     def pause_all_loops(self) -> None:
         """Sospende bus Ambient e Music (chiamato da Presentation su EVT_ACTIVATE)."""
-        self.sound_mixer.pause_loops()
+        if self.sound_mixer:
+            self.sound_mixer.pause_loops()
+
+    def resume_all_loops(self) -> None:
+        """Riprende bus Ambient e Music."""
+        if self.sound_mixer:
+            self.sound_mixer.resume_loops()
 
     def resume_all_loops(self) -> None:
         """Riprende bus Ambient e Music."""
         self.sound_mixer.resume_loops()
 
     def set_bus_volume(self, bus_name: str, volume: int) -> None:
-        self.sound_mixer.set_bus_volume(bus_name, volume)
+        if self.sound_mixer:
+            self.sound_mixer.set_bus_volume(bus_name, volume)
 
     def toggle_bus_mute(self, bus_name: str) -> bool:
-        return self.sound_mixer.toggle_bus_mute(bus_name)
+        return self.sound_mixer.toggle_bus_mute(bus_name) if self.sound_mixer else False
 
     def get_bus_volume(self, bus_name: str) -> int:
-        return self.sound_mixer.get_bus_volume(bus_name)
+        return self.sound_mixer.get_bus_volume(bus_name) if self.sound_mixer else 0
 
     def is_bus_muted(self, bus_name: str) -> bool:
-        return self.sound_mixer.is_bus_muted(bus_name)
+        return self.sound_mixer.is_bus_muted(bus_name) if self.sound_mixer else False
 
     def save_settings(self) -> None:
         """Scrive volumi e stato mute correnti in audio_config.json."""
@@ -112,7 +124,8 @@ class AudioManager:
     def shutdown(self) -> None:
         """Salva settings, ferma tutti i canali, chiama pygame.mixer.quit()."""
         self.save_settings()
-        self.sound_mixer.stop_all()
+        if self.sound_mixer:
+            self.sound_mixer.stop_all()
         pygame.mixer.quit()
         self._initialized = False
 
