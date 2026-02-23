@@ -270,6 +270,8 @@ python test.py
 - ✅ **Audio centralizzato completo**: ogni azione di gioco e UI genera un suono,
       con panning per le pile, feedback nei dialoghi e nei menu, loop ambientali
       e mixer accessibile via tasto M (visuale+TTS).
+- ✅ Configurazione audio completamente JSON-driven (v3.5.0):
+      mapping evento→file e flag di preload ad esempio in `config/audio_config.json`.
 - ✅ Gestione automatica pausa/riprendi audio quando la finestra perde/riacquista
       il focus (EVT_ACTIVATE binding su SolitarioFrame).
 

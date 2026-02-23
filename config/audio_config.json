@@ -21,6 +21,21 @@
     "channels": 2,
     "buffer": 512
   },
+  "event_sounds": {
+    "CARD_MOVE": "gameplay/card_move.wav",
+    "CARD_SELECT": "gameplay/card_place.wav",
+    "INVALID_MOVE": "gameplay/invalid_move.wav",
+    "STOCK_DRAW": "gameplay/stock_draw.wav",
+    "UI_NAVIGATE": "ui/navigate.wav",
+    "UI_SELECT": "ui/select.wav",
+    "UI_CANCEL": "ui/cancel.wav",
+    "TABLEAU_BUMPER": "gameplay/invalid_move.wav",
+    "GAME_WON": "voice/victory.wav",
+    "TIMER_WARNING": "ui/navigate.wav",
+    "TIMER_EXPIRED": "ui/cancel.wav",
+    "MIXER_OPENED": "ui/mixer_opened.wav"
+  },
+  "preload_all_event_sounds": true,
   "enabled_events": {
     "ui_navigate": true,
     "ui_select": true,

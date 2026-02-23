@@ -136,6 +136,27 @@ con il `ScreenReader` per feedback TTS e con `AudioManager` per effetti sonori.
 **Note:**
 - Utilizzato dalla finestra mixer accessibile (tasto "M").
 
+# AudioConfig (Infrastructure Layer)
+
+**Modulo:** `src/infrastructure/config/audio_config_loader.py`
+
+Dataclass che rappresenta la configurazione del sistema audio, caricata da
+`config/audio_config.json` tramite `AudioConfigLoader`. A partire da v3.5.0 la
+config contiene:
+
+- `event_sounds`: mappa event_type → nome file (es. "CARD_MOVE": "card_move.wav").
+- `preload_all_event_sounds`: flag booleano, se true carica automaticamente tutti
+  i suoni mappati.
+- `enabled_events`: mappa event_type → bool per disabilitare singoli eventi.
+
+La classe viene usata internamente da `AudioManager` e da `DIContainer`.
+
+## API pubblica
+
+- `AudioConfigLoader.load(path: str = CONFIG_PATH) -> AudioConfig`
+  - Carica e validà il JSON, crea fallback se il file è mancante o illegibile.
+
+
 # AudioManager (Infrastructure Layer)
 
 [...existing lines...]

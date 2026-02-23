@@ -711,6 +711,10 @@ def format_end_reason(reason: EndReason) -> str: ...  # "Vittoria", "Tempo scadu
 
 Orchestratore principale del sistema audio. Riceve `AudioEvent` dai controller Application, consulta `SoundCache`, calcola panning, delega la riproduzione a `SoundMixer`. Gestisce ciclo di vita, pause, resume, shutdown, salvataggio settings.
 
+- **Config JSON-driven:** a partire da v3.5.0 la mappatura evento→file è
+  definita in `config/audio_config.json` sotto la chiave `event_sounds`.
+  Questo rende il sistema facilmente riconfigurabile senza toccare codice.
+
 **Ruolo architetturale:**
 - Unico punto di ingresso per la riproduzione audio
 - Gestione mapping evento→bus, varianti, fallback, logging

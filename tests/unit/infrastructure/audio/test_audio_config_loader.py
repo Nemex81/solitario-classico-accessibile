@@ -15,13 +15,17 @@ def write_temp_config(tmp_path, data):
 def test_audio_config_loader_valid_json(tmp_path, monkeypatch):
     data = {
         "version": "1.1",
-        "enabled_events": {"timer_warning": False}
+        "enabled_events": {"timer_warning": False},
+        "event_sounds": {"CARD_MOVE": "move.wav"},
+        "preload_all_event_sounds": False
     }
     path = write_temp_config(tmp_path, data)
     cfg = AudioConfigLoader.load(path)
     assert isinstance(cfg, AudioConfig)
     assert cfg.version == "1.1"
     assert cfg.enabled_events.get("timer_warning") is False
+    assert cfg.event_sounds.get("CARD_MOVE") == "move.wav"
+    assert cfg.preload_all_event_sounds is False
 
 
 @pytest.mark.unit
@@ -31,6 +35,8 @@ def test_audio_config_loader_missing_file(tmp_path, monkeypatch):
     cfg = AudioConfigLoader.load(path)
     assert isinstance(cfg, AudioConfig)
     assert cfg.enabled_events == {}
+    assert cfg.event_sounds == {}
+    assert cfg.preload_all_event_sounds is True
 
 
 @pytest.mark.unit
@@ -42,3 +48,5 @@ def test_audio_config_loader_corrupted_json(tmp_path):
     assert isinstance(cfg, AudioConfig)
     # defaults still apply
     assert cfg.enabled_events == {}
+    assert cfg.event_sounds == {}
+    assert cfg.preload_all_event_sounds is True

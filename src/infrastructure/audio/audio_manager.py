@@ -24,6 +24,8 @@ class AudioManager:
         self.config = config
         self.sounds_base_path = sounds_base_path or Path("assets/sounds")
         self.sound_cache = SoundCache(self.sounds_base_path)
+        # prepare event->filename mapping based on config (JSON-driven)
+        self._event_sounds = self._load_event_mapping()
         # sound_mixer cannot be created until pygame.mixer.init() succeeds;
         # instantiate lazily in initialize()
         self.sound_mixer: Optional[SoundMixer] = None
@@ -40,9 +42,13 @@ class AudioManager:
             )
             # create mixer helper now that mixer is ready
             self.sound_mixer = SoundMixer(self.config)
-            self.sound_cache.load_pack(self.config.active_sound_pack)
+            # preload sounds based on event mapping
+            mapping_for_cache = {et.value: fname for et, fname in self._event_sounds.items()}
+            self.sound_cache.load_pack(self.config.active_sound_pack, mapping_for_cache)
             self._initialized = True
             _game_logger.info("AudioManager initialized successfully.")
+            # perform validation to catch missing events or files
+            self._validate_config_completeness()
             return True
         except Exception as e:
             _game_logger.exception(f"AudioManager initialization failed: {e}")
@@ -133,6 +139,70 @@ class AudioManager:
     def is_available(self) -> bool:
         """True se pygame.mixer è inizializzato e il sistema è operativo."""
         return self._initialized
+
+    def _load_event_mapping(self) -> Dict[AudioEventType, str]:
+        """Load event-to-sound mapping from configuration.
+
+        Uses `self.config.event_sounds` which is populated by
+        `AudioConfigLoader`. If the section is missing or empty, falls back to
+        hardcoded defaults for backwards compatibility and logs a warning.
+        Unknown event keys are ignored with a warning.
+        """
+        mapping: Dict[AudioEventType, str] = {}
+        raw = getattr(self.config, "event_sounds", {}) or {}
+        if not raw:
+            _game_logger.warning(
+                "AudioManager: 'event_sounds' section missing in config; using default mapping"
+            )
+            return self._get_default_event_mapping()
+        for key, fname in raw.items():
+            try:
+                evt = AudioEventType[key]
+                mapping[evt] = fname
+            except KeyError:
+                _game_logger.warning(
+                    f"AudioManager: unknown event '{key}' in config, skipping"
+                )
+        # warn about any enums not covered
+        missing = set(AudioEventType) - set(mapping.keys())
+        if missing:
+            _game_logger.warning(
+                f"AudioManager: missing sound mapping for events: {[e.name for e in missing]}"
+            )
+        return mapping
+
+    def _get_default_event_mapping(self) -> Dict[AudioEventType, str]:
+        """Return hardcoded mapping used as fallback."""
+        return {
+            AudioEventType.CARD_MOVE: "card_move.wav",
+            AudioEventType.CARD_SELECT: "card_select.wav",
+            AudioEventType.INVALID_MOVE: "invalid.wav",
+            AudioEventType.STOCK_DRAW: "stock_draw.wav",
+            AudioEventType.UI_NAVIGATE: "ui_navigate.wav",
+            AudioEventType.UI_SELECT: "ui_select.wav",
+            AudioEventType.UI_CANCEL: "ui_cancel.wav",
+            AudioEventType.TABLEAU_BUMPER: "boundary.wav",
+            AudioEventType.GAME_WON: "victory.wav",
+            AudioEventType.TIMER_WARNING: "timer_warning.wav",
+            AudioEventType.TIMER_EXPIRED: "timer_expired.wav",
+            AudioEventType.MIXER_OPENED: "mixer_open.wav",
+        }
+
+    def _validate_config_completeness(self) -> None:
+        """Log warnings for missing events or nonexistent files in mapping."""
+        # missing event keys
+        missing = set(AudioEventType) - set(self._event_sounds.keys())
+        if missing:
+            _game_logger.warning(
+                f"AudioManager: configuration incomplete, missing: {[e.name for e in missing]}"
+            )
+        # check file existence
+        for evt, fname in self._event_sounds.items():
+            fp = self.sounds_base_path / self.config.active_sound_pack / fname
+            if not fp.exists():
+                _game_logger.warning(
+                    f"AudioManager: sound file for {evt.name} not found: {fname}"
+                )
 
     def _get_panning_for_event(self, event: AudioEvent) -> float:
         """Determina il panning dall'evento usando formula lineare.

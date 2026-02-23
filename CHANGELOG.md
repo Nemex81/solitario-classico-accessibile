@@ -25,6 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * Nuovi test unitari/GUI per tutte le componenti audio.
 
 ### Changed
+- Configurazione audio ora JSON-driven: `event_sounds` e
+  `preload_all_event_sounds` gestiti da `audio_config.json`; AudioManager
+  legge mappa da config anziché usare dizionari hardcoded.
 - Documentazione (`API.md`, `ARCHITECTURE.md`, `README.md`) aggiornata con dettagli audio.
 - `acs_wx.py` ristrutturato per inizializzare audio e linkare audio_manager al frame.
 - InputHandler segnala audio solo se fornito dall'esterno (documento v1.6.1).

@@ -27,9 +27,12 @@ class AudioConfig:
     mixer_params: Dict[str, int] = field(default_factory=lambda: {
         "frequency": 44100, "size": -16, "channels": 2, "buffer": 512
     })
-    # new in v3.4.1: allow disabling individual events for debugging or
+    # new in v3.4.2: allow disabling individual events for debugging or
     # accessibility configuration. Missing keys are treated as enabled.
     enabled_events: Dict[str, bool] = field(default_factory=lambda: {})
+    # v3.5.0: mapping event -> sound file and preload flag
+    event_sounds: Dict[str, str] = field(default_factory=lambda: {})
+    preload_all_event_sounds: bool = True
 
 class AudioConfigLoader:
     """Loader per audio_config.json con fallback e validazione.
@@ -57,6 +60,8 @@ class AudioConfigLoader:
         bus_muted = data.get("bus_muted", AudioConfig().bus_muted)
         mixer_params = data.get("mixer_params", AudioConfig().mixer_params)
         enabled_events = data.get("enabled_events", AudioConfig().enabled_events)
+        event_sounds = data.get("event_sounds", AudioConfig().event_sounds)
+        preload_flag = data.get("preload_all_event_sounds", True)
         return AudioConfig(
             version=version,
             active_sound_pack=active_sound_pack,
@@ -64,4 +69,6 @@ class AudioConfigLoader:
             bus_muted=bus_muted,
             mixer_params=mixer_params,
             enabled_events=enabled_events,
+            event_sounds=event_sounds,
+            preload_all_event_sounds=preload_flag,
         )

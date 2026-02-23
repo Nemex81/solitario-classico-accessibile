@@ -1,143 +1,94 @@
-📋 TODO – Revisione sistema audio centralizzato (v3.4.x)
-Branch: supporto-audio-centralizzato
-Tipo: Feature / Bugfix
-Priorità: CRITICAL → HIGH
-Stato: READY
+📋 TODO – Refactor audio configuration to JSON-driven
+Branch: supporto-audio-centralizzato → refactor-audio-config-json
+Tipo: Refactor / Technical Debt
+Priorità: MEDIUM (Qualità)
+Stato: READY for implementation
 
 ---
 
 📖 Piano di riferimento:
-- [2 - projects/PLAN_revisione_audio_centralizzato.md](2%20-%20projects/PLAN_revisione_audio_centralizzato.md) (questo piano)
+- [3 - coding plans/PLAN_audio_config_json_driven.md](3%20-%20coding%20plans/PLAN_audio_config_json_driven.md)
 
-Obiettivo: completare l'integrazione di tutti gli eventi audio (gameplay, UI, dialoghi, menu, timer, ambient, music) affinché ogni azione generi un suono valido, rispettando il design del sistema audio centralizzato. Il lavoro è suddiviso in fasi incrementali; aggiornare questo TODO dopo ogni fase completata.
-
----
-
-### Fase 1 – Core gameplay [7h totali]
-
-#### 1.1 Helper (30 min) — PREREQUISITO
-- [ ] Creare `_map_pile_to_index(pile) -> Optional[int]`
-  - 0‑6 tableau, 7‑10 foundation, 11 waste, 12 stock
-
-#### 1.2 Panning Fix (45 min)
-- [ ] Aggiornare CARD_MOVE a passare indici reali
-- [ ] Aggiungere source/destination anche a STOCK_DRAW
-- [ ] Validare panning stereo in test
-
-#### 1.3 Navigazione (2.5 h)
-- [ ] 4 frecce: `_cursor_up/down/left/right` → `UI_NAVIGATE`
-- [ ] 7 pile base: `_nav_pile_base(0..6)` → `UI_NAVIGATE`
-- [ ] 3 pile speciali: `_nav_pile_semi`, `_nav_pile_scarti`, `_nav_pile_mazzo`
-- [ ] 2 comandi addizionali: `_cursor_tab`, `_cursor_home`, `_cursor_end`
-
-#### 1.4 Selezione (1 h)
-- [ ] Evento `CARD_SELECT` in `_select_card()` (solo se success)
-- [ ] Evento `UI_CANCEL` in `_cancel_selection()`
-- [ ] Boundary hit (`TABLEAU_BUMPER`) quando non si muove cursor
-
-#### 1.5 Victory (45 min)
-- [ ] Aggiungere evento `GAME_WON` in callback di fine partita
-
-#### 1.6 Test
-- [x] Mock AudioManager e verifiche panning
-- [x] Copertura evento per ognuno dei metodi precedenti
-
-### Fase 2 – Dialoghi e Input
-- [ ] Refactor `SolitarioDialogManager`: audio apertura/chiusura in tutti i metodi
-- [ ] Documentare InputHandler come codice morto (TODO di refactor v3.5)
-- [ ] Iniettare `AudioManager` in `OptionsWindowController`
-- [ ] Aggiungere audio navigation/select/cancel in OptionsWindowController
-- [ ] Test unitari per DialogManager, InputHandler, OptionsWindowController
-
-### Fase 3 – Menu & Mixer
-- [x] Integrare audio nel menu principale o creare `MainMenuController`
-- [x] Implementare `MixerController` accessibile (tasto M) con audio/TTS
-- [x] Boundary hit anche per fine corsa cursore
-- [x] Test di comportamento menu e mixer
-
-### Fase 4 – Timer & loop ambient/music [2h totali]
-
-#### 4.1 Timer (SKIP: implementazione già esistente)
-- [x] Callbacks `_on_timer_warning/expired` presenti in `game_engine.py` (v3.4.2)
-- [x] Test integrazione `TIMER_WARNING` (30 min)
-- [x] Test integrazione `TIMER_EXPIRED` (30 min)
-
-#### 4.2 Ambient Loop (45 min)
-- [x] Avviare `AMBIENT_LOOP` in `acs_wx.py` subito dopo init audio
-- [x] Validare con test manuale/autom.
-
-#### 4.3 Focus handling (30 min)
-- [x] Bind `wx.EVT_ACTIVATE` per mettere in pausa/resume i loop
-- [x] Test alt‑tab e perdita focus
-
-#### 4.4 Config opzionali
-- [x] Aggiornare `audio_config.json` per eventi opzionali
-- [x] Verificare che loader filtri correttamente
-
-
-### Fase 5 – Finitura & documentazione
-- [ ] Aggiornare `API.md`, `ARCHITECTURE.md`, README
-- [ ] Mypy/flake8 senza errori, coverage ≥ 90 %
-- [ ] Aggiornare CHANGELOG e link del TODO
-- [ ] Merge su main solo dopo Fase 1 o con disclaimer nel README
+Obiettivo: eliminare la duplicazione del mapping evento→file tra codice e
+`audio_config.json`, rendendo l'intera assegnazione sonoro **JSON-driven**.
+Questo riduce manutenzione, permette modifiche senza toccare Python e apre la
+porta a configurazione runtime/modding.
 
 ---
 
-🗂️ File principali coinvolti
-- `src/application/gameplay_controller.py` (16 metodi + helper panning)
-- `src/application/input_handler.py` *(deprecato, nessuna modifica necessaria)*
-- `src/application/dialog_manager.py`
-- `src/application/options_controller.py`
-- `src/application/*` (menu/mixer; verificare presenza `MainMenuController`)
-- `src/application/game_engine.py` (GAME_WON, timer callbacks già presenti)
-- `src/infrastructure/di_container.py`
-- `src/infrastructure/ui/*` (gameplay_panel, main_frame, altri)
-- `docs/API.md`, `docs/ARCHITECTURE.md`, README, config audio
-- `tests/unit/*`, `tests/integration/*` (varie)
+### Fase 1 – Config JSON (30 min)
+- [x] Modificare `config/audio_config.json`:
+    - aggiungere sezione `event_sounds` con tutti le 12 coppie evento/file
+    - inserire flag booleano `preload_all_event_sounds` (default true)
+    - mantenere `preload_sounds` come proprietà deprecata per compatibilità
+- [x] Validare JSON con formatter/linter
+- [x] Verificare fallback automatico in caso di configurazione mancante
+
+### Fase 2 – Refactor AudioManager (≈1.5 h)
+- [x] Rimuovere dizionario `_event_sounds` hardcoded da `__init__()`
+- [x] Implementare metodo `_load_event_mapping(config: dict) -> Dict[AudioEventType,str]`
+    - parse JSON keys → enum, log warning per chiavi sconosciute
+    - log warning per eventi mancanti
+- [x] Implementare `_get_default_event_mapping()` per fallback (duplicare mappa)
+- [x] Aggiungere chiamata `self._validate_config_completeness()` dopo il caricamento
+- [x] Spostare preload sotto condizione `preload_all_event_sounds`
+- [x] Scrivere docstring e aggiornare commenti
+
+### Fase 3 – Validazione & compatibilità (45 min)
+- [x] Nuovo metodo `_validate_config_completeness()` con warning per eventi
+      mancanti e file non esistenti
+- [x] Test unitari:
+    - config completa → mapping corretto
+    - config mancante → usa fallback e log warning
+    - config con chiave sconosciuta → skip con warning
+    - eventi mancanti nel mapping → warning e assenza di suono
+- [x] Test di caricamento audio_config (già esistente `test_audio_config_loader.py`,
+      estendere per verificare sezione `event_sounds`)
+
+### Fase 4 – Documentazione & cleanup (30 min)
+- [x] Aggiornare sezione “Audio Config” in `README.md` con nuovo formato
+- [x] Modificare `API.md` se menziona preload_sounds o mapping hardcoded
+- [x] Aggiornare commenti di `audio_config_loader.py` (documentare `event_sounds` e flag)
+- [x] Aggiungere note al `CHANGELOG.md` sotto v3.5.0 (incrementale minor)
+
+### Fase 5 – Verifica finale (15 min)
+- [x] Eseguire `mypy`, `flake8` su modelli modificati
+- [x] Lanciare suite test (unit + integrazione) per confermare 100% green
+- [x] Controllare `docs/TODO.md` e aggiornare eventuali task bonus
 
 ---
 
-📋 Linee guida generali
-- Incapsulare ogni chiamata audio in `if self._audio: try: ... except: pass`
-- Usare panning quando possibile (pile index)
-- Degradare graziosamente se audio disabilitato
-- Aggiornare test prima di modificare il codice (TDD) quando possibile
-- Documentare ogni nuovo evento e modifica API
+🗂️ File coinvolti
+- `config/audio_config.json` (nuova struttura)
+- `src/infrastructure/audio/audio_manager.py` (caricamento e validazione)
+- `src/infrastructure/config/audio_config_loader.py` (descrizione/optional keys)
+- `docs/3 - coding plans/PLAN_audio_config_json_driven.md` (piano già esistente)
+- `docs/API.md`, `docs/ARCHITECTURE.md`, `README.md`, `CHANGELOG.md`
+- `tests/unit/infrastructure/audio/test_audio_config_loader.py` (estendere)
+- possibili nuove unit tests sotto `tests/unit/infrastructure/audio`
+
+---
+
+📋 Linee guida
+- Non cambiare comportamento sonoro in fase (solo refactor)
+- Log warning per qualsiasi discrepanza, ma non lanciare eccezioni
+- Test TDD: scrivere prima i nuovi unit tests per `_load_event_mapping`
+- Conservare backward compatibility con file `audio_config.json` esistenti
+  (qualora `event_sounds` manchi, usare fallback e loggare)
 
 ---
 
 *Autore: AI Assistant – 23 Febbraio 2026*
-✅ Criteri di Completamento
-
-L'implementazione è considerata completa quando:
-
-- [ ] Tutte le checklist sopra sono spuntate
-- [ ] Tutti i test passano
-- [ ] Nessuna regressione funzionale
-- [ ] Versione aggiornata coerentemente (SemVer)
+✅ Criteri di completamento
+- [ ] Tutti i checklist sopra spuntate
+- [ ] Tutti i nuovi e vecchi test passano
+- [ ] Nessuna regressione funzionale audio
+- [ ] Documentazione e CHANGELOG aggiornati
 
 ---
 
-📝 Aggiornamenti Obbligatori a Fine Implementazione
+**Fine nuovo TODO.**
 
-- [ ] Aggiornare `README.md` se la feature è visibile all'utente
-- [ ] Aggiornare `CHANGELOG.md` con entry dettagliata
-- [ ] Incrementare versione in modo coerente:
-  - **PATCH** → bug fix
-  - **MINOR** → nuova feature retrocompatibile
-  - **MAJOR** → breaking change
-- [ ] Commit con messaggio convenzionale
-- [ ] Push su branch corretto
-
----
-
-📌 Note
-
-Questo TODO funge da cruscotto; il piano completo rimane la fonte di verità tecnica per ogni fase.
-
----
-
-**Fine.**
-
-Snello, consultabile in 30 secondi, zero fronzoli.
-Il documento lungo resta come fonte di verità tecnica. Questo è il cruscotto operativo.
+Questo documento sostituisce integralmente il precedente; usa il piano come
+fonte di verità tecnica. Contento per la nuova iterazione, pronto per
+iniziare l'implementazione quando decidi!  
