@@ -90,6 +90,52 @@ Gestisce finestre di dialogo accessibili (abbandona, nuova partita, etc.).
 - L'audio è completamente opzionale per la gestione dei dialoghi; la funzionalità
   degrada in assenza di manager.
 
+# MainMenuController (Application Layer)
+
+**Modulo:** `src/application/main_menu_controller.py`
+**Layer:** Application
+
+Controller per la logica del menu principale. Riceve un `AudioManager` opzionale
+per riprodurre effetti sonori quando l'utente naviga o seleziona voci di menu.
+
+### API pubblica
+
+- `__init__(audio_manager: Optional[Any] = None, items: Optional[List[str]] = None)`
+  - `items`: lista di etichette menu personalizzabili.
+
+- `navigate_up() -> int`
+- `navigate_down() -> int`
+  - Muovono il cursore, emettono `UI_NAVIGATE` o `TABLEAU_BUMPER` in caso di
+    bordo.
+
+- `select() -> str`  – restituisce etichetta selezionata; emette `UI_SELECT`.
+- `cancel() -> None` – emette `UI_CANCEL`.
+
+**Note:**
+- Il controller chiama `audio_manager.play_event(...)` se disponibile.
+
+# MixerController (Application Layer)
+
+**Modulo:** `src/application/mixer_controller.py`
+**Layer:** Application
+
+Controller per il mixer accessibile (canali master, music, effects). Si integra
+con il `ScreenReader` per feedback TTS e con `AudioManager` per effetti sonori.
+
+### API pubblica
+
+- `__init__(audio_manager: Optional[Any] = None, screen_reader: Optional[Any] = None, channels: Optional[Dict[str,int]] = None)`
+  - `screen_reader` tipicamente ottenuto da `DIContainer.get_screen_reader()`.
+
+- `navigate_up()`, `navigate_down()`: spostano cursore tra i canali;
+  emettono `UI_NAVIGATE`/`TABLEAU_BUMPER` e possono chiamare TTS.
+
+- `increase()`, `decrease()`: modificano valore canale (0‑100); emettono
+  `UI_SELECT` o `TABLEAU_BUMPER`.
+
+**Note:**
+- Utilizzato dalla finestra mixer accessibile (tasto "M").
+
 # AudioManager (Infrastructure Layer)
 
 [...existing lines...]

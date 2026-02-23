@@ -49,7 +49,8 @@ class OptionsWindowController:
     def __init__(
         self, 
         settings: GameSettings,
-        dialog_manager: Optional['SolitarioDialogManager'] = None
+        dialog_manager: Optional['SolitarioDialogManager'] = None,
+        audio_manager: Optional[object] = None  # NEW v3.4.1
     ):
         """Initialize options controller.
         
@@ -59,6 +60,7 @@ class OptionsWindowController:
         """
         self.settings = settings
         self.dialog_manager = dialog_manager
+        self._audio = audio_manager
         self.cursor_position = 0  # Current option (0-4)
         self.is_open = False
         self.state = "CLOSED"
@@ -81,6 +83,13 @@ class OptionsWindowController:
         self.is_open = True
         self.state = "OPEN_CLEAN"
         self.cursor_position = 0
+        # audio feedback for opening options
+        if self._audio:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_NAVIGATE))
+            except Exception:
+                pass
         
         # Save snapshot for change tracking
         self._save_snapshot()
@@ -107,22 +116,47 @@ class OptionsWindowController:
         if self.state == "OPEN_DIRTY":
             # NEW v1.6.1: Use wx dialog if available
             if self.dialog_manager and self.dialog_manager.is_available:
+                # audio open dialog
+                if self._audio:
+                    try:
+                        from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                        self._audio.play_event(AudioEvent(event_type=AudioEventType.MIXER_OPENED))
+                    except Exception:
+                        pass
                 result = self.dialog_manager.show_options_save_prompt()
                 
                 if result is True:
                     # User chose to save
                     self._save_snapshot()
                     self._reset_state()
+                    if self._audio:
+                        try:
+                            from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                            self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_SELECT))
+                        except Exception:
+                            pass
                     return OptionsFormatter.format_save_confirmed()
                 
                 elif result is False:
                     # User chose to discard
                     self._restore_snapshot()
                     self._reset_state()
+                    if self._audio:
+                        try:
+                            from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                            self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_CANCEL))
+                        except Exception:
+                            pass
                     return OptionsFormatter.format_save_discarded()
                 
                 # result is None: Should not happen with current API
                 # (ESC returns False). Treat as cancel.
+                if self._audio:
+                    try:
+                        from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                        self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_CANCEL))
+                    except Exception:
+                        pass
                 return OptionsFormatter.format_save_cancelled()
             
             else:
@@ -181,6 +215,13 @@ class OptionsWindowController:
             TTS message with option name, value, and hint
         """
         self.cursor_position = (self.cursor_position - 1) % 9
+        # AUDIO navigate
+        if self._audio:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_NAVIGATE))
+            except Exception:
+                pass
         return self._format_current_option(include_hint=True)
     
     def navigate_down(self) -> str:
@@ -190,6 +231,13 @@ class OptionsWindowController:
             TTS message with option name, value, and hint
         """
         self.cursor_position = (self.cursor_position + 1) % 9
+        # AUDIO navigate
+        if self._audio:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_NAVIGATE))
+            except Exception:
+                pass
         return self._format_current_option(include_hint=True)
     
     def jump_to_option(self, index: int) -> str:
@@ -254,7 +302,13 @@ class OptionsWindowController:
         if ("impostato" in msg_lower or "impostata" in msg_lower or 
             "disattivat" in msg_lower or "attivat" in msg_lower):
             self.state = "OPEN_DIRTY"
-        
+        # AUDIO select
+        if self._audio:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_SELECT))
+            except Exception:
+                pass
         return msg
     
     def increment_timer(self) -> str:

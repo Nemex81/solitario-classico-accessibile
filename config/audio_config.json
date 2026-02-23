@@ -20,5 +20,16 @@
     "size": -16,
     "channels": 2,
     "buffer": 512
+  },
+  "enabled_events": {
+    "ui_navigate": true,
+    "ui_select": true,
+    "ui_cancel": true,
+    "card_move": true,
+    "game_won": true,
+    "timer_warning": true,
+    "timer_expired": true,
+    "ambient_loop": true,
+    "mixer_opened": true
   }
 }

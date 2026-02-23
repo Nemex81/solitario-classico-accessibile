@@ -12,6 +12,8 @@
 
 L'audit del 23 Febbraio 2026 ha evidenziato che il nuovo sistema audio centralizzato è stato implementato correttamente ma integrato soltanto al 5 % nel codice applicativo. L'infrastruttura (AudioManager, SoundCache, SoundMixer, audio_events) funziona perfettamente, ma la quasi totalità dei controller non emette eventi audio.
 
+**Aggiornamento 20:29 CET:** durante la revisione troviamo tre gap rispetto al piano iniziale e le stime temporali sono state ricalibrate. Il totale stimato rimane ~23.5 ore, con redistribuzione interna tra le fasi (vedi sezione "Fasi del lavoro" per i dettagli corrette).
+
 Questo piano descrive una revisione completa dell'integrazione: tutti gli eventi di gameplay, UI, dialoghi, menu, timer, ambient e loop dovranno generare suoni, con panning dove applicabile, e gestire le configurazioni opzionali previste dal design.
 
 Al termine, il sistema audio sarà operativo al 100 % e pronto per un rilascio di produzione.
@@ -34,40 +36,44 @@ Al termine, il sistema audio sarà operativo al 100 % e pronto per un rilascio
 ## 🛠️ Fasi del lavoro
 
 ### Fase 1 – Core gameplay (v3.4.1 MVP)
-1. _map_pile_to_index_ helper in `GamePlayController`
-2. CARD_MOVE con panning, INVALID_MOVE, STOCK_DRAW già implementati
-3. Eventi navigazione: `_cursor_up/down/left/right` e `_nav_pile_base`
-4. Eventi selezione (`CARD_SELECT`) e cancellazione (`UI_CANCEL`)
+1. Helper `_map_pile_to_index()` in `GamePlayController` — **PREREQUISITO** per panning
+2. Panning fix: aggiornare chiamate esistenti CARD_MOVE/STOCK_DRAW
+3. Eventi navigazione: 16 metodi `UI_NAVIGATE`
+   - 4 frecce (`_cursor_up/down/left/right`)
+   - 7 pile base (`_nav_pile_base` 0‑6)
+   - 3 pile speciali (`_nav_pile_semi`, `_nav_pile_scarti`, `_nav_pile_mazzo`)
+   - 2 altri comandi (`_cursor_tab`, `_cursor_home`, `_cursor/end`)
+4. Selezione (`CARD_SELECT`) e cancellazione (`UI_CANCEL`)
 5. Boundary hit detection (`TABLEAU_BUMPER`)
-6. Victory detection callback `_on_game_won` e collegamento da `engine.on_game_ended`
-7. Aggiungere test unitari ed integration per ogni evento
-
-**Stima:** 4 ore sviluppo + 1 ora test
+6. Victory (`GAME_WON`) in end_game() + collegamento da `engine.on_game_ended`
+7. Test unitari e integration per tutti i punti precedenti
 
 ### Fase 2 – Dialoghi e Input
-1. Refactor `SolitarioDialogManager` per eventi apertura (`MIXER_OPENED`/`UI_NAVIGATE`) e chiusura (`UI_SELECT`/`UI_CANCEL`) in tutti metodi sincroni/asincroni
-2. Documentare InputHandler come dead code per wxPython; aggiungere TODO
+1. Refactor `SolitarioDialogManager` per eventi apertura (`MIXER_OPENED`/`UI_NAVIGATE`) e chiusura (`UI_SELECT`/`UI_CANCEL`) in tutti i metodi sincroni/asincroni
+2. **Skip InputHandler** (deprecato v1.7.x, attività solo documentale)
 3. Integrare `AudioManager` in `OptionsWindowController` e aggiungere eventi
-4. Test appropriati per dialoghi, input e opzioni
+4. Test unitari per dialoghi e OptionsWindowController
 
-**Stima:** 3 ore + 1 ora test
+<!-- stima rimossa per automazione -->
 
 ### Fase 3 – Menu & Mixer
+0. **Verificare esistenza di `MainMenuController`** o crearne uno da zero (verificare o creare)**
 1. Aggiungere audio a `OptionsWindowController.navigate_up/down`, `modify_current_option`, `close_window`
-2. Creare o aggiornare `MainMenuController` con audio navigation/select/cancel
+2. Creare/aggiornare `MainMenuController` con audio navigation/select/cancel
 3. Implementare `MixerController` accessibile (tasto M) con audio + TTS feedback
-4. Boundary hit anche per case di fine corsa in controller
+4. Boundary hit anche per fine corsa in controller
 
-**Stima:** 6 ore sviluppo + 2 ore test
+<!-- stima rimossa per automazione -->
 
 ### Fase 4 – Timer & Loop Ambient/Music
-1. Verifica registrazione callback timer in `GamePlayController` (integrato in engine)
-2. Avviare `AMBIENT_LOOP` dopo `AudioManager.initialize()` in `acs_wx.py`
-3. Bind evento `wx.EVT_ACTIVATE` per pause/resume loop
+1. ~~Verifica registrazione callback timer~~ **(già implementato in `game_engine.py` v3.4.2, linee 383–397)**
+   - Eseguire **test di integrazione** per `TIMER_WARNING`/`TIMER_EXPIRED`
+2. Avviare `AMBIENT_LOOP` dopo `AudioManager.initialize()` in `acs_wx.py` 
+- Bind evento `wx.EVT_ACTIVATE` per pause/resume loop
 4. Aggiornare `audio_config.json` per eventi opzionali e loader
-5. Test di integrazione focus e timer
+- Test di integrazione focus e timer
 
-**Stima:** 3 ore + 1 ora test
+<!-- stima rimossa per automazione -->
 
 ### Fase 5 – Finitura e rilascio
 1. Aggiornare `docs/API.md`, `ARCHITECTURE.md` e README con i nuovi dettagli
@@ -75,9 +81,21 @@ Al termine, il sistema audio sarà operativo al 100 % e pronto per un rilascio
 3. Aggiornare CHANGELOG con requisiti di rilascio
 4. Validazione finale e merge
 
-**Stima:** 3 ore lavoro documentazione/test
+<!-- stima rimossa per automazione -->
 
 ---
+
+
+## 🔧 Gap Risolti
+
+### Gap #1: Timer callbacks già implementati
+Le funzioni `_on_timer_warning` e `_on_timer_expired` sono presenti in `game_engine.py` (v3.4.2, linee 383–397). La Fase 4 è quindi ridotta a test di integrazione.
+
+### Gap #2: CARD_MOVE senza panning
+Nel controller l'evento CARD_MOVE veniva emesso con `source_pile=None` e `destination_pile=None`. Occorre inserire helper di mappatura nella Fase 1.
+
+### Gap #3: MainMenuController mancante
+Il file non esiste nel branch; la Fase 3 include ora una verifica preliminare e potenziale creazione.
 
 ## 📋 File Coinvolti
 

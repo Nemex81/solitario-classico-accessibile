@@ -85,6 +85,24 @@ def test_container_creates_audio_manager(audio_config, mock_pygame_mixer):
 
 
 @pytest.mark.unit
+def test_audio_manager_respects_enabled_events(audio_config, mock_pygame_mixer):
+    # disable a specific event via config and ensure play_event does nothing
+    audio_config.enabled_events = {"card_move": False}
+    am = AudioManager(audio_config)
+    am.initialize()
+    # patch sound_cache to return a dummy sound so we would normally play
+    am.sound_cache.get = lambda et: object()
+    called = False
+    def fake_play(sound, bus, panning):
+        nonlocal called
+        called = True
+    am.sound_mixer.play_one_shot = fake_play
+    # attempt to play disabled event
+    from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+    am.play_event(AudioEvent(event_type=AudioEventType.CARD_MOVE))
+    assert not called, "Event should have been skipped by config"
+
+@pytest.mark.unit
 def test_container_fallback_stub(monkeypatch):
     # simulate failure during AudioManager initialization
     from src.infrastructure.audio import audio_manager as am_mod

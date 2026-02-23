@@ -171,6 +171,34 @@ class GamePlayController:
             pygame.K_ESCAPE: self._esc_handler,
         }
     
+    # === AUDIO HELPER ===
+
+    def _map_pile_to_index(self, pile) -> Optional[int]:
+        """Map a pile object to an index 0-12 for stereo panning.
+
+        Tableau piles 0-6, foundation 7-10, waste 11, stock 12. Returns
+        ``None`` if the pile cannot be resolved.
+        """
+        if pile is None:
+            return None
+        try:
+            # Updated names to match GameTable model
+            tableau_piles = self.engine.service.table.pile_base
+            for i, tableau_pile in enumerate(tableau_piles):
+                if pile == tableau_pile:
+                    return i
+            foundation_piles = self.engine.service.table.pile_semi
+            for i, foundation_pile in enumerate(foundation_piles):
+                if pile == foundation_pile:
+                    return 7 + i
+            if pile == self.engine.service.table.pile_scarti:
+                return 11
+            if pile == self.engine.service.table.pile_mazzo:
+                return 12
+        except Exception:
+            pass
+        return None
+
     # === NAVIGAZIONE PILE ===
     
     def _nav_pile_base(self, pile_idx: int) -> None:
@@ -189,6 +217,18 @@ class GamePlayController:
         
         # Use conditional hint vocalization
         self._speak_with_hint(msg, hint)
+        
+        # AUDIO
+        if self._audio:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                dest = self._map_pile_to_index(self.engine.cursor.get_current_pile())
+                self._audio.play_event(AudioEvent(
+                    event_type=AudioEventType.UI_NAVIGATE,
+                    destination_pile=dest
+                ))
+            except Exception:
+                pass
     
     def _nav_pile_semi(self, pile_idx: int) -> None:
         """Navigate to foundation pile (SHIFT+1-4) with hint support (v1.5.0).
@@ -221,6 +261,18 @@ class GamePlayController:
         
         # Use conditional hint vocalization
         self._speak_with_hint(msg, hint)
+        
+        # AUDIO navigate
+        if self._audio:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                dest = self._map_pile_to_index(self.engine.cursor.get_current_pile())
+                self._audio.play_event(AudioEvent(
+                    event_type=AudioEventType.UI_NAVIGATE,
+                    destination_pile=dest
+                ))
+            except Exception:
+                pass
     
     def _nav_pile_mazzo(self) -> None:
         """Navigate to stock pile (SHIFT+M) with hint support (v1.5.0)."""
@@ -235,6 +287,18 @@ class GamePlayController:
         
         # Use conditional hint vocalization
         self._speak_with_hint(msg, hint)
+        
+        # AUDIO navigate
+        if self._audio:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                dest = self._map_pile_to_index(self.engine.cursor.get_current_pile())
+                self._audio.play_event(AudioEvent(
+                    event_type=AudioEventType.UI_NAVIGATE,
+                    destination_pile=dest
+                ))
+            except Exception:
+                pass
     
     # === NAVIGAZIONE CURSORE ===
     
@@ -251,6 +315,18 @@ class GamePlayController:
         
         # Use conditional hint vocalization
         self._speak_with_hint(msg, hint)
+        
+        # AUDIO NAVIGATE
+        if self._audio:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                dest = self._map_pile_to_index(self.engine.cursor.get_current_pile())
+                self._audio.play_event(AudioEvent(
+                    event_type=AudioEventType.UI_NAVIGATE,
+                    destination_pile=dest
+                ))
+            except Exception:
+                pass
     
     def _cursor_down(self) -> None:
         """Arrow DOWN: Next card in current pile with hint support (v1.5.0)."""
@@ -265,6 +341,18 @@ class GamePlayController:
         
         # Use conditional hint vocalization
         self._speak_with_hint(msg, hint)
+        
+        # AUDIO NAVIGATE
+        if self._audio:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                dest = self._map_pile_to_index(self.engine.cursor.get_current_pile())
+                self._audio.play_event(AudioEvent(
+                    event_type=AudioEventType.UI_NAVIGATE,
+                    destination_pile=dest
+                ))
+            except Exception:
+                pass
     
     def _cursor_left(self) -> None:
         """Arrow LEFT: Previous pile with hint support (v1.5.0)."""
@@ -272,13 +360,31 @@ class GamePlayController:
         original_sr = self.engine.screen_reader
         self.engine.screen_reader = None
         
+        old_pile = self.engine.cursor.get_current_pile()
         msg, hint = self.engine.move_cursor("left")
+        new_pile = self.engine.cursor.get_current_pile()
         
         # Restore screen reader
         self.engine.screen_reader = original_sr
         
         # Use conditional hint vocalization
         self._speak_with_hint(msg, hint)
+        
+        # AUDIO NAVIGATE or bumper
+        if self._audio:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                if old_pile == new_pile:
+                    # boundary hit
+                    self._audio.play_event(AudioEvent(event_type=AudioEventType.TABLEAU_BUMPER))
+                else:
+                    dest = self._map_pile_to_index(new_pile)
+                    self._audio.play_event(AudioEvent(
+                        event_type=AudioEventType.UI_NAVIGATE,
+                        destination_pile=dest
+                    ))
+            except Exception:
+                pass
     
     def _cursor_right(self) -> None:
         """Arrow RIGHT: Next pile with hint support (v1.5.0)."""
@@ -286,21 +392,60 @@ class GamePlayController:
         original_sr = self.engine.screen_reader
         self.engine.screen_reader = None
         
+        old_pile = self.engine.cursor.get_current_pile()
         msg, hint = self.engine.move_cursor("right")
+        new_pile = self.engine.cursor.get_current_pile()
         
         # Restore screen reader
         self.engine.screen_reader = original_sr
         
         # Use conditional hint vocalization
         self._speak_with_hint(msg, hint)
+        
+        # AUDIO NAVIGATE or bumper
+        if self._audio:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                if old_pile == new_pile:
+                    self._audio.play_event(AudioEvent(event_type=AudioEventType.TABLEAU_BUMPER))
+                else:
+                    dest = self._map_pile_to_index(new_pile)
+                    self._audio.play_event(AudioEvent(
+                        event_type=AudioEventType.UI_NAVIGATE,
+                        destination_pile=dest
+                    ))
+            except Exception:
+                pass
     
     def _cursor_home(self) -> None:
         """HOME: First card in current pile."""
         self.engine.move_cursor("home")
+        # AUDIO
+        if self._audio:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                dest = self._map_pile_to_index(self.engine.cursor.get_current_pile())
+                self._audio.play_event(AudioEvent(
+                    event_type=AudioEventType.UI_NAVIGATE,
+                    destination_pile=dest
+                ))
+            except Exception:
+                pass
     
     def _cursor_end(self) -> None:
         """END: Last card in current pile."""
         self.engine.move_cursor("end")
+        # AUDIO
+        if self._audio:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                dest = self._map_pile_to_index(self.engine.cursor.get_current_pile())
+                self._audio.play_event(AudioEvent(
+                    event_type=AudioEventType.UI_NAVIGATE,
+                    destination_pile=dest
+                ))
+            except Exception:
+                pass
     
     def _cursor_tab(self) -> None:
         """TAB: Jump to different pile type with hint support (v1.5.0)."""
@@ -315,6 +460,18 @@ class GamePlayController:
         
         # Use conditional hint vocalization
         self._speak_with_hint(msg, hint)
+        
+        # AUDIO
+        if self._audio:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                dest = self._map_pile_to_index(self.engine.cursor.get_current_pile())
+                self._audio.play_event(AudioEvent(
+                    event_type=AudioEventType.UI_NAVIGATE,
+                    destination_pile=dest
+                ))
+            except Exception:
+                pass
     
     # === AZIONI CARTE ===
     
@@ -341,6 +498,14 @@ class GamePlayController:
         # Modifiers already handled by caller handle_wx_key_event()
         success, message = self.engine.select_card_at_cursor()
         
+        # AUDIO feedback on successful selection
+        if self._audio and success and "selezionat" in message.lower():
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                self._audio.play_event(AudioEvent(event_type=AudioEventType.CARD_SELECT))
+            except Exception:
+                pass
+        
         # Log card selection for analytics
         if success and "selezionat" in message.lower():
             # Extract card and pile info from current state
@@ -363,6 +528,13 @@ class GamePlayController:
             except:
                 # If extraction fails, skip logging rather than crash
                 pass
+            # AUDIO: play select sound on successful selection
+            if self._audio:
+                try:
+                    from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                    self._audio.play_event(AudioEvent(event_type=AudioEventType.CARD_SELECT))
+                except Exception:
+                    pass
     
     def _select_from_waste(self) -> None:
         """CTRL+ENTER: Select card from waste pile directly.
@@ -391,6 +563,13 @@ class GamePlayController:
         
         # Log waste card selection
         if success and "selezionat" in message.lower():
+            # AUDIO feedback
+            if self._audio:
+                try:
+                    from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                    self._audio.play_event(AudioEvent(event_type=AudioEventType.CARD_SELECT))
+                except Exception:
+                    pass
             # Extract card name from waste pile
             try:
                 card_name = "unknown"
@@ -442,10 +621,12 @@ class GamePlayController:
             if self._audio:
                 try:
                     from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                    origin_pile = self.engine.selection.origin_pile if self.engine.selection.has_selection() else None
+                    dest_pile = self.engine.cursor.get_current_pile()
                     self._audio.play_event(AudioEvent(
                         event_type=AudioEventType.CARD_MOVE,
-                        source_pile=None,  # TODO: mappare indici reali se disponibili
-                        destination_pile=None
+                        source_pile=self._map_pile_to_index(origin_pile),
+                        destination_pile=self._map_pile_to_index(dest_pile)
                     ))
                 except Exception:
                     pass
@@ -468,6 +649,13 @@ class GamePlayController:
     def _cancel_selection(self) -> None:
         """DELETE: Cancel current card selection."""
         self.engine.clear_selection()
+        # AUDIO
+        if self._audio:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_CANCEL))
+            except Exception:
+                pass
     
     def _draw_cards(self) -> None:
         """D or P: Draw cards from stock pile."""
@@ -554,6 +742,19 @@ class GamePlayController:
         log.info_query_requested("settings_info")
         msg, hint = self.engine.service.get_settings_info()
         self._speak_with_hint(msg, hint)
+
+    def _on_game_won(self) -> None:
+        """Play victory audio when game has been won.
+
+        This should be invoked by the UI/engine callback when a game
+        ends successfully. It does not perform any game logic itself.
+        """
+        if self._audio:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                self._audio.play_event(AudioEvent(event_type=AudioEventType.GAME_WON))
+            except Exception:
+                pass
     
     def _show_help(self) -> None:
         """H: Show available commands help."""

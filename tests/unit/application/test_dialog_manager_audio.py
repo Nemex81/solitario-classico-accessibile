@@ -12,11 +12,19 @@ class DummyAudio:
 
 
 class DummyDialog:
-    def __init__(self):
+    def __init__(self, result=True):
         self.called = 0
+        self.result = result
+        self.async_callback = None
+    @property
+    def is_available(self):
+        return True
     def show_yes_no(self, msg, title):
         self.called += 1
-        return True
+        return self.result
+    def show_yes_no_async(self, title, message, callback):
+        # immediately call callback with preset result
+        callback(self.result)
 
 
 @pytest.fixture
@@ -29,11 +37,32 @@ def test_show_abandon_triggers_audio(dummy_audio):
     dm = SolitarioDialogManager(dialog_provider=DummyDialog(), audio_manager=dummy_audio)
     result = dm.show_abandon_game_prompt()
     assert result is True
-    assert dummy_audio.events, "No audio event emitted"
-    assert dummy_audio.events[0].event_type == AudioEventType.UI_SELECT
+    # open event should be first
+    assert dummy_audio.events[0].event_type == AudioEventType.MIXER_OPENED
+    assert dummy_audio.events[-1].event_type == AudioEventType.UI_SELECT
 
 
 def test_show_new_game_triggers_audio(dummy_audio):
     dm = SolitarioDialogManager(dialog_provider=DummyDialog(), audio_manager=dummy_audio)
-    assert dm.show_new_game_prompt() is True
+    result = dm.show_new_game_prompt()
+    assert result is True
+    assert dummy_audio.events[0].event_type == AudioEventType.MIXER_OPENED
     assert dummy_audio.events[-1].event_type == AudioEventType.UI_SELECT
+
+
+def test_async_abandon_wraps_audio(dummy_audio):
+    dm = SolitarioDialogManager(dialog_provider=DummyDialog(), audio_manager=dummy_audio)
+    called = []
+    def cb(res):
+        called.append(res)
+    # DummyDialog.show_yes_no_async calls the callback immediately, so
+    # invoking the method will both open the dialog and trigger the
+    # wrapped callback once.
+    dm.show_abandon_game_prompt_async(cb)
+    # open event should have been played
+    assert dummy_audio.events and dummy_audio.events[0].event_type == AudioEventType.MIXER_OPENED
+    # callback should have been invoked exactly once by DummyDialog
+    assert called == [True]
+    # the audio close event should also have been emitted
+    assert dummy_audio.events[-1].event_type == AudioEventType.UI_SELECT
+

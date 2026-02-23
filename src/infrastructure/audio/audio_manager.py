@@ -62,6 +62,10 @@ class AudioManager:
         if not self._initialized:
             _game_logger.debug(f"AudioManager not initialized, skipping event: {event.event_type}")
             return
+        # check configuration for event toggle
+        if not self.config.enabled_events.get(event.event_type, True):
+            _game_logger.debug(f"Event {event.event_type} disabled via config, skipping")
+            return
         sound = self.sound_cache.get(event.event_type)
         if sound is None:
             _game_logger.warning(f"No sound mapped for event: {event.event_type}")

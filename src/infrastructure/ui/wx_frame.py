@@ -121,6 +121,10 @@ class SolitarioFrame(wx.Frame):
         
         # Bind close event
         self.Bind(wx.EVT_CLOSE, self._on_close_event)
+        # Bind activate event for pause/resume of ambient/music loops
+        self.Bind(wx.EVT_ACTIVATE, self._on_activate)
+        # audio manager will be attached by controller if available
+        self.audio_manager = None
         
         # Show and center frame
         self.Centre()
@@ -184,6 +188,33 @@ class SolitarioFrame(wx.Frame):
             log.warning("close_event", "No on_close callback registered - destroying frame")
             self.Destroy()
     
+    def _on_activate(self, event: wx.ActivateEvent) -> None:
+        """Pause or resume ambient/music loops when window focus changes.
+
+        ``wx.EVT_ACTIVATE`` is fired whenever the frame gains or loses focus.
+        The ``GetActive()`` flag indicates the new state. When losing focus we
+        pause all looping audio to avoid music/ambient playing in the
+        background; when regaining focus we resume the loops.
+
+        This handler uses the ``audio_manager`` attribute if attached by the
+        controller; as a fallback it will try to resolve one via the
+        dependency container.
+        """
+        try:
+            am = self.audio_manager
+            if am is None:
+                from src.infrastructure.di_container import DIContainer
+                am = DIContainer().get_audio_manager()
+            if not event.GetActive():
+                am.pause_all_loops()
+            else:
+                am.resume_all_loops()
+        except Exception:
+            # Best-effort: ignore any issue obtaining/using audio manager
+            pass
+        finally:
+            event.Skip()
+
     def _on_timer_event(self, event: wx.TimerEvent) -> None:
         """Internal handler for timer events.
         

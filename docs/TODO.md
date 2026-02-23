@@ -13,14 +13,34 @@ Obiettivo: completare l'integrazione di tutti gli eventi audio (gameplay, UI, di
 
 ---
 
-### Fase 1 – Core gameplay (v3.4.1 MVP)
-- [ ] Implementare `_map_pile_to_index()` helper in `GamePlayController`
-- [ ] CARD_MOVE con panning (source/destination index)
-- [ ] Eventi navigazione cursore (`_cursor_up/down/left/right`, `_nav_pile_base`)
-- [ ] Eventi CARD_SELECT e UI_CANCEL
-- [ ] Boundary hit detection (`TABLEAU_BUMPER`)
-- [ ] Victory detection callback `_on_game_won` + collegamento
-- [ ] Aggiornare test unitari/integration per gli eventi
+### Fase 1 – Core gameplay [7h totali]
+
+#### 1.1 Helper (30 min) — PREREQUISITO
+- [ ] Creare `_map_pile_to_index(pile) -> Optional[int]`
+  - 0‑6 tableau, 7‑10 foundation, 11 waste, 12 stock
+
+#### 1.2 Panning Fix (45 min)
+- [ ] Aggiornare CARD_MOVE a passare indici reali
+- [ ] Aggiungere source/destination anche a STOCK_DRAW
+- [ ] Validare panning stereo in test
+
+#### 1.3 Navigazione (2.5 h)
+- [ ] 4 frecce: `_cursor_up/down/left/right` → `UI_NAVIGATE`
+- [ ] 7 pile base: `_nav_pile_base(0..6)` → `UI_NAVIGATE`
+- [ ] 3 pile speciali: `_nav_pile_semi`, `_nav_pile_scarti`, `_nav_pile_mazzo`
+- [ ] 2 comandi addizionali: `_cursor_tab`, `_cursor_home`, `_cursor_end`
+
+#### 1.4 Selezione (1 h)
+- [ ] Evento `CARD_SELECT` in `_select_card()` (solo se success)
+- [ ] Evento `UI_CANCEL` in `_cancel_selection()`
+- [ ] Boundary hit (`TABLEAU_BUMPER`) quando non si muove cursor
+
+#### 1.5 Victory (45 min)
+- [ ] Aggiungere evento `GAME_WON` in callback di fine partita
+
+#### 1.6 Test
+- [x] Mock AudioManager e verifiche panning
+- [x] Copertura evento per ognuno dei metodi precedenti
 
 ### Fase 2 – Dialoghi e Input
 - [ ] Refactor `SolitarioDialogManager`: audio apertura/chiusura in tutti i metodi
@@ -30,17 +50,30 @@ Obiettivo: completare l'integrazione di tutti gli eventi audio (gameplay, UI, di
 - [ ] Test unitari per DialogManager, InputHandler, OptionsWindowController
 
 ### Fase 3 – Menu & Mixer
-- [ ] Integrare audio nel menu principale o creare `MainMenuController`
-- [ ] Implementare `MixerController` accessibile (tasto M) con audio/TTS
-- [ ] Boundary hit anche per fine corsa cursore
-- [ ] Test di comportamento menu e mixer
+- [x] Integrare audio nel menu principale o creare `MainMenuController`
+- [x] Implementare `MixerController` accessibile (tasto M) con audio/TTS
+- [x] Boundary hit anche per fine corsa cursore
+- [x] Test di comportamento menu e mixer
 
-### Fase 4 – Timer & loop ambient/music
-- [ ] Verificare timer callbacks in GamePlayController/engine
-- [ ] Avviare `AMBIENT_LOOP` all'inizializzazione in `acs_wx.py`
-- [ ] Bind `wx.EVT_ACTIVATE` per pause/resume loop
-- [ ] Gestire eventi opzionali tramite `audio_config.json`
-- [ ] Test integrati focus e timer audio
+### Fase 4 – Timer & loop ambient/music [2h totali]
+
+#### 4.1 Timer (SKIP: implementazione già esistente)
+- [x] Callbacks `_on_timer_warning/expired` presenti in `game_engine.py` (v3.4.2)
+- [x] Test integrazione `TIMER_WARNING` (30 min)
+- [x] Test integrazione `TIMER_EXPIRED` (30 min)
+
+#### 4.2 Ambient Loop (45 min)
+- [x] Avviare `AMBIENT_LOOP` in `acs_wx.py` subito dopo init audio
+- [x] Validare con test manuale/autom.
+
+#### 4.3 Focus handling (30 min)
+- [x] Bind `wx.EVT_ACTIVATE` per mettere in pausa/resume i loop
+- [x] Test alt‑tab e perdita focus
+
+#### 4.4 Config opzionali
+- [x] Aggiornare `audio_config.json` per eventi opzionali
+- [x] Verificare che loader filtri correttamente
+
 
 ### Fase 5 – Finitura & documentazione
 - [ ] Aggiornare `API.md`, `ARCHITECTURE.md`, README
@@ -51,12 +84,12 @@ Obiettivo: completare l'integrazione di tutti gli eventi audio (gameplay, UI, di
 ---
 
 🗂️ File principali coinvolti
-- `src/application/gameplay_controller.py`
-- `src/application/input_handler.py`
+- `src/application/gameplay_controller.py` (16 metodi + helper panning)
+- `src/application/input_handler.py` *(deprecato, nessuna modifica necessaria)*
 - `src/application/dialog_manager.py`
 - `src/application/options_controller.py`
-- `src/application/*` (menu, mixer)
-- `src/application/game_engine.py`
+- `src/application/*` (menu/mixer; verificare presenza `MainMenuController`)
+- `src/application/game_engine.py` (GAME_WON, timer callbacks già presenti)
 - `src/infrastructure/di_container.py`
 - `src/infrastructure/ui/*` (gameplay_panel, main_frame, altri)
 - `docs/API.md`, `docs/ARCHITECTURE.md`, README, config audio

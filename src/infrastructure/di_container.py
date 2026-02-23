@@ -152,6 +152,49 @@ class DIContainer:
                 audio_mgr = None
             self._instances["input_handler"] = InputHandler(audio_manager=audio_mgr)
         return cast(InputHandler, self._instances["input_handler"])
+
+    # ------------------------------------------------------------------
+    # Additional application controllers for audio-enhanced UI elements
+    # ------------------------------------------------------------------
+
+    def get_main_menu_controller(self):
+        """Factory for MainMenuController.
+
+        The main menu is displayed at application startup and when the user
+        abandons a game. The controller provides navigation/select/cancel
+        methods and automatically plays the open sound on creation.
+        """
+        from src.application.main_menu_controller import MainMenuController
+
+        audio_mgr = None
+        try:
+            audio_mgr = self.get_audio_manager()
+        except Exception:
+            audio_mgr = None
+        return MainMenuController(audio_manager=audio_mgr)
+
+    def get_mixer_controller(
+        self, screen_reader: Optional[object] = None
+    ):
+        """Factory for MixerController used by the accessible audio mixer.
+
+        Args:
+            screen_reader: optional ScreenReader to provide TTS feedback
+        """
+        from src.application.mixer_controller import MixerController
+
+        audio_mgr = None
+        try:
+            audio_mgr = self.get_audio_manager()
+        except Exception:
+            audio_mgr = None
+        # if a screen reader wasn't provided, try to resolve one
+        if screen_reader is None:
+            try:
+                screen_reader = self.get_screen_reader()
+            except Exception:
+                screen_reader = None
+        return MixerController(audio_manager=audio_mgr, screen_reader=screen_reader)
     
     # ========================================================================
     # DOMAIN LAYER

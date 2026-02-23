@@ -110,16 +110,24 @@ class SolitarioDialogManager:
             ...     abandon_and_return_to_menu()
         """
         if not self.is_available:
-            result = False
-        else:
-            result = self.dialogs.show_yes_no(
-                "Vuoi abbandonare la partita e tornare al menu di gioco?",
-                "Abbandono Partita"
-            )
+            return False
+        # audio on open
         if self._audio:
             try:
                 from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
-                self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_SELECT))
+                self._audio.play_event(AudioEvent(event_type=AudioEventType.MIXER_OPENED))
+            except Exception:
+                pass
+        result = self.dialogs.show_yes_no(
+            "Vuoi abbandonare la partita e tornare al menu di gioco?",
+            "Abbandono Partita"
+        )
+        # audio on close
+        if self._audio:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                ev = AudioEventType.UI_SELECT if result else AudioEventType.UI_CANCEL
+                self._audio.play_event(AudioEvent(event_type=ev))
             except Exception:
                 pass
         return result
@@ -145,11 +153,24 @@ class SolitarioDialogManager:
         """
         if not self.is_available:
             return False
-        
-        return self.dialogs.show_yes_no(
+        if self._audio:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                self._audio.play_event(AudioEvent(event_type=AudioEventType.MIXER_OPENED))
+            except Exception:
+                pass
+        result = self.dialogs.show_yes_no(
             "Una partita è già in corso. Vuoi abbandonarla e avviarne una nuova?",
             "Nuova Partita"
         )
+        if self._audio:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                ev = AudioEventType.UI_SELECT if result else AudioEventType.UI_CANCEL
+                self._audio.play_event(AudioEvent(event_type=ev))
+            except Exception:
+                pass
+        return result
     
     def show_return_to_main_prompt(self) -> bool:
         """Show confirmation dialog for returning to main menu.
@@ -169,11 +190,24 @@ class SolitarioDialogManager:
         """
         if not self.is_available:
             return False
-        
-        return self.dialogs.show_yes_no(
+        if self._audio:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                self._audio.play_event(AudioEvent(event_type=AudioEventType.MIXER_OPENED))
+            except Exception:
+                pass
+        result = self.dialogs.show_yes_no(
             "Vuoi tornare al menu principale?",
             "Torna al Menu"
         )
+        if self._audio:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                ev = AudioEventType.UI_SELECT if result else AudioEventType.UI_CANCEL
+                self._audio.play_event(AudioEvent(event_type=ev))
+            except Exception:
+                pass
+        return result
     
     def show_exit_app_prompt(self) -> bool:
         """DEPRECATED: Use show_exit_app_prompt_async().
@@ -201,11 +235,24 @@ class SolitarioDialogManager:
         """
         if not self.is_available:
             return False
-        
-        return self.dialogs.show_yes_no(
+        if self._audio:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                self._audio.play_event(AudioEvent(event_type=AudioEventType.MIXER_OPENED))
+            except Exception:
+                pass
+        result = self.dialogs.show_yes_no(
             "Vuoi uscire dall'applicazione?",
             "Chiusura Applicazione"
         )
+        if self._audio:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                ev = AudioEventType.UI_SELECT if result else AudioEventType.UI_CANCEL
+                self._audio.play_event(AudioEvent(event_type=ev))
+            except Exception:
+                pass
+        return result
     
     def show_options_save_prompt(self) -> Optional[bool]:
         """Show confirmation dialog for saving modified options.
@@ -236,11 +283,24 @@ class SolitarioDialogManager:
         """
         if not self.is_available:
             return None
-        
-        return self.dialogs.show_yes_no(
+        if self._audio:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                self._audio.play_event(AudioEvent(event_type=AudioEventType.MIXER_OPENED))
+            except Exception:
+                pass
+        result = self.dialogs.show_yes_no(
             "Hai modifiche non salvate. Vuoi salvare le modifiche prima di chiudere?",
             "Modifiche Non Salvate"
         )
+        if self._audio:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                ev = AudioEventType.UI_SELECT if result else AudioEventType.UI_CANCEL
+                self._audio.play_event(AudioEvent(event_type=ev))
+            except Exception:
+                pass
+        return result
     
     def show_alert(self, title: str, message: str) -> None:
         """Show informational alert dialog.
@@ -259,8 +319,15 @@ class SolitarioDialogManager:
         """
         if not self.is_available:
             return
-        
+        # audio open
+        if self._audio:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                self._audio.play_event(AudioEvent(event_type=AudioEventType.MIXER_OPENED))
+            except Exception:
+                pass
         self.dialogs.show_alert(message, title)
+        # no close event needed for simple OK dialog
     
     def show_abandon_game_prompt_async(self, callback: Callable[[bool], None]) -> None:
         """Show abandon game confirmation dialog (non-blocking).
@@ -282,11 +349,27 @@ class SolitarioDialogManager:
             # Note: TTS needs to be injected if we want to use it here
             # For now, just silently fail (no dialogs available)
             return
-        
+        # audio open event
+        if self._audio:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                self._audio.play_event(AudioEvent(event_type=AudioEventType.MIXER_OPENED))
+            except Exception:
+                pass
+        # wrap callback to emit close event before forwarding
+        def _with_audio(result: bool) -> None:
+            if self._audio:
+                try:
+                    from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                    ev = AudioEventType.UI_SELECT if result else AudioEventType.UI_CANCEL
+                    self._audio.play_event(AudioEvent(event_type=ev))
+                except Exception:
+                    pass
+            callback(result)
         self.dialogs.show_yes_no_async(
             title="Abbandono Partita",
             message="Vuoi abbandonare la partita e tornare al menu di gioco?",
-            callback=_make_logged_callback("Abbandono Partita", callback)
+            callback=_make_logged_callback("Abbandono Partita", _with_audio)
         )
     
     def show_rematch_prompt_async(self, callback: Callable[[bool], None]) -> None:
@@ -330,11 +413,28 @@ class SolitarioDialogManager:
             # Invoke callback with False to maintain async signature
             callback(False)
             return
-        
+        # AUDIO open
+        if self._audio:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                self._audio.play_event(AudioEvent(event_type=AudioEventType.MIXER_OPENED))
+            except Exception:
+                pass
+
+        def _audio_wrapped2(confirmed: bool) -> None:
+            if self._audio:
+                try:
+                    from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                    ev = AudioEventType.UI_SELECT if confirmed else AudioEventType.UI_CANCEL
+                    self._audio.play_event(AudioEvent(event_type=ev))
+                except Exception:
+                    pass
+            callback(confirmed)
+
         self.dialogs.show_yes_no_async(
             title="Rivincita?",
             message="Vuoi giocare ancora?",
-            callback=_make_logged_callback("Rivincita?", callback)
+            callback=_make_logged_callback("Rivincita?", _audio_wrapped2)
         )
     
     def show_new_game_prompt_async(self, callback: Callable[[bool], None]) -> None:

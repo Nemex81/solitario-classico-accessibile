@@ -267,6 +267,11 @@ python test.py
 - ✅ Manutenibilità ottimale
 - ✅ 100% compatibile con versioni precedenti (stesso gameplay)
 - ✅ Migliore accessibilità NVDA/JAWS
+- ✅ **Audio centralizzato completo**: ogni azione di gioco e UI genera un suono,
+      con panning per le pile, feedback nei dialoghi e nei menu, loop ambientali
+      e mixer accessibile via tasto M (visuale+TTS).
+- ✅ Gestione automatica pausa/riprendi audio quando la finestra perde/riacquista
+      il focus (EVT_ACTIVATE binding su SolitarioFrame).
 
 **Legacy pygame version** (deprecated):
 ```bash

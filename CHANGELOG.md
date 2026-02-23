@@ -11,7 +11,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased] — targeting v3.3.0
+## [Unreleased] — targeting v3.5.0
+
+### Added
+- Revisione completa del sistema audio centralizzato:
+  * Tutte le azioni di gameplay generano AudioEvent (navigazione, selezione, movimenti con panning, pescate, vittoria, ecc.).
+  * DialogManager ed OptionsWindowController emettono effetti sonori su apertura, navigazione, chiusura.
+  * Nuovi controller Application `MainMenuController` (menu principale) e `MixerController`
+    (mixer accessibile con audio/TTS).
+  * Eventi ambient loop e musica supportati, avvio automatico all'init del controller.
+  * Binding `wx.EVT_ACTIVATE` su `SolitarioFrame` per mettere in pausa/riprendere loop audio.
+  * DIContainer esteso con factory `get_main_menu_controller` e `get_mixer_controller`.
+  * Nuovi test unitari/GUI per tutte le componenti audio.
+
+### Changed
+- Documentazione (`API.md`, `ARCHITECTURE.md`, `README.md`) aggiornata con dettagli audio.
+- `acs_wx.py` ristrutturato per inizializzare audio e linkare audio_manager al frame.
+- InputHandler segnala audio solo se fornito dall'esterno (documento v1.6.1).
+
+### Fixed
+- Corrette varie KeyError e callback doppio nei test dopo refactoring.
 
 ## [Unreleased] — targeting v3.4.0
 

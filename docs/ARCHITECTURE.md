@@ -212,6 +212,8 @@ src/
 │   ├── session_tracker.py # Crash recovery (v3.0.0)
 │   ├── input_handler.py  # Keyboard → Commands
 │   ├── game_settings.py  # Configuration
+│   ├── main_menu_controller.py  # Main menu navigation logic (v3.4.1)
+│   ├── mixer_controller.py  # Audio mixer controller with TTS (v3.4.1)
 │   └── timer_manager.py  # Timer logic (v2.7.0)
 ├── domain/               # Domain Layer (Core)
 │   ├── __init__.py
@@ -718,6 +720,15 @@ Orchestratore principale del sistema audio. Riceve `AudioEvent` dai controller A
 **Cross-reference:**
 - [docs/API.md](docs/API.md): dettagli API pubblica, metodi, signature
 - [CHANGELOG.md](CHANGELOG.md): voce Added AudioManager orchestratore audio
+
+### Presentation Layer
+- `SolitarioFrame` (main window) ora si binda su `wx.EVT_ACTIVATE` per
+  mettere in pausa/riprendere automaticamente i loop ambient e musicali
+  attraverso l'`AudioManager`. Questa logica assicura che l'audio non continui
+  a suonare quando il giocatore cambia applicazione.
+- Il controller principale (`SolitarioController.run`) avvia un evento
+  `AMBIENT_LOOP` immediatamente dopo l'inizializzazione dell'`AudioManager`,
+  permettendo l'audio ambientale di partire non appena l'app è pronta.
 
 ---
 #### Logging Categorizzato (`src/infrastructure/logging/`) (v3.2.0)
