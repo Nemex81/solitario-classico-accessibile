@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - SoundCache: asset manager con caricamento WAV, varianti, fallback
     - AudioEventType & AudioEvent: 35 costanti evento (gameplay, UI, settings, voice)
   * **Integrazione Gameplay**:
-    - GameplayController: CARD_FLIP, TABLEAU_DROP, TABLEAU_DROP, CARD_SHUFFLE e altri eventi
+    - GameplayController: CARD_FLIP, TABLEAU_DROP, FOUNDATION_DROP, CARD_SHUFFLE e altri eventi
     - DialogManager: UI_ERROR, UI_NOTIFICATION, UI_CONFIRM, UI_CANCEL
     - MixerController: SETTING_VOLUME_CHANGED, UI_BOUNDARY_HIT (mixer accessibile)
     - MainMenuController: UI_MENU_OPEN, UI_BUTTON_CLICK, UI_BOUNDARY_HIT
@@ -47,24 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Callback doppi nei test corretti dopo refactoring
 
 
-## [Unreleased] — targeting v3.4.0
 
-### Added
-
-- **AudioManager**: Orchestratore principale sistema audio, gestione ciclo di vita, eventi, bus, panning, salvataggio settings, shutdown. Documentato in [docs/API.md](docs/API.md) e [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
-- **SoundMixer**: Nuovo orchestratore bus audio, gestione volumi, mute, panning, loop. Documentato in [docs/API.md](docs/API.md) e [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
-- **SoundCache**: Nuovo asset manager audio per caricamento WAV, gestione varianti, fallback e warning log. Documentato in [docs/API.md](docs/API.md) e [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
-- **AudioEventType & AudioEvent**: Nuova API pubblica per eventi audio, con dataclass immutabile e costanti stringa. Entry point dati per Application → AudioManager. Documentato in [docs/API.md](docs/API.md) e [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
-
-### Changed
-
-- Aggiornata struttura Infrastructure Layer in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) per includere audio_events.py come entry point dati.
-
-### Fixed
-
-- Aggiornata [docs/API.md](docs/API.md) con sezione AudioEventType & AudioEvent, signature, type hints, esempio d’uso.
-
----
 ## [3.2.2] - 2026-02-19
 
 ### Fixed
