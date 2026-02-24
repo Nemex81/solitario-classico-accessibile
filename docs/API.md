@@ -2144,7 +2144,7 @@ for session in orphaned:
 ## � Infrastructure Logging
 
 **Modulo**: `src/infrastructure/logging/`  
-**Versione**: v3.2.0 (sistema categorizzato Paradox-style)
+**Versione**: v3.5.0 (sistema categorizzato Paradox-style)
 
 ### Setup
 

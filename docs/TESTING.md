@@ -2,9 +2,9 @@
 
 ## Overview
 
-La test suite del progetto utilizza **pytest** con copertura dell'88.2% (v3.2.0).
+La test suite del progetto utilizza **pytest** con copertura dell'88.2% (v3.5.0).
 
-### Test Statistics (v3.2.1)
+### Test Statistics (v3.5.0)
 
 | Category | Count | Marker |
 |----------|-------|--------|
@@ -14,7 +14,7 @@ La test suite del progetto utilizza **pytest** con copertura dell'88.2% (v3.2.0)
 | Slow Tests | ~15 | `@pytest.mark.slow` |
 | **Total** | **790+** | - |
 
-### Test Coverage (v3.2.0)
+### Test Coverage (v3.5.0)
 
 - **Domain Layer**: 96%+
 - **Application Layer**: 87%+
@@ -301,7 +301,7 @@ markers =
 
 ---
 
-**Last Updated**: 19 Febbraio 2026 (v3.2.1)  
+**Last Updated**: 24 Febbraio 2026 (v3.5.0)  
 **Maintainer**: Nemex81  
 **Test Framework**: pytest 7.0+  
 **Coverage Tool**: pytest-cov 4.0+
