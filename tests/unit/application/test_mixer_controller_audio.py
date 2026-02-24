@@ -37,9 +37,9 @@ class TestMixerControllerAudio:
         audio = DummyAudio()
         sr = DummySR()
         ctrl = MixerController(audio_manager=audio, screen_reader=sr)
-        # at top, going up should bumper
+        # at top, going up should play boundary hit
         ctrl.navigate_up()
-        assert audio.events[-1].event_type == AudioEventType.TABLEAU_BUMPER
+        assert audio.events[-1].event_type == AudioEventType.UI_BOUNDARY_HIT
         # move down one step
         ctrl.navigate_down()
         assert audio.events[-1].event_type == AudioEventType.UI_NAVIGATE
@@ -47,7 +47,7 @@ class TestMixerControllerAudio:
         # go to bottom and try again
         ctrl.cursor = len(ctrl._order) - 1
         ctrl.navigate_down()
-        assert audio.events[-1].event_type == AudioEventType.TABLEAU_BUMPER
+        assert audio.events[-1].event_type == AudioEventType.UI_BOUNDARY_HIT
 
     def test_increase_decrease_changes_value_and_tts(self):
         audio = DummyAudio()
@@ -56,14 +56,14 @@ class TestMixerControllerAudio:
         initial = ctrl.channels[ctrl._order[0]]
         new = ctrl.increase()
         assert new == initial + 10
-        assert audio.events[-1].event_type == AudioEventType.UI_SELECT
+        assert audio.events[-1].event_type == AudioEventType.SETTING_VOLUME_CHANGED
         assert any(str(new) in spoken for spoken in sr.tts.spoken)
         # decrease back
         new2 = ctrl.decrease()
         assert new2 == initial
-        assert audio.events[-1].event_type == AudioEventType.UI_SELECT
+        assert audio.events[-1].event_type == AudioEventType.SETTING_VOLUME_CHANGED
         assert any(str(new2) in spoken for spoken in sr.tts.spoken)
         # try to decrease below 0 boundary
         ctrl.channels[ctrl._order[0]] = 0
         ctrl.decrease()
-        assert audio.events[-1].event_type == AudioEventType.TABLEAU_BUMPER
+        assert audio.events[-1].event_type == AudioEventType.UI_BOUNDARY_HIT

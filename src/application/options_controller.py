@@ -87,7 +87,7 @@ class OptionsWindowController:
         if self._audio:
             try:
                 from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
-                self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_NAVIGATE))
+                self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_MENU_OPEN))
             except Exception:
                 pass
         
@@ -120,7 +120,7 @@ class OptionsWindowController:
                 if self._audio:
                     try:
                         from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
-                        self._audio.play_event(AudioEvent(event_type=AudioEventType.MIXER_OPENED))
+                        self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_MENU_OPEN))
                     except Exception:
                         pass
                 result = self.dialog_manager.show_options_save_prompt()
@@ -132,7 +132,7 @@ class OptionsWindowController:
                     if self._audio:
                         try:
                             from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
-                            self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_SELECT))
+                            self._audio.play_event(AudioEvent(event_type=AudioEventType.SETTING_SAVED))
                         except Exception:
                             pass
                     return OptionsFormatter.format_save_confirmed()
@@ -306,7 +306,7 @@ class OptionsWindowController:
         if self._audio:
             try:
                 from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
-                self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_SELECT))
+                self._audio.play_event(AudioEvent(event_type=AudioEventType.SETTING_CHANGED))
             except Exception:
                 pass
         return msg

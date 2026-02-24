@@ -29,6 +29,38 @@ def test_audio_config_loader_valid_json(tmp_path, monkeypatch):
 
 
 @pytest.mark.unit
+def test_audio_config_loader_full_mapping(tmp_path):
+    """Loader should accept a comprehensive config with all new keys."""
+    data = {
+        "version": "2.0",
+        "enabled_events": {"ui_navigate": False, "card_flip": True, "welcome_message": True},
+        "event_sounds": {
+            "CARD_MOVE": "gameplay/card_move.wav",
+            "CARD_FLIP": "gameplay/card_flip.wav",
+            "UI_MENU_OPEN": "ui/menu_open.wav",
+            "WELCOME_MESSAGE": "voice/welcome_english.wav"
+        },
+        "preload_all_event_sounds": False
+    }
+    path = write_temp_config(tmp_path, data)
+    cfg = AudioConfigLoader.load(path)
+
+    # basics
+    assert cfg.version == "2.0"
+    assert cfg.preload_all_event_sounds is False
+
+    # check that no keys are dropped
+    assert cfg.event_sounds["CARD_MOVE"] == "gameplay/card_move.wav"
+    assert cfg.event_sounds["CARD_FLIP"] == "gameplay/card_flip.wav"
+    assert cfg.event_sounds["UI_MENU_OPEN"] == "ui/menu_open.wav"
+    assert cfg.event_sounds["WELCOME_MESSAGE"] == "voice/welcome_english.wav"
+
+    assert cfg.enabled_events.get("ui_navigate") is False
+    assert cfg.enabled_events.get("card_flip") is True
+    assert cfg.enabled_events.get("welcome_message") is True
+
+
+@pytest.mark.unit
 def test_audio_config_loader_missing_file(tmp_path, monkeypatch):
     # point loader at non-existent file, should return default config
     path = str(tmp_path / "nonexistent.json")

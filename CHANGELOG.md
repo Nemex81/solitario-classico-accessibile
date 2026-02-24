@@ -23,6 +23,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * Binding `wx.EVT_ACTIVATE` su `SolitarioFrame` per mettere in pausa/riprendere loop audio.
   * DIContainer esteso con factory `get_main_menu_controller` e `get_mixer_controller`.
   * Nuovi test unitari/GUI per tutte le componenti audio.
+- **Espansione eventi audio (+21 costanti)**: `AudioEventType` in `audio_events.py` raggiunge la parità
+  con la vecchia release pygame. Nuove costanti aggiunte per categoria:
+  * Gameplay: `CARD_FLIP`, `CARD_SHUFFLE`, `CARD_SHUFFLE_WASTE`, `TABLEAU_DROP`, `CARDS_EXHAUSTED`, `MULTI_CARD_MOVE`
+  * UI navigazione: `UI_NAVIGATE_FRAME`, `UI_NAVIGATE_PILE`, `UI_CONFIRM`, `UI_TOGGLE`, `UI_FOCUS_CHANGE`, `UI_BOUNDARY_HIT`, `UI_NOTIFICATION`, `UI_ERROR`
+  * Menu/pulsanti: `UI_MENU_OPEN`, `UI_MENU_CLOSE`, `UI_BUTTON_CLICK`, `UI_BUTTON_HOVER`
+  * Impostazioni: `SETTING_SAVED`, `SETTING_CHANGED`, `SETTING_LEVEL_CHANGED`, `SETTING_VOLUME_CHANGED`, `SETTING_MUSIC_CHANGED`, `SETTING_SWITCH_ON`, `SETTING_SWITCH_OFF`
+  * Voce: `WELCOME_MESSAGE`
+- Aggiornato `audio_config.json` con mappatura completa a 34 file WAV e 35 flag `enabled_events`.
+- Inserite chiamate `play_event` nei controller chiave con eventi semantici:
+  * `gameplay_controller.py`: `UI_NAVIGATE_PILE`, `UI_NAVIGATE_FRAME`, `MULTI_CARD_MOVE`, `TABLEAU_DROP`, `FOUNDATION_DROP`, `CARDS_EXHAUSTED`, `CARD_SHUFFLE`
+  * `dialog_manager.py`: `UI_ERROR`, `UI_NOTIFICATION`, `UI_CONFIRM`, `UI_CANCEL`
+  * `mixer_controller.py`: `SETTING_VOLUME_CHANGED`, `UI_BOUNDARY_HIT`
+  * `options_controller.py`: `UI_MENU_OPEN`, `SETTING_SAVED`, `SETTING_CHANGED`
+  * `main_menu_controller.py`: `UI_MENU_OPEN`, `UI_BOUNDARY_HIT`, `UI_BUTTON_CLICK`
+- `AudioManager._load_event_mapping()` ora risolve chiavi JSON (nomi costanti) ai valori stringa corrispondenti tramite `getattr(AudioEventType, key)`. Rimosso uso Enum-style (`AudioEventType[key]`).
 
 ### Changed
 - Configurazione audio ora JSON-driven: `event_sounds` e
@@ -34,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Corrette varie KeyError e callback doppio nei test dopo refactoring.
+- `AudioManager`: aggiunto import `Dict` e `AudioEventType` mancanti; rimossi riferimenti a metodi Enum-style sull'oggetto classe.
 
 ## [Unreleased] — targeting v3.4.0
 

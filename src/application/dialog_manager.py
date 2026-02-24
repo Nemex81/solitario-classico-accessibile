@@ -115,7 +115,7 @@ class SolitarioDialogManager:
         if self._audio:
             try:
                 from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
-                self._audio.play_event(AudioEvent(event_type=AudioEventType.MIXER_OPENED))
+                self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_ERROR))
             except Exception:
                 pass
         result = self.dialogs.show_yes_no(
@@ -126,7 +126,7 @@ class SolitarioDialogManager:
         if self._audio:
             try:
                 from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
-                ev = AudioEventType.UI_SELECT if result else AudioEventType.UI_CANCEL
+                ev = AudioEventType.UI_CONFIRM if result else AudioEventType.UI_CANCEL
                 self._audio.play_event(AudioEvent(event_type=ev))
             except Exception:
                 pass
@@ -156,7 +156,7 @@ class SolitarioDialogManager:
         if self._audio:
             try:
                 from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
-                self._audio.play_event(AudioEvent(event_type=AudioEventType.MIXER_OPENED))
+                self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_ERROR))
             except Exception:
                 pass
         result = self.dialogs.show_yes_no(
@@ -166,7 +166,7 @@ class SolitarioDialogManager:
         if self._audio:
             try:
                 from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
-                ev = AudioEventType.UI_SELECT if result else AudioEventType.UI_CANCEL
+                ev = AudioEventType.UI_CONFIRM if result else AudioEventType.UI_CANCEL
                 self._audio.play_event(AudioEvent(event_type=ev))
             except Exception:
                 pass
@@ -193,7 +193,7 @@ class SolitarioDialogManager:
         if self._audio:
             try:
                 from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
-                self._audio.play_event(AudioEvent(event_type=AudioEventType.MIXER_OPENED))
+                self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_NOTIFICATION))
             except Exception:
                 pass
         result = self.dialogs.show_yes_no(
@@ -203,7 +203,7 @@ class SolitarioDialogManager:
         if self._audio:
             try:
                 from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
-                ev = AudioEventType.UI_SELECT if result else AudioEventType.UI_CANCEL
+                ev = AudioEventType.UI_CONFIRM if result else AudioEventType.UI_CANCEL
                 self._audio.play_event(AudioEvent(event_type=ev))
             except Exception:
                 pass
@@ -238,7 +238,7 @@ class SolitarioDialogManager:
         if self._audio:
             try:
                 from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
-                self._audio.play_event(AudioEvent(event_type=AudioEventType.MIXER_OPENED))
+                self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_ERROR))
             except Exception:
                 pass
         result = self.dialogs.show_yes_no(
@@ -248,7 +248,7 @@ class SolitarioDialogManager:
         if self._audio:
             try:
                 from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
-                ev = AudioEventType.UI_SELECT if result else AudioEventType.UI_CANCEL
+                ev = AudioEventType.UI_CONFIRM if result else AudioEventType.UI_CANCEL
                 self._audio.play_event(AudioEvent(event_type=ev))
             except Exception:
                 pass
@@ -286,7 +286,7 @@ class SolitarioDialogManager:
         if self._audio:
             try:
                 from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
-                self._audio.play_event(AudioEvent(event_type=AudioEventType.MIXER_OPENED))
+                self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_NOTIFICATION))
             except Exception:
                 pass
         result = self.dialogs.show_yes_no(
@@ -296,7 +296,7 @@ class SolitarioDialogManager:
         if self._audio:
             try:
                 from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
-                ev = AudioEventType.UI_SELECT if result else AudioEventType.UI_CANCEL
+                ev = AudioEventType.UI_CONFIRM if result else AudioEventType.UI_CANCEL
                 self._audio.play_event(AudioEvent(event_type=ev))
             except Exception:
                 pass
@@ -353,7 +353,7 @@ class SolitarioDialogManager:
         if self._audio:
             try:
                 from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
-                self._audio.play_event(AudioEvent(event_type=AudioEventType.MIXER_OPENED))
+                self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_ERROR))
             except Exception:
                 pass
         # wrap callback to emit close event before forwarding
@@ -361,7 +361,7 @@ class SolitarioDialogManager:
             if self._audio:
                 try:
                     from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
-                    ev = AudioEventType.UI_SELECT if result else AudioEventType.UI_CANCEL
+                    ev = AudioEventType.UI_CONFIRM if result else AudioEventType.UI_CANCEL
                     self._audio.play_event(AudioEvent(event_type=ev))
                 except Exception:
                     pass

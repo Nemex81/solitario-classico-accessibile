@@ -37,7 +37,7 @@ class MainMenuController:
         # shown; constructors may be used directly in tests
         if self._audio:
             try:
-                self._audio.play_event(AudioEvent(event_type=AudioEventType.MIXER_OPENED))
+                self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_MENU_OPEN))
             except Exception:
                 pass
 
@@ -46,7 +46,7 @@ class MainMenuController:
         if self.cursor <= 0:
             if self._audio:
                 try:
-                    self._audio.play_event(AudioEvent(event_type=AudioEventType.TABLEAU_BUMPER))
+                    self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_BOUNDARY_HIT))
                 except Exception:
                     pass
         else:
@@ -62,7 +62,7 @@ class MainMenuController:
         if self.cursor >= len(self.items) - 1:
             if self._audio:
                 try:
-                    self._audio.play_event(AudioEvent(event_type=AudioEventType.TABLEAU_BUMPER))
+                    self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_BOUNDARY_HIT))
                 except Exception:
                     pass
         else:
@@ -78,7 +78,7 @@ class MainMenuController:
     def select(self) -> str:
         if self._audio:
             try:
-                self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_SELECT))
+                self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_BUTTON_CLICK))
             except Exception:
                 pass
         return self.items[self.cursor]

@@ -41,7 +41,7 @@ class TestOptionsControllerAudio:
         # set a cursor position allowing modification
         ctrl.cursor_position = 0
         msg = ctrl.modify_current_option()
-        assert audio.events and audio.events[-1].event_type == AudioEventType.UI_SELECT
+        assert audio.events and audio.events[-1].event_type == AudioEventType.SETTING_CHANGED
 
     def test_close_dirty_plays_dialog_and_response(self):
         audio = DummyAudio()
@@ -61,6 +61,6 @@ class TestOptionsControllerAudio:
             "score_warning_level": s.score_warning_level,
         }
         out = ctrl.close_window()
-        assert audio.events[0].event_type == AudioEventType.MIXER_OPENED
+        assert audio.events[0].event_type == AudioEventType.UI_MENU_OPEN
         assert audio.events[-1].event_type == AudioEventType.UI_CANCEL
         assert out == "Opzioni chiuse senza salvare." or isinstance(out, str)

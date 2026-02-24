@@ -43,7 +43,7 @@ class MixerController:
         if self.cursor <= 0:
             if self._audio:
                 try:
-                    self._audio.play_event(AudioEvent(event_type=AudioEventType.TABLEAU_BUMPER))
+                    self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_BOUNDARY_HIT))
                 except Exception:
                     pass
         else:
@@ -61,7 +61,7 @@ class MixerController:
         if self.cursor >= len(self._order) - 1:
             if self._audio:
                 try:
-                    self._audio.play_event(AudioEvent(event_type=AudioEventType.TABLEAU_BUMPER))
+                    self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_BOUNDARY_HIT))
                 except Exception:
                     pass
         else:
@@ -81,7 +81,7 @@ class MixerController:
             self.channels[key] += 10
             if self._audio:
                 try:
-                    self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_SELECT))
+                    self._audio.play_event(AudioEvent(event_type=AudioEventType.SETTING_VOLUME_CHANGED))
                 except Exception:
                     pass
             if self._sr:
@@ -89,7 +89,7 @@ class MixerController:
         else:
             if self._audio:
                 try:
-                    self._audio.play_event(AudioEvent(event_type=AudioEventType.TABLEAU_BUMPER))
+                    self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_BOUNDARY_HIT))
                 except Exception:
                     pass
         return self.channels[key]
@@ -100,7 +100,7 @@ class MixerController:
             self.channels[key] -= 10
             if self._audio:
                 try:
-                    self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_SELECT))
+                    self._audio.play_event(AudioEvent(event_type=AudioEventType.SETTING_VOLUME_CHANGED))
                 except Exception:
                     pass
             if self._sr:
@@ -108,7 +108,7 @@ class MixerController:
         else:
             if self._audio:
                 try:
-                    self._audio.play_event(AudioEvent(event_type=AudioEventType.TABLEAU_BUMPER))
+                    self._audio.play_event(AudioEvent(event_type=AudioEventType.UI_BOUNDARY_HIT))
                 except Exception:
                     pass
         return self.channels[key]

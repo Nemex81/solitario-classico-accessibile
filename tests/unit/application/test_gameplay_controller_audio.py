@@ -83,8 +83,8 @@ class TestGamePlayControllerAudio:
         # monkeypatch engine to force success
         ctrl.engine.execute_move = lambda : (True, "Moved")
         ctrl._move_cards()
-        # look for the card_move event
-        card_events = [ev for ev in audio.events if ev.event_type == "card_move"]
+        # look for the card_move event (now emitted as tableau_drop or multi_card_move)
+        card_events = [ev for ev in audio.events if ev.event_type in ("tableau_drop", "multi_card_move", "foundation_drop")]
         assert card_events, audio.events
         ev = card_events[-1]
         assert ev.source_pile is not None

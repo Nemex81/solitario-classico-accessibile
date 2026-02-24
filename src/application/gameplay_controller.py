@@ -380,7 +380,7 @@ class GamePlayController:
                 else:
                     dest = self._map_pile_to_index(new_pile)
                     self._audio.play_event(AudioEvent(
-                        event_type=AudioEventType.UI_NAVIGATE,
+                        event_type=AudioEventType.UI_NAVIGATE_PILE,
                         destination_pile=dest
                     ))
             except Exception:
@@ -411,7 +411,7 @@ class GamePlayController:
                 else:
                     dest = self._map_pile_to_index(new_pile)
                     self._audio.play_event(AudioEvent(
-                        event_type=AudioEventType.UI_NAVIGATE,
+                        event_type=AudioEventType.UI_NAVIGATE_PILE,
                         destination_pile=dest
                     ))
             except Exception:
@@ -467,7 +467,7 @@ class GamePlayController:
                 from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
                 dest = self._map_pile_to_index(self.engine.cursor.get_current_pile())
                 self._audio.play_event(AudioEvent(
-                    event_type=AudioEventType.UI_NAVIGATE,
+                    event_type=AudioEventType.UI_NAVIGATE_FRAME,
                     destination_pile=dest
                 ))
             except Exception:
@@ -623,8 +623,22 @@ class GamePlayController:
                     from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
                     origin_pile = self.engine.selection.origin_pile if self.engine.selection.has_selection() else None
                     dest_pile = self.engine.cursor.get_current_pile()
+                    # Detect multi-card vs single-card move
+                    try:
+                        selected_count = len(self.engine.selection.selected_cards) if self.engine.selection.has_selection() else 1
+                    except Exception:
+                        selected_count = 1
+                    if selected_count > 1:
+                        event_type = AudioEventType.MULTI_CARD_MOVE
+                    else:
+                        dest_idx = self._map_pile_to_index(dest_pile)
+                        # Foundation piles are index 7-10; tableau are 0-6
+                        if dest_idx is not None and 7 <= dest_idx <= 10:
+                            event_type = AudioEventType.FOUNDATION_DROP
+                        else:
+                            event_type = AudioEventType.TABLEAU_DROP
                     self._audio.play_event(AudioEvent(
-                        event_type=AudioEventType.CARD_MOVE,
+                        event_type=event_type,
                         source_pile=self._map_pile_to_index(origin_pile),
                         destination_pile=self._map_pile_to_index(dest_pile)
                     ))
@@ -676,6 +690,13 @@ class GamePlayController:
                     ))
                 except Exception:
                     pass
+        elif not success and self._audio:
+            # Draw failed – mazzo e scarti esauriti
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                self._audio.play_event(AudioEvent(event_type=AudioEventType.CARDS_EXHAUSTED))
+            except Exception:
+                pass
     
     # === QUERY INFORMAZIONI ===
     
@@ -801,6 +822,14 @@ ESC: abbandona partita."""
         # Start new game immediately (no game running OR no callback)
         self.engine.new_game()
         # Message vocalized by engine.new_game()
+
+        # AUDIO: mischia mazzo
+        if self._audio:
+            try:
+                from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+                self._audio.play_event(AudioEvent(event_type=AudioEventType.CARD_SHUFFLE))
+            except Exception:
+                pass
         
         # Log new game started with settings
         try:
