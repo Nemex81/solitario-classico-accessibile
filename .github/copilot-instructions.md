@@ -150,6 +150,22 @@ class ProfileNotFoundError(Exception):
     pass
 ```
 
+**Nota**: `src/domain/exceptions.py` è indicato come "pattern futuro". Quando si introducono exception custom, crea il file `src/domain/exceptions.py` e considera di aggiungere una gerarchia base per facilitare catch selettivi e logging centralizzato:
+
+```python
+class DomainError(Exception):
+    """Base class per errori Domain-specific."""
+    pass
+
+class InvalidMoveError(DomainError):
+    pass
+
+class ProfileNotFoundError(DomainError):
+    pass
+```
+
+Questo permette di usare `except DomainError:` quando si vuole intercettare tutti gli errori di dominio, o `except InvalidMoveError:` per gestire casi specifici.
+
 **Vietato:**
 - ❌ `except Exception: pass` (swallow silent)
 - ❌ Exception generiche per errori Domain (`raise Exception("bad move")` → usa `InvalidMoveError`)
@@ -255,6 +271,8 @@ Ogni degradazione graziosa **deve** essere loggata con:
 2. **Contesto completo**: path file, parametri tentati, cosa fallisce
 3. **Azione intrapresa**: quale fallback/stub viene usato
 4. **Stack trace**: sempre con `_error_logger.exception()` dentro `except` block
+
+(Vedi esempi concreti nella sezione [Esempi Applicati al Progetto](#esempi-applicati-al-progetto) per pattern di logging e fallback già usati nel codice.)
 
 **Esempio completo:**
 ```python
