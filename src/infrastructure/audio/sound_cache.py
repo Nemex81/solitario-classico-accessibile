@@ -27,7 +27,7 @@ class SoundCache:
             event_to_files: mappa evento->percorso relativo (es. {"card_move": "gameplay/card_move.wav"}).
                             Fornita da AudioManager._load_event_mapping() caricata da JSON config.
         
-        **v3.5.1**: Mapping JSON-driven è unica sorgente di verità. 
+        **v3.5.0**: Mapping JSON-driven è unica sorgente di verità. 
         Non esiste più fallback hardcoded legacy.
         """
         self._cache.clear()

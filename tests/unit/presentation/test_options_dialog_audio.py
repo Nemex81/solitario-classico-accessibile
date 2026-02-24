@@ -1,4 +1,4 @@
-"""Unit tests for OptionsDialog audio integration (v3.5.1).
+"""Unit tests for OptionsDialog audio integration (v3.5.0).
 
 Tests:
 - OptionsDialog accepts audio_manager parameter

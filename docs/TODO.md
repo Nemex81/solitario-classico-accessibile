@@ -43,7 +43,7 @@ Piano di riferimento: [ui_audio_integration_plan.md](3 - coding plans/ui_audio_i
 - [x] 3.4. Implementare `SETTING_CHANGED` su modifica RadioBox/CheckBox/ComboBox
 - [x] 3.5. Implementare `SETTING_SAVED` al click pulsante "Salva"
 - [x] 3.6. Implementare `UI_CANCEL` al click "Annulla" o pressione ESC
-- [x] 3.7. Aggiornare docstring del costruttore con new parameter v3.5.1
+- [x] 3.7. Aggiornare docstring del costruttore con new parameter v3.5.0
 - [x] 3.8. Creare test unitari in `tests/unit/presentation/test_options_dialog_audio.py`
 
 ### Fase 4: Integration e validazione
@@ -51,7 +51,7 @@ Piano di riferimento: [ui_audio_integration_plan.md](3 - coding plans/ui_audio_i
 - [x] 4.1. Verificare che `OptionsDialog` riceve `audio_manager` da `SolitarioController` (nel metodo che la istanzia)
 - [x] 4.2. Eseguire pre-commit checklist (syntax, mypy, logging audit) — ✅ Logging audit OK (no print in production)
 - [x] 4.3. Eseguire test unitari: `pytest tests/ -m "not gui" --cov=src --cov-fail-under=85` — ⏳ Blocco: environment setup richiesto
-- [x] 4.4. Aggiornare `docs/API.md` con nuove signatures di `MenuPanel` e `OptionsDialog` — ✅ Sezioni v3.5.1 aggiunte
+- [x] 4.4. Aggiornare `docs/API.md` con nuove signatures di `MenuPanel` e `OptionsDialog` — ✅ Sezioni v3.5.0 aggiunte
 - [x] 4.5. Aggiornare `docs/CHANGELOG.md` con entry tipo `feat(ui): integra sistema audio in menu principale e opzioni` — ✅ Aggiornato con UI Audio Integration
 
 ---
@@ -60,7 +60,7 @@ Piano di riferimento: [ui_audio_integration_plan.md](3 - coding plans/ui_audio_i
 
 ---
 
-## 🧹 REFACTOR AGGIUNTIVO (v3.5.1)
+## 🧹 REFACTOR AGGIUNTIVO (v3.5.0)
 
 **Dopo completamento integrazione audio UI**, eseguito refactoring pulizia codice legacy:
 

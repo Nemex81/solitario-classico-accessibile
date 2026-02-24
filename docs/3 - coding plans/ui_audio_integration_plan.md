@@ -60,7 +60,7 @@ def __init__(self, parent, controller, container=None, audio_manager=None, **kwa
         parent: Parent panel container (frame.panel_container)
         controller: Application controller with menu action methods
         container: Optional DependencyContainer for future DI needs (v2.2.0)
-        audio_manager: Optional AudioManager for sound effects (v3.5.1)
+        audio_manager: Optional AudioManager for sound effects (v3.5.0)
         **kwargs: Additional arguments passed to BasicPanel
     """
     self.container = container
@@ -84,7 +84,7 @@ def on_button_focus(self, event: wx.FocusEvent) -> None:
     is called programmatically. Announces button label via TTS for
     screen reader users.
     
-    🆕 v3.5.1: Plays UI_BUTTON_HOVER sound effect.
+    🆕 v3.5.0: Plays UI_BUTTON_HOVER sound effect.
     """
     button = event.GetEventObject()
     self.announce(button.GetLabel(), interrupt=False)
@@ -115,7 +115,7 @@ def on_button_focus(self, event: wx.FocusEvent) -> None:
 def on_play_click(self, event: wx.CommandEvent) -> None:
     """Handle "Gioca al solitario classico" button click.
     
-    🆕 v3.5.1: Plays UI_BUTTON_CLICK sound before action.
+    🆕 v3.5.0: Plays UI_BUTTON_CLICK sound before action.
     """
     # ✨ NUOVO: Play button click sound
     if self.audio_manager:
@@ -182,7 +182,7 @@ def __init__(
         parent: Parent window (typically main frame)
         controller: OptionsWindowController instance
         screen_reader: ScreenReader for optional TTS feedback
-        audio_manager: Optional AudioManager for sound effects (v3.5.1)
+        audio_manager: Optional AudioManager for sound effects (v3.5.0)
         title: Dialog title
         size: Dialog size in pixels
     """
@@ -213,7 +213,7 @@ def __init__(
 def on_setting_changed(self, event: wx.Event) -> None:
     """Handle any setting change from widgets.
     
-    🆕 v3.5.1: Plays audio feedback for setting changes.
+    🆕 v3.5.0: Plays audio feedback for setting changes.
     """
     # ✨ NUOVO: Determina tipo di evento audio in base al widget
     event_obj = event.GetEventObject()
@@ -284,7 +284,7 @@ def on_setting_changed(self, event: wx.Event) -> None:
 def on_save_click(self, event: wx.CommandEvent) -> None:
     """Handle Save button click.
     
-    🆕 v3.5.1: Plays SETTING_SAVED sound before closing.
+    🆕 v3.5.0: Plays SETTING_SAVED sound before closing.
     """
     # ✨ NUOVO: Play save confirmation sound
     if self.audio_manager:
@@ -309,7 +309,7 @@ def on_save_click(self, event: wx.CommandEvent) -> None:
 def on_cancel_click(self, event: wx.CommandEvent) -> None:
     """Handle Cancel button click.
     
-    🆕 v3.5.1: Plays UI_CANCEL sound before closing.
+    🆕 v3.5.0: Plays UI_CANCEL sound before closing.
     """
     # ✨ NUOVO: Play cancel sound
     if self.audio_manager:
@@ -340,7 +340,7 @@ def on_cancel_click(self, event: wx.CommandEvent) -> None:
 def show_options(self) -> None:
     """Show options window using OptionsDialog with native wx widgets.
     
-    🆕 v3.5.1: Passes audio_manager for sound effects.
+    🆕 v3.5.0: Passes audio_manager for sound effects.
     """
     from src.infrastructure.ui.options_dialog import OptionsDialog
     
@@ -552,7 +552,7 @@ self.audio_manager.play_event(...)
 
 ### Retrocompatibilità
 Tutti i parametri `audio_manager` sono **opzionali** (`=None`):
-- Se non passato, UI funziona senza audio (comportamento pre-v3.5.1)
+- Se non passato, UI funziona senza audio (comportamento pre-v3.5.0)
 - Se passato, audio attivo
 - Mantiene compatibilità con test esistenti che non passano audio_manager
 
@@ -608,6 +608,6 @@ Dopo implementazione:
 4. **Accessibilità**: Utenti ciechi ricevono conferma immediata delle azioni
 5. **Retrocompatibilità**: Codice esistente continua a funzionare
 
-**Versione Target:** v3.5.1  
+**Versione Target:** v3.5.0  
 **Stima Implementazione:** 1-2 ore  
 **Rischio:** BASSO (modifiche isolate, pattern già testato in GameplayPanel)

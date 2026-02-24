@@ -1,7 +1,3 @@
-### Added
-- [infra] AudioManager integrato in DIContainer come singleton lazy-loaded con shutdown hook (`get_audio_manager`, `shutdown_audio_manager`).
-  - Accesso centralizzato, nessuna dipendenza verso Domain/Application.
-  - Aggiornata documentazione API e architettura.
 # Changelog
 
 All notable changes to this project will be documented in this file.
@@ -14,49 +10,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased] — targeting v3.5.0
 
 ### Added
-- Revisione completa del sistema audio centralizzato:
-  * Tutte le azioni di gameplay generano AudioEvent (navigazione, selezione, movimenti con panning, pescate, vittoria, ecc.).
-  * DialogManager ed OptionsWindowController emettono effetti sonori su apertura, navigazione, chiusura.
-  * Nuovi controller Application `MainMenuController` (menu principale) e `MixerController`
-    (mixer accessibile con audio/TTS).
-  * Eventi ambient loop e musica supportati, avvio automatico all'init del controller.
-  * Binding `wx.EVT_ACTIVATE` su `SolitarioFrame` per mettere in pausa/riprendere loop audio.
-  * DIContainer esteso con factory `get_main_menu_controller` e `get_mixer_controller`.
-  * Nuovi test unitari/GUI per tutte le componenti audio.
-- **UI Audio Integration (v3.5.1)**: MenuPanel e OptionsDialog ora integrate con AudioManager centralizzato:
-  * `MenuPanel`: emette `UI_BUTTON_HOVER` su focus pulsante, `UI_BUTTON_CLICK` su click di 6 pulsanti principali (Gioca, Ultima Partita, Classifica, Profilo, Opzioni, Esci).
-  * `OptionsDialog`: emette `SETTING_CHANGED` su modifica widget, `SETTING_SAVED` su save, `UI_CANCEL` su cancel/ESC.
-  * Nuovo parametro `audio_manager=None` in entrambe le classi per graceful fallback senza audio.
-  * Integrazione SolitarioController: passa `audio_manager` a MenuPanel e OptionsDialog durante istanziazione.
-  * Test unitari completi: `test_menu_panel_audio.py` (9 test) e `test_options_dialog_audio.py` (9 test).
-  * Documentazione API.md aggiornata con nuove signature v3.5.1.
-- **Espansione eventi audio (+21 costanti)**: `AudioEventType` in `audio_events.py` raggiunge la parità
-  con la vecchia release pygame. Nuove costanti aggiunte per categoria:
-  * Gameplay: `CARD_FLIP`, `CARD_SHUFFLE`, `CARD_SHUFFLE_WASTE`, `TABLEAU_DROP`, `CARDS_EXHAUSTED`, `MULTI_CARD_MOVE`
-  * UI navigazione: `UI_NAVIGATE_FRAME`, `UI_NAVIGATE_PILE`, `UI_CONFIRM`, `UI_TOGGLE`, `UI_FOCUS_CHANGE`, `UI_BOUNDARY_HIT`, `UI_NOTIFICATION`, `UI_ERROR`
-  * Menu/pulsanti: `UI_MENU_OPEN`, `UI_MENU_CLOSE`, `UI_BUTTON_CLICK`, `UI_BUTTON_HOVER`
-  * Impostazioni: `SETTING_SAVED`, `SETTING_CHANGED`, `SETTING_LEVEL_CHANGED`, `SETTING_VOLUME_CHANGED`, `SETTING_MUSIC_CHANGED`, `SETTING_SWITCH_ON`, `SETTING_SWITCH_OFF`
-  * Voce: `WELCOME_MESSAGE`
-- Aggiornato `audio_config.json` con mappatura completa a 34 file WAV e 35 flag `enabled_events`.
-- Inserite chiamate `play_event` nei controller chiave con eventi semantici:
-  * `gameplay_controller.py`: `UI_NAVIGATE_PILE`, `UI_NAVIGATE_FRAME`, `MULTI_CARD_MOVE`, `TABLEAU_DROP`, `FOUNDATION_DROP`, `CARDS_EXHAUSTED`, `CARD_SHUFFLE`
-  * `dialog_manager.py`: `UI_ERROR`, `UI_NOTIFICATION`, `UI_CONFIRM`, `UI_CANCEL`
-  * `mixer_controller.py`: `SETTING_VOLUME_CHANGED`, `UI_BOUNDARY_HIT`
-  * `options_controller.py`: `UI_MENU_OPEN`, `SETTING_SAVED`, `SETTING_CHANGED`
-  * `main_menu_controller.py`: `UI_MENU_OPEN`, `UI_BOUNDARY_HIT`, `UI_BUTTON_CLICK`
-- `AudioManager._load_event_mapping()` ora risolve chiavi JSON (nomi costanti) ai valori stringa corrispondenti tramite `getattr(AudioEventType, key)`. Rimosso uso Enum-style (`AudioEventType[key]`).
+- **Sistema Audio Centralizzato v3.5.0** (implementazione completa in branch `supporto-audio-centralizzato`):
+  * **Architettura Core**:
+    - AudioManager: orchestratore principale, gestione eventi/bus/shutdown
+    - SoundMixer: gestione volumi, mute, panning, loop ambient/music
+    - SoundCache: asset manager con caricamento WAV, varianti, fallback
+    - AudioEventType & AudioEvent: 35 costanti evento (gameplay, UI, settings, voice)
+  * **Integrazione Gameplay**:
+    - GameplayController: CARD_FLIP, TABLEAU_DROP, TABLEAU_DROP, CARD_SHUFFLE e altri eventi
+    - DialogManager: UI_ERROR, UI_NOTIFICATION, UI_CONFIRM, UI_CANCEL
+    - MixerController: SETTING_VOLUME_CHANGED, UI_BOUNDARY_HIT (mixer accessibile)
+    - MainMenuController: UI_MENU_OPEN, UI_BUTTON_CLICK, UI_BOUNDARY_HIT
+    - OptionsController: SETTING_SAVED, SETTING_CHANGED
+  * **Integrazione UI**:
+    - MenuPanel: feedback audio con UI_BUTTON_HOVER su focus e UI_BUTTON_CLICK su 6 pulsanti principali (Gioca, Ultima Partita, Classifica, Profilo, Opzioni, Esci)
+    - OptionsDialog: SETTING_CHANGED su modifica widget, SETTING_SAVED su save, UI_CANCEL su ESC/cancel
+    - audio_manager=None parametro opzionale per graceful fallback (nessun crash se audio assente)
+    - SolitarioController passa audio_manager a MenuPanel/OptionsDialog all'istanziazione
+    - Test unitari: `test_menu_panel_audio.py` (9 test), `test_options_dialog_audio.py` (9 test)
+    - Documentazione API.md aggiornate con nuove signature 'since v3.5.0'
+  * **Configurazione & Storage**:
+    - `audio_config.json`: mappatura 34 file WAV, 35 flag `enabled_events` JSON-driven
+    - AudioManager._load_event_mapping(): risolve chiavi JSON → costanti AudioEventType via`getattr()`
+  * **Eventi Audio (+21 nuovi)**:
+    - Categoria gameplay, UI navigazione, menu/pulsanti, impostazioni, voce (lista completa nel changelog originale)
 
 ### Changed
-- Configurazione audio ora JSON-driven: `event_sounds` e
-  `preload_all_event_sounds` gestiti da `audio_config.json`; AudioManager
-  legge mappa da config anziché usare dizionari hardcoded.
-- Documentazione (`API.md`, `ARCHITECTURE.md`, `README.md`) aggiornata con dettagli audio.
-- `acs_wx.py` ristrutturato per inizializzare audio e linkare audio_manager al frame.
-- InputHandler segnala audio solo se fornito dall'esterno (documento v1.6.1).
+- Configurazione audio: da dizionari hardcoded → JSON-driven (`audio_config.json`)
+- Documentazione: API.md, ARCHITECTURE.md, README.md dettagliate con audio v3.5.0
+- acs_wx.py ristrutturato per inizializzare audio e collegare audio_manager al frame
+- InputHandler segnala audio solo se fornito dall'esterno
 
 ### Fixed
-- Corrette varie KeyError e callback doppio nei test dopo refactoring.
-- `AudioManager`: aggiunto import `Dict` e `AudioEventType` mancanti; rimossi riferimenti a metodi Enum-style sull'oggetto classe.
+- KeyError risolte: AudioManager._load_event_mapping() usa `getattr(AudioEventType, key)`
+- Import mancanti: `Dict`, `AudioEventType` aggiunti a AudioManager
+- Callback doppi nei test corretti dopo refactoring
+
 
 ## [Unreleased] — targeting v3.4.0
 

@@ -1,4 +1,4 @@
-"""Unit tests for MenuPanel audio integration (v3.5.1).
+"""Unit tests for MenuPanel audio integration (v3.5.0).
 
 Tests:
 - MenuPanel audio_manager parameter acceptance

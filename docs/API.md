@@ -2273,7 +2273,7 @@ mypy src/ --strict
 
 ---
 
-## � MenuPanel (Infrastructure UI Layer) — v3.5.1
+## � MenuPanel (Infrastructure UI Layer) — v3.5.0
 
 **Modulo:** `src/infrastructure/ui/menu_panel.py`  
 **Layer:** Infrastructure → Presentation
@@ -2287,11 +2287,11 @@ Pannello principale del gioco con pulsanti di navigazione (Gioca, Ultima Partita
     - `parent`: finestra contenitore wxPython
     - `controller`: istanza SolitarioController per delega azioni
     - `audio_manager`: istanza AudioManager (opzionale). Se None, nessun feedback sonoro.
-    - **v3.5.1**: Nuovo parametro `audio_manager` per emettere:
+    - **v3.5.0**: Nuovo parametro `audio_manager` per emettere:
         - `UI_BUTTON_HOVER`: su focus di pulsante (via `on_button_focus()`)
         - `UI_BUTTON_CLICK`: su click di uno dei 6 pulsanti principali
 
-**Esempio d'uso (v3.5.1):**
+**Esempio d'uso (v3.5.0):**
 ```python
 from src.infrastructure.ui.menu_panel import MenuPanel
 from src.infrastructure.audio.audio_manager import AudioManager
@@ -2302,7 +2302,7 @@ audio.initialize()
 menu = MenuPanel(
     parent=frame.panel_container,
     controller=solitario_controller,
-    audio_manager=audio  # ✨ v3.5.1: pass audio manager for UI feedback
+    audio_manager=audio  # ✨ v3.5.0: pass audio manager for UI feedback
 )
 ```
 
@@ -2313,7 +2313,7 @@ menu = MenuPanel(
 
 ---
 
-## 📋 OptionsDialog (Infrastructure UI Layer) — v3.5.1
+## 📋 OptionsDialog (Infrastructure UI Layer) — v3.5.0
 
 **Modulo:** `src/infrastructure/ui/options_dialog.py`  
 **Layer:** Infrastructure → Presentation
@@ -2328,12 +2328,12 @@ Dialog modale per configurazione opzioni di gioco (tipo mazzo, difficoltà, time
     - `controller`: istanza OptionsWindowController per gestire state
     - `screen_reader`: istanza ScreenReader per TTS (opzionale)
     - `audio_manager`: istanza AudioManager (opzionale). Se None, nessun feedback sonoro.
-    - **v3.5.1**: Nuovo parametro `audio_manager` per emettere:
+    - **v3.5.0**: Nuovo parametro `audio_manager` per emettere:
         - `SETTING_CHANGED`: su modifica widget RadioBox/CheckBox/ComboBox
         - `SETTING_SAVED`: su click "Salva" (prima di EndModal)
         - `UI_CANCEL`: su click "Annulla" o ESC (prima di Discard)
 
-**Esempio d'uso (v3.5.1):**
+**Esempio d'uso (v3.5.0):**
 ```python
 from src.infrastructure.ui.options_dialog import OptionsDialog
 from src.infrastructure.audio.audio_manager import AudioManager
@@ -2345,7 +2345,7 @@ dlg = OptionsDialog(
     parent=frame,
     controller=options_controller,
     screen_reader=screen_reader,
-    audio_manager=audio  # ✨ v3.5.1: pass audio manager for UI feedback
+    audio_manager=audio  # ✨ v3.5.0: pass audio manager for UI feedback
 )
 result = dlg.ShowModal()
 ```
@@ -2354,7 +2354,7 @@ result = dlg.ShowModal()
 - Emissione sonoro wrappata in `if self.audio_manager:` per graceful fallback.
 - Inline import di AudioEvent per evitare circular dependency.
 - WAI-ARIA compliant: focus su primo controllo, TAB naviga legittimi widget, Enter attiva pulsante, ESC cancella.
-- Docstring aggiornato a v3.5.1 con nuovo parametro.
+- Docstring aggiornato a v3.5.0 con nuovo parametro.
 
 ---
 

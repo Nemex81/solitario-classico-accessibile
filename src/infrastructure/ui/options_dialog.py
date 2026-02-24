@@ -96,14 +96,14 @@ class OptionsDialog(wx.Dialog):
             parent: Parent window (typically main frame)
             controller: OptionsWindowController instance (must call open_window() before)
             screen_reader: ScreenReader for optional TTS feedback
-            audio_manager: Optional AudioManager for sound effects (v3.5.1)
+            audio_manager: Optional AudioManager for sound effects (v3.5.0)
             title: Dialog title (default: "Opzioni di gioco")
             size: Dialog size in pixels (default: 600x700 for all widgets)
         
         Attributes:
             options_controller: Reference to OptionsWindowController
             screen_reader: Reference to ScreenReader for TTS
-            audio_manager: Reference to AudioManager for audio events (v3.5.1)
+            audio_manager: Reference to AudioManager for audio events (v3.5.0)
             deck_type_radio: RadioBox for deck type (Francese/Napoletano)
             difficulty_radio: RadioBox for difficulty (5 levels)
             draw_count_radio: RadioBox for draw count (1/2/3)
@@ -121,7 +121,7 @@ class OptionsDialog(wx.Dialog):
             This saves settings snapshot for change tracking and rollback.
         
         Version:
-            v3.5.1: Added optional audio_manager parameter
+            v3.5.0: Added optional audio_manager parameter
         """
         super().__init__(
             parent=parent,
@@ -437,10 +437,10 @@ class OptionsDialog(wx.Dialog):
         - Refresh ALL widgets to show new preset values
         - Update widget lock states (disable/enable based on preset)
         
-        🆕 v3.5.1: Plays SETTING_CHANGED sound effect.
+        🆕 v3.5.0: Plays SETTING_CHANGED sound effect.
         
         Version: v2.4.2 - Fixed preset application on difficulty change (Bug #67)
-                 v3.5.1 - Added audio feedback
+                 v3.5.0 - Added audio feedback
         
         Args:
             event: wx.Event from widget (EVT_RADIOBOX, EVT_CHECKBOX, EVT_COMBOBOX)
@@ -458,7 +458,7 @@ class OptionsDialog(wx.Dialog):
         # Update GameSettings from current widget values
         self._save_widgets_to_settings()
         
-        # ✨ NUOVO v3.5.1: Play setting changed sound
+        # ✨ NUOVO v3.5.0: Play setting changed sound
         if self.audio_manager:
             from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
             self.audio_manager.play_event(AudioEvent(
@@ -503,7 +503,7 @@ class OptionsDialog(wx.Dialog):
         2. Resets controller state to CLOSED
         3. Returns TTS confirmation message
         
-        🆕 v3.5.1: Plays SETTING_SAVED sound effect.
+        🆕 v3.5.0: Plays SETTING_SAVED sound effect.
         
         Args:
             event: wx.CommandEvent from btn_save
@@ -513,9 +513,9 @@ class OptionsDialog(wx.Dialog):
             This just commits the snapshot.
         
         Version:
-            v3.5.1: Added audio feedback
+            v3.5.0: Added audio feedback
         """
-        # ✨ NUOVO v3.5.1: Play setting saved sound
+        # ✨ NUOVO v3.5.0: Play setting saved sound
         if self.audio_manager:
             from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
             self.audio_manager.play_event(AudioEvent(
@@ -539,7 +539,7 @@ class OptionsDialog(wx.Dialog):
         2. Resets controller state to CLOSED
         3. Returns TTS confirmation message
         
-        🆕 v3.5.1: Plays UI_CANCEL sound effect.
+        🆕 v3.5.0: Plays UI_CANCEL sound effect.
         
         Args:
             event: wx.CommandEvent from btn_cancel
@@ -548,9 +548,9 @@ class OptionsDialog(wx.Dialog):
             Rollback restores ALL settings to values at dialog open time.
         
         Version:
-            v3.5.1: Added audio feedback
+            v3.5.0: Added audio feedback
         """
-        # ✨ NUOVO v3.5.1: Play cancel sound
+        # ✨ NUOVO v3.5.0: Play cancel sound
         if self.audio_manager:
             from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
             self.audio_manager.play_event(AudioEvent(

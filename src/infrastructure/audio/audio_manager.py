@@ -149,7 +149,7 @@ class AudioManager:
         ritorna dict vuoto (fail-fast: nessun suono sarà riproducibile).
         Chiavi sconosciute vengono saltate con warning.
         
-        **v3.5.1**: JSON è unica sorgente di verità per mapping eventi.
+        **v3.5.0**: JSON è unica sorgente di verità per mapping eventi.
         Se config assente, errore in log (non fallback silenzioso).
         """
         mapping: Dict[str, str] = {}
