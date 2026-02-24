@@ -322,6 +322,12 @@ Ogni componente UI (`wx.Dialog`, `wx.Panel`, `wx.Button`) deve rispettare:
 
 4. **Pile.count() Bug**: il metodo **NON ESISTE** → usa sempre `pile.get_card_count()`. `pile.count()` genera `AttributeError`.
 
+5. **DI Container Duality**: Coesistono due container distinti con ruoli diversi:
+   - `DIContainer` (`src/infrastructure/di_container.py`): container app-specifico con factory methods per tutti i componenti (Domain, Application, Infrastructure). Esportato da `src/infrastructure/__init__.py`.
+   - `DependencyContainer` (`src/infrastructure/di/dependency_container.py`): container IoC generico con pattern `register/resolve`. È il container di sessione attivo creato in `acs_wx.py` come `self.container`.
+   
+   **Regola**: usa SEMPRE `self.container.get_audio_manager()` sull'istanza `DependencyContainer` esistente. MAI fare `DIContainer().get_audio_manager()` direttamente in metodi UI: crea una nuova istanza che bypassa il singleton e duplica le risorse audio.
+
 ---
 
 ## �📚 Protocollo Allineamento Documentazione (Mandatorio)
@@ -331,10 +337,10 @@ Ogni componente UI (`wx.Dialog`, `wx.Panel`, `wx.Button`) deve rispettare:
 ```
 docs/
 ├── 1 - templates/          # Template riutilizzabili (PR body, design doc, TODO)
-├── 2 - projects/           # Design doc e piani pre-merge per feature attive
-│   ├── DESIGN_*.md         # Analisi architetturale di una feature
+├── 2 - projects/           # Design doc, diagrammi di flusso testuali e analisi architetturali
+│   └── DESIGN_*.md         # Analisi architetturale di una feature (accessibile: solo testo e ASCII)
+├── 3 - coding plans/       # Piani di sviluppo, implementazioni, codifiche, revisioni e fix
 │   └── PLAN_*.md           # Piano di implementazione/fix con checklist
-├── 3 - coding plans/       # Piani di coding dettagliati (step-by-step implementazione)
 ├── API.md                  # Riferimento API pubblica di tutti i moduli
 ├── ARCHITECTURE.md         # Architettura del sistema e data flow
 ├── TESTING.md              # Guida testing e convenzioni
@@ -343,7 +349,7 @@ docs/
 
 **Regole di posizionamento:**
 - Un nuovo design doc → `docs/2 - projects/DESIGN_<feature>.md`
-- Un piano di fix/implementazione → `docs/2 - projects/PLAN_<descrizione>_vX.Y.Z.md`
+- Un piano di fix/implementazione → `docs/3 - coding plans/PLAN_<descrizione>_vX.Y.Z.md`
 - `docs/TODO.md` esiste solo durante un branch di lavoro attivo; è il cruscotto
   operativo da spuntare durante l'implementazione. Va aggiornato dopo ogni commit.
 
@@ -391,7 +397,7 @@ Utente: "Voglio aggiungere un sistema audio con varianti per difficoltà"
 
 **Template da usare:** `docs/1 - templates/TEMPLATE_example_PIANO_IMPLEMENTAZIONE.md`
 
-**Nome file output:** `docs/2 - projects/PLAN_<descrizione-slug>_vX.Y.Z.md`
+**Nome file output:** `docs/3 - coding plans/PLAN_<descrizione-slug>_vX.Y.Z.md`
 
 **Contenuto minimo obbligatorio:**
 - Executive Summary (tipo, priorità, stato, branch, versione target)
@@ -404,7 +410,7 @@ Utente: "Voglio aggiungere un sistema audio con varianti per difficoltà"
 **Esempio creazione:**
 ```
 Utente: "Implementa il sistema audio descritto nel DESIGN"
-→ Crea: docs/2 - projects/PLAN_audio-system_v3.4.0.md
+→ Crea: docs/3 - coding plans/PLAN_audio-system_v3.4.0.md
 → Usa: TEMPLATE_example_PIANO_IMPLEMENTAZIONE.md come base
 → Stato iniziale: DRAFT → poi READY prima del primo commit
 ```
@@ -470,7 +476,7 @@ Quando l'utente introduce un nuovo task significativo:
 
 1. **Valuta la complessità**: meno di 2 file e 1 commit → nessun file di progetto necessario
 2. **Crea DESIGN** (se architetturale): copia `TEMPLATE_example_DESIGN_DOCUMENT.md`, compila sezioni obbligatorie, salva in `docs/2 - projects/`
-3. **Crea PLAN**: copia `TEMPLATE_example_PIANO_IMPLEMENTAZIONE.md`, collega al DESIGN se esiste, definisci fasi, salva in `docs/2 - projects/`
+3. **Crea PLAN**: copia `TEMPLATE_example_PIANO_IMPLEMENTAZIONE.md`, collega al DESIGN se esiste, definisci fasi, salva in `docs/3 - coding plans/`
 4. **Crea TODO**: copia `TEMPLATE_exaple_TODO.md`, metti link al PLAN in cima, trascrivi le fasi come checklist, salva come `docs/TODO.md`
 5. **Inizia implementazione**: segui il workflow incrementale descritto nel TODO
 6. **Aggiorna TODO** dopo ogni commit (spunta checkbox)
@@ -542,9 +548,9 @@ Per ogni fase non completata in docs/TODO.md:
     1. LEGGI  → La descrizione della fase nel TODO + i dettagli nel PLAN
     2. CODIFICA → Implementa solo quella fase (non anticipare la successiva)
     3. VERIFICA → Esegui pre-commit checklist (syntax, type hints, logging)
-    4. COMMIT  → Commit atomico con messaggio convenzionale
+    4. COMMIT  → Copilot propone il messaggio di commit atomico convenzionale; l'utente lo esegue manualmente
     5. SPUNTA  → Aggiorna docs/TODO.md: [x] per la fase appena completata
-    6. COMUNICA → Notifica l'utente: "Fase N completata: [descrizione]. Proseguo con Fase N+1?"
+    6. COMUNICA → Notifica l'utente: "Fase N completata: [descrizione]. Ecco il commit suggerito: `<type>(<scope>): <subject>`. Proseguo con Fase N+1?"
     7. ATTENDI  → Ricevi conferma prima di passare alla fase successiva
                   (oppure procedi automaticamente se l'utente ha detto "procedi senza chiedere")
 ```
@@ -584,7 +590,7 @@ Dopo **ogni modifica al codice** (`.py`), esegui questo audit:
 
 ---
 
-**3. CHANGELOG.md** — Aggiorna **sempre** dopo merge su `main`: nuove feature → `Added`, bug fix → `Fixed`, breaking changes → `Changed` + ⚠️.
+**3. CHANGELOG.md** — Aggiorna **sempre** prima del commit nel branch di sviluppo: nuove feature → `Added`, bug fix → `Fixed`, breaking changes → `Changed` + ⚠️. La sezione `[Unreleased]` viene rinominata in `[X.Y.Z] — YYYY-MM-DD` solo al momento del merge su `main`.
 
 ---
 
@@ -708,7 +714,7 @@ Prima di ogni commit, verifica silentemente:
 2. **Type Hints**: `mypy src/ --strict --python-version 3.8` (0 errori, 100% copertura type hints)
 3. **Imports**: `pylint src/ --disable=all --enable=cyclic-import` (nessun import circolare)
 4. **Logging**: `grep -r "print(" src/ --include="*.py" --exclude="__main__.py"` (must return 0 occorrenze)
-5. **Docs Sync**: Changelog modificato nelle ultime 48h? (verifica manuale)
+5. **Docs Sync**: `CHANGELOG.md` e tutti i doc correlati (`API.md`, `ARCHITECTURE.md`) aggiornati nella sessione corrente con tutte le modifiche applicate? (verifica manuale prima del commit)
 6. **Tests**: `pytest tests/ --cov=src --cov-report=term --cov-fail-under=85` (100% pass, coverage >= 85%)
 
 **Output esempio comando Git:**
@@ -804,10 +810,11 @@ Refs: #42, docs/3 - coding plans/PLAN-docs-allineamento-v3.2.2.md
 1. Tutti i fix e i task del branch completati e verificati
 2. PR aperta verso `main` con body che linka design doc e piano (se esistono)
 3. Checklist PR spuntata (vedi template `docs/1 - templates/`)
-4. Merge con **merge commit** (`--no-ff`) — preserva storia del branch
-5. Subito dopo il merge, creare il tag di versione:
+4. Merge con **merge commit** (`--no-ff`) — preserva storia del branch (eseguire manualmente)
+5. Subito dopo il merge, creare il tag di versione (suggerimento da eseguire manualmente):
    ```bash
-   git checkout main && git pull origin main
+   git checkout main
+   git pull origin main
    git tag vX.Y.Z
    git push origin vX.Y.Z
    ```
@@ -835,6 +842,18 @@ Refs: #42, docs/3 - coding plans/PLAN-docs-allineamento-v3.2.2.md
 4. ✅ Audit documentazione (proponi sync)
 5. ✅ Esegui test coverage check
 6. ✅ Fornisci riepilogo testuale strutturato
+
+**Policy comandi Git (obbligatoria):**
+Copilot NON esegue direttamente comandi `git commit`, `git push`, `git pull`, `git merge`.
+Al termine dell'elaborazione, propone il/i comandi suggeriti in un blocco finale separato:
+
+```
+--- COMANDI GIT SUGGERITI (da eseguire manualmente) ---
+git add <file>
+git commit -m "<type>(<scope>): <subject>"
+```
+
+L'utente decide se e quando eseguirli. Comandi di sola lettura (`git log`, `git ls-tree`, `git diff`) possono essere eseguiti da Copilot come parte della verifica.
 
 **Frase magica per audit completo:**
 *"Codice, documentazione e test sono sincronizzati al 100% secondo gli standard v2.3+"*
