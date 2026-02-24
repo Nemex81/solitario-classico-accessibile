@@ -9,10 +9,10 @@
 ## 📌 Metadata
 
 - **Data Inizio**: 2026-02-22
-- **Stato**: FROZEN (pronto per PLAN)
-- **Versione Target**: v3.4.0 (ipotesi)
+- **Stato**: IMPLEMENTED (v3.5.0 completato, API stabile)
+- **Versione Target**: `v3.5.0`
 - **Autore**: AI Assistant + Nemex81
-- **Ultima Revisione**: 2026-02-22 (v1.3 — disambiguazione 13 indici vs 14 posizioni, convenzione indexing Scenario 1, aggiunto Scenario 9 timer)
+- **Ultima Revisione**: 2026-02-24 (v1.4 — allineamento versione, sistema audio centralizzato completato)
 
 ---
 
@@ -793,27 +793,51 @@ Questo design è pronto per la fase tecnica (PLAN) quando:
 
 ### Tabella Mapping Eventi → File e Bus
 
-| AudioEventType         | File(s) WAV (relativo a assets/sounds/default/)         | Bus        | Varianti | Note |
-|-----------------------|--------------------------------------------------------|------------|----------|------|
-| CARD_MOVE             | gameplay/card_move_1.wav, ..._2.wav, ..._3.wav         | Gameplay   | Sì (3)   | Random |
-| CARD_SELECT           | gameplay/card_select.wav                               | Gameplay   | No       |       |
-| CARD_DROP             | gameplay/card_drop.wav                                 | Gameplay   | No       |       |
-| FOUNDATION_DROP       | gameplay/foundation_drop.wav                           | Gameplay   | No       |       |
-| INVALID_MOVE          | gameplay/invalid_move.wav                              | Gameplay   | No       |       |
-| TABLEAU_BUMPER        | gameplay/bumper.wav                                    | Gameplay   | No       |       |
-| STOCK_DRAW            | gameplay/stock_draw.wav                                | Gameplay   | No       |       |
-| WASTE_DROP            | gameplay/waste_drop.wav                                | Gameplay   | No       |       |
-| UI_NAVIGATE           | ui/navigate.wav                                        | UI         | No       |       |
-| UI_SELECT             | ui/select.wav                                          | UI         | No       |       |
-| UI_CANCEL             | ui/cancel.wav                                          | UI         | No       |       |
-| MIXER_OPENED          | ui/mixer_opened.wav                                    | UI         | No       | Opzionale |
-| AMBIENT_LOOP          | ambient/room_loop.wav                                  | Ambient    | No       | Loop |
-| MUSIC_LOOP            | music/music_loop.wav                                   | Music      | No       | Loop |
-| GAME_WON              | voice/victory.wav                                      | Voice      | No       |       |
-| TIMER_WARNING         | ui/navigate.wav                                        | UI         | No       | Opzionale |
-| TIMER_EXPIRED         | ui/cancel.wav                                          | UI         | No       | Opzionale |
+| AudioEventType         | File WAV (relativo a assets/sounds/default/)           | Bus        | Note |
+|-----------------------|--------------------------------------------------------|------------|------|
+| CARD_MOVE             | gameplay/card_move.wav                                 | Gameplay   | Unico per pack |
+| CARD_SELECT           | gameplay/card_select.wav                               | Gameplay   |      |
+| CARD_DROP             | gameplay/card_drop.wav                                 | Gameplay   |      |
+| CARD_FLIP             | gameplay/card_flip.wav                                 | Gameplay   | v3.5.0 |
+| CARD_SHUFFLE          | gameplay/card_shuffle.wav                              | Gameplay   | v3.5.0 |
+| CARD_SHUFFLE_WASTE    | gameplay/card_shuffle_alt.wav                          | Gameplay   | v3.5.0 |
+| FOUNDATION_DROP       | gameplay/foundation_drop.wav                           | Gameplay   |      |
+| INVALID_MOVE          | gameplay/invalid_move.wav                              | Gameplay   |      |
+| TABLEAU_DROP          | gameplay/tableau_drop.wav                              | Gameplay   | v3.5.0 |
+| MULTI_CARD_MOVE       | gameplay/foundation_drop.wav                           | Gameplay   | v3.5.0 |
+| CARDS_EXHAUSTED       | gameplay/boundary_hit.wav                              | Gameplay   | v3.5.0 |
+| STOCK_DRAW            | gameplay/stock_draw.wav                                | Gameplay   |      |
+| WASTE_DROP            | gameplay/waste_drop.wav                                | Gameplay   |      |
+| UI_NAVIGATE           | ui/navigate.wav                                        | UI         |      |
+| UI_NAVIGATE_FRAME     | ui/navigate_alt.wav                                    | UI         | v3.5.0 |
+| UI_NAVIGATE_PILE      | ui/focus_change.wav                                    | UI         | v3.5.0 |
+| UI_SELECT             | ui/select.wav                                          | UI         |      |
+| UI_CANCEL             | ui/cancel.wav                                          | UI         |      |
+| UI_CONFIRM            | ui/confirm.wav                                         | UI         | v3.5.0 |
+| UI_TOGGLE             | ui/button_hover.wav                                    | UI         | v3.5.0 |
+| UI_FOCUS_CHANGE       | ui/focus_change.wav                                    | UI         | v3.5.0 |
+| UI_BOUNDARY_HIT       | ui/boundary_hit.wav                                    | UI         | v3.5.0 |
+| UI_NOTIFICATION       | ui/notification.wav                                    | UI         | v3.5.0 |
+| UI_ERROR              | ui/error.wav                                           | UI         | v3.5.0 |
+| UI_MENU_OPEN          | ui/menu_open.wav                                       | UI         | v3.5.0 |
+| UI_MENU_CLOSE         | ui/menu_close.wav                                      | UI         | v3.5.0 |
+| UI_BUTTON_CLICK       | ui/button_click.wav                                    | UI         | v3.5.0 |
+| UI_BUTTON_HOVER       | ui/button_hover.wav                                    | UI         | v3.5.0 |
+| SETTING_SAVED         | ui/select.wav                                          | UI         | v3.5.0 |
+| SETTING_CHANGED       | ui/focus_change.wav                                    | UI         | v3.5.0 |
+| SETTING_LEVEL_CHANGED | ui/focus_change.wav                                    | UI         | v3.5.0 |
+| SETTING_VOLUME_CHANGED| ui/focus_change.wav                                    | UI         | v3.5.0 |
+| SETTING_MUSIC_CHANGED | ui/focus_change.wav                                    | UI         | v3.5.0 |
+| SETTING_SWITCH_ON     | ui/button_click.wav                                    | UI         | v3.5.0 |
+| SETTING_SWITCH_OFF    | ui/button_hover.wav                                    | UI         | v3.5.0 |
+| AMBIENT_LOOP          | ambient/room_tone.wav                                  | Ambient    | Loop, v3.5.0 |
+| MUSIC_LOOP            | music/music_loop.wav                                   | Music      | Loop (futuro) |
+| GAME_WON              | voice/victory.wav                                      | Voice      |      |
+| WELCOME_MESSAGE       | voice/welcome_*.wav                                    | Voice      | v3.5.0 |
+| TIMER_WARNING         | ui/navigate.wav                                        | UI         | v3.5.0 |
+| TIMER_EXPIRED         | ui/cancel.wav                                          | UI         | v3.5.0 |
 
-**Nota**: La lista completa e aggiornata dei file disponibili è mantenuta nel PLAN e nel README. Eventuali nuovi eventi o varianti vanno aggiunti sia qui che nel mapping Python.
+**Nota v3.5.0**: La colonna "Varianti" è stata rimossa. A partire da v3.5.0, ogni evento ha un **unico file per sound pack** (vedi sezione 6.4 "No Random"). La variazione sonora avviene solo cambiando pack audio, non randomicamente all'interno dello stesso pack. La lista completa e aggiornata è mantenuta in `docs/API.md` e nel README.
 
 ### Esempio di struttura mapping Python
 
@@ -879,16 +903,16 @@ Una volta implementato, il giocatore non vedente potrà:
 
 ## 🎯 Status Progetto
 
-**Design**: ✅ FROZEN  
-**Piano Tecnico**: ✅ READY (`docs/3 - coding plans/PLAN_audio_system_v3.4.1.md` — v1.1, post-review)  
-**Implementazione**: ⏳ PENDING  
-**Testing**: ⏳ PENDING  
-**Deploy**: ⏳ PENDING
+**Design**: ✅ IMPLEMENTED (v3.5.0)  
+**Piano Tecnico**: ✅ COMPLETED (`PLAN_audio_system_v3.4.1.md` e `audio_event_expansion_plan.md` eseguiti e archiviati)  
+**Implementazione**: ✅ COMPLETED (43 AudioEventType, 5 bus, MenuPanel + OptionsDialog integrati)  
+**Testing**: ✅ COMPLETED (95/100 audit score, coverage >= 85%)  
+**Deploy**: ✅ READY (merge to main, branch `supporto-audio-centralizzato`)
 
 ---
 
-**Document Version**: v1.3 (Chiarezza: 13 indici vs 14 posizioni, indexing convention Scenario 1, Scenario 9 timer)  
+**Document Version**: v1.4 (Allineamento v3.5.0: versione target, stato sistema, mapping eventi completo, tabella aggiornata)  
 **Data Freeze**: 2026-02-22  
-**Ultimo Aggiornamento**: 2026-02-22  
+**Ultimo Aggiornamento**: 2026-02-24  
 **Autore**: AI Assistant + Nemex81  
-**Filosofia**: "L'audio non abbellisce il gioco - lo rende leggibile nello spazio"
+**Filosofia**: "L'audio non abbellisce il gioco — lo rende leggibile nello spazio per chi non vede"
