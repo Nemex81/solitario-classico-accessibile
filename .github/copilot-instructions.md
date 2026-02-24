@@ -1,4 +1,4 @@
----
+"""
 
 # Copilot Custom Instructions - Solitario Classico Accessibile
 
@@ -115,6 +115,167 @@ questo comportamento senza aggiornare `categorized_logger.py`.
 - ❌ Log con emoji o box ASCII → screen reader unfriendly
 - ❌ `logging.getLogger()` (root logger) nel codice applicativo → usa named loggers
 - ❌ Log in Domain layer senza dependency injection
+
+---
+
+### Error Handling e Graceful Degradation
+
+**Principio guida**: Distinguere **bug logici interni** (crash immediato) da **fallimenti di risorse esterne** (degradazione graziosa).
+
+#### Quando Usare Exception Raising (Fail-Fast)
+
+**Trigger (almeno uno dei seguenti):**
+- Violazione contratto API (es. parametro `None` quando richiesto non-null)
+- Errore logico interno (es. `IndexError`, assertion failure)
+- Stato inconsistente non recuperabile (es. corruzione struttura dati Domain)
+- Bug nello sviluppo (es. chiamata a metodo inesistente)
+
+**Pattern obbligatorio:**
+```python
+# ✅ CORRETTO — Crash su bug logico
+def move_card(self, from_pile: int, to_pile: int) -> None:
+    if from_pile < 0 or from_pile > 12:
+        raise ValueError(f"Invalid pile index: {from_pile}")  # Bug dev
+```
+
+**Custom Exceptions** — Crea sottoclassi di `Exception` solo per errori Domain-specific:
+```python
+# src/domain/exceptions.py (pattern futuro)
+class InvalidMoveError(Exception):
+    """Mossa carta non valida per regole Solitario."""
+    pass
+
+class ProfileNotFoundError(Exception):
+    """Profilo richiesto non esiste in storage."""
+    pass
+```
+
+**Vietato:**
+- ❌ `except Exception: pass` (swallow silent)
+- ❌ Exception generiche per errori Domain (`raise Exception("bad move")` → usa `InvalidMoveError`)
+- ❌ Try-catch attorno a operazioni deterministiche (es. aritmetica semplice)
+
+---
+
+#### Quando Usare Graceful Degradation (Log + Fallback)
+
+**Trigger (almeno uno dei seguenti):**
+- I/O esterni fallisce (filesystem, network, pygame.mixer)
+- Feature non critica per core business (es. audio in videogioco con TTS)
+- Risorsa opzionale non disponibile (file asset mancante, config corrotto)
+- Servizio esterno temporaneamente down
+
+**Pattern obbligatorio:**
+```python
+# ✅ CORRETTO — Degradazione feature non critica
+def initialize_audio(self) -> bool:
+    try:
+        pygame.mixer.init(...)
+        self._audio_ready = True
+        _game_logger.info("Audio initialized")
+        return True
+    except Exception as e:
+        _error_logger.exception("Audio init failed, fallback to stub")
+        self._audio_ready = False
+        return False  # ← App continua senza audio
+```
+
+**Livelli severità logging:**
+- `_error_logger.error(...)`: Config assente, feature compromessa (ma app usabile)
+- `_error_logger.warning(...)`: File singolo mancante (es. 1 WAV su 40)
+- `_error_logger.exception(...)`: Exception con stack trace completo (sempre dopo `except`)
+
+**Pattern Null Object (Stub)** — Quando una dipendenza può fallire, fornisci una versione no-op:
+```python
+# ✅ CORRETTO — Stub per graceful degradation
+class _AudioManagerStub:
+    """No-op safe substitute per AudioManager."""
+    def play_event(self, event: AudioEvent) -> None:
+        pass  # Silenzioso, nessun crash
+    
+    @property
+    def is_available(self) -> bool:
+        return False
+
+# In DI container
+try:
+    manager = AudioManager(config)
+    manager.initialize()
+except Exception:
+    _error_logger.exception("AudioManager failed, using stub")
+    manager = _AudioManagerStub()  # ← Codice chiamante non cambia
+```
+
+**Vietato:**
+- ❌ Degradazione per errori di sicurezza/dati critici (es. pagamenti, salvataggi)
+- ❌ Log WARNING per config assente (deve essere ERROR)
+- ❌ Fallback con valori "ragionevoli" inventati (es. `except: return DEFAULT_DOSE` in app medica)
+
+---
+
+#### Checklist Decisionale (Flow Chart)
+
+```
+Errore rilevato
+    ↓
+È un bug logico interno (violazione contratto, assertion)?
+    ↓ SÌ → RAISE Exception (crash immediato)
+    ↓ NO
+    ↓
+La feature è critica per core business?
+    ↓ SÌ → RAISE Exception + mostra errore utente visivo
+    ↓ NO
+    ↓
+È I/O esterno o risorsa opzionale?
+    ↓ SÌ → LOG ERROR + return fallback/stub
+    ↓ NO
+    ↓
+Caso ambiguo? → Applica principio conservativo: RAISE Exception
+```
+
+---
+
+#### Esempi Applicati al Progetto
+
+| Scenario | Strategia | Rationale |
+|----------|-----------|-----------|
+| `pile.count()` chiamato (metodo inesistente) | ✅ RAISE `AttributeError` | Bug dev, metodo corretto è `get_card_count()` in src/domain/models/pile.py |
+| File `audio_config.json` assente | ✅ LOG ERROR + return `{}` | Feature non critica, app usabile senza audio |
+| File WAV singolo mancante | ✅ LOG WARNING + entry `None` in cache | Degradazione parziale, altri suoni funzionano |
+| `ProfileService.load()` con `profile_id=None` | ✅ RAISE `ValueError` | Contratto violato, bug chiamante |
+| pygame.mixer.init() fallisce | ✅ LOG EXCEPTION + return `_AudioManagerStub` | Dipendenza esterna, stub garantisce no crash |
+| Partita salvata corrotta | ⚠️ RAISE + mostra dialog utente | Dato critico, utente deve saperlo |
+
+---
+
+#### Osservabilità Obbligatoria
+
+Ogni degradazione graziosa **deve** essere loggata con:
+1. **Livello appropriato**: ERROR per config, WARNING per file singolo
+2. **Contesto completo**: path file, parametri tentati, cosa fallisce
+3. **Azione intrapresa**: quale fallback/stub viene usato
+4. **Stack trace**: sempre con `_error_logger.exception()` dentro `except` block
+
+**Esempio completo:**
+```python
+def _load_sound_pack(self, pack_name: str) -> None:
+    try:
+        # Operazione I/O
+        sounds = self._cache.load(pack_name)
+        _game_logger.info(f"Loaded {len(sounds)} sounds from pack '{pack_name}'")
+    except FileNotFoundError as e:
+        _error_logger.exception(
+            f"Sound pack '{pack_name}' not found at {self.base_path}. "
+            f"Audio will be unavailable."
+        )
+        self._cache = {}  # Fallback: cache vuota
+    except Exception as e:
+        _error_logger.exception(
+            f"Unexpected error loading sound pack '{pack_name}'. "
+            f"Using silent fallback."
+        )
+        self._cache = {}
+```
 
 ---
 
@@ -662,4 +823,4 @@ Refs: #42, docs/3 - coding plans/PLAN-docs-allineamento-v3.2.2.md
 
 Quando l'utente la richiede, esegui tutti i 6 check pre-commit + verifica manuale cross-references docs prima di confermare sync.
 
----
+"""
