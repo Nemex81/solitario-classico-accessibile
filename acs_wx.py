@@ -441,7 +441,8 @@ class SolitarioController:
         dlg = OptionsDialog(
             parent=self.frame,
             controller=self.gameplay_controller.options_controller,
-            screen_reader=self.screen_reader
+            screen_reader=self.screen_reader,
+            audio_manager=self.audio_manager
         )
         result = dlg.ShowModal()
         
@@ -1060,7 +1061,8 @@ class SolitarioController:
             # Create panels as children of frame.panel_container
             menu_panel = MenuPanel(
                 parent=self.frame.panel_container,
-                controller=self
+                controller=self,
+                audio_manager=self.audio_manager
             )
             gameplay_panel = GameplayPanel(
                 parent=self.frame.panel_container,

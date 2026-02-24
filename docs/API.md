@@ -2273,7 +2273,92 @@ mypy src/ --strict
 
 ---
 
-## 📚 Cross-References
+## � MenuPanel (Infrastructure UI Layer) — v3.5.1
+
+**Modulo:** `src/infrastructure/ui/menu_panel.py`  
+**Layer:** Infrastructure → Presentation
+
+Pannello principale del gioco con pulsanti di navigazione (Gioca, Ultima Partita, Classifica, Profilo, Opzioni, Esci). Supporta feedback sonoro tramite audio_manager.
+
+### API pubblica
+
+- `MenuPanel(parent: wx.Window, controller: SolitarioController, audio_manager: AudioManager | None = None)`
+    - Crea il pannello menu con supporto audio opzionale.
+    - `parent`: finestra contenitore wxPython
+    - `controller`: istanza SolitarioController per delega azioni
+    - `audio_manager`: istanza AudioManager (opzionale). Se None, nessun feedback sonoro.
+    - **v3.5.1**: Nuovo parametro `audio_manager` per emettere:
+        - `UI_BUTTON_HOVER`: su focus di pulsante (via `on_button_focus()`)
+        - `UI_BUTTON_CLICK`: su click di uno dei 6 pulsanti principali
+
+**Esempio d'uso (v3.5.1):**
+```python
+from src.infrastructure.ui.menu_panel import MenuPanel
+from src.infrastructure.audio.audio_manager import AudioManager
+
+audio = AudioManager(config)
+audio.initialize()
+
+menu = MenuPanel(
+    parent=frame.panel_container,
+    controller=solitario_controller,
+    audio_manager=audio  # ✨ v3.5.1: pass audio manager for UI feedback
+)
+```
+
+**Note:**
+- Emissione sonoro wrapped in `if self.audio_manager:` per graceful fallback senza audio.
+- Inline import di AudioEvent per evitare circular dependency.
+- WAI-ARIA compliant: ogni pulsante ha label descrittivo, TAB naviga in ordine, ESC supportato.
+
+---
+
+## 📋 OptionsDialog (Infrastructure UI Layer) — v3.5.1
+
+**Modulo:** `src/infrastructure/ui/options_dialog.py`  
+**Layer:** Infrastructure → Presentation
+
+Dialog modale per configurazione opzioni di gioco (tipo mazzo, difficoltà, timer, shuffle, hint, scoring, strict mode, avvisi). Supporta feedback sonoro tramite audio_manager.
+
+### API pubblica
+
+- `OptionsDialog(parent: wx.Window, controller: OptionsWindowController, screen_reader: ScreenReader | None = None, audio_manager: AudioManager | None = None)`
+    - Crea dialog opzioni con supporto audio opzionale.
+    - `parent`: finestra wxPython padre
+    - `controller`: istanza OptionsWindowController per gestire state
+    - `screen_reader`: istanza ScreenReader per TTS (opzionale)
+    - `audio_manager`: istanza AudioManager (opzionale). Se None, nessun feedback sonoro.
+    - **v3.5.1**: Nuovo parametro `audio_manager` per emettere:
+        - `SETTING_CHANGED`: su modifica widget RadioBox/CheckBox/ComboBox
+        - `SETTING_SAVED`: su click "Salva" (prima di EndModal)
+        - `UI_CANCEL`: su click "Annulla" o ESC (prima di Discard)
+
+**Esempio d'uso (v3.5.1):**
+```python
+from src.infrastructure.ui.options_dialog import OptionsDialog
+from src.infrastructure.audio.audio_manager import AudioManager
+
+audio = AudioManager(config)
+audio.initialize()
+
+dlg = OptionsDialog(
+    parent=frame,
+    controller=options_controller,
+    screen_reader=screen_reader,
+    audio_manager=audio  # ✨ v3.5.1: pass audio manager for UI feedback
+)
+result = dlg.ShowModal()
+```
+
+**Note:**
+- Emissione sonoro wrappata in `if self.audio_manager:` per graceful fallback.
+- Inline import di AudioEvent per evitare circular dependency.
+- WAI-ARIA compliant: focus su primo controllo, TAB naviga legittimi widget, Enter attiva pulsante, ESC cancella.
+- Docstring aggiornato a v3.5.1 con nuovo parametro.
+
+---
+
+## �📚 Cross-References
 
 Per dettagli architetturali:
 - **[ARCHITECTURE.md](ARCHITECTURE.md)**: Panoramica layer, data flow, design patterns

@@ -23,6 +23,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * Binding `wx.EVT_ACTIVATE` su `SolitarioFrame` per mettere in pausa/riprendere loop audio.
   * DIContainer esteso con factory `get_main_menu_controller` e `get_mixer_controller`.
   * Nuovi test unitari/GUI per tutte le componenti audio.
+- **UI Audio Integration (v3.5.1)**: MenuPanel e OptionsDialog ora integrate con AudioManager centralizzato:
+  * `MenuPanel`: emette `UI_BUTTON_HOVER` su focus pulsante, `UI_BUTTON_CLICK` su click di 6 pulsanti principali (Gioca, Ultima Partita, Classifica, Profilo, Opzioni, Esci).
+  * `OptionsDialog`: emette `SETTING_CHANGED` su modifica widget, `SETTING_SAVED` su save, `UI_CANCEL` su cancel/ESC.
+  * Nuovo parametro `audio_manager=None` in entrambe le classi per graceful fallback senza audio.
+  * Integrazione SolitarioController: passa `audio_manager` a MenuPanel e OptionsDialog durante istanziazione.
+  * Test unitari completi: `test_menu_panel_audio.py` (9 test) e `test_options_dialog_audio.py` (9 test).
+  * Documentazione API.md aggiornata con nuove signature v3.5.1.
 - **Espansione eventi audio (+21 costanti)**: `AudioEventType` in `audio_events.py` raggiunge la parità
   con la vecchia release pygame. Nuove costanti aggiunte per categoria:
   * Gameplay: `CARD_FLIP`, `CARD_SHUFFLE`, `CARD_SHUFFLE_WASTE`, `TABLEAU_DROP`, `CARDS_EXHAUSTED`, `MULTI_CARD_MOVE`

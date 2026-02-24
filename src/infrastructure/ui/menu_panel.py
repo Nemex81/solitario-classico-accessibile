@@ -51,13 +51,14 @@ class MenuPanel(BasicPanel):
         show_exit_dialog().
     """
     
-    def __init__(self, parent, controller, container=None, **kwargs):
-        """Initialize MenuPanel with controller.
+    def __init__(self, parent, controller, container=None, audio_manager=None, **kwargs):
+        """Initialize MenuPanel with controller and optional audio manager.
         
         Args:
             parent: Parent panel container (frame.panel_container)
             controller: Application controller with menu action methods
             container: Optional DependencyContainer for future DI needs (v2.2.0)
+            audio_manager: Optional AudioManager for sound effects (v3.5.1)
             **kwargs: Additional arguments passed to BasicPanel
         
         Note:
@@ -66,8 +67,10 @@ class MenuPanel(BasicPanel):
         
         Version:
             v2.2.0: Added optional container parameter for DI pattern
+            v3.5.1: Added optional audio_manager parameter
         """
         self.container = container
+        self.audio_manager = audio_manager
         super().__init__(
             parent=parent,
             controller=controller,
@@ -153,6 +156,8 @@ class MenuPanel(BasicPanel):
         is called programmatically. Announces button label via TTS for
         screen reader users.
         
+        🆕 v3.5.1: Plays UI_BUTTON_HOVER sound effect.
+        
         Args:
             event: wx.FocusEvent from button focus change
         
@@ -166,6 +171,14 @@ class MenuPanel(BasicPanel):
         """
         button = event.GetEventObject()
         self.announce(button.GetLabel(), interrupt=False)
+        
+        # ✨ NUOVO v3.5.1: Play button hover sound
+        if self.audio_manager:
+            from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+            self.audio_manager.play_event(AudioEvent(
+                event_type=AudioEventType.UI_BUTTON_HOVER
+            ))
+        
         event.Skip()
     
     def on_play_click(self, event: wx.CommandEvent) -> None:
@@ -176,6 +189,8 @@ class MenuPanel(BasicPanel):
         2. Push GameplayView onto ViewManager stack
         3. Initialize new game
         
+        🆕 v3.5.1: Plays UI_BUTTON_CLICK sound effect before action.
+        
         Args:
             event: wx.CommandEvent from button click or ENTER key
         
@@ -183,6 +198,13 @@ class MenuPanel(BasicPanel):
             Controller is responsible for view management and game initialization.
             wxPython button events are wx.CommandEvent, not wx.ButtonEvent.
         """
+        # ✨ NUOVO v3.5.1: Play button click sound
+        if self.audio_manager:
+            from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+            self.audio_manager.play_event(AudioEvent(
+                event_type=AudioEventType.UI_BUTTON_CLICK
+            ))
+        
         if self.controller:
             self.controller.start_gameplay()
     
@@ -192,12 +214,22 @@ class MenuPanel(BasicPanel):
         Delegates to controller.show_last_game_summary() which displays
         the LastGameDialog with summary of most recent game.
         
+        🆕 v3.5.1: Plays UI_BUTTON_CLICK sound before action.
+        
         Args:
             event: wx.CommandEvent from button click or ENTER key
         
         Version:
             v3.1.0 Phase 9.1
+            v3.5.1: Added audio feedback
         """
+        # ✨ NUOVO v3.5.1: Play button click sound
+        if self.audio_manager:
+            from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+            self.audio_manager.play_event(AudioEvent(
+                event_type=AudioEventType.UI_BUTTON_CLICK
+            ))
+        
         if self.controller and hasattr(self.controller, 'show_last_game_summary'):
             self.controller.show_last_game_summary()
     
@@ -207,12 +239,22 @@ class MenuPanel(BasicPanel):
         Delegates to controller.show_leaderboard() which displays
         the LeaderboardDialog with global rankings.
         
+        🆕 v3.5.1: Plays UI_BUTTON_CLICK sound before action.
+        
         Args:
             event: wx.CommandEvent from button click or ENTER key
         
         Version:
             v3.1.0 Phase 9.2
+            v3.5.1: Added audio feedback
         """
+        # ✨ NUOVO v3.5.1: Play button click sound
+        if self.audio_manager:
+            from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+            self.audio_manager.play_event(AudioEvent(
+                event_type=AudioEventType.UI_BUTTON_CLICK
+            ))
+        
         if self.controller and hasattr(self.controller, 'show_leaderboard'):
             self.controller.show_leaderboard()
     
@@ -222,12 +264,22 @@ class MenuPanel(BasicPanel):
         Delegates to controller.show_profile_menu() which displays
         the ProfileMenuPanel modal dialog.
         
+        🆕 v3.5.1: Plays UI_BUTTON_CLICK sound before action.
+        
         Args:
             event: wx.CommandEvent from button click or ENTER key
         
         Version:
             v3.1.0 Phase 10.4
+            v3.5.1: Added audio feedback
         """
+        # ✨ NUOVO v3.5.1: Play button click sound
+        if self.audio_manager:
+            from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+            self.audio_manager.play_event(AudioEvent(
+                event_type=AudioEventType.UI_BUTTON_CLICK
+            ))
+        
         if self.controller and hasattr(self.controller, 'show_profile_menu'):
             self.controller.show_profile_menu()
     
@@ -237,6 +289,8 @@ class MenuPanel(BasicPanel):
         Delegates to controller.show_options() which should display
         the options configuration dialog or view.
         
+        🆕 v3.5.1: Plays UI_BUTTON_CLICK sound before action.
+        
         Args:
             event: wx.CommandEvent from button click or ENTER key
         
@@ -244,6 +298,13 @@ class MenuPanel(BasicPanel):
             Controller is responsible for showing options dialog.
             wxPython button events are wx.CommandEvent, not wx.ButtonEvent.
         """
+        # ✨ NUOVO v3.5.1: Play button click sound
+        if self.audio_manager:
+            from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+            self.audio_manager.play_event(AudioEvent(
+                event_type=AudioEventType.UI_BUTTON_CLICK
+            ))
+        
         if self.controller:
             self.controller.show_options()
     
@@ -253,6 +314,8 @@ class MenuPanel(BasicPanel):
         Delegates to controller.show_exit_dialog() which should show
         a confirmation dialog before exiting the application.
         
+        🆕 v3.5.1: Plays UI_BUTTON_CLICK sound before action.
+        
         Args:
             event: wx.CommandEvent from button click or ENTER key
         
@@ -260,6 +323,13 @@ class MenuPanel(BasicPanel):
             Controller is responsible for confirmation dialog and exit logic.
             wxPython button events are wx.CommandEvent, not wx.ButtonEvent.
         """
+        # ✨ NUOVO v3.5.1: Play button click sound
+        if self.audio_manager:
+            from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+            self.audio_manager.play_event(AudioEvent(
+                event_type=AudioEventType.UI_BUTTON_CLICK
+            ))
+        
         if self.controller:
             self.controller.show_exit_dialog()
     
