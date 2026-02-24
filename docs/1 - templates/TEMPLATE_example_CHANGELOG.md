@@ -9,169 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 📝 CHANGELOG Writing Guidelines
 
-### 🎯 Purpose
+Queste linee guida forniscono un rapido richiamo; per la policy completa
+(contente anche esempi e checklist) vedi
+`.github/copilot-instructions.md`.
 
-CHANGELOG.md is a **user-facing document** that answers:
-- "What changed in this version?"
-- "Is there a breaking change?"
-- "What bugs were fixed?"
-
-**Target Audience**: Users, contributors, maintainers scanning for updates.
-
-**Philosophy**: *"Concise, scannable, user-focused. Technical details belong in commit messages."*
-
----
-
-### 📊 Format Structure
-
-#### Version Header
-```markdown
-## [X.Y.Z] - YYYY-MM-DD
-```
-
-**Rules**:
-- Use **Semantic Versioning** (Major.Minor.Patch)
-- Include release date in ISO format (YYYY-MM-DD)
-- Link version to tag/release: `[X.Y.Z]` (anchor at bottom)
-
----
-
-#### Change Categories
-
-Group changes under these standard categories (use only relevant ones):
-
-**➕ Added**: New features, capabilities, APIs
-**🔄 Changed**: Changes in existing functionality (including breaking changes)
-**🚫 Deprecated**: Features marked for future removal (with timeline)
-**❌ Removed**: Features removed (breaking changes)
-**🐛 Fixed**: Bug fixes
-**🔒 Security**: Vulnerability fixes, security improvements
-
-**Order**: Always use this category order for consistency.
-
----
-
-### ✏️ Writing Rules
-
-| DO ✅ | DON'T ❌ |
-|-------|----------|
-| **One line per change** (max 2 for breaking) | **No paragraphs/essays** (move to docs) |
-| **User perspective** (what changed for user) | **No implementation details** ("refactored to use X pattern") |
-| **Action verbs** (Added, Fixed, Improved, Changed, Removed) | **No vague descriptions** ("various improvements", "bug fixes") |
-| **Include impact/benefit** ("reduced startup by 40%") | **No technical jargon** ("fixed race condition in async dispatcher") |
-| **Mark breaking**: `**BREAKING**: renamed X → Y` | **No commit duplication** (verbose git format with WIP/closes) |
-| **Link references**: (#234), (commit abc), (see docs/X.md) | **No tiny changes** (typo in comment, copyright year, code format) |
-
-**Examples**:
-```markdown
-✅ Added score warning system with 4 verbosity levels.
-✅ Fixed crash when rapidly switching panels. (#234)
-✅ Improved TTS clarity for better screen reader compatibility.
-
-❌ Refactored GameEngine to use state machine pattern. (internal detail)
-❌ Fixed null pointer exception in GameEngine.java:234. (what did user see?)
-❌ Various improvements. (too vague)
-```
-
----
-
-### 📏 Entry Length Guidelines
-
-**Target per version**:
-- **Patch (X.Y.Z)**: 3-8 lines total
-- **Minor (X.Y.0)**: 8-15 lines total  
-- **Major (X.0.0)**: 15-25 lines total (more breaking changes)
-
-**Per change**:
-- **Simple**: 1 line
-- **Complex**: 2 lines (breaking change + migration hint)
-- **Never**: 3+ lines (move to docs or commit message)
-
----
-
-### 🎯 Examples
-
-#### ✅ Good Example (Concise)
-
-```markdown
-## [2.6.0] - 2025-02-05
-
-### Added
-- Score warning system with 4 verbosity levels (Disabled, Minimal, Balanced, Complete).
-- TTS announcements for score milestones at 100pt intervals.
-- Settings control for warning level (arrows to cycle).
-
-### Changed
-- Improved TTS message clarity for score events.
-
-### Fixed
-- Fixed score calculation edge case when rapidly moving multiple cards.
-```
-
-**Why good**: Scannable in 10 seconds, user-facing only, clear categories, benefit implicit.
-
----
-
-#### ❌ Bad Example (Too Verbose)
-
-```markdown
-## [2.6.0] - 2025-02-05
-
-### Added
-
-#### Score Warning System
-We have implemented a comprehensive score warning system that allows
-users to configure the verbosity of TTS announcements...
-[continues for 3 more paragraphs with implementation details]
-```
-
-**Why bad**: Essay format, too long, implementation details, hard to scan. Belongs in docs/feature-guide.
-
----
-
-### 🔗 Linking to Details
-
-If a change needs explanation, link to external documentation:
-
-```markdown
-### Added
-- Score warning system. (See docs/SCORE_WARNINGS.md for configuration guide)
-
-### Changed
-- **BREAKING**: Difficulty now uses enum instead of int. (See MIGRATION.md)
-```
-
-**External detail locations**:
-- `docs/DETAILED_CHANGELOG.md` - Technical implementation notes
-- `docs/MIGRATION.md` - Breaking change migration guides
-- `docs/PLAN_*.md` - Feature planning documents
-- Commit messages - Detailed technical changes
-- PR descriptions - Discussion, screenshots, videos
-
----
-
-### 🗓️ Unreleased Section
-
-Keep an `[Unreleased]` section at the top for ongoing work:
-
-```markdown
-## [Unreleased]
-
-### Added
-- Hint system for suggesting next move (in development).
-
-### Changed
-- Improved card animation smoothness (experimental).
-```
-
-**Rules**:
-- Update as features merge to main/development branch
-- Move to versioned section on release
-- Helps contributors know what's coming
-
----
-
-### 🎯 Breaking Changes
+- Usa Semantic Versioning; la quarta cifra (`W`) è riservata a **correzioni
+  minori/bugfix totalmente retrocompatibili**. Le prime tre cifre seguono la
+  convenzione normale (MAJOR.MINOR.PATCH).
+- Raggruppa le voci in Added, Changed, Deprecated, Removed, Fixed, Security.
+- Scrivi una riga per cambiamento, dal punto di vista dell’utente.
+- Mantieni il changelog snello; dettagli tecnici vanno nei commit o nei docs.
 
 **Always mark clearly with "BREAKING:" prefix**:
 
@@ -210,6 +57,11 @@ Keep an `[Unreleased]` section at the top for ongoing work:
 - Bug fixes
 - Security patches
 - Documentation fixes
+
+**BUILD (0.0.0.W)**: *Correzioni minori semplci e bugfix completamente retrocompatibili.*
+- Utilizzato per hotfix o micro‑revisione che non modifica il comportamento
+  dell’API
+- Non influisce sulla compatibilità; non incrementa MAJOR/MINOR/PATCH
 
 ---
 
