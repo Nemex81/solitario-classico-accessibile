@@ -7,63 +7,29 @@ Stato: [READY | IN PROGRESS | DONE | BLOCKED]
 ---
 
 📖 Riferimento Documentazione
-Prima di iniziare qualsiasi implementazione, consultare obbligatoriamente:
-`docs/[NOME_FILE_PIANO_COMPLETO].md`
+Consulta sempre il piano completo:
+`docs/[NOME_FILE_PIANO_COMPLETO].md` – contiene analisi, architettura e dettagli.
 
-Questo file TODO è solo un sommario operativo da consultare e aggiornare durante ogni fase dell'implementazione.
-Il piano completo contiene analisi, architettura, edge case e dettagli tecnici.
+Questo TODO è un cruscotto operativo: aggiornalo dopo ogni fase. Le regole
+(documenti, workflow, commit, versioning) sono in `.github/copilot-instructions.md`.
 
 ---
 
 🤖 Istruzioni per Copilot Agent
 
-Implementare le modifiche in modo **incrementale** su più commit atomici e logici.
+Segui il TODO Gate: lavora fase per fase, esegui un commit atomico e spunta la
+corrispondente checkbox. Rileggi il piano prima di ogni passo.
 
-**Workflow per ogni fase:**
-
-1. **Leggi questo TODO** → Identifica la prossima fase da implementare
-2. **Consulta piano completo** → Rivedi dettagli tecnici, architettura, edge case della fase
-3. **Implementa modifiche** → Codifica solo la fase corrente (scope limitato)
-4. **Commit atomico** → Messaggio conventional, scope chiaro, riferimento fase
-5. **Aggiorna questo TODO** → Spunta checkbox completate per la fase
-6. **Acquisisci info sommarie** → Rivedi stato globale prima di proseguire
-7. **RIPETI** → Passa alla fase successiva (torna al punto 1)
-
-⚠️ **REGOLE FONDAMENTALI:**
-
-- ✅ **Un commit per fase logica** (no mega-commit con tutto)
-- ✅ **Dopo ogni commit**: aggiorna questo TODO spuntando checkbox
-- ✅ **Prima di ogni fase**: rileggi sezione pertinente nel piano completo
-- ✅ **Approccio sequenziale**: fase → commit → aggiorna TODO → fase successiva
-- ✅ **Commit message format**: `type(scope): description [Phase N/M]`
-- ❌ **NO commit multipli senza aggiornare TODO** (perde tracciabilità)
-- ❌ **NO implementazione completa in un colpo** (viola incrementalità)
-
-**Esempio workflow reale:**
-```
-Fase 1: Domain Model
-→ Implementa + Commit + Aggiorna TODO ✅
-
-Fase 2: Domain Service  
-→ Rileggi piano completo sezione Fase 2
-→ Implementa + Commit + Aggiorna TODO ✅
-
-Fase 3: Application Controller
-→ Rileggi piano completo sezione Fase 3
-→ Implementa + Commit + Aggiorna TODO ✅
-
-... e così via per tutte le fasi
-```
+⚠️ Promemoria veloce:
+- Un commit per fase logica, messaggio conventional.
+- Dopo ogni commit aggiorna questo TODO.
+- Non implementare tutto in un unico colpo.
 
 ---
 
 🎯 Obiettivo Implementazione
 
-Breve descrizione in 3–5 righe:
-
-- Cosa viene introdotto/modificato
-- Perché viene fatto
-- Impatto principale sul sistema
+Breve descrizione (3–5 righe) di cosa, perché e impatto della modifica.
 
 ---
 
@@ -77,55 +43,27 @@ Breve descrizione in 3–5 righe:
 
 ---
 
-🛠 Checklist Implementazione
+🛠 Checklist Implementazione (segna il necessario)
 
-**Logica / Dominio**
-- [ ] Modifica modello / entità
-- [ ] Aggiornamento servizi / use case
-- [ ] Gestione edge case previsti
-
-**Application / Controller**
-- [ ] Nuovi metodi aggiunti
-- [ ] Metodi esistenti aggiornati
-- [ ] Nessuna violazione Clean Architecture
-
-**Infrastructure (se applicabile)**
-- [ ] Persistenza aggiornata
-- [ ] Eventi / handler modificati
-
-**Presentation / Accessibilità**
-- [ ] Messaggi TTS in italiano chiaro
-- [ ] Nessuna informazione solo visiva
-- [ ] Comandi accessibili via tastiera
-
-**Testing**
-- [ ] Unit test creati / aggiornati
-- [ ] Tutti i test esistenti passano
-- [ ] Nessuna regressione rilevata
+- Logica / Dominio: modello, servizi, edge case
+- Application: controller, metodi
+- Infrastructure: storage, eventi
+- Presentation / Accessibilità
+- Testing: unit/integrazione, nessuna regressione
 
 ---
 
 ✅ Criteri di Completamento
 
-L'implementazione è considerata completa quando:
-
-- [ ] Tutte le checklist sopra sono spuntate
-- [ ] Tutti i test passano
-- [ ] Nessuna regressione funzionale
-- [ ] Versione aggiornata coerentemente (SemVer)
+- Checklist spuntate, test verdi, nessuna regressione.
+- Versioning e documenti aggiornati (README, CHANGELOG).
 
 ---
 
 📝 Aggiornamenti Obbligatori a Fine Implementazione
 
-- [ ] Aggiornare `README.md` se la feature è visibile all'utente
-- [ ] Aggiornare `CHANGELOG.md` con entry dettagliata
-- [ ] Incrementare versione in modo coerente:
-  - **PATCH** → bug fix
-  - **MINOR** → nuova feature retrocompatibile
-  - **MAJOR** → breaking change
-- [ ] Commit con messaggio convenzionale
-- [ ] Push su branch corretto
+Aggiorna README/CHANGELOG, incrementa versione (seguendo la policy),
+commit e push come da prassi.
 
 ---
 
