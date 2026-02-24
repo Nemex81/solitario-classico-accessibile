@@ -57,3 +57,18 @@ Piano di riferimento: [ui_audio_integration_plan.md](3 - coding plans/ui_audio_i
 ---
 
 **🎯 Stato COMPLETATO:** Implementazione core + documentazione (Fasi 1–4.5) finito. ✅
+
+---
+
+## 🧹 REFACTOR AGGIUNTIVO (v3.5.1)
+
+**Dopo completamento integrazione audio UI**, eseguito refactoring pulizia codice legacy:
+
+- [x] **Fase A**: Semplificare `AudioManager._load_event_mapping()` — rimuovere fallback `_get_default_event_mapping()`, fail-fast su config assente
+- [x] **Fase B**: Eliminare `_get_default_event_mapping()` (dead code, path legacy incompatibili)
+- [x] **Fase C**: Eliminare mapping hardcoded in `SoundCache.load_pack()` (sempre sovrascritto da JSON)
+- [x] **Fase D**: Rimuovere `Optional` da import `sound_cache.py` (parametro sempre fornito)
+
+**Razionale:** JSON config è unica sorgente verità; fallback legacy mai eseguito in flusso normale.
+
+**Impact:** -80 linee codice morto, improved maintainability, single source of truth

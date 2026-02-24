@@ -141,20 +141,25 @@ class AudioManager:
         return self._initialized
 
     def _load_event_mapping(self) -> Dict[str, str]:
-        """Load event-to-sound mapping from configuration.
+        """Load event-to-sound mapping from JSON configuration.
 
         Converte le chiavi JSON (nomi delle costanti, es. "CARD_MOVE") nei
         valori stringa corrispondenti (es. "card_move") tramite
-        ``getattr(AudioEventType, key)``. Se la sezione è assente o vuota
-        usa il mapping di default. Chiavi sconosciute vengono saltate con warning.
+        ``getattr(AudioEventType, key)``. Se la sezione è assente o vuota,
+        ritorna dict vuoto (fail-fast: nessun suono sarà riproducibile).
+        Chiavi sconosciute vengono saltate con warning.
+        
+        **v3.5.1**: JSON è unica sorgente di verità per mapping eventi.
+        Se config assente, errore in log (non fallback silenzioso).
         """
         mapping: Dict[str, str] = {}
         raw = getattr(self.config, "event_sounds", {}) or {}
         if not raw:
-            _game_logger.warning(
-                "AudioManager: 'event_sounds' section missing in config; using default mapping"
+            _game_logger.error(
+                "AudioManager: 'event_sounds' section missing in config. "
+                "No sounds will be available. Check config/audio_config.json."
             )
-            return self._get_default_event_mapping()
+            return {}
         for key, fname in raw.items():
             evt_value = getattr(AudioEventType, key, None)
             if evt_value is None:
@@ -164,23 +169,6 @@ class AudioManager:
                 continue
             mapping[evt_value] = fname
         return mapping
-
-    def _get_default_event_mapping(self) -> Dict[str, str]:
-        """Return hardcoded mapping used as fallback (costanti stringa)."""
-        return {
-            AudioEventType.CARD_MOVE: "card_move.wav",
-            AudioEventType.CARD_SELECT: "card_select.wav",
-            AudioEventType.INVALID_MOVE: "invalid.wav",
-            AudioEventType.STOCK_DRAW: "stock_draw.wav",
-            AudioEventType.UI_NAVIGATE: "ui_navigate.wav",
-            AudioEventType.UI_SELECT: "ui_select.wav",
-            AudioEventType.UI_CANCEL: "ui_cancel.wav",
-            AudioEventType.TABLEAU_BUMPER: "boundary.wav",
-            AudioEventType.GAME_WON: "victory.wav",
-            AudioEventType.TIMER_WARNING: "timer_warning.wav",
-            AudioEventType.TIMER_EXPIRED: "timer_expired.wav",
-            AudioEventType.MIXER_OPENED: "mixer_open.wav",
-        }
 
     def _validate_config_completeness(self) -> None:
         """Log warnings for nonexistent files in mapping."""

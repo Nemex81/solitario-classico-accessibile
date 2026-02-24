@@ -17,63 +17,25 @@ class SoundCache:
         self._cache: Dict[str, Optional[pygame.mixer.Sound]] = {}
         self._pack_name: Optional[str] = None
 
-    def load_pack(self, pack_name: str, event_to_files: Optional[Dict[str, str]] = None) -> None:
+    def load_pack(self, pack_name: str, event_to_files: Dict[str, str]) -> None:
         """Carica tutti i WAV del pack in RAM come pygame.Sound.
+        
         File assenti: warning nel log, entry None (degradazione graziosa).
 
         Args:
-            pack_name: nome della cartella del sound pack
-            event_to_files: mappa opzionale evento->percorso relativo. Se
-                fornita, sostituisce il dizionario hardcoded. Le chiavi devono
-                essere gli stessi string event_type usati da AudioEvent.
+            pack_name: nome della cartella del sound pack (es. "default")
+            event_to_files: mappa evento->percorso relativo (es. {"card_move": "gameplay/card_move.wav"}).
+                            Fornita da AudioManager._load_event_mapping() caricata da JSON config.
+        
+        **v3.5.1**: Mapping JSON-driven è unica sorgente di verità. 
+        Non esiste più fallback hardcoded legacy.
         """
         self._cache.clear()
         self._pack_name = pack_name
         pack_path = self.sounds_base_path / pack_name
-        # Mapping evento → file WAV singolo (design v3.4.1 or JSON-driven)
-        if event_to_files is not None:
-            EVENT_TO_FILES = event_to_files
-        else:
-            EVENT_TO_FILES = {
-                # ========================================
-                # GAMEPLAY BUS
-                # ========================================
-                "card_move": "gameplay/card_move.wav",
-                "card_select": "gameplay/card_place.wav",      # riuso file
-                "card_drop": "gameplay/card_place.wav",        # riuso file
-                "foundation_drop": "gameplay/foundation_drop.wav",
-                "invalid_move": "gameplay/invalid_move.wav",
-                "tableau_bumper": "gameplay/invalid_move.wav", # riuso invalid_move
-                "stock_draw": "gameplay/stock_draw.wav",
-                "waste_drop": "gameplay/tableau_drop.wav",     # riuso tableau_drop
-                # ========================================
-                # UI BUS
-                # ========================================
-                "ui_navigate": "ui/navigate.wav",
-                "ui_select": "ui/select.wav",
-                "ui_cancel": "ui/cancel.wav",
-                "mixer_opened": "ui/mixer_opened.wav",
-                # ========================================
-                # AMBIENT BUS
-                # ========================================
-                "ambient_loop": "ambient/room_loop.wav",
-                # ========================================
-                # MUSIC BUS
-                # ========================================
-                "music_loop": "music/music_loop.wav",
-                # ========================================
-                # VOICE BUS
-                # ========================================
-                "game_won": "voice/victory.wav",
-                # ========================================
-                # TIMER EVENTS
-                # ========================================
-                "timer_warning": "ui/navigate.wav",
-                "timer_expired": "ui/cancel.wav",
-            }
-
-        # Carica ogni file WAV singolo
-        for event_type, rel_path in EVENT_TO_FILES.items():
+        
+        # Carica ogni file WAV dal mapping JSON-driven
+        for event_type, rel_path in event_to_files.items():
             file_path = pack_path / rel_path
             try:
                 sound = pygame.mixer.Sound(str(file_path))
