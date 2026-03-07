@@ -70,7 +70,7 @@ Infrastructure Layer:
   src/infrastructure/
     di_container.py                       ← MODIFY (registra nuovi componenti)
     storage/
-      profile_storage.py                  ← MODIFY (serializza tts_rate, tts_volume)
+      profile_storage.py                  ← INVARIATO (chiama già profile.to_dict() internamente)
     plugins/
       __init__.py                         ← CREATE
       plugin_registry.py                  ← CREATE (registry esplicito dict)
@@ -107,7 +107,7 @@ Documentation:
 | `src/domain/models/profile.py` | Domain | MODIFY | Medio |
 | `src/domain/services/profile_service.py` | Domain | MODIFY (minor) | Basso |
 | `src/infrastructure/di_container.py` | Infrastructure | MODIFY | Medio |
-| `src/infrastructure/storage/profile_storage.py` | Infrastructure | MODIFY | Medio |
+| `src/infrastructure/storage/profile_storage.py` | Infrastructure | INVARIATO | — |
 | `src/infrastructure/plugins/__init__.py` | Infrastructure | CREATE | Basso |
 | `src/infrastructure/plugins/plugin_registry.py` | Infrastructure | CREATE | Basso |
 | `src/infrastructure/plugins/french_deck_provider.py` | Infrastructure | CREATE | Basso |
@@ -135,11 +135,32 @@ Documentation:
 
 ### RF-2: TTS configurabile per profilo
 
+> **⚠️ LIMITAZIONE CRITICA — NVDA non supporta rate/volume via accessible_output2**:
+>
+> `NvdaProvider.set_rate()` e `NvdaProvider.set_volume()` sono **no-op espliciti**
+> (implementati come `pass`) nel codice reale (`src/infrastructure/audio/tts_provider.py`,
+> righe 148–169). Il commento nel sorgente: *"NVDA rate/volume control not exposed
+> via accessible_output2"*. L'intera RF-2 con slider rate/volume persistenti
+> **funziona SOLO su SAPI5** (`Sapi5Provider.set_rate()` e `.set_volume()` sono
+> implementati e chiamano `self.engine.setProperty(...)`).
+>
+> **Impatto**: Su sistemi dove l'utente usa NVDA (il target primario del progetto),
+> gli slider rate/volume nell'OptionsDialog non producono alcun effetto percepibile.
+> I campi `tts_rate`/`tts_volume` vengono comunque persistiti in `UserProfile` per
+> forward-compatibility (un futuro backend TTS potrebbe supportarli), ma la UI
+> **deve avvertire l'utente** che con NVDA queste impostazioni non hanno effetto.
+>
+> **Azione raccomandata per Fase 2d (OptionsDialog)**:
+> - Rilevare il provider attivo (`NvdaProvider` vs `Sapi5Provider`)
+> - Se NVDA: disabilitare slider + mostrare label "Non disponibile con NVDA"
+> - Se SAPI5: slider attivi normalmente
+
 - `UserProfile` espone `tts_rate: int = 0` (range 0–100, mappato a -10/+10 per `TtsProvider.set_rate()`) e `tts_volume: int = 80` (range 0–100, mappato a 0.0–1.0 per `TtsProvider.set_volume()`)
 - `ProfileStorage` serializza/deserializza i nuovi campi con retrocompatibilità (default su profili legacy)
 - `TTSAnnouncer` (Application layer) espone `apply_tts_settings(tts_rate, tts_volume)` che chiama `TtsProvider.set_rate()` e `TtsProvider.set_volume()` — **NON** `ProfileService`/Domain (violerebbe Clean Architecture)
 - `OptionsDialog` mostra slider Rate e Volume TTS; salva modifica al profilo attivo
 - I valori persistono dopo riavvio e vengono applicati all'avvio di ogni sessione
+- **Con NVDA**: rate/volume sono no-op — la UI deve informare l'utente
 
 ### RF-3: Plugin system deck e regole
 
@@ -262,7 +283,7 @@ from typing import TYPE_CHECKING, Optional
 import logging
 
 if TYPE_CHECKING:
-    from src.infrastructure.audio.tts_provider import TtsProvider
+    from src.infrastructure.accessibility.tts_provider import TtsProvider  # path reale nel codebase
 
 _ui_logger = logging.getLogger('ui')
 
@@ -614,6 +635,23 @@ def get_session_recorder(self) -> "SessionRecorder":
 >   già esistente in `acs_wx.py`
 > - MAI chiamare `DIContainer()` direttamente dentro metodi UI — crea una nuova
 >   istanza che bypassa il singleton e duplica risorse audio
+>
+> **⚠️ BUG LATENTE — `DIContainer.get_screen_reader()` (Problema 6)**:
+>
+> Il codice attuale chiama `ScreenReader()` **senza argomenti**, ma
+> `ScreenReader.__init__` in `src/infrastructure/accessibility/screen_reader.py`
+> richiede `tts: TtsProvider` come parametro obbligatorio (nessun default).
+> Questo genera `TypeError: __init__() missing 1 required positional argument: 'tts'`.
+>
+> **Prima di implementare Fase 1d**, verificare se:
+> 1. Esiste un'altra `ScreenReader` in `src/infrastructure/audio/` con costruttore diverso
+>    (accetta zero argomenti) — ed è quella effettivamente in uso
+> 2. Oppure il bug è latente perché `get_screen_reader()` non viene mai chiamato
+>    nel percorso attuale (il `ScreenReader` viene creato altrove)
+>
+> In ogni caso, i factory methods aggiunti (`get_tts_announcer()`, etc.) dipendono
+> da `get_screen_reader()` — se crasha, l'intera catena si rompe.
+> **Fix proposto**: aggiungere istanziazione TtsProvider dentro `get_screen_reader()`:
 
 **Commit Fase 1d**:
 ```
@@ -683,10 +721,10 @@ class TestSessionRecorder:
 
 **File coinvolti**:
 
-- `src/domain/models/profile.py` — MODIFY
-- `src/infrastructure/storage/profile_storage.py` — MODIFY
-- `src/domain/services/profile_service.py` — MODIFY (metodo `apply_tts_settings`)
-- `src/presentation/dialogs/options_dialog.py` — MODIFY
+- `src/domain/models/profile.py` — MODIFY (dataclass + `to_dict()` + `from_dict()`)
+- `src/infrastructure/storage/profile_storage.py` — INVARIATO (chiama già `profile.to_dict()`)
+- `src/domain/services/profile_service.py` — INVARIATO (see Fase 2c: apply_tts_settings è in TTSAnnouncer)
+- `src/presentation/dialogs/options_dialog.py` — CREATE (non esiste nel codebase)
 - `docs/UX_SHORTCUTS.md` — CREATE
 
 #### Fase 2a: Aggiornamento UserProfile
@@ -695,50 +733,113 @@ class TestSessionRecorder:
 >
 > - Il file è `src/domain/models/profile.py` — NON `user_profile.py`
 > - La classe è `UserProfile` — NON `Profile`
+>
+> **CRITICO — Campi obbligatori senza default**:
+>
+> `UserProfile` ha 4 campi **senza default**: `profile_id`, `profile_name`,
+> `created_at: datetime`, `last_played: datetime`. Usare il costruttore diretto
+> `UserProfile(profile_id=..., profile_name=...)` **crasha** con `TypeError`
+> perché mancano `created_at` e `last_played`.
+> Usare SEMPRE la factory: `UserProfile.create_new("NomeUtente")`.
 
 ```python
-# src/domain/models/profile.py — modifica dataclass UserProfile
-from dataclasses import dataclass, field
-
-@dataclass
-class UserProfile:
-    profile_id: str
-    profile_name: str
-    preferred_deck: str = "french"
+# src/domain/models/profile.py — aggiungere i due campi alla dataclass
+# NOTA: i campi con default DEVONO essere dopo quelli senza default
+# I campi esistenti:
+#   profile_id: str             (no default)
+#   profile_name: str           (no default)
+#   created_at: datetime        (no default)
+#   last_played: datetime       (no default)
+#   is_default: bool = False
+#   is_guest: bool = False
+#   preferred_difficulty: int = 3
+#   preferred_deck: str = "french"
+#
+# AGGIUNGERE dopo preferred_deck:
     tts_rate: int = 0       # NUOVO: velocità TTS (range 0–100, default 0=sistema)
                             # Mappato a TtsProvider.set_rate() range -10/+10 da TTSAnnouncer
+                            # Con NVDA: no-op (accessible_output2 non espone rate control)
     tts_volume: int = 80    # NUOVO: volume TTS (range 0–100, default 80=0.8)
                             # Mappato a TtsProvider.set_volume() range 0.0–1.0 da TTSAnnouncer
-    # ... tutti gli altri campi esistenti invariati ...
+                            # Con NVDA: no-op (accessible_output2 non espone volume control)
 ```
 
-#### Fase 2b: ProfileStorage — serializzazione con retrocompatibilità
-
-> **CRITICO — ProfileStorage API reale**:
->
-> - I metodi `_to_dict` e `_from_dict` **non esistono** in `ProfileStorage`
-> - L'API reale è: `create_profile(profile: UserProfile)`, `load_profile(profile_id: str) -> Optional[Dict]`, `save_profile(profile_id: str, profile_data: Dict) -> bool`
-> - Il costruttore accetta `data_dir: Optional[Path] = None` (NON `storage_path`)
+**Aggiornare anche `to_dict()` e `from_dict()`** per includere i nuovi campi:
 
 ```python
-# src/infrastructure/storage/profile_storage.py
-# Aggiungere tts_rate e tts_volume nella serializzazione dict dentro create_profile():
-# Localizzare il blocco che costruisce profile_data e aggiungere:
-#   profile_data["tts_rate"] = getattr(profile, "tts_rate", 0)    # NUOVO
-#   profile_data["tts_volume"] = getattr(profile, "tts_volume", 80)  # NUOVO
+# src/domain/models/profile.py — aggiornare to_dict()
+def to_dict(self) -> dict:
+    """Convert to JSON-serializable dict."""
+    return {
+        # ... campi esistenti invariati ...
+        "preferred_deck": self.preferred_deck,
+        "tts_rate": self.tts_rate,        # NUOVO
+        "tts_volume": self.tts_volume,    # NUOVO
+    }
 
-# In save_profile(profile_id, profile_data) non servono modifiche —
-# il dizionario viene scritto direttamente come JSON.
-
-# La deserializzazione dict→UserProfile avviene in ProfileService:
-# (load_profile ritorna Optional[Dict[str, Any]], non UserProfile)
-# In ProfileService, aggiungere .get() con default nel punto
-# dove viene costruito UserProfile dal dizionario:
-#   tts_rate=data.get("tts_rate", 0),    # NUOVO — default 0 per profili legacy
-#   tts_volume=data.get("tts_volume", 80)  # NUOVO — default 80 per profili legacy
+# src/domain/models/profile.py — aggiornare from_dict()
+@classmethod
+def from_dict(cls, data: dict) -> "UserProfile":
+    """Create from JSON dict.
+    
+    NOTA retrocompatibilità: usa dict.get() con default per i campi TTS
+    così i profili legacy (pre-v3.6.0) senza tts_rate funzionano.
+    """
+    data = data.copy()
+    data["created_at"] = datetime.fromisoformat(data["created_at"])
+    data["last_played"] = datetime.fromisoformat(data["last_played"])
+    # Default per retrocompatibilità profili legacy:
+    data.setdefault("tts_rate", 0)      # NUOVO
+    data.setdefault("tts_volume", 80)   # NUOVO
+    return cls(**data)
 ```
 
-Il `.get(..., default)` garantisce retrocompatibilità: i profili JSON pre-esistenti che non hanno `tts_rate` ottengono automaticamente il valore di default.
+Il punto d'intervento per la serializzazione è **`UserProfile.to_dict()`/`from_dict()`**
+(Domain layer), NON `ProfileStorage.create_profile()`. `ProfileStorage.create_profile()`
+chiama già `profile.to_dict()` internamente (linea 91 nel sorgente attuale) e salva
+il risultato nella struttura JSON `{"profile": profile.to_dict(), "stats": {...}, ...}`.
+
+#### Fase 2b: Serializzazione TTS in UserProfile.to_dict()/from_dict()
+
+> **CRITICO — Punto d'intervento corretto per serializzazione**:
+>
+> - **NON** modificare `ProfileStorage.create_profile()` — quel metodo chiama già
+>   `profile.to_dict()` e salva il risultato sotto la chiave `"profile"` nel JSON.
+> - **NON** aggiungere manualmente `profile_data["tts_rate"] = ...` in `create_profile()`
+> - I nuovi campi vanno aggiunti a **`UserProfile.to_dict()`** e **`UserProfile.from_dict()`**
+>   (vedi Fase 2a sopra). Questo è sufficiente perché il ciclo write→read è:
+>
+>   1. **Write**: `create_profile(profile)` → `profile.to_dict()` → salva come
+>      `{"profile": {...}, "stats": {...}, "recent_sessions": []}` su disco
+>   2. **Read**: `load_profile(id)` → ritorna l'intero dict `{"profile": {...}, ...}`
+>   3. **Deserialize**: `ProfileService` estrae `data["profile"]` e chiama
+>      `UserProfile.from_dict(data["profile"])` → i nuovi campi sono inclusi
+>
+> **Struttura JSON su disco** (post-v3.6.0):
+> ```json
+> {
+>   "profile": {
+>     "profile_id": "profile_abc123",
+>     "profile_name": "Mario",
+>     "created_at": "2026-03-07T10:00:00",
+>     "last_played": "2026-03-07T12:30:00",
+>     "is_default": true,
+>     "is_guest": false,
+>     "preferred_difficulty": 3,
+>     "preferred_deck": "french",
+>     "tts_rate": 0,
+>     "tts_volume": 80
+>   },
+>   "stats": { "global": {...}, "timer": {...}, ... },
+>   "recent_sessions": []
+> }
+> ```
+>
+> Per **profili legacy** (pre-v3.6.0) il JSON non contiene `tts_rate`/`tts_volume`.
+> `UserProfile.from_dict()` usa `data.setdefault("tts_rate", 0)` per garantire
+> retrocompatibilità senza errori.
+
+Nessuna modifica a `ProfileStorage` necessaria per questa fase.
 
 #### Fase 2c: TTSAnnouncer — apply_tts_settings (Application Layer)
 
@@ -766,6 +867,15 @@ if self._tts and self.profile_service and self.profile_service.active_profile:
 
 **CREARE** il file `src/presentation/dialogs/options_dialog.py` (non esiste nel codebase).
 Il file deve implementare `OptionsDialog` con tab "Audio/TTS":
+
+> **⚠️ NVDA: slider rate/volume sono no-op** (vedi RF-2 warning sopra).
+> La UI deve rilevare il provider TTS attivo e comportarsi di conseguenza:
+> - **SAPI5**: slider attivi, valori applicati via `apply_tts_settings()`
+> - **NVDA**: slider disabilitati con label "Non disponibile con NVDA — regola
+>   dal pannello impostazioni di NVDA" (leggibile da screen reader)
+>
+> Per rilevare il provider: `TTSAnnouncer` può esporre `is_rate_supported() -> bool`
+> che controlla `isinstance(self._tts, Sapi5Provider)` o un attributo del protocollo.
 
 - `wx.Slider` per Rate TTS — label `"Velocità lettura &TTS:"`, range 0–100
 - `wx.Slider` per Volume TTS — label `"&Volume lettura:"`, range 0–100
@@ -825,34 +935,58 @@ from src.infrastructure.storage.profile_storage import ProfileStorage
 @pytest.mark.unit   # NON @pytest.mark.gui — nessuna dipendenza wx
 class TestUserProfileTTS:
     def test_user_profile_defaults(self):
-        p = UserProfile(profile_id="p001", profile_name="Test")
+        """UserProfile ha created_at/last_played obbligatori — usare create_new()."""
+        p = UserProfile.create_new("Test")  # factory che popola created_at/last_played
         assert p.tts_rate == 0    # default 0 (sistema), non 50
         assert p.tts_volume == 80
 
     def test_profile_storage_roundtrip_tts(self, tmp_path):
         """ProfileStorage serializza/deserializza tts_rate e tts_volume.
         
-        Nota: ProfileStorage(data_dir=tmp_path), non storage_path.
-        create_profile(profile) serializza; load_profile(id) -> Optional[Dict].
+        Il ciclo è: create_profile → profile.to_dict() → JSON su disco →
+        load_profile → dict annidato → UserProfile.from_dict(data["profile"])
         """
         storage = ProfileStorage(data_dir=tmp_path)  # parametro è data_dir, NON storage_path
-        p = UserProfile(profile_id="p001", profile_name="Test", tts_rate=75, tts_volume=60)
-        storage.create_profile(p)  # metodo reale: create_profile(), non save()
-        data = storage.load_profile("p001")  # ritorna Optional[Dict], non UserProfile
+        p = UserProfile.create_new("Test")            # factory — NON costruttore diretto
+        # Sovrascriviamo i valori TTS per il test
+        p.tts_rate = 75
+        p.tts_volume = 60
+        storage.create_profile(p)                    # scrive {"profile": {...}, "stats": {...}, ...}
+        data = storage.load_profile(p.profile_id)    # ritorna dict annidato
         assert data is not None
-        assert data.get("tts_rate") == 75
-        assert data.get("tts_volume") == 60
+        # tts_rate è sotto data["profile"], NON a livello radice
+        profile_data = data["profile"]
+        assert profile_data["tts_rate"] == 75
+        assert profile_data["tts_volume"] == 60
+        # Verifica roundtrip completo UserProfile.from_dict()
+        loaded_profile = UserProfile.from_dict(profile_data)
+        assert loaded_profile.tts_rate == 75
+        assert loaded_profile.tts_volume == 60
 
     def test_profile_storage_defaults_for_legacy_json(self, tmp_path):
-        """Profili pre-esistenti senza tts_rate: i default vengono applicati in ProfileService."""
-        (tmp_path / "p001.json").write_text(
-            json.dumps({"profile_id": "p001", "profile_name": "Legacy"})
-        )
-        storage = ProfileStorage(data_dir=tmp_path)  # data_dir, non storage_path
-        data = storage.load_profile("p001")  # ritorna dict; default gestiti da ProfileService
+        """Profili legacy (pre-v3.6.0) senza tts_rate: from_dict() applica i default."""
+        legacy_json = {
+            "profile": {
+                "profile_id": "p001", "profile_name": "Legacy",
+                "created_at": "2025-01-01T00:00:00",
+                "last_played": "2025-01-01T00:00:00",
+                "is_default": False, "is_guest": False,
+                "preferred_difficulty": 3, "preferred_deck": "french"
+            },
+            "stats": {"global": {}, "timer": {}, "difficulty": {}, "scoring": {}},
+            "recent_sessions": []
+        }
+        profile_dir = tmp_path / "profiles"
+        profile_dir.mkdir(parents=True, exist_ok=True)
+        (profile_dir / "p001.json").write_text(json.dumps(legacy_json))
+        storage = ProfileStorage(data_dir=tmp_path)
+        data = storage.load_profile("p001")
         assert data is not None
-        # tts_rate/tts_volume non presenti nel JSON legacy — ProfileService usa .get(..., default)
-        assert "tts_rate" not in data or data.get("tts_rate") == 0
+        profile_data = data["profile"]
+        # JSON legacy non ha tts_rate — from_dict applica default
+        loaded = UserProfile.from_dict(profile_data)
+        assert loaded.tts_rate == 0     # default da setdefault in from_dict
+        assert loaded.tts_volume == 80  # default da setdefault in from_dict
 
     def test_apply_tts_settings_calls_tts_provider(self):
         """apply_tts_settings è su TTSAnnouncer (Application), non ProfileService (Domain)."""
@@ -1345,23 +1479,27 @@ Setup:
     TtsProvider mockato (acceduto tramite screen_reader.tts)
 
 Azioni:
-    1. Crea UserProfile(tts_rate=75, tts_volume=60)
+    1. Crea UserProfile via create_new("Test") + sovrascrive tts_rate=75, tts_volume=60
     2. Salva via ProfileStorage.create_profile(profile)
-    3. Ricarica profilo via ProfileStorage.load_profile("p001") -> Dict
-    4. Chiama tts_announcer.apply_tts_settings(tts_rate=75, tts_volume=60)
+    3. Ricarica profilo via ProfileStorage.load_profile(profile_id) -> Dict annidato
+    4. Estrae data["profile"] e chiama UserProfile.from_dict(data["profile"])
+    5. Chiama tts_announcer.apply_tts_settings(tts_rate=75, tts_volume=60)
 
 Assertions:
-    - Profilo ricaricato ha data["tts_rate"] == 75
+    - data["profile"]["tts_rate"] == 75 (NON data["tts_rate"] — struttura JSON annidata)
+    - Profilo ricostruito ha .tts_rate == 75
     - mock_tts.set_rate chiamato con 5 (conversione: (75/100)*20 - 10 = 5)
     - mock_tts.set_volume chiamato con 0.6 (conversione: 60/100 = 0.6)
+    - Con NVDA: set_rate/set_volume sono no-op — il test verifica la chiamata, non l'effetto
 """
 ```
 
 ### Manual Testing Checklist
 
 - [ ] Mossa carta annunciata correttamente da NVDA
-- [ ] Rate TTS modificabile in OptionsDialog e persistente dopo riavvio
-- [ ] Volume TTS modificabile in OptionsDialog e persistente dopo riavvio
+- [ ] Rate TTS modificabile in OptionsDialog e persistente dopo riavvio **(solo SAPI5 — con NVDA gli slider sono disabilitati o segnalati come non disponibili)**
+- [ ] Volume TTS modificabile in OptionsDialog e persistente dopo riavvio **(solo SAPI5)**
+- [ ] Con NVDA: la UI segnala che rate/volume non sono controllabili dal codice
 - [ ] Selezionare "Mazzo Napoletano" in OptionsDialog — partita usa mazzo napoletano
 - [ ] Regole "Klondike" — comportamento identico a prima del refactoring
 - [ ] ESC chiude ogni dialog, focus ritorna al pannello di gioco
@@ -1491,9 +1629,10 @@ def on_button_click(self) -> None:
    - `refactor(application,infrastructure): GameEngine delega TTS/config/sessione ai nuovi componenti; DIContainer registra i tre factory`
    - Files: `src/application/game_engine.py`, `src/infrastructure/di_container.py`
 
-6. **[Fase 2a+b]** UserProfile + ProfileStorage
-   - `feat(domain,infrastructure): aggiunge tts_rate/tts_volume a UserProfile con retrocompatibilità ProfileStorage`
-   - Files: `src/domain/models/profile.py`, `src/infrastructure/storage/profile_storage.py`
+6. **[Fase 2a+b]** UserProfile to_dict/from_dict + test
+   - `feat(domain): aggiunge tts_rate/tts_volume a UserProfile con retrocompatibilità in to_dict()/from_dict()`
+   - Files: `src/domain/models/profile.py` (MODIFY: dataclass + to_dict + from_dict)
+   - **NOTA**: `ProfileStorage` NON va modificato — chiama già `profile.to_dict()` internamente
    - Tests: `tests/unit/domain/test_profile_tts.py`
 
 7. **[Fase 2c]** apply_tts_settings già incluso in TTSAnnouncer (Fase 1a)
@@ -1556,12 +1695,43 @@ def on_button_click(self) -> None:
 **Accessibilità**:
 
 - [ ] NVDA legge ogni annuncio mossa (TTSAnnouncer funzionante)
-- [ ] Slider Rate/Volume TTS in OptionsDialog leggibili con valore corrente
+- [ ] Slider Rate/Volume TTS in OptionsDialog leggibili con valore corrente **(solo SAPI5)**
+- [ ] Con NVDA: slider rate/volume disabilitati con label esplicativa (no-op via accessible_output2)
 - [ ] TAB naviga correttamente tutti i controlli in OptionsDialog
 - [ ] Keyboard shortcuts documentati in `docs/UX_SHORTCUTS.md`
 
 ---
 
-*Fine PLAN — v3.6.0 — generato da analisi iterativa (report v1/v2/v3) con 15 correzioni applicate*
+## ⚠️ Problemi noti e warning pre-implementazione
+
+### W1 — DIContainer.get_screen_reader() bug latente
+
+`DIContainer.get_screen_reader()` chiama `ScreenReader()` senza argomenti, ma
+`ScreenReader.__init__` in `src/infrastructure/accessibility/screen_reader.py`
+richiede `tts: TtsProvider` come parametro obbligatorio. Questo genera
+`TypeError` se il metodo viene effettivamente invocato.
+
+**Prima di implementare Fase 1d**, verificare:
+1. Se `get_screen_reader()` viene già usato nel percorso attuale o è dead code
+2. Se c'è un'altra `ScreenReader` in `src/infrastructure/audio/` con costruttore diverso
+3. Fix proposto: istanziare `TtsProvider` dentro `get_screen_reader()` e passarlo
+
+### W2 — Path duplicati ScreenReader e TtsProvider
+
+Esistono due `ScreenReader` e due `TtsProvider`:
+- `src/infrastructure/audio/screen_reader.py` + `audio/tts_provider.py`
+- `src/infrastructure/accessibility/screen_reader.py` + `accessibility/tts_provider.py`
+
+`DIContainer` importa da `accessibility/`. Il piano usa `accessibility/` come path canonico.
+Verificare quale dei due è il file "attivo" e documentare la relazione.
+
+### W3 — NvdaProvider.set_rate()/set_volume() sono no-op
+
+Vedi sezione RF-2 per dettagli. I test di `apply_tts_settings` verificano che
+la **chiamata** avvenga (mock), non che l'effetto sia percepibile.
+
+---
+
+*Fine PLAN — v3.6.0 — generato da analisi iterativa (report v1/v2/v3/v4) con 21 correzioni applicate*
 
 *Percorso archivio definitivo*: `docs/3 - coding plans/PLAN_game-engine-refactoring_v3.6.0.md`
