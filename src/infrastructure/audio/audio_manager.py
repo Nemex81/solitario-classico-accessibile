@@ -16,6 +16,13 @@ from src.infrastructure.audio.sound_mixer import SoundMixer
 
 _game_logger = logging.getLogger('game')
 
+# Eventi che richiedono riproduzione in loop continuo (bus ambient/music)
+_LOOP_EVENTS = frozenset({
+    AudioEventType.AMBIENT_LOOP,
+    AudioEventType.MUSIC_LOOP,
+})
+
+
 class AudioManager:
     """Unico punto di ingresso al sistema audio.
     Stati: NON_INITIALIZED → ACTIVE ⇄ LOOPS_PAUSED → SHUTDOWN
@@ -80,11 +87,17 @@ class AudioManager:
         panning = self._get_panning_for_event(event)
         # Determina bus audio
         bus_name = self._get_bus_for_event(event.event_type)
-        # Riproduci il suono
-        self.sound_mixer.play_one_shot(sound, bus_name, panning)
-        _game_logger.debug(
-            f"Played event: {event.event_type} → bus: {bus_name}, panning: {panning:.2f}"
-        )
+        # Riproduci il suono: loop per eventi ambient/music, one-shot per tutti gli altri
+        if event.event_type in _LOOP_EVENTS:
+            self.sound_mixer.play_loop(sound, bus_name)
+            _game_logger.debug(
+                f"Started loop event: {event.event_type} → bus: {bus_name}"
+            )
+        else:
+            self.sound_mixer.play_one_shot(sound, bus_name, panning)
+            _game_logger.debug(
+                f"Played event: {event.event_type} → bus: {bus_name}, panning: {panning:.2f}"
+            )
 
     def pause_all_loops(self) -> None:
         """Sospende bus Ambient e Music (chiamato da Presentation su EVT_ACTIVATE)."""

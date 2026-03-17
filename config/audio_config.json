@@ -23,7 +23,7 @@
   },
   "event_sounds": {
     "CARD_MOVE": "gameplay/card_move.wav",
-    "CARD_SELECT": "gameplay/card_place.wav",
+    "CARD_SELECT": "ui/select.wav",
     "CARD_FLIP": "gameplay/card_flip.wav",
     "CARD_SHUFFLE": "gameplay/card_shuffle.wav",
     "CARD_SHUFFLE_WASTE": "gameplay/card_shuffle_alt.wav",
@@ -61,11 +61,17 @@
     "SETTING_SWITCH_ON": "ui/button_click.wav",
     "SETTING_SWITCH_OFF": "ui/button_hover.wav",
     
+    "CARD_DROP"    : "gameplay/tableau_drop.wav",
+    "WASTE_DROP"   : "gameplay/stock_draw.wav",
+
     "GAME_WON": "voice/victory.wav",
     "WELCOME_MESSAGE": "voice/welcome_italian.wav",
-    
+
     "TIMER_WARNING": "ui/navigate.wav",
-    "TIMER_EXPIRED": "ui/cancel.wav"
+    "TIMER_EXPIRED": "ui/cancel.wav",
+
+    "MUSIC_LOOP"   : "music/ambient_music_01.wav",
+    "AMBIENT_LOOP" : "ambient/game_start_ambient.wav"
   },
   "preload_all_event_sounds": true,
   "enabled_events": {
@@ -103,6 +109,14 @@
     "setting_volume_changed": true,
     "setting_music_changed": true,
     "setting_switch_on": true,
-    "setting_switch_off": true
+    "setting_switch_off": true,
+    "stock_draw"      : true,
+    "foundation_drop" : true,
+    "invalid_move"    : true,
+    "tableau_bumper"  : true,
+    "card_select"     : true,
+    "card_drop"       : true,
+    "waste_drop"      : true,
+    "music_loop"      : true
   }
 }
