@@ -1,6 +1,6 @@
 ﻿ee# Copilot Custom Instructions  Solitario Classico Accessibile
 
-## Framework Copilot v1.2.0
+## Framework Copilot v1.3.0
 
 **Questo progetto utilizza un framework orchestrazione Copilot con 7 agenti nativi VS Code.**
 
@@ -19,11 +19,13 @@
 | **Ciclo Dev E2E** | Fase per fase, gate, transizioni |
 | **Automazione CLI** | Pre-commit hook, script validation, changelog, build |
 | **CI GitHub Actions** | Workflow syntax, types, lint, test |
+| **Agent-Orchestrator** | Coordinatore E2E con subagent delegation |
 | **Quick Reference** | Comandi rapidi, troubleshooting |
 | **Script Utility** | 8 script Python per automazione |
 
-### I 7 Agenti
+### Gli 8 Agenti
 
+0. **Agent-Orchestrator**: Coordinatore E2E, delega agli agenti specializzati
 1. **Agent-Analyze**: Discovery findings (read-only)
 2. **Agent-Design**: DESIGN_*.md doc (DRAFT  REVIEWED)
 3. **Agent-Plan**: PLAN_*.md + docs/TODO.md (DRAFT  READY)
@@ -41,6 +43,7 @@
 | `/status` | `#status.prompt.md` |
 | `/sync-docs` | `#sync-docs.prompt.md` |
 | `/release vX.Y.Z` | `#release.prompt.md` |
+| `#orchestrate` | `#orchestrate.prompt.md` (ciclo E2E completo) |
 | `/Agent-<Name>` | Seleziona dal dropdown agenti VS Code |
 | `/create-agent` | Comando nativo VS Code per generare nuovo file agente |
 | `/create-prompt` | Comando nativo VS Code per generare nuovo prompt file |

@@ -2,7 +2,7 @@
 
 > **Versione Framework**: v1.2.0 -- 21 Marzo 2026
 
-Questo framework orchestra lo sviluppo del progetto tramite 7 agenti specializzati
+Questo framework orchestra lo sviluppo del progetto tramite 8 agenti specializzati
 e prompt files nativi di VS Code. Ogni agente ha un ruolo specifico nel ciclo di
 sviluppo (dal concept al rilascio) con trigger di attivazione, output e gate di
 validazione. Il flusso E2E completo e descritto in [docs/WORKFLOW.md](../docs/WORKFLOW.md).
@@ -14,6 +14,11 @@ validazione. Il flusso E2E completo e descritto in [docs/WORKFLOW.md](../docs/WO
 Gli agenti sono disponibili nel dropdown agenti della chat di VS Code.
 Ogni file agente contiene: scopo, trigger, deliverable, gate e workflow.
 
+- [Agent-Orchestrator](agents/Agent-Orchestrator.md) — Coordinatore E2E
+  Orchestratore del ciclo completo. Usa subagent delegation per
+  coordinare tutti gli agenti specializzati. Gate oggettivi verificati
+  tramite script CLI. Checkpoint di controllo con conferma utente.
+  Invocazione: seleziona dal dropdown o usa #orchestrate.prompt.md
 - [Agent-Analyze](agents/Agent-Analyze.md) — Discovery e analisi codebase (read-only)
 - [Agent-Design](agents/Agent-Design.md) — Decisioni architetturali, creazione DESIGN_*.md
 - [Agent-Plan](agents/Agent-Plan.md) — Breaking down in fasi, PLAN_*.md e docs/TODO.md

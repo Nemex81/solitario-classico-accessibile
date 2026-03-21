@@ -42,6 +42,17 @@ Questo file è un **quick reference** per usare il framework Copilot di questo w
 
 ---
 
+## Orchestrazione E2E (NUOVO in v1.3.0)
+
+Per task complessi che richiedono tutto il ciclo Analyze→Release:
+1. Seleziona Agent-Orchestrator dal dropdown agenti
+2. Scrivi: #orchestrate
+3. Oppure usa #orchestrate.prompt.md dal file picker
+L'orchestratore gestisce automaticamente gate e transizioni.
+Tu intervieni solo ai checkpoint di approvazione.
+
+---
+
 ## Agenti Nativi VS Code
 
 Gli agenti del framework sono ora disponibili nel dropdown agenti
