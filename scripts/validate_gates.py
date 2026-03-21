@@ -115,7 +115,7 @@ def validate_document(
 
     Returns:
         Tupla (exit_code, lista_messaggi).
-        exit_code: 0=ok, 1=errore, 2=warning.
+        exit_code: 0=ok o warning, 1=errore bloccante.
     """
     messages: List[str] = []
 
