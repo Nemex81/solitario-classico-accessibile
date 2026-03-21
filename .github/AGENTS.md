@@ -1,6 +1,6 @@
 # Framework Copilot — Solitario Classico Accessibile
 
-> **Versione Framework**: v1.1.0-native — 21 Marzo 2026
+> **Versione Framework**: v1.2.0 -- 21 Marzo 2026
 
 Questo framework orchestra lo sviluppo del progetto tramite 7 agenti specializzati
 e prompt files nativi di VS Code. Ogni agente ha un ruolo specifico nel ciclo di
@@ -61,7 +61,22 @@ Per il flusso dettagliato: [docs/WORKFLOW.md](../docs/WORKFLOW.md)
 - `docs/TODO.md` — cruscotto operativo durante il branch
 - `CHANGELOG.md` — source of truth per versioni
 - `pyproject.toml` — entry point build
-- `.github/workflows/` — CI/CD (se implementato GitHub Actions)
+- `.github/workflows/` -- CI/CD (GitHub Actions: ci.yml, assistant-commit.yml)
+
+---
+
+## Script di Supporto
+
+Script Python per automazione del framework:
+
+- `scripts/detect_agent.py` -- Rileva l'agente appropriato dalla descrizione di un task
+- `scripts/validate_gates.py` -- Valida il frontmatter YAML dei documenti DESIGN/PLAN/TODO
+- `scripts/ci-local-validate.py` -- Pre-commit checklist (syntax, types, coverage)
+- `scripts/generate-changelog.py` -- Generazione SemVer + CHANGELOG.md
+- `scripts/build-release.py` -- Build cx_freeze + checksums
+- `scripts/sync-documentation.py` -- Validazione API.md, ARCHITECTURE.md, links
+- `scripts/create-project-files.py` -- Scaffolding DESIGN/PLAN/TODO
+- `scripts/pre-commit-hook-template.sh` -- Git hook template
 
 ---
 

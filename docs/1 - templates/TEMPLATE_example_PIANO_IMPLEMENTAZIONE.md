@@ -1,4 +1,14 @@
-# 📋 Template Piano di Implementazione
+---
+type: plan
+feature: "[feature-slug]"
+version: "vX.Y.Z"
+status: DRAFT
+agent: Agent-Plan
+created: "YYYY-MM-DD"
+updated: "YYYY-MM-DD"
+---
+
+# Template Piano di Implementazione
 
 > **QUESTO È UN MODELLO** - Usalo come base per creare nuovi piani di implementazione.  
 > Rimuovi sezioni irrilevanti, personalizza contenuti, mantieni struttura coerente.

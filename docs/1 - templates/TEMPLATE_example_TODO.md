@@ -1,7 +1,16 @@
-📋 TODO – [Feature/Fix Name] (vX.Y.Z)
+---
+type: todo
+feature: "[feature-slug]"
+version: "vX.Y.Z"
+status: READY
+created: "YYYY-MM-DD"
+updated: "YYYY-MM-DD"
+---
+
+TODO - [Feature/Fix Name] (vX.Y.Z)
 Branch: [nome-branch]
 Tipo: [FEATURE | FIX | REFACTOR | ENHANCEMENT]
-Priorità: [HIGH | MEDIUM | LOW]
+Priorita: [HIGH | MEDIUM | LOW]
 Stato: [READY | IN PROGRESS | DONE | BLOCKED]
 
 ---

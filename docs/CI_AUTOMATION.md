@@ -429,7 +429,55 @@ python scripts/generate-changelog.py --force-version 1.0.0
 
 ---
 
-## 🔗 Cross-References
+## Configurazione AUTOMATION_TOKEN (GitHub Actions)
+
+Il workflow `assistant-commit.yml` utilizza un Personal Access Token (PAT) per
+operazioni git automatizzate (push branch, apertura PR). Il token e salvato
+come repository secret con il nome `AUTOMATION_TOKEN`.
+
+### Creazione Token
+
+1. Vai su GitHub: Settings > Developer settings > Personal access tokens > Fine-grained tokens
+2. Crea un nuovo token con queste impostazioni:
+   - **Repository access**: Solo questo repository
+   - **Permissions richieste**:
+     - Contents: Read and write
+     - Pull requests: Read and write
+     - Metadata: Read-only (selezionato automaticamente)
+   - **Expiration**: Scegli una durata adeguata (consigliato: 90 giorni)
+3. Copia il token generato
+
+### Aggiunta come Repository Secret
+
+1. Vai su GitHub: Repository > Settings > Secrets and variables > Actions
+2. Clicca "New repository secret"
+3. Nome: `AUTOMATION_TOKEN`
+4. Valore: incolla il token copiato
+5. Salva
+
+### Sicurezza
+
+- Non condividere mai il token in chiaro nel codice o nei log
+- Il token ha scope limitato al singolo repository
+- Ruota il token periodicamente (prima della scadenza)
+- Se compromesso, revoca immediatamente da GitHub Settings > Developer settings
+- I workflow CI standard (`ci.yml`) non richiedono questo token
+
+### Verifica
+
+Per verificare che il token sia configurato correttamente:
+
+```bash
+# Controlla che il secret esista (dalla pagina Secrets del repository)
+# Il valore non e mai visibile dopo il salvataggio
+
+# Test manuale: trigger del workflow assistant-commit
+# Se il push fallisce con 403, il token manca o ha permessi insufficienti
+```
+
+---
+
+## Cross-References
 
 - **Agenti Orchestrazione**: [.github/AGENTS.md](../.github/AGENTS.md)
 - **Workflow Dettagliato**: [docs/WORKFLOW.md](WORKFLOW.md)
@@ -438,4 +486,4 @@ python scripts/generate-changelog.py --force-version 1.0.0
 
 ---
 
-**Versione**: 1.0.0 — 17 Marzo 2026
+**Versione**: 1.2.0 -- 21 Marzo 2026

@@ -1,4 +1,14 @@
-# 🎨 Design Document - [Feature Name]
+---
+type: design
+feature: "[feature-slug]"
+version: "vX.Y.Z"
+status: DRAFT
+agent: Agent-Design
+created: "YYYY-MM-DD"
+updated: "YYYY-MM-DD"
+---
+
+# Design Document - [Feature Name]
 
 > **FASE: CONCEPT & FLOW DESIGN**  
 > Questo è uno scheletro. Per linee guida su quando e come scrivere e

@@ -1,6 +1,6 @@
 ﻿ee# Copilot Custom Instructions  Solitario Classico Accessibile
 
-## Framework Copilot v1.1.0-native
+## Framework Copilot v1.2.0
 
 **Questo progetto utilizza un framework orchestrazione Copilot con 7 agenti nativi VS Code.**
 
@@ -18,8 +18,9 @@
 | **`.github/prompts/*.md`** | Prompt files per entry point e workflow |
 | **Ciclo Dev E2E** | Fase per fase, gate, transizioni |
 | **Automazione CLI** | Pre-commit hook, script validation, changelog, build |
+| **CI GitHub Actions** | Workflow syntax, types, lint, test |
 | **Quick Reference** | Comandi rapidi, troubleshooting |
-| **Script Utility** | 6 script Python per automazione |
+| **Script Utility** | 8 script Python per automazione |
 
 ### I 7 Agenti
 
@@ -161,13 +162,14 @@ Dopo ogni modifica .py:
 
 ### Pre-Commit Checklist
 
-`
+```
 1. Syntax: python -m py_compile src/**/*.py
 2. Type Hints: mypy src/ --strict
 3. Imports: pylint --enable=cyclic-import
 4. Logging: grep -r "print(" src/ (0 occorrenze)
 5. Tests: pytest --cov=src --cov-fail-under=85
-`
+6. Gates: python scripts/validate_gates.py --check-all docs/2\ -\ projects/
+```
 
 ---
 
@@ -232,5 +234,5 @@ Scope: domain, application, infrastructure, presentation, docs, tests
 | [.github/AGENTS.md](AGENTS.md) | 7-agent system |
 | [docs/WORKFLOW.md](../docs/WORKFLOW.md) | E2E workflow |
 | [docs/CI_AUTOMATION.md](../docs/CI_AUTOMATION.md) | CI locale |
-| [.vscode/copilot-quick-start.md](.vscode/copilot-quick-start.md) | Commands (5 min) |
+| [.vscode/copilot-quick-start.md](../.vscode/copilot-quick-start.md) | Commands (5 min) |
 | docs/1 - templates/ | DESIGN/PLAN/TODO scaffold |

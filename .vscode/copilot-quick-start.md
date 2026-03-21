@@ -1,7 +1,7 @@
 # Copilot Quick Start — Solitario Classico Accessibile
 
 > **Ultimo aggiornamento**: 21 Marzo 2026  
-> **Versione Framework**: 1.1.0-native
+> **Versione Framework**: 1.2.0
 
 Questo file è un **quick reference** per usare il framework Copilot di questo workspace. Consultalo quando inizi un task.
 
@@ -114,7 +114,7 @@ Fase 7: RELEASE
 
 | File | Scopo | Chi modifica | Note |
 |------|-------|-------------|------|
-| [.github/AGENTS.md](.github/AGENTS.md) | Descrizione 7 agenti | (Non toccare) | Orchestra tutto |
+| [.github/AGENTS.md](.github/AGENTS.md) | Descrizione 7 agenti | (Non toccare) | Overview e indice agenti (v1.2.0) |
 | [docs/WORKFLOW.md](docs/WORKFLOW.md) | Ciclo dev end-to-end | (Non toccare) | Processo dettagliato |
 | [docs/CI_AUTOMATION.md](docs/CI_AUTOMATION.md) | Setup automazione | (Non toccare) | Setup pre-commit, script |
 | **docs/TODO.md** | Cruscotto operativo | Agent-Plan crea, Agent-Code aggiorna | **Vedi questo durante codifica** |
@@ -130,7 +130,9 @@ Tutti i script si trovano in `scripts/`:
 
 ```
 scripts/
-├── ci-local-validate.py          # Pre-commit checklist (syntax, types, coverage)
+├── detect_agent.py                # Rileva agente appropriato da descrizione task
+├── validate_gates.py              # Valida frontmatter YAML dei doc DESIGN/PLAN/TODO
+├── ci-local-validate.py           # Pre-commit checklist (syntax, types, coverage)
 ├── generate-changelog.py          # SemVer + CHANGELOG.md update
 ├── build-release.py               # cx_freeze build + checksums
 ├── sync-documentation.py          # Valida API.md, ARCHITECTURE.md, links
@@ -227,6 +229,9 @@ Verifica che il file `.github/agents/Agent-X.md` esista e abbia il frontmatter Y
 ### "Il prompt file non si attiva"
 Scrivi `#` in chat e verifica che VS Code mostri il file nel picker. Se assente, controlla che il file sia in `.github/prompts/` con estensione `.prompt.md`.
 
+### "validate_gates.py segnala errori"
+Controlla che il documento abbia un frontmatter YAML valido (delimitato da `---`) con almeno i campi: type, feature, status. Esegui `python scripts/validate_gates.py --check-design <file>` per dettagli.
+
 ---
 
 ## Documentazione Completa
@@ -263,7 +268,7 @@ Per approfondire ogni componente:
 
 ---
 
-## Cinque Comandi Piu Frequenti
+## Sei Comandi Piu Frequenti
 
 Durante sviluppo, userai ricorrentemente:
 
@@ -280,7 +285,10 @@ python scripts/ci-local-validate.py
 # 4. Aggiorna versione + CHANGELOG
 python scripts/generate-changelog.py
 
-# 5. Status check during workflow
+# 5. Valida frontmatter documenti progetto
+python scripts/validate_gates.py --check-all docs/2\ -\ projects/
+
+# 6. Status check during workflow
 /status
 ```
 
@@ -326,7 +334,7 @@ python scripts/generate-changelog.py
 
 ---
 
-## 📞 Aiuto e Support
+## Aiuto e Support
 
 - **Leggi il file AGENTS.md**: risponde a "chi fa cosa"
 - **Leggi il file WORKFLOW.md**: risponde a "in che ordine"
@@ -336,4 +344,4 @@ python scripts/generate-changelog.py
 
 ---
 
-**Ultimo Update**: 17 Marzo 2026 | **Framework Version**: 1.0.0 | **Python**: 3.8+ | **Versionamento**: SemVer
+**Ultimo Update**: 21 Marzo 2026 | **Framework Version**: 1.2.0 | **Python**: 3.8+ | **Versionamento**: SemVer
