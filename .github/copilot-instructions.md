@@ -1,20 +1,21 @@
 ﻿ee# Copilot Custom Instructions  Solitario Classico Accessibile
 
-## Framework Copilot v1.0.0 (NEW)
+## Framework Copilot v1.1.0-native
 
-**Questo progetto utilizza un framework orchestrazione Copilot con 7 agenti specializzati.**
+**Questo progetto utilizza un framework orchestrazione Copilot con 7 agenti nativi VS Code.**
 
 ### Quick Start (3 passi)
 
-1. **Leggi reference**: [.vscode/copilot-quick-start.md](.vscode/copilot-quick-start.md) (5 min)
-2. **Scopri i 7 agenti**: [.github/AGENTS.md](AGENTS.md)
-3. **Inizio task**: /init <descrizione>  Copilot suggerisce agente  Confermi
+1. **Seleziona agente**: dal dropdown agenti nella chat di VS Code (`.github/agents/`)
+2. **Scopri gli agenti**: [.github/agents/Agent-NAME.md](agents/) per la specifica di ciascuno
+3. **Inizio task**: scrivi `#init` in chat e seleziona `init.prompt.md` dal file picker
 
 ### Componenti Framework
 
 | Componente | Scopo |
 |-----------|-------|
-| **7 Agenti Specializzati** | Orchestrazione: Analyze  Design  Plan  Code  Validate  Docs  Release |
+| **`.github/agents/*.md`** | 7 agenti nativi VS Code con tool restrictions |
+| **`.github/prompts/*.md`** | Prompt files per entry point e workflow |
 | **Ciclo Dev E2E** | Fase per fase, gate, transizioni |
 | **Automazione CLI** | Pre-commit hook, script validation, changelog, build |
 | **Quick Reference** | Comandi rapidi, troubleshooting |
@@ -32,11 +33,16 @@
 
 ### Comandi Entry Point
 
-\\\
-/init <task-description>      Auto-detect agente
-/start                         Riprendi codifica da docs/TODO.md
-/Agent-<Name>                  Forza agente specifico
-\\\
+| Comando testuale | Metodo nativo VS Code |
+|-----------------|----------------------|
+| `/init <task>` | `#init.prompt.md` (file picker o scrivi #init in chat) |
+| `/start` | `#start.prompt.md` |
+| `/status` | `#status.prompt.md` |
+| `/sync-docs` | `#sync-docs.prompt.md` |
+| `/release vX.Y.Z` | `#release.prompt.md` |
+| `/Agent-<Name>` | Seleziona dal dropdown agenti VS Code |
+| `/create-agent` | Comando nativo VS Code per generare nuovo file agente |
+| `/create-prompt` | Comando nativo VS Code per generare nuovo prompt file |
 
 Per dettagli completi: [.github/AGENTS.md](AGENTS.md) e [docs/WORKFLOW.md](../docs/WORKFLOW.md).
 

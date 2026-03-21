@@ -1,49 +1,68 @@
 # Copilot Quick Start — Solitario Classico Accessibile
 
-> **Ultimo aggiornamento**: 17 Marzo 2026  
-> **Versione Framework**: 1.0.0
+> **Ultimo aggiornamento**: 21 Marzo 2026  
+> **Versione Framework**: 1.1.0-native
 
 Questo file è un **quick reference** per usare il framework Copilot di questo workspace. Consultalo quando inizi un task.
 
 ---
 
-## 🚀 Entrypoint Principale
+## Entrypoint Principale
 
 ### Come iniziare un task
 
-**Comando di ingresso**:
-```
-/init <descrizione-task>
-```
+**Metodo 1 (consigliato)**: scrivi `#init` in chat, seleziona `init.prompt.md` dal file picker.
+
+**Metodo 2 (alternativo)**: scrivi `/init <descrizione>` in chat.
 
 **Esempio**:
 ```
-/init Voglio aggiungere un sistema di backup automatico per i profili utente
+#init
+-> Seleziona init.prompt.md -> Descrivi: "Voglio aggiungere un sistema di backup automatico per i profili utente"
 ```
 
-**Copilot farà**:
+**Copilot fara**:
 1. Analizza la descrizione
 2. Suggerisce quale agente usare (Analyze / Design / Plan / Code / Validate / Docs / Release)
 3. Tu confermi o overridei: `yes`, `no`, `/Agent-Name`
 
 ---
 
-## 🎯 Comandi Rapidi (Copy-Paste Ready)
+## Comandi Rapidi (Copy-Paste Ready)
 
-| Comando | Effetto | Quando usare |
-|---------|---------|------------|
-| `/init <descrizione>` | Inizio task da analisi | Nuovo task, no chiarezza ancora |
-| `/start` | Riprendi codifica | Continua TODO.md in corso |
-| `/status` | Mostra stato workflow | Verificare dove siamo |
-| `/Agent-Design` | Forza Agent-Design | Saltare analisi, go direct to design |
-| `/Agent-Code` | Forza Agent-Code | Skip design/plan, direct to coding |
-| `/sync-docs` | Aggiorna docs | Sincronizza API.md, ARCHITECTURE.md |
-| `/release v3.6.0` | Inizio release | Trigger Agent-Release |
-| `/help <agente>` | Aiuto agente | Info su come funziona agente |
+| Comando testuale | Metodo nativo VS Code | Effetto |
+|-----------------|----------------------|--------|
+| `/init <descrizione>` | `#init.prompt.md` dal file picker | Inizio task da analisi |
+| `/start` | `#start.prompt.md` | Riprendi codifica da TODO.md |
+| `/status` | `#status.prompt.md` | Mostra stato workflow |
+| `/sync-docs` | `#sync-docs.prompt.md` | Sincronizza API.md, ARCHITECTURE.md |
+| `/release v3.6.0` | `#release.prompt.md` | Trigger Agent-Release |
+| `/help <agente>` | `#help.prompt.md` | Info su come funziona agente |
+| `/Agent-X` | Dropdown agenti in chat (seleziona Agent-X) | Forza agente specifico |
 
 ---
 
-## 🔄 Workflow Standard (7 Agenti)
+## Agenti Nativi VS Code
+
+Gli agenti del framework sono ora disponibili nel dropdown agenti
+della chat di VS Code.
+
+Per attivare un agente specifico:
+- Metodo 1: clicca dropdown agenti nella chat, seleziona Agent-X
+- Metodo 2: scrivi /Agent-Analyze per attivazione testuale (fallback)
+
+Ogni agente ha tool restrictions proprie:
+- Agent-Analyze: solo lettura (no modifiche file)
+- Agent-Code: lettura + scrittura + terminale
+- Agent-Release: lettura + scrittura + terminale
+- Agent-Design, Agent-Plan, Agent-Docs: lettura + scrittura
+- Agent-Validate: lettura + terminale
+
+I file agente si trovano in `.github/agents/`.
+
+---
+
+## Workflow Standard (7 Agenti)
 
 ```
 Fase 1: ANALYZE
@@ -91,7 +110,7 @@ Fase 7: RELEASE
 
 ---
 
-## 📋 File Critici da Conoscere
+## File Critici da Conoscere
 
 | File | Scopo | Chi modifica | Note |
 |------|-------|-------------|------|
@@ -105,7 +124,7 @@ Fase 7: RELEASE
 
 ---
 
-## 📂 Directory Script (Automazione)
+## Directory Script (Automazione)
 
 Tutti i script si trovano in `scripts/`:
 
@@ -143,7 +162,7 @@ python scripts/sync-documentation.py
 
 ---
 
-## 🏗️ Architettura Codebase (Reference Veloce)
+## Architettura Codebase (Reference Veloce)
 
 **Clean Architecture a 4 Layer**:
 
@@ -182,29 +201,35 @@ Presentation Layer (src/presentation/)
 
 ---
 
-## 🐛 Troubleshooting Veloce
+## Troubleshooting Veloce
 
 ### "Non so da dove cominciare"
-→ Esegui `/init <descrizione task>` e lascia che Copilot suggerisca l'agente
+Scrivi `#init` in chat, seleziona init.prompt.md e descrivi il task.
 
 ### "Voglio riprendere da dove ho lasciato"
-→ Esegui `/start` → legge docs/TODO.md e riprende dalla prima fase non completata
+Scrivi `#start` in chat oppure `/start`. Legge docs/TODO.md e riprende dalla prima fase non completata.
 
 ### "Pre-commit check fallisce"
-→ Esegui `python scripts/ci-local-validate.py --verbose` e leggi gli errori
+Esegui `python scripts/ci-local-validate.py --verbose` e leggi gli errori.
 
 ### "Non so quale agente usare"
-→ Esegui `/help` oppure consulta [.github/AGENTS.md](.github/AGENTS.md) sezione "Trigger Detection"
+Scrivi `#help` in chat oppure consulta [.github/AGENTS.md](.github/AGENTS.md).
 
-### "Coverage è basso"
-→ Esegui `pytest -m "not gui" --cov=src --cov-report=html` e apri `htmlcov/index.html`
+### "Coverage e basso"
+Esegui `pytest -m "not gui" --cov=src --cov-report=html` e apri `htmlcov/index.html`.
 
-### "Voglio skipppare un agente"
-→ Usa `/Agent-DirectName` per saltare il suggerimento automatico
+### "Voglio skippare un agente"
+Seleziona l'agente desiderato dal dropdown agenti nella chat, oppure scrivi `/Agent-NomeAgente`.
+
+### "L'agente non appare nel dropdown"
+Verifica che il file `.github/agents/Agent-X.md` esista e abbia il frontmatter YAML corretto (name, description, tools, model).
+
+### "Il prompt file non si attiva"
+Scrivi `#` in chat e verifica che VS Code mostri il file nel picker. Se assente, controlla che il file sia in `.github/prompts/` con estensione `.prompt.md`.
 
 ---
 
-## 📖 Documentazione Completa
+## Documentazione Completa
 
 Per approfondire ogni componente:
 
@@ -238,7 +263,7 @@ Per approfondire ogni componente:
 
 ---
 
-## ⚡ Cinque Comandi Più Frequenti
+## Cinque Comandi Piu Frequenti
 
 Durante sviluppo, userai ricorrentemente:
 
@@ -261,7 +286,7 @@ python scripts/generate-changelog.py
 
 ---
 
-## 🎬 Esempio Workflow Completo (5 minuti)
+## Esempio Workflow Completo (5 minuti)
 
 ```
 1. User:  "/init Voglio backup automatico profili"
