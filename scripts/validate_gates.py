@@ -8,10 +8,10 @@ un frontmatter YAML valido con i campi obbligatori.
 Uso:
     python scripts/validate_gates.py --check-design docs/2\ -\ projects/DESIGN_audio.md
     python scripts/validate_gates.py --check-plan docs/2\ -\ projects/PLAN_audio.md
-    python scripts/validate_gates.py --check-all docs/2\ -\ projects/
+    python scripts/validate_gates.py --check-all
     python scripts/validate_gates.py --help
 
-Exit code: 0 se valido, 1 se errori, 2 se warning (frontmatter mancante).
+Exit code: 0 se valido o warning, 1 se errori bloccanti.
 """
 
 import argparse
@@ -132,8 +132,12 @@ def validate_document(
 
     frontmatter = parse_frontmatter(content)
     if frontmatter is None:
-        messages.append(f"WARN: frontmatter YAML mancante in {filepath}")
-        return 2, messages
+        messages.append(
+            f"GATE WARN: {os.path.basename(filepath)}\n"
+            f"           Frontmatter YAML assente (formato legacy pre v1.2.0).\n"
+            f"           Aggiungi frontmatter per abilitare gate automatici."
+        )
+        return 0, messages
 
     # Verifica tipo
     fm_type: str = str(frontmatter.get("type", "")).lower()
@@ -161,9 +165,10 @@ def validate_document(
     fm_status: str = str(frontmatter.get("status", "")).upper()
     if fm_status and fm_status not in VALID_STATUS:
         messages.append(
-            f"WARN: status '{fm_status}' non standard in {filepath}"
+            f"GATE WARN: {os.path.basename(filepath)}  "
+            f"status '{fm_status}' non standard."
         )
-        return 2, messages
+        return 0, messages
 
     messages.append(f"OK: {filepath} valido ({doc_type})")
     return 0, messages
@@ -235,9 +240,8 @@ def build_parser() -> argparse.ArgumentParser:
         ),
         epilog=(
             "Exit codes:\n"
-            "  0 = tutti i documenti validi\n"
-            "  1 = errori trovati\n"
-            "  2 = warning (es. frontmatter mancante)\n"
+            "  0 = tutti i documenti validi o solo warning\n"
+            "  1 = errori bloccanti trovati\n"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -258,8 +262,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--check-all",
-        metavar="DIR",
-        help="Valida tutti i DESIGN/PLAN/TODO in una directory.",
+        action="store_true",
+        help=(
+            "Valida tutti i DESIGN/PLAN/TODO nelle directory "
+            "docs/2 - projects/ e docs/3 - coding plans/."
+        ),
     )
     return parser
 
@@ -268,7 +275,7 @@ def main() -> int:
     """Entrypoint principale dello script.
 
     Returns:
-        Exit code: 0=ok, 1=errore, 2=warning.
+        Exit code: 0=ok/warning, 1=errore.
     """
     parser = build_parser()
     args = parser.parse_args()
@@ -300,10 +307,15 @@ def main() -> int:
         max_code = max(max_code, code)
 
     if args.check_all:
-        code, msgs = check_all(args.check_all)
-        for msg in msgs:
-            sys.stdout.write(msg + "\n")
-        max_code = max(max_code, code)
+        dirs_to_scan = [
+            "docs/2 - projects",
+            "docs/3 - coding plans",
+        ]
+        for scan_dir in dirs_to_scan:
+            code, msgs = check_all(scan_dir)
+            for msg in msgs:
+                sys.stdout.write(msg + "\n")
+            max_code = max(max_code, code)
 
     return max_code
 

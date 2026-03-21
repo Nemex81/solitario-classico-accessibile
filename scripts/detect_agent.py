@@ -33,7 +33,7 @@ AGENT_KEYWORDS: Dict[str, List[str]] = {
         "nuovo pattern", "design", "struttura come", "come dovrebbe",
         "riprogetta", "riorganizza architettura",
         # inglese
-        "architect", "refactor structure", "new pattern",
+        "design", "architect", "refactor structure", "new pattern",
         "architectural", "redesign", "structure",
     ],
     "Agent-Plan": [
