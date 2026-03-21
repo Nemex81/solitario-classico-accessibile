@@ -14,7 +14,7 @@
 
 | Componente | Scopo |
 |-----------|-------|
-| **`.github/agents/*.md`** | 7 agenti nativi VS Code con tool restrictions |
+| **`.github/agents/*.md`** | 8 agenti nativi VS Code con tool restrictions |
 | **`.github/prompts/*.md`** | Prompt files per entry point e workflow |
 | **Ciclo Dev E2E** | Fase per fase, gate, transizioni |
 | **Automazione CLI** | Pre-commit hook, script validation, changelog, build |
