@@ -2,7 +2,7 @@
 
 ## Framework Copilot v1.3.0
 
-**Questo progetto utilizza un framework orchestrazione Copilot con 7 agenti nativi VS Code.**
+**Questo progetto utilizza un framework orchestrazione Copilot con 8 agenti nativi VS Code.**
 
 ### Quick Start (3 passi)
 
@@ -234,7 +234,7 @@ Scope: domain, application, infrastructure, presentation, docs, tests
 
 | Risorsa | Scopo |
 |---------|-------|
-| [.github/AGENTS.md](AGENTS.md) | 7-agent system |
+| [.github/AGENTS.md](AGENTS.md) | 8-agent system |
 | [docs/WORKFLOW.md](../docs/WORKFLOW.md) | E2E workflow |
 | [docs/CI_AUTOMATION.md](../docs/CI_AUTOMATION.md) | CI locale |
 | [.vscode/copilot-quick-start.md](../.vscode/copilot-quick-start.md) | Commands (5 min) |

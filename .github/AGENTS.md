@@ -1,6 +1,6 @@
 # Framework Copilot — Solitario Classico Accessibile
 
-> **Versione Framework**: v1.2.0 -- 21 Marzo 2026
+> **Versione Framework**: v1.3.0 -- 21 Marzo 2026
 
 Questo framework orchestra lo sviluppo del progetto tramite 8 agenti specializzati
 e prompt files nativi di VS Code. Ogni agente ha un ruolo specifico nel ciclo di
