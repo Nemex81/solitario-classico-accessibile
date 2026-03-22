@@ -62,6 +62,18 @@ merge sarebbe appropriato:
 3. Comunicare: "Comandi proposti sopra. Eseguili nel terminale
    quando sei pronto, poi confermami per procedere."
 
+## Protezione eliminazione file
+
+Qualsiasi operazione che elimina file o directory è soggetta
+alla procedura definita in:
+→ `.github/skills/file-deletion-guard.skill.md`
+
+Questa regola si applica in TUTTI i contesti git, inclusi:
+- Risoluzione conflitti durante merge
+- Operazioni `git rm` o `git clean`
+
+Nessun agente può bypassare questa procedura.
+
 ## Riferimento skill
 
 Per la lista tecnica completa dei comandi autorizzati per contesto:

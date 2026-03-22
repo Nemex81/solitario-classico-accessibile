@@ -10,6 +10,24 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 ## [Unreleased]
 
+### Added
+
+- `file-deletion-guard.skill.md`: nuova skill di protezione contro
+  eliminazione non autorizzata di file. Procedura obbligatoria con
+  blocco di conferma esplicita (keyword ELIMINA) prima di qualsiasi
+  operazione di eliminazione file, inclusi merge con conflitti,
+  git rm e git clean. Referenziata da Agent-Git, Agent-Code,
+  Agent-FrameworkDocs.
+
+### Changed
+
+- `git-policy.instructions.md`: aggiunta sezione "Protezione
+  eliminazione file" con riferimento a file-deletion-guard.skill.md.
+- `Agent-Git.md`: aggiunto riferimento a file-deletion-guard.skill.md
+  in Riferimenti Skills e Regole Invarianti.
+- `skills/README.md`: skill list e tabella agenti aggiornate con
+  file-deletion-guard per Agent-Git, Agent-Code, Agent-FrameworkDocs.
+
 ## [v1.5.1] - 2026-03-22
 
 ### Added

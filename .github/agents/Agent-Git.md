@@ -180,6 +180,10 @@ git push origin <tag>
 
 ## Riferimenti Skills
 
+| Agente | Skills referenziate |
+| ------ | ------------------ |
+| Agent-Git | git-execution, conventional-commit, accessibility-output, file-deletion-guard |
+
 - **Git policy e matrice autorizzazioni**:
   → `.github/skills/git-execution.skill.md`
 - **Conventional Commits** (formato messaggi commit):
@@ -199,6 +203,8 @@ git push origin <tag>
 - Se un comando git fallisce: mostra l'errore, non tentare correzioni
   automatiche, chiedi istruzioni all'utente
 - Tag: sempre proposto come testo, mai eseguito autonomamente
+- MAI eliminare file senza seguire la procedura in
+   `.github/skills/file-deletion-guard.skill.md`
 
 ---
 
