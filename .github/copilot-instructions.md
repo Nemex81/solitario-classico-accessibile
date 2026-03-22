@@ -1,6 +1,6 @@
 ﻿# Copilot Custom Instructions  Solitario Classico Accessibile
 
-## Framework Copilot v1.5.0
+## Framework Copilot v1.5.1
 
 **Questo progetto utilizza un framework orchestrazione Copilot con 9 agenti nativi VS Code.**
 
