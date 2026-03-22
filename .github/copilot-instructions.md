@@ -1,6 +1,6 @@
 ﻿ee# Copilot Custom Instructions  Solitario Classico Accessibile
 
-## Framework Copilot v1.4.0
+## Framework Copilot v1.5.0
 
 **Questo progetto utilizza un framework orchestrazione Copilot con 9 agenti nativi VS Code.**
 
@@ -23,6 +23,8 @@
 | **Agent-FrameworkDocs** | Manutenzione docs e changelog framework |
 | **Quick Reference** | Comandi rapidi, troubleshooting |
 | **Script Utility** | 8 script Python per automazione |
+| **`.github/instructions/*.instructions.md`** | Regole contestuali per filetype |
+| **`.github/skills/*.skill.md`** | Abilità atomiche riutilizzabili tra agenti |
 
 ### I 9 Agenti
 
@@ -91,73 +93,22 @@ I due binari non si incrociano.
 
 ### Clean Architecture (Summary)
 
-4 Layer Dependency Flow: Presentation  Application  Domain  Infrastructure
+4 Layer: Presentation → Application → Domain → Infrastructure
 
-**Regole Essenziali:**
-- **Domain** (src/domain/): Zero dipendenze, solo entity, value objects, business rules
-- **Application** (src/application/): Solo Domain, use cases, game engine
-- **Infrastructure** (src/infrastructure/): Implementa interfacce Domain
-- **Presentation** (src/presentation/): Application layer, dialog, view logic
+Regole dettagliate per layer, naming, type hints, logging, error
+handling e accessibilità sono nelle instructions contestuali:
 
-### Naming Conventions
+- Python standards → `.github/instructions/python.instructions.md`
+  (attivo automaticamente su tutti i file `*.py`)
+- Test standards → `.github/instructions/tests.instructions.md`
+  (attivo automaticamente su `tests/**/*.py`)
+- Domain rules → `.github/instructions/domain.instructions.md`
+  (attivo automaticamente su `src/domain/**/*.py`)
 
-| Categoria | Pattern | Esempio |
-|-----------|---------|---------|
-| Variabili/Funzioni | snake_case | ensure_guest_profile |
-| Classi | PascalCase | GameEngine |
-| Costanti | UPPER_SNAKE_CASE | MAX_RECENT_SESSIONS |
-| Private | Prefisso _ | _handle_crash |
-| Type Hints | Obbligatori | def get_profile(id: str) -> Profile |
-
-### Type Hints: Mypy strict mode REQUIRED
-
-- Ogni metodo pubblico con return type + parametri annotati
-- mypy src/ --strict --python-version 3.8  0 errori
-- No Any, no implicit returns
-
-### Logging (Categorizzato)
-
-`python
-_game_logger  = logging.getLogger('game')    # partita, mosse
-_ui_logger    = logging.getLogger('ui')      # navigazione
-_error_logger = logging.getLogger('error')   # eccezioni
-_timer_logger = logging.getLogger('timer')   # lifecycle
-`
-
-**Output**: logs/game_logic.log, logs/ui_events.log, logs/errors.log, logs/timer.log
-
-**Regola**: No print() in produzione. No emoji in log.
-
-### Error Handling
-
-**RAISE Exception quando:**
-- Violazione contratto API (parametro None non-null)
-- Errore logico interno
-- Stato inconsistente non recuperabile
-
-**LOG ERROR + Fallback quando:**
-- I/O fallisce (filesystem, network, pygame.mixer)
-- Feature non critica (audio opzionale)
-- Risorsa esterna down
-
-### Accessibility UI (WAI-ARIA + Keyboard)
-
-- [ ] SetLabel() con testo descrittivo
-- [ ] Bottoni critici con acceleratori (&OK, &Annulla)
-- [ ] SetTitle() semantico
-- [ ] SetFocus() su primo controllo
-- [ ] ESC chiude dialog
-- [ ] TAB naviga in ordine logico
-
----
-
-## Critical Warnings (Non Ignorare)
-
-1. **Guest Profile Protection**: profile_000 intoccabilefallback sistema.
-2. **Timer Overtime**: VICTORY = entro limite; VICTORY_OVERTIME = oltre (PERMISSIVE).
-3. **Draw Count Duality**: GameService.draw_count (stats) vs ScoringService.stock_draw_count (penalità).
-4. **Pile.count() Bug**: Metodo inesistente  usa pile.get_card_count().
-5. **DI Container**: DIContainer (app) vs DependencyContainer (session). Usa SEMPRE self.container.get_audio_manager().
+Skills riutilizzabili tra agenti:
+- Accessibilità NVDA → `.github/skills/validate-accessibility.skill.md`
+- Conventional Commits → `.github/skills/conventional-commit.skill.md`
+- SemVer bump → `.github/skills/semver-bump.skill.md`
 
 ---
 
@@ -203,12 +154,10 @@ Dopo ogni modifica .py:
 
 ---
 
-## Testing: 85%+ Coverage Required
+## Testing
 
-- **Minimum**: 85% per domain/application
-- **Markers**: @pytest.mark.unit (no wx), @pytest.mark.gui (requires display)
-- **Pattern**: test_<method>_<scenario>_<expected>
-- **CI-Safe**: pytest -m "not gui" (pre-merge obbligatorio)
+Vedi `.github/instructions/tests.instructions.md` per coverage minima,
+markers, naming pattern e regole CI-safe.
 
 ---
 

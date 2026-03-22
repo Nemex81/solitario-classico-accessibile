@@ -8,6 +8,20 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 ## [Unreleased]
 
+### Added
+- Instructions files: `python.instructions.md`, `tests.instructions.md`,
+  `domain.instructions.md` — regole contestuali per filetype attivate
+  automaticamente da VS Code Copilot.
+- Agent Skills: `validate-accessibility.skill.md`,
+  `conventional-commit.skill.md`, `semver-bump.skill.md` — abilità
+  atomiche riutilizzabili tra agenti.
+
+### Changed
+- `copilot-instructions.md`: sezioni Python standards, testing e
+  critical warnings migrate nelle instructions contestuali.
+  File alleggerito di circa un terzo.
+- Framework bumped a v1.5.0.
+
 ## [1.4.0] — 2026-03-22
 
 ### Added

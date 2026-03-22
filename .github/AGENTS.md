@@ -1,6 +1,6 @@
 # Framework Copilot — Solitario Classico Accessibile
 
-> **Versione Framework**: v1.4.0 — 22 Marzo 2026
+> **Versione Framework**: v1.5.0 — 22 Marzo 2026
 
 Questo framework orchestra lo sviluppo del progetto tramite 9 agenti specializzati
 e prompt files nativi di VS Code. Ogni agente ha un ruolo specifico nel ciclo di
@@ -72,6 +72,26 @@ il nome del file. Usano variabili di input con sintassi `${input:label}`.
 - `#framework-release.prompt.md` — Consolida [Unreleased] in una versione rilasciata del framework
 
 I file si trovano in `.github/prompts/`.
+
+---
+
+## Instructions Files
+
+Le instructions si attivano automaticamente in base al file aperto.
+Si trovano in `.github/instructions/`.
+
+- `python.instructions.md` — standard Python (applyTo: `**/*.py`)
+- `tests.instructions.md` — standard test (applyTo: `tests/**/*.py`)
+- `domain.instructions.md` — regole layer domain (applyTo: `src/domain/**/*.py`)
+
+## Agent Skills
+
+Le skills sono abilità atomiche richiamabili da più agenti.
+Si trovano in `.github/skills/`.
+
+- `validate-accessibility.skill.md` — checklist WAI-ARIA + NVDA
+- `conventional-commit.skill.md` — regole Conventional Commits
+- `semver-bump.skill.md` — logica SemVer per release
 
 ---
 
