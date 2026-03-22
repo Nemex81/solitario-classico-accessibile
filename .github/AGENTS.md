@@ -1,8 +1,8 @@
 # Framework Copilot — Solitario Classico Accessibile
 
-> **Versione Framework**: v1.3.0 -- 21 Marzo 2026
+> **Versione Framework**: v1.4.0 — 22 Marzo 2026
 
-Questo framework orchestra lo sviluppo del progetto tramite 8 agenti specializzati
+Questo framework orchestra lo sviluppo del progetto tramite 9 agenti specializzati
 e prompt files nativi di VS Code. Ogni agente ha un ruolo specifico nel ciclo di
 sviluppo (dal concept al rilascio) con trigger di attivazione, output e gate di
 validazione. Il flusso E2E completo e descritto in [docs/WORKFLOW.md](../docs/WORKFLOW.md).
@@ -26,6 +26,33 @@ Ogni file agente contiene: scopo, trigger, deliverable, gate e workflow.
 - [Agent-Validate](agents/Agent-Validate.md) — Test coverage, quality gates
 - [Agent-Docs](agents/Agent-Docs.md) — Sync API.md, ARCHITECTURE.md, CHANGELOG.md
 - [Agent-Release](agents/Agent-Release.md) — Versioning SemVer, build cx_freeze, release
+- [Agent-FrameworkDocs](agents/Agent-FrameworkDocs.md) — Manutenzione Framework
+  Agente esclusivo per documentazione e changelog del Framework Copilot.
+  Scope: `.github/**`. Attivazione: solo manuale o tramite prompt `framework-*`.
+  Non partecipa al ciclo E2E del progetto.
+
+---
+
+## Dual-Track Documentation
+
+Il framework adotta una separazione netta tra documentazione del framework
+e documentazione del progetto ospite.
+
+**Binario Framework** — gestito da Agent-FrameworkDocs:
+
+- `.github/FRAMEWORK_CHANGELOG.md`: storico evoluzione framework
+- `.github/AGENTS.md`: questo file
+- `.github/README.md`: guida importazione framework
+- `.github/agents/README.md`, `.github/prompts/README.md`
+
+**Binario Progetto** — gestito da Agent-Docs nel ciclo E2E:
+
+- `CHANGELOG.md` della root: storico del progetto applicativo
+- `docs/API.md`, `docs/ARCHITECTURE.md`: documentazione tecnica progetto
+
+**Regola invariante**: Agent-FrameworkDocs non tocca mai `CHANGELOG.md`
+della root. Agent-Docs non tocca mai `FRAMEWORK_CHANGELOG.md`.
+I due binari non si incrociano.
 
 ---
 
@@ -40,6 +67,9 @@ il nome del file. Usano variabili di input con sintassi `${input:label}`.
 - `#sync-docs.prompt.md` — Avvia Agent-Docs per sync documentazione
 - `#release.prompt.md` — Avvia Agent-Release per versioning e build
 - `#help.prompt.md` — Spiega come funziona un agente specifico
+- `#framework-update.prompt.md` — Aggiorna AGENTS.md e copilot-instructions.md dopo modifica al framework
+- `#framework-changelog.prompt.md` — Aggiunge voce a FRAMEWORK_CHANGELOG.md sezione [Unreleased]
+- `#framework-release.prompt.md` — Consolida [Unreleased] in una versione rilasciata del framework
 
 I file si trovano in `.github/prompts/`.
 

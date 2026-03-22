@@ -1,8 +1,8 @@
 ﻿ee# Copilot Custom Instructions  Solitario Classico Accessibile
 
-## Framework Copilot v1.3.0
+## Framework Copilot v1.4.0
 
-**Questo progetto utilizza un framework orchestrazione Copilot con 8 agenti nativi VS Code.**
+**Questo progetto utilizza un framework orchestrazione Copilot con 9 agenti nativi VS Code.**
 
 ### Quick Start (3 passi)
 
@@ -14,16 +14,17 @@
 
 | Componente | Scopo |
 |-----------|-------|
-| **`.github/agents/*.md`** | 8 agenti nativi VS Code con tool restrictions |
+| **`.github/agents/*.md`** | 9 agenti nativi VS Code con tool restrictions |
 | **`.github/prompts/*.md`** | Prompt files per entry point e workflow |
 | **Ciclo Dev E2E** | Fase per fase, gate, transizioni |
 | **Automazione CLI** | Pre-commit hook, script validation, changelog, build |
 | **CI GitHub Actions** | Workflow syntax, types, lint, test |
 | **Agent-Orchestrator** | Coordinatore E2E con subagent delegation |
+| **Agent-FrameworkDocs** | Manutenzione docs e changelog framework |
 | **Quick Reference** | Comandi rapidi, troubleshooting |
 | **Script Utility** | 8 script Python per automazione |
 
-### Gli 8 Agenti
+### Gli 9 Agenti
 
 0. **Agent-Orchestrator**: Coordinatore E2E, delega agli agenti specializzati
 1. **Agent-Analyze**: Discovery findings (read-only)
@@ -33,6 +34,7 @@
 5. **Agent-Validate**: Test coverage (85%+ threshold)
 6. **Agent-Docs**: API.md, ARCHITECTURE.md, CHANGELOG.md sync
 7. **Agent-Release**: Versioning SemVer, cx_freeze build, tag proposal
+8. **Agent-FrameworkDocs**: Docs e changelog Framework Copilot (scope: .github/**)
 
 ### Comandi Entry Point
 
@@ -47,8 +49,33 @@
 | `/Agent-<Name>` | Seleziona dal dropdown agenti VS Code |
 | `/create-agent` | Comando nativo VS Code per generare nuovo file agente |
 | `/create-prompt` | Comando nativo VS Code per generare nuovo prompt file |
+| `/framework-update` | `#framework-update.prompt.md` |
+| `/framework-changelog` | `#framework-changelog.prompt.md` |
+| `/framework-release` | `#framework-release.prompt.md` |
 
 Per dettagli completi: [.github/AGENTS.md](AGENTS.md) e [docs/WORKFLOW.md](../docs/WORKFLOW.md).
+
+---
+
+## Dual-Track Documentation
+
+Il framework adotta una separazione netta tra documentazione del framework
+e documentazione del progetto ospite.
+
+**Binario Framework** — gestito da Agent-FrameworkDocs:
+
+- `.github/FRAMEWORK_CHANGELOG.md`: storico evoluzione framework
+- `.github/AGENTS.md`: riferimento agenti e versioni
+- `.github/README.md`: guida importazione framework
+
+**Binario Progetto** — gestito da Agent-Docs nel ciclo E2E:
+
+- `CHANGELOG.md` della root: storico del progetto applicativo
+- `docs/API.md`, `docs/ARCHITECTURE.md`: documentazione tecnica progetto
+
+**Regola invariante**: Agent-FrameworkDocs non tocca mai `CHANGELOG.md`
+della root. Agent-Docs non tocca mai `FRAMEWORK_CHANGELOG.md`.
+I due binari non si incrociano.
 
 ---
 

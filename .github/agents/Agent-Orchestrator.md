@@ -150,6 +150,10 @@ Delega tramite subagent:
   CHANGELOG.md sezione [Unreleased] (Added/Fixed/Changed)."
 
 Gate: nessuno automatico. Revisione umana.
+Nota: se il task corrente ha modificato file in `.github/agents/` o
+`.github/prompts/`, notifica l'utente che è necessario invocare
+Agent-FrameworkDocs manualmente per aggiornare la documentazione
+e il changelog del framework.
 Checkpoint: "Documentazione sincronizzata. Procedere al rilascio?"
 
 ### Fase 7 — Release (opzionale, solo se richiesto)
