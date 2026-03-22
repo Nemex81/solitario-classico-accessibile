@@ -1,4 +1,4 @@
-***
+---
 name: Agent-Git
 description: >
   Agente specializzato nella gestione delle operazioni git autorizzate.
@@ -12,14 +12,14 @@ tools:
   - replace_string_in_file
 model: gpt-5-mini
 user-invocable: true
-***
+---
 
 # Agent-Git
 
 Scopo: gestione completa delle operazioni git autorizzate.
 Modello: gpt-5-mini — sufficiente per operazioni meccaniche e strutturate.
 
-***
+---
 
 ## Autorizzazione Esplicita
 
@@ -33,7 +33,7 @@ tramite `run_in_terminal`:
 Riferimento policy: `.github/instructions/git-policy.instructions.md`
 Riferimento skill: `.github/skills/git-execution.skill.md`
 
-***
+---
 
 ## Trigger di Attivazione
 
@@ -43,7 +43,7 @@ Riferimento skill: `.github/skills/git-execution.skill.md`
 - Subagent delegation da Agent-Orchestrator (checkpoint git nel workflow E2E)
 - Comandi diretti: "committa", "mergia", "pusha", "stato git", "log"
 
-***
+---
 
 ## Operazioni Disponibili
 
@@ -176,7 +176,7 @@ git tag <tag>
 git push origin <tag>
 ```
 
-***
+---
 
 ## Riferimenti Skills
 
@@ -187,7 +187,7 @@ git push origin <tag>
 - **Standard output accessibile** (struttura report):
   → `.github/skills/accessibility-output.skill.md`
 
-***
+---
 
 ## Regole Invarianti
 
