@@ -1,26 +1,26 @@
-versione: v1.5.0
+versione: v1.5.1
 parole_chiave:
   - RELEASE
 
 descrizione: |
   Prompt per l'operazione di release del framework. Obiettivo: consolidare la
   sezione `[Unreleased]` presente in `.github/FRAMEWORK_CHANGELOG.md` in una
-  nuova voce di release `v1.5.0` datata oggi (22 marzo 2026). Questo prompt è
+  nuova voce di release `v1.5.1` datata oggi (22 marzo 2026). Questo prompt è
   pensato per l'agente `Agent-Release` o per l'operatore umano che esegue la
   release.
 
 istruzioni: |
   1. Apri `.github/FRAMEWORK_CHANGELOG.md` e individua la sezione `## [Unreleased]`.
   2. Se la sezione contiene contenuti, sposta tutto il contenuto sotto una nuova
-     intestazione `## [v1.5.0] - 2026-03-22` mantenendo la formattazione delle
+    intestazione `## [v1.5.1] - 2026-03-22` mantenendo la formattazione delle
      sottosezioni (Added, Changed, Fixed, ecc.). Rimuovi la sezione `[Unreleased]`
      oppure lascia una intestazione vuota se preferito dal maintainer.
-  3. Aggiorna i metadati rilevanti in `.github/AGENTS.md` e `.github/copilot-instructions.md`
-     sostituendo eventuali riferimenti a `v1.5.0` precedenti o a `[Unreleased]` con
+    3. Aggiorna i metadati rilevanti in `.github/AGENTS.md` e `.github/copilot-instructions.md`
+      sostituendo eventuali riferimenti a `v1.5.1` precedenti o a `[Unreleased]` con
      la nuova versione quando applicabile.
   4. Non eseguire operazioni git automaticamente: lascia i cambiamenti pronti per
      la review e commit da parte del maintainer. Includi nel messaggio di commit
-     la riga `chore(framework): release v1.5.0` (conventional-commit).
+    la riga `chore(framework): release v1.5.1` (conventional-commit).
 
 note_operatore: |
   - Verifica che il contenuto spostato non introduca duplicati o conflitti di
@@ -29,7 +29,7 @@ note_operatore: |
     di aggiornare anche gli altri file di documentazione se necessario.
 
 output_atteso: |
-  - `.github/FRAMEWORK_CHANGELOG.md` con una nuova sezione `## [v1.5.0] - 2026-03-22`
+  - `.github/FRAMEWORK_CHANGELOG.md` con una nuova sezione `## [v1.5.1] - 2026-03-22`
     contenente il contenuto precedentemente sotto `[Unreleased]`.
   - Modifiche preparate in `.github/AGENTS.md` e `.github/copilot-instructions.md`
     se applicabili.
@@ -50,7 +50,7 @@ Esegui in sequenza:
    - [Unreleased] non è vuoto (almeno una voce presente)
    - Nessun task di framework in corso non completato
    Se un prerequisito fallisce: mostra errore e interrompi.
-4. Raccogli la versione target: ${input:Versione da rilasciare (es. v1.4.0)}
+4. Raccogli la versione target: ${input:Versione da rilasciare (es. v1.5.1)}
 5. Mostra piano completo PRIMA di scrivere:
    - Voci [Unreleased] che diventano la nuova versione
    - Nuova intestazione: `## [X.Y.Z] — YYYY-MM-DD`
