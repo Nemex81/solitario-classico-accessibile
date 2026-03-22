@@ -1,6 +1,6 @@
-***
+---
 applyTo: "**"
-***
+---
 
 # Git Policy — Solitario Classico Accessibile
 
