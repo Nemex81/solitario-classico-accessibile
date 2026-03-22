@@ -83,11 +83,12 @@ Agent-Release:
 
 ## Riferimenti Skills
 
+- **Logica SemVer** (regole bump MAJOR/MINOR/PATCH, output strutturato):
    → `.github/skills/semver-bump.skill.md`
+- **Standard output accessibile** (struttura, NVDA, report):
    → `.github/skills/accessibility-output.skill.md`
-
 - **Operazioni Git strutturate** (tag proposal via Agent-Git):
-    → `.github/skills/git-execution.skill.md`
+   → `.github/skills/git-execution.skill.md`
 
 ## Gate di Completamento
 

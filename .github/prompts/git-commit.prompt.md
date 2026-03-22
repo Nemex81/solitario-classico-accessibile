@@ -6,7 +6,7 @@ Riferimento policy: .github/instructions/git-policy.instructions.md
 Riferimento skill: .github/skills/git-execution.skill.md
 -->
 
-***
+---
 mode: agent
 model: gpt-5-mini
 description: >
@@ -15,7 +15,7 @@ description: >
   file picker. Indipendente dal ciclo agenti.
 tools:
   - agent
-***
+---
 
 # git-commit — Dispatcher
 

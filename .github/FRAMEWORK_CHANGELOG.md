@@ -63,6 +63,11 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 ### Fixed
 
+- `Agent-Release.md`: ripristinate etichette descrittive nella sezione
+  "Riferimenti Skills" per semver-bump e accessibility-output.
+  Formattazione uniformata alle altre 3 voci della sezione.
+- `git-commit.prompt.md`: fix frontmatter — delimitatori corretti
+  da `***` a `---`. Model gpt-5-mini e tools ora parsabili da VS Code.
 - `git-merge.prompt.md`: fix frontmatter — delimitatori corretti
   da `***` a `---`. Model gpt-5-mini e tools ora parsabili da VS Code.
 - `Agent-Git.md`: rimossa ultima occorrenza di `***` come separatore.
