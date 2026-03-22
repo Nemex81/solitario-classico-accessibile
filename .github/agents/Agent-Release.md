@@ -89,6 +89,8 @@ Agent-Release:
    → `.github/skills/accessibility-output.skill.md`
 - **Operazioni Git strutturate** (tag proposal via Agent-Git):
    → `.github/skills/git-execution.skill.md`
+   
+---
 
 ## Gate di Completamento
 
