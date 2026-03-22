@@ -24,6 +24,7 @@
 | **Quick Reference** | Comandi rapidi, troubleshooting |
 | **Script Utility** | 8 script Python per automazione |
 | **`.github/instructions/*.instructions.md`** | Regole contestuali per filetype |
+| **`.github/instructions/git-policy.instructions.md`** | Policy git operativa (applyTo: `**`) |
 | **`.github/skills/*.skill.md`** | Abilità atomiche riutilizzabili tra agenti |
 
 ### I 9 Agenti
@@ -112,6 +113,7 @@ Skills riutilizzabili tra agenti:
 - Clean Architecture → `.github/skills/clean-architecture-rules.skill.md`
 - Template documenti → `.github/skills/document-template.skill.md`
 - Output accessibile → `.github/skills/accessibility-output.skill.md`
+- Git execution matrix → `.github/skills/git-execution.skill.md`
 
 ---
 
@@ -214,9 +216,13 @@ Read-only sempre consentito: `git log`, `git diff`, `git status`.
 
 **Eccezioni autorizzate (unici contesti in cui Copilot può eseguire
 git tramite `run_in_terminal`)**:
-- `#git-commit.prompt.md` — autorizzato a eseguire `git add` e `git commit`
-- `#git-merge.prompt.md` — autorizzato a eseguire `git merge --no-ff`
-  e proporre `git tag` (mai `git push` autonomamente)
+- `Agent-Git` — agente dedicato, unico punto di esecuzione git diretta
+- `#git-commit.prompt.md` — dispatcher leggero, delega ad Agent-Git
+- `#git-merge.prompt.md` — dispatcher leggero, delega ad Agent-Git
+
+Agent-Git è l'unico agente autorizzato a eseguire git tramite
+run_in_terminal. Tutti gli altri agenti propongono i comandi come
+testo e delegano ad Agent-Git quando necessario.
 
 Questi 2 prompt sono gli UNICI punti di esecuzione git diretta.
 In qualsiasi altro contesto (agenti, chat libera, altri prompt)

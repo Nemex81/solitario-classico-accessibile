@@ -20,6 +20,12 @@ Versioning: [SemVer](https://semver.org/lang/it/)
   lista, scopo e meccanismo di attivazione.
 - `skills/README.md`: documentazione skills con lista completa e
   tabella agenti/skills associate.
+- `Agent-Git`: agente dedicato operazioni git (commit, push, merge, tag).
+  Modello gpt-5-mini. Unico punto autorizzato all'esecuzione git diretta.
+  Invocabile da dropdown, da git-commit.prompt.md, git-merge.prompt.md
+  e da Agent-Orchestrator tramite subagent delegation.
+- Riferimenti: git-execution.skill.md, conventional-commit.skill.md,
+  accessibility-output.skill.md.
 
 ### Changed
 
@@ -34,6 +40,26 @@ Versioning: [SemVer](https://semver.org/lang/it/)
   a `git-execution.skill.md`.
 - `.github/README.md`: aggiunta sezione Git Policy con descrizione
   struttura a 3 livelli.
+- `git-commit.prompt.md`: refactored in dispatcher leggero.
+  Logica operativa spostata in Agent-Git. Model: gpt-5-mini.
+- `git-merge.prompt.md`: refactored in dispatcher leggero.
+  Logica operativa spostata in Agent-Git. Model: gpt-5-mini.
+- `copilot-instructions.md`: git policy aggiornata con Agent-Git
+  come contesto autorizzato principale.
+- `git-policy.instructions.md`: aggiunta sezione Agent-Git
+  tra i contesti autorizzati.
+- `git-execution.skill.md`: aggiunta matrice autorizzazioni Agent-Git.
+- `Agent-Orchestrator`: aggiunto riferimento a Agent-Git per
+  subagent delegation nei checkpoint git del workflow E2E.
+- `AGENTS.md`: conteggio agenti da 9 a 10, Agent-Git aggiunto.
+- `.github/README.md`: sezione Git Policy aggiornata.
+
+### Note tecniche
+
+- `copilot-instructions.md` e `AGENTS.md`: aggiornate anche le
+  2 voci mancanti dalla sessione precedente:
+  - tabella Componenti Framework: aggiunta riga git-policy.instructions.md
+  - lista skills: aggiunta git-execution.skill.md
 
 ## [v1.5.0] - 2026-03-22
 

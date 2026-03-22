@@ -124,6 +124,9 @@ Gate di uscita dal loop:
   python scripts/validate_gates.py --check-all
   Exit code atteso: 0
 
+Per commit atomici al termine di ogni fase:
+  delega a Agent-Git: "Esegui OP-2 (Commit). Fase completata: <nome fase>."
+
 ### Fase 5 — Validazione (Agent-Validate)
 
 Delega tramite subagent:
@@ -171,6 +174,8 @@ Delega tramite subagent:
 
 - Per git policy completa, comandi autorizzati e vietati per contesto:
   → `.github/skills/git-execution.skill.md`
+- Per operazioni git nel workflow E2E (commit checkpoint, merge finale):
+  delega ad Agent-Git tramite subagent. Non eseguire git direttamente.
 - NON saltare un gate fallito. Se un gate fallisce, correggi o chiedi.
 - NON procedere oltre un checkpoint senza conferma esplicita dell'utente.
 - Per standard output strutturato e accessibilità NVDA:

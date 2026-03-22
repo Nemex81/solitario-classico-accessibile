@@ -60,9 +60,11 @@ Il framework applica una policy git strutturata a 3 livelli:
 - **Matrice autorizzazioni**: `.github/skills/git-execution.skill.md`
    (riferimento tecnico per Agent-Code e Agent-Orchestrator)
 
-I soli 2 punti di esecuzione git diretta autorizzati sono:
-`#git-commit.prompt.md` e `#git-merge.prompt.md`.
-In tutti gli altri contesti Copilot propone i comandi senza eseguirli.
+I contesti autorizzati all'esecuzione git diretta sono 3:
+
+- `Agent-Git`: agente dedicato, logica operativa completa
+- `#git-commit.prompt.md`: dispatcher leggero → delega ad Agent-Git
+- `#git-merge.prompt.md`: dispatcher leggero → delega ad Agent-Git
 
 ---
 

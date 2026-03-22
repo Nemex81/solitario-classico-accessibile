@@ -29,30 +29,22 @@ La regola è assoluta in tutti questi contesti.
 
 ## Eccezioni autorizzate
 
-I seguenti 2 prompt sono gli UNICI contesti in cui Copilot può
-eseguire comandi git tramite `run_in_terminal`:
+I seguenti contesti sono gli UNICI in cui Copilot può eseguire
+comandi git tramite `run_in_terminal`:
 
-### `#git-commit.prompt.md`
-Comandi consentiti:
-- `git add <file>` o `git add .` (con conferma esplicita utente)
-- `git commit -m "<messaggio>"` (formato Conventional Commits obbligatorio)
+### `Agent-Git` (logica operativa principale)
+Agente dedicato. Gestisce commit, push, merge, tag.
+Invocabile dal dropdown o tramite subagent delegation.
+Regole di conferma:
+- Push: richiede "PUSH" maiuscolo
+- Merge: richiede "MERGE" maiuscolo
+- Commit: richiede conferma messaggio
 
-Comandi vietati anche in questo prompt:
-- `git push`
-- `git commit --amend`
-- `git commit -a` senza staging esplicito
+### `#git-commit.prompt.md` (dispatcher)
+Delega ad Agent-Git. Non esegue git direttamente.
 
-### `#git-merge.prompt.md`
-Comandi consentiti:
-- `git checkout <branch>`
-- `git merge --no-ff <branch> -m "<messaggio>"`
-- `git tag <tag>` (proposto come comando testuale, eseguito solo
-  con conferma esplicita utente)
-
-Comandi vietati anche in questo prompt:
-- `git push` (proposto come comando testuale, mai eseguito)
-- `git merge --squash`
-- `git merge --ff-only`
+### `#git-merge.prompt.md` (dispatcher)
+Delega ad Agent-Git. Non esegue git direttamente.
 
 ## Comportamento atteso degli agenti
 

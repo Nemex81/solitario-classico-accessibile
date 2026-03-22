@@ -2,7 +2,7 @@
 
 > **Versione Framework**: v1.5.0 — 22 Marzo 2026
 
-Questo framework orchestra lo sviluppo del progetto tramite 9 agenti specializzati
+Questo framework orchestra lo sviluppo del progetto tramite 10 agenti specializzati
 e prompt files nativi di VS Code. Ogni agente ha un ruolo specifico nel ciclo di
 sviluppo (dal concept al rilascio) con trigger di attivazione, output e gate di
 validazione. Il flusso E2E completo e descritto in [docs/WORKFLOW.md](../docs/WORKFLOW.md).
@@ -30,6 +30,10 @@ Ogni file agente contiene: scopo, trigger, deliverable, gate e workflow.
   Agente esclusivo per documentazione e changelog del Framework Copilot.
   Scope: `.github/**`. Attivazione: solo manuale o tramite prompt `framework-*`.
   Non partecipa al ciclo E2E del progetto.
+- [Agent-Git](agents/Agent-Git.md) — Operazioni Git autorizzate
+  Unico agente autorizzato a eseguire git tramite run_in_terminal.
+  Gestisce commit, push, merge, tag con conferme esplicite obbligatorie.
+  Modello: gpt-5-mini. Invocabile dal dropdown o come subagente.
 
 ---
 
@@ -95,12 +99,17 @@ Si trovano in `.github/skills/`.
 - `clean-architecture-rules.skill.md` — regole Clean Architecture 4 layer
 - `document-template.skill.md` — struttura DESIGN, PLAN e TODO
 - `accessibility-output.skill.md` — standard output accessibile (tutti gli agenti)
+- `git-execution.skill.md` — matrice autorizzazioni comandi git per contesto
+
+| Agente | Skills referenziate |
+| ------ | ------------------- |
+| Agent-Git | git-execution, conventional-commit, accessibility-output |
 
 ---
 
 ## Flusso di Lavoro (Overview)
 
-```
+```text
 1. ANALYZE  — Agent-Analyze (read-only, findings report)
 2. DESIGN   — Agent-Design (DESIGN_*.md: DRAFT -> REVIEWED)
 3. PLAN     — Agent-Plan (PLAN_*.md: DRAFT -> READY, + TODO.md)
