@@ -21,6 +21,14 @@ Versioning: [SemVer](https://semver.org/lang/it/)
   critical warnings migrate nelle instructions contestuali.
   File alleggerito di circa un terzo.
 - Framework bumped a v1.5.0.
+- Agent-Code: rimossa Pre-Commit Checklist inline e regole duplicate.
+  Sostituita con riferimenti a `python.instructions.md`,
+  `conventional-commit.skill.md`, `validate-accessibility.skill.md`.
+- Agent-Validate: rimossi marker e naming rules inline duplicati.
+  Sostituiti con riferimenti a `tests.instructions.md` e
+  `validate-accessibility.skill.md`.
+- Agent-Release: rimossa logica SemVer inline duplicata.
+  Sostituita con riferimento a `semver-bump.skill.md`.
 
 ## [1.4.0] — 2026-03-22
 

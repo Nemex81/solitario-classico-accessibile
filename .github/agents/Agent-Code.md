@@ -34,29 +34,6 @@ Prima di qualsiasi implementazione:
 
 ---
 
-## Pre-Commit Checklist
-
-Eseguire prima di ogni commit:
-
-```bash
-# Syntax check
-python -m py_compile src/**/*.py
-
-# Type hints
-mypy src/ --strict --python-version 3.8
-
-# Cyclic imports
-pylint src/ --disable=all --enable=cyclic-import
-
-# No print() in produzione
-grep -r "print(" src/ --include="*.py"
-
-# Test + coverage
-pytest -m "not gui" --cov=src --cov-fail-under=85
-```
-
----
-
 ## Deliverable per Fase
 
 - File Python modificati con **type hints 100%** e **logging categorizzato**
@@ -82,6 +59,26 @@ Agent-Code:
 
 ---
 
+## Riferimenti Skills e Instructions
+
+Le regole operative sono centralizzate nelle risorse framework:
+
+- **Standard Python** (type hints, logging, clean architecture, error handling):
+  → `.github/instructions/python.instructions.md` (attivo automaticamente su `*.py`)
+- **Formato commit atomico** (Conventional Commits, scopes, atomicità):
+  → `.github/skills/conventional-commit.skill.md`
+- **Accessibilità componenti UI** (WAI-ARIA, NVDA, checklist):
+  → `.github/skills/validate-accessibility.skill.md`
+
+Pre-commit checklist di riferimento rapido:
+```bash
+python -m py_compile src/**/*.py          # syntax
+mypy src/ --strict --python-version 3.8   # types
+pytest -m "not gui" --cov=src --cov-fail-under=85  # test + coverage
+```
+
+---
+
 ## Gate di Completamento
 
 - Tutte le fasi spuntate in TODO.md
@@ -94,10 +91,6 @@ Agent-Code:
 
 ## Regole Operative
 
-- Rispettare la Clean Architecture a 4 layer
-- Type hints obbligatori su ogni metodo pubblico (mypy strict)
-- Logging categorizzato (game, ui, error, timer) — mai print()
 - Un commit per fase, mai accorpare piu fasi
-- Formato commit: `<type>(<scope>): <subject>`
 - Spuntare TODO.md immediatamente dopo ogni commit
 - Output testuale, strutturato con intestazioni, accessibile screen reader

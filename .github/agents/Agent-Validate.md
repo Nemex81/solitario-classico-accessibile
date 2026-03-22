@@ -22,14 +22,6 @@ Scopo: Test coverage, test generation, validation report, quality gates.
 
 ---
 
-## Test Markers
-
-- `@pytest.mark.unit` -> no dipendenze esterne
-- `@pytest.mark.gui` -> richiede wx/display
-- Esecuzione safe: `pytest -m "not gui"`
-
----
-
 ## Coverage Gate
 
 - Minimo: **85%** (pre-commit)
@@ -79,6 +71,15 @@ Agent-Validate:
 
 ---
 
+## Riferimenti Skills e Instructions
+
+- **Standard test** (coverage, markers, naming, CI-safe rules):
+  → `.github/instructions/tests.instructions.md` (attivo automaticamente su `tests/**/*.py`)
+- **Accessibilità componenti UI** (checklist WAI-ARIA + NVDA):
+  → `.github/skills/validate-accessibility.skill.md`
+
+---
+
 ## Gate di Completamento
 
 - Coverage >= 85% (pre-commit) o 90% (release)
@@ -92,7 +93,5 @@ Agent-Validate:
 ## Regole Operative
 
 - Non modificare codice sorgente in src/ (solo test in tests/)
-- Usare naming pattern: `test_<method>_<scenario>_<expected>`
-- Preferire `pytest -m "not gui"` per CI-safe execution
 - Generare skeletons solo con approvazione utente
 - Output testuale, strutturato con intestazioni, accessibile screen reader

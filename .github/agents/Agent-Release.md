@@ -79,6 +79,13 @@ Agent-Release:
 
 ---
 
+## Riferimenti Skills
+
+- **Logica SemVer** (regole bump MAJOR/MINOR/PATCH, output strutturato):
+   → `.github/skills/semver-bump.skill.md`
+
+---
+
 ## Gate di Completamento
 
 - CHANGELOG.md finalizzato (versione approvata)
@@ -93,7 +100,6 @@ Agent-Release:
 ## Regole Operative
 
 - Copilot NON esegue direttamente git push/merge. Propone comandi, l'utente decide
-- Seguire SemVer: MAJOR (breaking), MINOR (feature), PATCH (bugfix)
 - CHANGELOG: trasformare [Unreleased] in versione datata alla release
 - Verificare che il build cx_freeze produca un eseguibile funzionante
 - Output testuale, strutturato con intestazioni, accessibile screen reader
