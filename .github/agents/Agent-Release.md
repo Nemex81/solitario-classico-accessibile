@@ -58,8 +58,10 @@ Agent-Release:
      - Genera: checksum SHA256, MANIFEST.txt
 
   4. CREATE GIT TAG:
-     - Propone: git tag v3.6.0
-     - User esegue (manual git push)
+       - Delega ad Agent-Git con: "Esegui OP-5 (Tag).
+          Tag proposto: v<versione>. Branch: <branch-corrente>."
+       - Agent-Git produce output strutturato con i comandi da
+          eseguire manualmente. L'utente decide se e quando eseguirli.
 
   5. RELEASE COORDINATION:
      - Crea draft release notes (GitHub Releases)
@@ -81,12 +83,11 @@ Agent-Release:
 
 ## Riferimenti Skills
 
-- **Logica SemVer** (regole bump MAJOR/MINOR/PATCH, output strutturato):
    → `.github/skills/semver-bump.skill.md`
-- **Standard output accessibile** (struttura, NVDA, report):
    → `.github/skills/accessibility-output.skill.md`
 
----
+- **Operazioni Git strutturate** (tag proposal via Agent-Git):
+    → `.github/skills/git-execution.skill.md`
 
 ## Gate di Completamento
 
@@ -101,6 +102,10 @@ Agent-Release:
 
 ## Regole Operative
 
-- Copilot NON esegue direttamente git push/merge. Propone comandi, l'utente decide
+- Copilot NON esegue direttamente git push, merge o tag.
+  Per tag proposal: delega ad Agent-Git (OP-5).
+  Per merge finale: delega ad Agent-Git (OP-4).
+  In entrambi i casi l'utente conferma con parola chiave maiuscola.
 - CHANGELOG: trasformare [Unreleased] in versione datata alla release
 - Verificare che il build cx_freeze produca un eseguibile funzionante
+

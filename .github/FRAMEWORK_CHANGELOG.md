@@ -53,12 +53,18 @@ Versioning: [SemVer](https://semver.org/lang/it/)
   subagent delegation nei checkpoint git del workflow E2E.
 - `AGENTS.md`: conteggio agenti da 9 a 10, Agent-Git aggiunto.
 - `.github/README.md`: sezione Git Policy aggiornata.
+- `Agent-Release.md`: passo 4 "CREATE GIT TAG" aggiornato per
+  delegare ad Agent-Git (OP-5) invece di proporre testo generico.
+  Aggiunte Regole Operative coerenti con git policy centralizzata.
+  Aggiunto riferimento a git-execution.skill.md.
 - `Agent-Orchestrator.md`: ripristinato da git history e aggiornato
   con modifiche v1.5.1 (riferimento Agent-Git, git-execution.skill.md).
 - `Agent-Git.md`: fix frontmatter — delimitatori corretti da `***` a `---`.
 
 ### Fixed
 
+- `git-merge.prompt.md`: fix frontmatter — delimitatori corretti
+  da `***` a `---`. Model gpt-5-mini e tools ora parsabili da VS Code.
 - `Agent-Git.md`: rimossa ultima occorrenza di `***` come separatore.
   Tutti i separatori ora uniformi a `---`.
 
