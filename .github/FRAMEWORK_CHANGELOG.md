@@ -10,6 +10,8 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 ## [Unreleased]
 
+## [v1.5.1] - 2026-03-22
+
 ### Added
 
 - `git-policy.instructions.md`: policy git dettagliata con comandi
