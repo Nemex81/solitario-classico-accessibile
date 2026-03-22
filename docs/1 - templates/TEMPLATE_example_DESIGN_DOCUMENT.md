@@ -1,8 +1,20 @@
-# 🎨 Design Document - [Feature Name]
+---
+type: design
+feature: "[feature-slug]"
+version: "vX.Y.Z"
+status: DRAFT
+agent: Agent-Design
+created: "YYYY-MM-DD"
+updated: "YYYY-MM-DD"
+---
+
+# Design Document - [Feature Name]
 
 > **FASE: CONCEPT & FLOW DESIGN**  
-> Nessuna decisione tecnica qui - solo logica e flussi concettuali  
-> Equivalente a "diagrammi di flusso sulla lavagna"
+> Questo è uno scheletro. Per linee guida su quando e come scrivere e
+> formattare un design document, consulta `.github/copilot-instructions.md`.
+> Mantenere il documento conciso: descrivi logica e flussi, evita dettagli
+> di implementazione.
 
 ---
 
@@ -77,111 +89,26 @@ Punteggio Finale
 
 ## 🎬 Scenari & Flussi
 
-### Scenario 1: [Nome Scenario Principale]
+[Sintetizza 1–2 scenari principali; usa brevi liste numerate per il flusso.]
 
-**Punto di partenza**: [Stato iniziale del sistema]
+*Esempio: Utente pesca carta → sistema conta, verifica soglia, emette avviso.*
 
-**Flusso**:
-
-1. **Utente**: [Azione utente in linguaggio naturale]
-   → **Sistema risponde**: [Cosa fa/mostra/comunica]
-   
-2. **Utente**: [Prossima azione]
-   → **Sistema**: [Cambio stato/risposta]
-   
-3. **Utente**: [Continua...]
-   → **Sistema**: [...]
-
-**Punto di arrivo**: [Stato finale del sistema]
-
-**Cosa cambia**: [Quali concetti sono stati modificati]
-
-**Esempio**:
-### Scenario 1: Utente Si Avvicina a Soglia Pescate
-
-**Punto di partenza**: Utente ha pescato 19 carte, soglia penalità è 21
-
-**Flusso**:
-1. **Utente**: Preme tasto P per pescare
-   → **Sistema**: Pesca carta, conta 20 pescate totali
-   
-2. **Sistema**: Verifica livello avviso (es: "Completo")
-   → **Sistema**: Annuncia vocalmente "Attenzione: ancora una pescata e scatta la penalità!"
-   
-3. **Utente**: Ascolta avviso, decide se pescare ancora o cambiare strategia
-   → **Sistema**: Attende prossima azione utente
-
-**Punto di arrivo**: Utente informato, può decidere consapevolmente
-
-**Cosa cambia**: Contatore pescate incrementato, avviso emesso una volta
-
----
-
-### Scenario 2: [Nome Scenario Alternativo]
-
-**Punto di partenza**: [Stato iniziale]
-
-**Flusso**:
-1. **Utente/Sistema**: [Step 1]
-2. **Utente/Sistema**: [Step 2]
-3. **Utente/Sistema**: [Step 3]
-
-**Punto di arrivo**: [Stato finale]  
-**Cosa cambia**: [Concetti modificati]
-
----
-
-### Scenario 3: [Edge Case / Caso Limite]
-
-**Cosa succede se**: [Condizione anomala o limite]
-
-**Sistema dovrebbe**: [Comportamento atteso]
+Aggiungi eventualmente uno scenario alternativo o un edge case, ma mantieni
+la descrizione leggera: l'obiettivo è chiarire il flusso, non fornire uno
+script dettagliato.
 
 ---
 
 ## 🔀 Stati e Transizioni
 
-### Stati del Sistema
+[Se utile, elenca brevemente gli stati principali e i trigger; altrimenti una
+descrizione qualitativa basta.]
 
-#### Stato A: [Nome Stato]
-- **Descrizione**: [Cosa caratterizza questo stato]
-- **Può passare a**: [Stato B, Stato C]
-- **Trigger**: [Cosa causa il cambio stato]
+*Esempio:* `Sotto Soglia → Prossimo a Soglia → Sopra Soglia` con trigger "pesca
+carta".
 
-#### Stato B: [Nome Stato]
-- **Descrizione**: [...]
-- **Può passare a**: [...]
-- **Trigger**: [...]
+(Aggiungere diagramma ASCII solo se facilita la comprensione.)
 
-**Esempio**:
-#### Stato A: Sotto Soglia
-- **Descrizione**: Contatore pescate < 21
-- **Può passare a**: Prossimo a Soglia, Sopra Soglia
-- **Trigger**: Azione "pesca carta"
-
-#### Stato B: Prossimo a Soglia
-- **Descrizione**: Contatore pescate = 20 (1 pescata prima della penalità)
-- **Può passare a**: Sopra Soglia
-- **Trigger**: Azione "pesca carta"
-
-#### Stato C: Sopra Soglia
-- **Descrizione**: Contatore pescate ≥ 21, penalità attiva
-- **Può passare a**: Sopra Soglia Successiva (41)
-- **Trigger**: Azione "pesca carta"
-
-### Diagramma Stati (ASCII)
-
-```
-[Stato Iniziale: Sotto Soglia]
-      ↓ (pesca carta, contatore < 20)
-[Sotto Soglia] ←────────────┐
-      ↓ (pesca carta, contatore = 20)  │
-[Prossimo a Soglia]                 │ (nuova partita)
-      ↓ (pesca carta, contatore = 21)  │
-[Sopra Soglia] ───────────────┘
-      ↓ (pesca carta, contatore ≥ 21)
-[Sopra Soglia] (penalità continua)
-```
 
 ---
 

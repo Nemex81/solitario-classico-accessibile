@@ -1,0 +1,62 @@
+name: Assistant Commit and PR
+
+on:
+  repository_dispatch:
+    types: [assistant-commit]
+
+jobs:
+  apply-and-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Create branch
+        id: create_branch
+        run: |
+          BRANCH="assistant/commit-$(date +%s)"
+          git checkout -b "$BRANCH"
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+
+      - name: Apply patch from payload
+        env:
+          PATCH_B64: ${{ github.event.client_payload.patch }}
+        run: |
+          if [ -z "$PATCH_B64" ]; then
+            echo "No patch provided in client_payload.patch"; exit 1
+          fi
+          echo "$PATCH_B64" | base64 -d > /tmp/patch.diff
+          git apply /tmp/patch.diff || (echo "git apply failed"; cat /tmp/patch.diff; exit 1)
+
+      - name: Commit changes
+        run: |
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit"; exit 0
+          fi
+          git commit -m "${{ github.event.client_payload.title }}" -m "${{ github.event.client_payload.body }}"
+
+      - name: Push branch
+        env:
+          TOKEN: ${{ secrets.AUTOMATION_TOKEN }}
+        run: |
+          BRANCH=${{ steps.create_branch.outputs.branch }}
+          git push -u https://x-access-token:${TOKEN}@github.com/${{ github.repository }} $BRANCH
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.AUTOMATION_TOKEN }}
+          head: ${{ steps.create_branch.outputs.branch }}
+          base: main
+          title: ${{ github.event.client_payload.title }}
+          body: ${{ github.event.client_payload.body }}
+          labels: automated,assistant

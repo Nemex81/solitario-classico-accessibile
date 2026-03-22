@@ -169,8 +169,31 @@ class SolitarioController:
         )
         
         # Inject end game callback for UI state management
-        self.engine.on_game_ended = self.handle_game_ended
+        # ALSO trigger audio victory in gameplay controller
+        def _on_game_ended_with_audio(wants_rematch: bool) -> None:
+            # play victory sound regardless of rematch decision
+            try:
+                self.gameplay_controller._on_game_won()
+            except Exception:
+                pass
+            # forward to normal handler
+            self.handle_game_ended(wants_rematch)
+
+        self.engine.on_game_ended = _on_game_ended_with_audio
         log.debug_state("game_engine_ready", {"status": "initialized"})
+        
+        # Prepare audio subsystem
+        log.debug_state("audio_manager_init", {"status": "starting"})
+        self.audio_manager = self.container.get_audio_manager()
+        if hasattr(self.audio_manager, 'initialize'):
+            self.audio_manager.initialize()
+        log.debug_state("audio_manager_ready", {"status": "initialized"})
+        # start ambient loop automatically so that background sound plays
+        try:
+            from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+            self.audio_manager.play_event(AudioEvent(event_type=AudioEventType.AMBIENT_LOOP))
+        except Exception:
+            pass
         
         # Application: Gameplay controller
         log.debug_state("gameplay_controller_init", {"status": "starting"})
@@ -178,7 +201,8 @@ class SolitarioController:
             engine=self.engine,
             screen_reader=self.screen_reader,
             settings=self.settings,
-            on_new_game_request=self.show_new_game_dialog
+            on_new_game_request=self.show_new_game_dialog,
+            audio_manager=self.audio_manager  # pass audio manager for effects
         )
         log.debug_state("gameplay_controller_ready", {"status": "initialized"})
         
@@ -250,6 +274,11 @@ class SolitarioController:
         self.container.register(
             "gameplay_controller",
             lambda: self.gameplay_controller  # Use existing instance
+        )
+        # register audio manager so other components may request it
+        self.container.register(
+            "audio_manager",
+            lambda: getattr(self, 'audio_manager', None)
         )
         
         # 4. Infrastructure: WindowController (for future async dialog integration)
@@ -412,7 +441,8 @@ class SolitarioController:
         dlg = OptionsDialog(
             parent=self.frame,
             controller=self.gameplay_controller.options_controller,
-            screen_reader=self.screen_reader
+            screen_reader=self.screen_reader,
+            audio_manager=self.audio_manager
         )
         result = dlg.ShowModal()
         
@@ -1010,6 +1040,8 @@ class SolitarioController:
                 on_timer_tick=self._on_timer_tick,
                 on_close=self._on_frame_close
             )
+            # attach audio manager so frame can pause/resume loops on EVT_ACTIVATE
+            self.frame.audio_manager = self.audio_manager
             
             # Initialize dialog manager with parent frame (v1.7.3 - single-frame pattern)
             log.debug_state("run", {"phase": "dialog_manager_init"})
@@ -1029,7 +1061,8 @@ class SolitarioController:
             # Create panels as children of frame.panel_container
             menu_panel = MenuPanel(
                 parent=self.frame.panel_container,
-                controller=self
+                controller=self,
+                audio_manager=self.audio_manager
             )
             gameplay_panel = GameplayPanel(
                 parent=self.frame.panel_container,

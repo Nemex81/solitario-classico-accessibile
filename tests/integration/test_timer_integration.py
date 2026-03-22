@@ -96,6 +96,39 @@ class TestStrictModeTimeout:
                 call_args = mock_speak.call_args[0][0]
                 assert "Tempo scaduto!" in call_args
 
+    def test_timer_audio_callbacks_fire(self, game_engine_strict):
+        """Verify that TimerManager warnings/expired callbacks emit audio events."""
+        # attach mock audio
+        audio = Mock()
+        game_engine_strict._audio = audio
+
+        # build a short timer manager with our callbacks
+        from src.application.timer_manager import TimerManager
+        from src.infrastructure.audio.audio_events import AudioEventType
+
+        tm = TimerManager(
+            minutes=1,
+            warning_callback=game_engine_strict._on_timer_warning,
+            expired_callback=game_engine_strict._on_timer_expired,
+        )
+        game_engine_strict._timer_manager = tm
+        tm.start()
+
+        # simulate 1 minute remaining -> warnings should fire for all thresholds
+        tm.get_remaining = lambda: 60
+        game_engine_strict.on_timer_tick()
+        assert audio.play_event.call_count >= 1
+        # every call should be a timer warning
+        for call_args in audio.play_event.call_args_list:
+            assert call_args[0][0].event_type == AudioEventType.TIMER_WARNING
+
+        # simulate expiration -> additional event should be fired
+        tm.get_remaining = lambda: 0
+        tm.is_expired = lambda: True
+        game_engine_strict.on_timer_tick()
+        assert audio.play_event.call_count >= 2
+        assert audio.play_event.call_args_list[-1][0][0].event_type == AudioEventType.TIMER_EXPIRED
+
 
 class TestPermissiveModeTimeout:
     """Integration tests for PERMISSIVE mode timer."""

@@ -2,7 +2,27 @@
 
 Un gioco di carte Solitario (Klondike) in versione accessibile per non vedenti, sviluppato in Python con supporto per screen reader.
 
-**Versione Corrente**: 3.2.0 (Test Suite Modernization Complete)
+**Versione Corrente**: 3.5.0 (Sistema Audio Centralizzato)
+
+
+## 🔊 Sistema Audio Accessibile (v3.4.0)
+
+**Novità:** Sistema audio centralizzato a 5 bus indipendenti (gameplay, UI, ambient, musica, voice) con panning stereo, mixer accessibile da tastiera e fallback automatico.
+
+- **AudioManager**: orchestratore unico, gestisce eventi sonori tramite `AudioEvent` e mapping esplicito.
+- **SoundMixer**: 5 bus separati, mute/volume indipendenti, panning spaziale.
+- **SoundCache**: caricamento asset WAV in RAM, degradazione graziosa (nessun crash se file mancante).
+- **Config persistente**: preferenze audio salvate in `audio_config.json`.
+- **Mixer accessibile**: dialog navigabile solo tastiera, feedback TTS, shortcut `M`.
+- **Fallback automatico**: se pygame non disponibile, il gioco resta giocabile senza audio.
+- **Zero dipendenze nel Domain/Application**: rispetto Clean Architecture.
+
+**Accessibilità**:
+- Tutti i feedback audio sono progettati per essere complementari a NVDA/JAWS.
+- Nessuna informazione solo sonora: ogni evento audio ha equivalente TTS/testuale.
+- Mixer e volumi regolabili senza mouse.
+
+Per dettagli tecnici: [docs/API.md](docs/API.md#audiomanager), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#audio-manager)
 
 ## 🎯 Caratteristiche
 
@@ -247,6 +267,13 @@ python test.py
 - ✅ Manutenibilità ottimale
 - ✅ 100% compatibile con versioni precedenti (stesso gameplay)
 - ✅ Migliore accessibilità NVDA/JAWS
+- ✅ **Audio centralizzato completo**: ogni azione di gioco e UI genera un suono,
+      con panning per le pile, feedback nei dialoghi e nei menu, loop ambientali
+      e mixer accessibile via tasto M (visuale+TTS).
+- ✅ Configurazione audio completamente JSON-driven (v3.5.0):
+      mapping evento→file e flag di preload ad esempio in `config/audio_config.json`.
+- ✅ Gestione automatica pausa/riprendi audio quando la finestra perde/riacquista
+      il focus (EVT_ACTIVATE binding su SolitarioFrame).
 
 **Legacy pygame version** (deprecated):
 ```bash

@@ -23,6 +23,35 @@ from src.presentation.game_formatter import GameFormatter
 
 
 class DIContainer:
+    def get_audio_manager(self) -> Any:
+        """Get or create AudioManager singleton (lazy-loaded).
+        AudioManager è l'orchestratore del sistema audio, gestisce SoundCache e SoundMixer.
+        Ritorna sempre la stessa istanza per l'intera sessione. Se pygame non è
+        disponibile o l'inizializzazione fallisce, viene restituito uno stub
+        (no-op) per evitare crash.
+        """
+        if "audio_manager" not in self._instances:
+            try:
+                from src.infrastructure.config.audio_config_loader import AudioConfigLoader
+                from src.infrastructure.audio.audio_manager import AudioManager
+
+                config = AudioConfigLoader.load()
+                manager = AudioManager(config)
+                # initialize mixer now so controllers can play immediately
+                manager.initialize()
+                self._instances["audio_manager"] = manager
+            except Exception:
+                # graceful degradation: provide stub implementation
+                from src.infrastructure.audio.audio_manager import _AudioManagerStub
+                self._instances["audio_manager"] = _AudioManagerStub()
+        return self._instances["audio_manager"]
+
+    def shutdown_audio_manager(self) -> None:
+        """Shutdown sicuro di AudioManager (salva settings, ferma mixer, rilascia risorse)."""
+        am = self._instances.get("audio_manager")
+        if am is not None:
+            am.shutdown()
+            del self._instances["audio_manager"]
     """Dependency Injection container for all application components.
     
     Manages object creation, lifecycle, and dependency resolution
@@ -73,7 +102,12 @@ class DIContainer:
         """
         self._settings = settings
     
-    def get_timer_manager(self, settings=None):
+    def get_timer_manager(
+        self,
+        settings=None,
+        warning_callback=None,
+        expired_callback=None,
+    ):
         """Create new TimerManager instance.
         
         TimerManager is per-game (not singleton) to allow proper
@@ -81,6 +115,8 @@ class DIContainer:
         
         Args:
             settings: GameSettings to use (None = use container's settings)
+            warning_callback: Optional callback(minutes_left) for warnings
+            expired_callback: Optional callback() for expiration
         
         Returns:
             New TimerManager instance
@@ -92,13 +128,15 @@ class DIContainer:
         
         return TimerManager(
             minutes=settings.timer_minutes,
-            warning_callback=None  # Set by caller if needed
+            warning_callback=warning_callback,
+            expired_callback=expired_callback,
         )
     
     def get_input_handler(self):
         """Get or create InputHandler singleton.
         
         InputHandler is stateless and can be shared across games.
+        Optionally receives the AudioManager for sound effects.
         
         Returns:
             InputHandler singleton
@@ -106,8 +144,57 @@ class DIContainer:
         from src.application.input_handler import InputHandler
         
         if "input_handler" not in self._instances:
-            self._instances["input_handler"] = InputHandler()
+            # resolve audio manager lazily; fall back to stub if unavailable
+            audio_mgr = None
+            try:
+                audio_mgr = self.get_audio_manager()
+            except Exception:
+                audio_mgr = None
+            self._instances["input_handler"] = InputHandler(audio_manager=audio_mgr)
         return cast(InputHandler, self._instances["input_handler"])
+
+    # ------------------------------------------------------------------
+    # Additional application controllers for audio-enhanced UI elements
+    # ------------------------------------------------------------------
+
+    def get_main_menu_controller(self):
+        """Factory for MainMenuController.
+
+        The main menu is displayed at application startup and when the user
+        abandons a game. The controller provides navigation/select/cancel
+        methods and automatically plays the open sound on creation.
+        """
+        from src.application.main_menu_controller import MainMenuController
+
+        audio_mgr = None
+        try:
+            audio_mgr = self.get_audio_manager()
+        except Exception:
+            audio_mgr = None
+        return MainMenuController(audio_manager=audio_mgr)
+
+    def get_mixer_controller(
+        self, screen_reader: Optional[object] = None
+    ):
+        """Factory for MixerController used by the accessible audio mixer.
+
+        Args:
+            screen_reader: optional ScreenReader to provide TTS feedback
+        """
+        from src.application.mixer_controller import MixerController
+
+        audio_mgr = None
+        try:
+            audio_mgr = self.get_audio_manager()
+        except Exception:
+            audio_mgr = None
+        # if a screen reader wasn't provided, try to resolve one
+        if screen_reader is None:
+            try:
+                screen_reader = self.get_screen_reader()
+            except Exception:
+                screen_reader = None
+        return MixerController(audio_manager=audio_mgr, screen_reader=screen_reader)
     
     # ========================================================================
     # DOMAIN LAYER

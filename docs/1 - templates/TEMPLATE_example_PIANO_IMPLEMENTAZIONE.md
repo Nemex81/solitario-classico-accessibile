@@ -1,7 +1,21 @@
-# 📋 Template Piano di Implementazione
+---
+type: plan
+feature: "[feature-slug]"
+version: "vX.Y.Z"
+status: DRAFT
+agent: Agent-Plan
+created: "YYYY-MM-DD"
+updated: "YYYY-MM-DD"
+---
+
+# Template Piano di Implementazione
 
 > **QUESTO È UN MODELLO** - Usalo come base per creare nuovi piani di implementazione.  
 > Rimuovi sezioni irrilevanti, personalizza contenuti, mantieni struttura coerente.
+>
+> **Nota**: le regole generali di commit, logging, workflow e testing sono descritte
+> in `.github/copilot-instructions.md`. Questo template si concentra sulla
+> struttura del piano; non copia le policy.
 
 ---
 
@@ -62,11 +76,8 @@ GameplayPanel.on_key_down()          (wxPython event)
 
 [Descrizione high-level della soluzione con pattern architetturali e rationale]
 
-**Esempio (Feature)**:
-> Implementare Clean Architecture a strati: Domain Models → Domain Service → Application Controllers → Presentation Formatters → Infrastructure Storage. ScoringService calcola punteggi come dependency opzionale (None = free-play mode).
-
-**Esempio (Bugfix)**:
-> Usare **Semi-Modal Pattern**: `ShowModal()` chiamato da `wx.CallAfter()` per evitare nested event loops. Dialog si chiude sempre con `Destroy()`, callback invocato in contesto deferito.
+*Esempio*: Implementare Clean Architecture a strati e documentare le dipendenze in
+`docs/ARCHITECTURE.md`.
 
 ---
 
@@ -84,23 +95,20 @@ GameplayPanel.on_key_down()          (wxPython event)
 
 ## 🎯 Requisiti Funzionali
 
-[Lista numerata requisiti con comportamento atteso e file coinvolti]
+[Lista numerata dei requisiti con comportamento atteso. Indica anche file chiave.
+]
 
 ### 1. [Nome Requisito]
 
 **Comportamento Atteso**:
-1. [Step 1 utente]
-2. [Step 2 sistema]
-3. [Step 3 risposta]
+1. [Step utente]
+2. [Risposta sistema]
 
 **File Coinvolti**:
-- `percorso/file1.py` - [Ruolo, già corretto ✅ / DA FIXARE 🔧]
-- `percorso/file2.py` - [Ruolo, MODIFICARE ⚙️]
+- `src/…` – ruolo descrizione
 
-**Esempio**:
-```python
-# Codice esemplificativo comportamento
-```
+*(Esempio di snippet se necessario)*
+
 
 ---
 
@@ -166,44 +174,14 @@ docs/
 
 **Priorità**: [🔴 CRITICA | 🟠 ALTA | 🟡 MEDIA | 🟢 BASSA]  
 **File**: `percorso/file.py`  
-**Linee**: [XXX-YYY] (metodo/classe target)
 
 #### Codice Attuale (se modifica)
 
-```python
-# Codice esistente da modificare
-def metodo_vecchio():
-    # Implementazione attuale
-    pass
-```
-
-**Problemi**:
-- ❌ [Problema 1]
-- ❌ [Problema 2]
+[Includi solo se necessario un breve snippet di riferimento]
 
 #### Codice Nuovo/Modificato
 
-```python
-# Nuova implementazione
-def metodo_nuovo():
-    """Docstring completa con Args, Returns, Examples, Version.
-    
-    Args:
-        param1: Descrizione
-        
-    Returns:
-        Tipo: Descrizione
-        
-    Example:
-        >>> metodo_nuovo()
-        'risultato'
-        
-    Version:
-        v[X.Y.Z]: [Descrizione modifica]
-    """
-    # Implementazione nuova
-    pass
-```
+[Mostra l'algoritmo o la firma modificata; documenta versioni e motivi]
 
 **Vantaggi**:
 - ✅ [Vantaggio 1]

@@ -96,14 +96,27 @@ class TestDIContainer:
             container.get_deck("invalid")
     
     def test_timer_manager_factory(self):
-        """Verify TimerManager creation with settings."""
+        """Verify TimerManager creation with settings and callback parameters."""
         container = DIContainer()
         settings = container.get_settings()
         settings.timer_minutes = 15
         
-        timer = container.get_timer_manager()
+        # supply dummy callbacks
+        called_warning = []
+        called_expired = []
+        def warn(minutes):
+            called_warning.append(minutes)
+        def expire():
+            called_expired.append(True)
+
+        timer = container.get_timer_manager(
+            warning_callback=warn,
+            expired_callback=expire,
+        )
         assert isinstance(timer, TimerManager)
         assert timer.duration_seconds == 15 * 60
+        assert timer.warning_callback is warn
+        assert timer.expired_callback is expire
     
     def test_timer_manager_new_instance_each_call(self):
         """Verify TimerManager is factory (not singleton)."""

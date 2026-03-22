@@ -1,3 +1,22 @@
+    ## AudioManager e DIContainer (Infrastructure Layer)
+
+    **AudioManager** è l'orchestratore del sistema audio:
+    - Riceve `AudioEvent` dai controller Application
+    - Consulta `SoundCache` per asset e mapping
+    - Delega la riproduzione a `SoundMixer` (bus, panning, mute)
+    - Gestisce ciclo di vita, pause, resume, shutdown, salvataggio settings
+
+    **Pattern DIContainer:**
+    - Accesso singleton lazy-loaded: `container.get_audio_manager()`
+    - Shutdown sicuro: `container.shutdown_audio_manager()`
+    - Nessuna dipendenza verso Domain/Application
+
+    **Cross-reference:** vedi [API.md](API.md#audiomanager)
+
+    │   ├── audio/
+    │   │   ├── audio_events.py    # AudioEventType & AudioEvent (entry point dati eventi audio, v3.4.0)
+    │   │   ├── audio_manager.py   # AudioManager orchestratore audio (gestione eventi, bus, panning, v3.4.0)
+    │   │   └── ...                # Altri moduli audio (SoundCache, SoundMixer)
 # Architettura del Sistema
 
 ## 📀 Panoramica
@@ -34,6 +53,7 @@ Il Solitario Classico Accessibile utilizza una **Clean Architecture** (architett
 │  │  - Orchestrazione │  │  - MoveCommand             │     │
 │  │  - Use cases      │  │  - DrawCommand             │     │
 │  │  - State mgmt     │  │  - CommandHistory          │     │
+│  │  - AudioEvent emission for feedback   │          │
 │  └───────────────────┘  └────────────────────────────┘     │
 │  ┌───────────────────┐  ┌────────────────────────────┐     │
 │  │  ProfileService   │  │  SessionTracker (v3.0.0)   │     │
@@ -63,6 +83,7 @@ Il Solitario Classico Accessibile utilizza una **Clean Architecture** (architett
 │  │  - Dependency Injection                             │   │
 │  │  - Component lifecycle                              │   │
 │  │  - Configuration                                    │   │
+│  │  - Provides AudioManager singleton to controllers    │   │
 │  └─────────────────────────────────────────────────────────┘   │
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │     Storage (v3.0.0)                                │   │
@@ -191,6 +212,8 @@ src/
 │   ├── session_tracker.py # Crash recovery (v3.0.0)
 │   ├── input_handler.py  # Keyboard → Commands
 │   ├── game_settings.py  # Configuration
+│   ├── main_menu_controller.py  # Main menu navigation logic (v3.4.1)
+│   ├── mixer_controller.py  # Audio mixer controller with TTS (v3.4.1)
 │   └── timer_manager.py  # Timer logic (v2.7.0)
 ├── domain/               # Domain Layer (Core)
 │   ├── __init__.py
@@ -236,15 +259,15 @@ src/
         ├── game_formatter.py
         └── stats_formatter.py (v3.1.0) # Statistiche formattate
 
-tests/                    # Test Suite (v3.2.0 modernized)
+tests/                    # Test Suite (v3.5.0 modernized)
 ├── __init__.py
 ├── unit/                # Unit tests
 │   ├── domain/         # Domain layer tests
 │   ├── application/    # Application layer tests
 │   └── presentation/   # Presentation layer tests
-├── integration/         # Integration tests (v3.2.0)
+├── integration/         # Integration tests (v3.5.0)
 │   └── test_profile_game_integration.py  # 10 ProfileService+GameEngine tests
-├── archive/             # Archived legacy tests (v3.2.0)
+├── archive/             # Archived legacy tests (v3.5.0)
 │   ├── README.md       # Archival rationale + coverage mapping
 │   └── scr/            # 3 legacy monolithic tests (preserved for reference)
 │       ├── test_distribuisci_carte_deck_switching.py
@@ -349,10 +372,10 @@ solitario-classico-accessibile/
 │   │   │   ├── profile_storage.py   # ProfileStorage (atomic JSON writes, temp-file-rename)
 │   │   │   └── session_storage.py   # SessionStorage (crash detection tracking)
 │   │   │
-│   │   ├── logging/                  # Logging categorizzato (v3.2.0)
+│   │   ├── logging/                  # Logging categorizzato (v3.5.0)
 │   │   │   ├── __init__.py          # Re-export: setup_logging, setup_categorized_logging, LOGS_DIR, LOG_FILE
 │   │   │   ├── categorized_logger.py # setup_categorized_logging() — multi-file RotatingFileHandler (Paradox-style)
-│   │   │   ├── logger_setup.py      # Thin wrapper backward-compat → categorized_logger.py (DEPRECATED v3.2.0)
+│   │   │   ├── logger_setup.py      # Thin wrapper backward-compat → categorized_logger.py (DEPRECATED v3.5.0)
 │   │   │   └── game_logger.py       # Helper semantici: ~30 funzioni named per categoria (game/ui/error/timer)
 │   │   │
 │   │   ├── di_container.py           # Dependency Injection container (singleton factories)
@@ -382,7 +405,7 @@ solitario-classico-accessibile/
 │           ├── game_formatter.py    # Game state formatting (card lists, cursor position, move results)
 │           └── stats_formatter.py   # Statistics formatting (summary/detailed methods, NVDA-optimized) [v3.1.0]
 │
-├── tests/                             # === TEST SUITE (v3.2.0 - 88.2% coverage) ===
+├── tests/                             # === TEST SUITE (v3.5.0 - 88.2% coverage) ===
 │   ├── __init__.py
 │   ├── conftest.py                   # Pytest configuration (fixtures, shared setup)
 │   │
@@ -420,14 +443,14 @@ solitario-classico-accessibile/
 │   │       └── dialogs/
 │   │           └── test_dialogs.py  # Dialog initialization + content validation (v3.1.0)
 │   │
-│   ├── integration/                  # Integration tests (cross-layer validation) [v3.2.0]
+│   ├── integration/                  # Integration tests (cross-layer validation) [v3.5.0]
 │   │   ├── __init__.py
 │   │   └── test_profile_game_integration.py  # 10 tests ProfileService + GameEngine integration
 │   │       # Tests: victory updates, abandon updates, timeout handling, stats aggregation,
 │   │       #        VICTORY_OVERTIME classification, EndReason coverage, timer mode tracking,
 │   │       #        difficulty stats, scoring stats, session history FIFO limit
 │   │
-│   └── archive/                      # Archived legacy tests (preserved for reference) [v3.2.0]
+│   └── archive/                      # Archived legacy tests (preserved for reference) [v3.5.0]
 │       ├── README.md                 # Archival rationale + replacement coverage mapping
 │       └── scr/                      # 3 legacy monolithic tests (pre-Clean Architecture)
 │           ├── test_distribuisci_carte_deck_switching.py  # Deck switching logic (obsolete)
@@ -436,10 +459,10 @@ solitario-classico-accessibile/
 │
 └── docs/                              # === DOCUMENTATION ===
     ├── API.md                        # API reference (GameController, GameEngine, Domain models, v3.1.2)
-    ├── ARCHITECTURE.md               # Architettura sistema (Clean Architecture, layers, patterns, v3.2.0)
-    ├── CHANGELOG.md                  # Version history completa (v1.0.0 → v3.2.1)
+    ├── ARCHITECTURE.md               # Architettura sistema (Clean Architecture, layers, patterns, v3.5.0)
+    ├── CHANGELOG.md                  # Version history completa (v1.0.0 → v3.5.0)
     ├── TODO.md                       # Implementation tracking Feature 1-3 (Profile System roadmap)
-    ├── TESTING.md                    # Testing guide (pytest usage, @pytest.mark.gui marker, CI setup) [v3.2.1]
+    ├── TESTING.md                    # Testing guide (pytest usage, @pytest.mark.gui marker, CI setup) [v3.5.0]
     └── legacy/                       # Documentazione storica (archiviata)
         ├── IMPLEMENTATION_TIMER_STRICT_MODE_SYSTEM_v2.1.md  # Timer STRICT implementation
         ├── AUDIT_CALLAFTER_PATTERNS_v2.1.md                 # CallAfter pattern audit
@@ -466,7 +489,7 @@ Presentation ──→ Application ──→ Domain ←── Infrastructure
 - ✅ **Presentation**: Depends on Domain + Application
 - ✅ **Infrastructure**: Depends on Domain (implements interfaces)
 
-#### `/tests/` - Test Suite (v3.2.0)
+#### `/tests/` - Test Suite (v3.5.0)
 
 **Coverage Targets:**
 - **Domain**: ≥ 95% (pure logic, critical path)
@@ -479,7 +502,7 @@ Presentation ──→ Application ──→ Domain ←── Infrastructure
 - Integration tests: Cross-layer validation (realistic scenarios)
 - `@pytest.mark.gui`: Isolates wxPython tests for CI/CD
 
-**Archival Strategy (v3.2.0):**
+**Archival Strategy (v3.5.0):**
 - Legacy tests preserved in `/tests/archive/scr/`
 - `README.md` documents replacement coverage mapping
 - Git history intact (no deletions)
@@ -684,7 +707,35 @@ def format_end_reason(reason: EndReason) -> str: ...  # "Vittoria", "Tempo scadu
 
 ### Infrastructure Layer
 
-#### Logging Categorizzato (`src/infrastructure/logging/`) (v3.2.0)
+#### AudioManager (`src/infrastructure/audio/audio_manager.py`) (v3.4.0)
+
+Orchestratore principale del sistema audio. Riceve `AudioEvent` dai controller Application, consulta `SoundCache`, calcola panning, delega la riproduzione a `SoundMixer`. Gestisce ciclo di vita, pause, resume, shutdown, salvataggio settings.
+
+- **Config JSON-driven:** a partire da v3.5.0 la mappatura evento→file è
+  definita in `config/audio_config.json` sotto la chiave `event_sounds`.
+  Questo rende il sistema facilmente riconfigurabile senza toccare codice.
+
+**Ruolo architetturale:**
+- Unico punto di ingresso per la riproduzione audio
+- Gestione mapping evento→bus, varianti, fallback, logging
+- Policy bus: Ambient/Music sospesi in pausa, one-shot sempre attivi
+- Salvataggio settings persistente in JSON
+
+**Cross-reference:**
+- [docs/API.md](docs/API.md): dettagli API pubblica, metodi, signature
+- [CHANGELOG.md](CHANGELOG.md): voce Added AudioManager orchestratore audio
+
+### Presentation Layer
+- `SolitarioFrame` (main window) ora si binda su `wx.EVT_ACTIVATE` per
+  mettere in pausa/riprendere automaticamente i loop ambient e musicali
+  attraverso l'`AudioManager`. Questa logica assicura che l'audio non continui
+  a suonare quando il giocatore cambia applicazione.
+- Il controller principale (`SolitarioController.run`) avvia un evento
+  `AMBIENT_LOOP` immediatamente dopo l'inizializzazione dell'`AudioManager`,
+  permettendo l'audio ambientale di partire non appena l'app è pronta.
+
+---
+#### Logging Categorizzato (`src/infrastructure/logging/`) (v3.5.0)
 
 Sistema di logging multi-file categorizzato in stile Paradox Interactive.
 Sostituisce il monolite `solitario.log` con file dedicati per categoria.
@@ -947,7 +998,7 @@ class MoveValidatorProtocol(Protocol):
 - Nessuna ereditarietà richiesta
 - Type checking statico
 
-## 📊 Metriche di Qualità (v3.2.0)
+## 📊 Metriche di Qualità (v3.5.0)
 
 | Metrica | Target | Attuale | Stato |
 |---------|--------|---------|-------|
@@ -966,21 +1017,21 @@ class MoveValidatorProtocol(Protocol):
 | Version | Total Tests | Import Errors | Coverage | Status |
 |---------|-------------|---------------|----------|--------|
 | v3.1.2 | ~780 | 17 | ~75% | ⚠️ Degraded |
-| v3.2.0 | **790+** | **0** | **88.2%** | **✅ Healthy** |
+| v3.5.0 | **790+** | **0** | **88.2%** | **✅ Healthy** |
 
-**v3.2.0 Improvements:**
+**v3.5.0 Improvements:**
 - ✅ **+10 integration tests** (`test_profile_game_integration.py`)
 - ✅ **0 import errors** (17 resolved)
 - ✅ **+13.2% coverage** (75% → 88.2%)
 - ✅ **3 legacy tests archived** (with documentation)
 - ✅ **Test modernization complete** (Clean Architecture aligned)
 
-**v3.2.1 Improvements:**
+**v3.5.0 Improvements:**
 - ✅ **`@pytest.mark.gui` marker** — isolates wxPython-dependent tests
 - ✅ **CI-safe command**: `pytest -m "not gui"` skips ~50 GUI tests
 - ✅ **[docs/TESTING.md](TESTING.md)** — comprehensive test guide
 
-### Test Organization Strategy (v3.2.0)
+### Test Organization Strategy (v3.5.0)
 
 ```
 tests/
@@ -1010,7 +1061,7 @@ tests/
         └── test_king_to_empty_base_pile.py            # King placement rules
 ```
 
-**Archival Rationale** (v3.2.0):
+**Archival Rationale** (v3.5.0):
 - Legacy `scr/` tests obsoleted by Clean Architecture migration
 - Functionality **fully covered** by new integration tests
 - Files **preserved** (not deleted) with Git history intact

@@ -9,10 +9,10 @@
 ## 📌 Metadata
 
 - **Data Inizio**: 2026-02-22
-- **Stato**: FROZEN (pronto per PLAN)
-- **Versione Target**: v3.4.0 (ipotesi)
+- **Stato**: IMPLEMENTED (v3.5.0 completato, API stabile)
+- **Versione Target**: `v3.5.0`
 - **Autore**: AI Assistant + Nemex81
-- **Ultima Revisione**: 2026-02-22 (v1.3 — disambiguazione 13 indici vs 14 posizioni, convenzione indexing Scenario 1, aggiunto Scenario 9 timer)
+- **Ultima Revisione**: 2026-02-24 (v1.4 — allineamento versione, sistema audio centralizzato completato)
 
 ---
 
@@ -27,9 +27,9 @@ Aggiungere un sistema audio modulare a 5 bus indipendenti che funzioni come **di
 ### Attori (Chi/Cosa Interagisce)
 
 - **Giocatore non vedente**: Usa NVDA per le informazioni descrittive e l'audio per il feedback immediato spaziale/emotivo
-- **GamePlayController**: Pubblica eventi audio dopo ogni azione validata dal motore di gioco (nota: classe reale è `GamePlayController` con capital P)
-- **InputHandler**: Pubblica eventi audio per navigazione e bumper di fine corsa
-- **DialogManager**: Pubblica eventi audio per apertura/chiusura dialoghi e selezioni UI
+- **GamePlayController**: Pubblica eventi audio dopo ogni azione validata dal motore di gioco (nota: classe reale è `GamePlayController` con capital P). Riceve istanza di `AudioManager` tramite Dependency Injection.
+- **InputHandler**: Pubblica eventi audio per navigazione e bumper di fine corsa. Anche questo controller è costruito con un parametro opzionale `audio_manager` ottenuto dal container.
+- **DialogManager**: Pubblica eventi audio per apertura/chiusura dialoghi e selezioni UI; ottiene `AudioManager` via DI per fornire feedback sonoro alle azioni dell'utente.
 - **AudioManager**: Unico punto di ingresso al sistema audio, interpreta gli eventi e orchestra la riproduzione
 - **SoundMixer**: Gestisce i 5 bus pygame.mixer con volumi e mute indipendenti
 - **SoundCache**: Carica e mantiene i campioni WAV in RAM all'avvio
@@ -66,6 +66,17 @@ Aggiungere un sistema audio modulare a 5 bus indipendenti che funzioni come **di
 
 #### SoundTimbre (Firma Sonora)
 - **Cos'è**: Associazione tra categoria strutturale del tavolo e file audio corrispondente
+- **Risorse effettive**: il pack `default` sotto `assets/sounds/` contiene i seguenti file utili al sistema audio:
+  - *gameplay*: `card_flip.wav`, `card_move.wav`, `card_place.wav`, `card_shuffle.wav`,
+    `card_shuffle_alt.wav`, `foundation_drop.wav`, `invalid_move.wav`,
+    `stock_draw.wav`, `tableau_drop.wav`
+  - *ui*: `navigate.wav`, `navigate_alt.wav`, `confirm.wav`, `cancel.wav`,
+    `boundary_hit.wav`, `button_click.wav`, `button_hover.wav`,
+    `menu_open.wav`, `menu_close.wav`, `error.wav`, `focus_change.wav`,
+    `notification.wav`, `select.wav`
+  - *ambient*: `room_tone.wav`
+  - *voice*: `victory.wav`
+  (il folder `music/` è attualmente vuoto; potrà contenere loop futuri)
 - **Proprietà**:
   - `tableau`: Suono carta/legno - naturale, secco, attacco percussivo deciso
   - `foundation`: Suono cristallino/metallico - acuto, risonante brevemente, gratificante
@@ -75,6 +86,97 @@ Aggiungere un sistema audio modulare a 5 bus indipendenti che funzioni come **di
   - `ui_confirm`: Tono positivo, corto
   - `ui_cancel`: Tono neutro/negativo, corto
   - `boundary_hit`: Thud smorzato, fisico - comunica il confine del tavolo
+- **Variazioni**: a partire da v3.4.1 il design elimina la selezione casuale tra varianti. Ogni evento ha un file WAV singolo per pack; le varianti audio sono possibili **solo cambiando pack**. (Per future estensioni, la randomizzazione potrà essere introdotta come feature opt‑in per pack speciali.)
+
+### 6.4 Gestione Suoni per Evento
+
+**Design Definitivo (v3.4.1): Un Evento = Un Suono Fisso per Pack**
+
+Il sistema audio **non implementa selezione casuale** tra varianti.
+Ogni evento ha **un solo file WAV** associato nel pack attivo.
+
+#### Principio Architetturale
+
+```
+Evento Audio → Sound Pack → File WAV singolo → Riproduzione
+              ↓
+       (Unico punto di variazione)
+```
+
+**Esempio:**
+
+```
+Pack "default":
+  card_move → assets/sounds/default/gameplay/card_move.wav (suono legno)
+
+Pack "retro":
+  card_move → assets/sounds/retro/gameplay/card_move.wav (suono 8-bit)
+
+Pack "luxury":
+  card_move → assets/sounds/luxury/gameplay/card_move.wav (suono cristallo)
+```
+
+Spostare una carta riproduce **sempre** lo stesso suono all'interno del pack attivo.
+Per cambiare suono, l'utente cambia pack (via settings o `audio_config.json`).
+
+#### Rationale
+
+1. **Consistenza UX**
+   - Il giocatore sviluppa associazioni mentali forti: "Questo suono = Questa azione"
+   - Comportamento predittivo migliora l'esperienza di gioco
+   - Fondamentale per utenti non vedenti che si affidano a feedback sonoro coerente
+
+2. **Accessibilità**
+   - Variazioni casuali possono generare confusione o incertezza sull'esito azione
+   - Feedback deterministico facilita apprendimento pattern di gioco
+   - Screen reader users beneficiano di ambiente sonoro stabile
+
+3. **Semplicità Implementativa**
+   - Mapping diretto evento → file (no logica condizionale)
+   - Debugging facilitato (sempre lo stesso output per stesso input)
+   - Test automatizzati possono verificare suono atteso
+
+4. **Manutenibilità**
+   - Sound pack developers creano un file per evento (no varianti obbligatorie)
+   - Struttura directory semplificata
+   - Caricamento RAM ridotto (1 file vs 3+ varianti)
+
+#### Implementazione Cambio Pack
+
+```python
+# In runtime (via settings UI o API):
+audio_manager = container.get_audio_manager()
+audio_manager.load_sound_pack("retro")
+
+# In configurazione (persistente):
+# config/audio_config.json
+{
+    "active_sound_pack": "retro",
+    "sounds_path": "assets/sounds"
+}
+```
+
+#### Riuso File Audio
+
+Per ottimizzare asset, eventi semanticamente simili condividono file:
+
+| Evento | File Usato | Rationale |
+|--------|-----------|-----------|
+| `card_select` | `card_place.wav` | Selezionare = iniziare a posare |
+| `card_drop` | `card_place.wav` | Drop = azione di posare |
+| `tableau_bumper` | `invalid_move.wav` | Bumper = feedback errore |
+| `waste_drop` | `tableau_drop.wav` | Drop generico pile |
+
+Questo riduce duplicazione asset mantenendo consistenza semantica.
+
+#### Decisione Architetturale: No Random
+
+**Deprecato:** Il concetto di "varianti multiple con selezione casuale" è stato **escluso dal design** nella v3.4.1.
+
+**Motivo:** Non allineato con obiettivi di accessibilità e consistenza UX.
+
+**Se necessario in futuro:** Implementare come feature opt-in per pack specifici (es. pack "variety" con flag dedicato), non come comportamento default.
+
 
 #### StereoPosition
 - **Cos'è**: Valore float da -1.0 (estrema sinistra) a +1.0 (estrema destra) che rappresenta la posizione orizzontale di una pila nel campo stereo
@@ -100,6 +202,29 @@ Aggiungere un sistema audio modulare a 5 bus indipendenti che funzioni come **di
 - **Cos'è**: Struttura dati deserializzata da `config/audio_config.json` con tutte le preferenze utente
 - **Proprietà**: volumi per bus (0-100), stato mute per bus, pack attivo, mapping spaziale pile
 - **Ciclo di vita**: Caricata all'init, aggiornata in memoria durante sessione, scritta su disco solo alla chiusura del mixer o del gioco
+
+#### Troubleshooting Audio Failures
+Se i suoni non vengono riprodotti, verificare i seguenti punti:
+
+1. **Inizializzazione Mixer**: consultare `logs/game_logic.log` per eventuali messaggi `AudioManager initialization failed`.
+   - Se presente, il traceback contiene la causa (es. mancanza di dispositivo audio o dipendenze SDL).
+   - In Python REPL si può eseguire:
+     ```python
+     from src.infrastructure.di.dependency_container import DIContainer
+     am = DIContainer().get_audio_manager()
+     print("available", am.is_available)
+     ```
+2. **SoundCache**: verificare che la cache contenga oggetti `pygame.mixer.Sound` non None.
+   - `am.sound_cache._cache` può essere ispezionato in REPL.
+   - Un warning `Sound asset missing` nel log indica pack sbagliato o file mancanti.
+3. **Configurazione**: controllare `config/audio_config.json`.
+   - `active_sound_pack` deve puntare a una cartella esistente sotto `assets/sounds`.
+   - I volumi non devono essere tutti a 0 e nessun bus deve essere mutato.
+4. **Ambiente**: alcuni ambienti virtualizzati (container, WSL senza server audio) non forniscono dispositivo.
+   - In tali casi il manager ritorna stub; i log mostreranno `is_available False`.
+   - Usare un player esterno (`ffplay assets/sounds/default/gameplay/card_move.wav`) per verificare la presenza di un driver audio.
+
+Queste linee guida aiutano a isolare problemi prima di modificare il codice.
 
 ---
 
@@ -599,7 +724,7 @@ Questo design è pronto per la fase tecnica (PLAN) quando:
 - [x] Opzioni valutate e motivate (3 opzioni analizzate)
 - [x] Degradazione graziosa definita
 
-**Next Step**: Piano tecnico completato — `docs/3 - coding plans/PLAN_audio_system_v3.4.0.md` (v1.1, post-review, stato READY). Pronto per implementazione sul branch `feature/audio-system`.
+**Next Step**: Piano tecnico completato — `docs/3 - coding plans/PLAN_audio_system_v3.4.1.md` (v1.1, post-review, stato READY). Pronto per implementazione sul branch `feature/audio-system`.
 
 ---
 
@@ -647,6 +772,105 @@ Questo design è pronto per la fase tecnica (PLAN) quando:
 | `src/application/input_handler.py` | Punto di integrazione per navigazione e bumper |
 | `src/application/dialog_manager.py` | Punto di integrazione per eventi UI |
 
+
+---
+
+## 🔊 Mappatura Eventi → File Audio, Varianti e Opzioni
+
+### Strategia di Mapping e Gestione Varianti
+
+**1. Mappatura esplicita**: Ogni `AudioEventType` è mappato a una o più path di file WAV (solo WAV, no OGG/MP3) nella struttura `assets/sounds/default/`.
+   - La mappatura è definita in una struttura Python (dict) e documentata qui e nel PLAN.
+   - Esempio: `CARD_MOVE` → `["gameplay/card_move_1.wav", "gameplay/card_move_2.wav"]`
+
+**2. Varianti**: *(deprecato)* l’idea di caricare più file e scegliere randomicamente è stata abbandonata in v3.4.1.
+
+**3. Bus assignment**: Ogni evento è assegnato a un bus (`Gameplay`, `UI`, `Ambient`, `Music`, `Voice`) secondo tabella seguente.
+
+**4. Eventi opzionali**: Alcuni eventi (es. `TIMER_WARNING`, `TIMER_EXPIRED`, `MIXER_OPENED`) sono disattivabili via config JSON (`audio_config.json`).
+
+**5. Degradazione**: Se un file manca, warning nel log e nessun crash. Se nessuna variante disponibile, l'evento è silenziato.
+
+### Tabella Mapping Eventi → File e Bus
+
+| AudioEventType         | File WAV (relativo a assets/sounds/default/)           | Bus        | Note |
+|-----------------------|--------------------------------------------------------|------------|------|
+| CARD_MOVE             | gameplay/card_move.wav                                 | Gameplay   | Unico per pack |
+| CARD_SELECT           | gameplay/card_select.wav                               | Gameplay   |      |
+| CARD_DROP             | gameplay/card_drop.wav                                 | Gameplay   |      |
+| CARD_FLIP             | gameplay/card_flip.wav                                 | Gameplay   | v3.5.0 |
+| CARD_SHUFFLE          | gameplay/card_shuffle.wav                              | Gameplay   | v3.5.0 |
+| CARD_SHUFFLE_WASTE    | gameplay/card_shuffle_alt.wav                          | Gameplay   | v3.5.0 |
+| FOUNDATION_DROP       | gameplay/foundation_drop.wav                           | Gameplay   |      |
+| INVALID_MOVE          | gameplay/invalid_move.wav                              | Gameplay   |      |
+| TABLEAU_DROP          | gameplay/tableau_drop.wav                              | Gameplay   | v3.5.0 |
+| MULTI_CARD_MOVE       | gameplay/foundation_drop.wav                           | Gameplay   | v3.5.0 |
+| CARDS_EXHAUSTED       | gameplay/boundary_hit.wav                              | Gameplay   | v3.5.0 |
+| STOCK_DRAW            | gameplay/stock_draw.wav                                | Gameplay   |      |
+| WASTE_DROP            | gameplay/waste_drop.wav                                | Gameplay   |      |
+| UI_NAVIGATE           | ui/navigate.wav                                        | UI         |      |
+| UI_NAVIGATE_FRAME     | ui/navigate_alt.wav                                    | UI         | v3.5.0 |
+| UI_NAVIGATE_PILE      | ui/focus_change.wav                                    | UI         | v3.5.0 |
+| UI_SELECT             | ui/select.wav                                          | UI         |      |
+| UI_CANCEL             | ui/cancel.wav                                          | UI         |      |
+| UI_CONFIRM            | ui/confirm.wav                                         | UI         | v3.5.0 |
+| UI_TOGGLE             | ui/button_hover.wav                                    | UI         | v3.5.0 |
+| UI_FOCUS_CHANGE       | ui/focus_change.wav                                    | UI         | v3.5.0 |
+| UI_BOUNDARY_HIT       | ui/boundary_hit.wav                                    | UI         | v3.5.0 |
+| UI_NOTIFICATION       | ui/notification.wav                                    | UI         | v3.5.0 |
+| UI_ERROR              | ui/error.wav                                           | UI         | v3.5.0 |
+| UI_MENU_OPEN          | ui/menu_open.wav                                       | UI         | v3.5.0 |
+| UI_MENU_CLOSE         | ui/menu_close.wav                                      | UI         | v3.5.0 |
+| UI_BUTTON_CLICK       | ui/button_click.wav                                    | UI         | v3.5.0 |
+| UI_BUTTON_HOVER       | ui/button_hover.wav                                    | UI         | v3.5.0 |
+| SETTING_SAVED         | ui/select.wav                                          | UI         | v3.5.0 |
+| SETTING_CHANGED       | ui/focus_change.wav                                    | UI         | v3.5.0 |
+| SETTING_LEVEL_CHANGED | ui/focus_change.wav                                    | UI         | v3.5.0 |
+| SETTING_VOLUME_CHANGED| ui/focus_change.wav                                    | UI         | v3.5.0 |
+| SETTING_MUSIC_CHANGED | ui/focus_change.wav                                    | UI         | v3.5.0 |
+| SETTING_SWITCH_ON     | ui/button_click.wav                                    | UI         | v3.5.0 |
+| SETTING_SWITCH_OFF    | ui/button_hover.wav                                    | UI         | v3.5.0 |
+| AMBIENT_LOOP          | ambient/room_tone.wav                                  | Ambient    | Loop, v3.5.0 |
+| MUSIC_LOOP            | music/music_loop.wav                                   | Music      | Loop (futuro) |
+| GAME_WON              | voice/victory.wav                                      | Voice      |      |
+| WELCOME_MESSAGE       | voice/welcome_*.wav                                    | Voice      | v3.5.0 |
+| TIMER_WARNING         | ui/navigate.wav                                        | UI         | v3.5.0 |
+| TIMER_EXPIRED         | ui/cancel.wav                                          | UI         | v3.5.0 |
+
+**Nota v3.5.0**: La colonna "Varianti" è stata rimossa. A partire da v3.5.0, ogni evento ha un **unico file per sound pack** (vedi sezione 6.4 "No Random"). La variazione sonora avviene solo cambiando pack audio, non randomicamente all'interno dello stesso pack. La lista completa e aggiornata è mantenuta in `docs/API.md` e nel README.
+
+### Esempio di struttura mapping Python
+
+```python
+EVENT_TO_FILES = {
+      AudioEventType.CARD_MOVE: [
+            "gameplay/card_move_1.wav",
+            "gameplay/card_move_2.wav",
+            "gameplay/card_move_3.wav",
+      ],
+      AudioEventType.CARD_SELECT: ["gameplay/card_select.wav"],
+      # ... altri eventi ...
+}
+```
+
+### Gestione Varianti
+
+- Se la lista associata a un evento contiene più file, la selezione è randomica (`random.choice`).
+- Se la lista è vuota o tutti i file mancano, l'evento è silenziato (nessun errore).
+
+### Eventi Opzionali e Configurazione
+
+- Gli eventi marcati come "Opzionale" possono essere abilitati/disabilitati dall'utente tramite `audio_config.json`.
+- Il loader carica la config e filtra gli eventi disabilitati a runtime.
+
+### Bus Assignment e Policy
+
+- Ogni evento è assegnato a un bus secondo la tabella sopra.
+- I bus sono gestiti da `SoundMixer` e possono essere mutati/regolati indipendentemente.
+- I bus loop (Ambient, Music) sono sospesi in pausa/focus out; i bus one-shot (Gameplay, UI, Voice) restano sempre attivi.
+
+---
+
 ### Vincoli da Rispettare
 
 - **Zero modifiche al Domain Layer**: La logica di gioco non sa che esiste un sistema audio
@@ -679,16 +903,16 @@ Una volta implementato, il giocatore non vedente potrà:
 
 ## 🎯 Status Progetto
 
-**Design**: ✅ FROZEN  
-**Piano Tecnico**: ✅ READY (`docs/3 - coding plans/PLAN_audio_system_v3.4.0.md` — v1.1, post-review)  
-**Implementazione**: ⏳ PENDING  
-**Testing**: ⏳ PENDING  
-**Deploy**: ⏳ PENDING
+**Design**: ✅ IMPLEMENTED (v3.5.0)  
+**Piano Tecnico**: ✅ COMPLETED (`PLAN_audio_system_v3.4.1.md` e `audio_event_expansion_plan.md` eseguiti e archiviati)  
+**Implementazione**: ✅ COMPLETED (43 AudioEventType, 5 bus, MenuPanel + OptionsDialog integrati)  
+**Testing**: ✅ COMPLETED (95/100 audit score, coverage >= 85%)  
+**Deploy**: ✅ READY (merge to main, branch `supporto-audio-centralizzato`)
 
 ---
 
-**Document Version**: v1.3 (Chiarezza: 13 indici vs 14 posizioni, indexing convention Scenario 1, Scenario 9 timer)  
+**Document Version**: v1.4 (Allineamento v3.5.0: versione target, stato sistema, mapping eventi completo, tabella aggiornata)  
 **Data Freeze**: 2026-02-22  
-**Ultimo Aggiornamento**: 2026-02-22  
+**Ultimo Aggiornamento**: 2026-02-24  
 **Autore**: AI Assistant + Nemex81  
-**Filosofia**: "L'audio non abbellisce il gioco - lo rende leggibile nello spazio"
+**Filosofia**: "L'audio non abbellisce il gioco — lo rende leggibile nello spazio per chi non vede"

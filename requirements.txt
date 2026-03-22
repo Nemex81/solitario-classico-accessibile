@@ -32,9 +32,19 @@ pywin32-ctypes==0.2.0
 # - numpy (optional, for advanced features - not used in this project)
 
 # ============================================================================
+# AUDIO SYSTEM (v3.4.0 - re-aggiunta pygame)
+# ============================================================================
+
+# Audio System: 5 bus indipendenti con panning stereo nativo (RF-1 .. RF-6)
+# Nota: pygame era stato rimosso da requirements.txt (v2.3.1) dopo la migrazione
+# wxPython, ma era ancora usato per keyboard constants (KMOD_SHIFT, KMOD_CTRL)
+# in gameplay_controller.py e input_handler.py. Re-aggiunto esplicitamente.
+pygame>=2.1.2
+
+# ============================================================================
 # REMOVED DEPENDENCIES (v2.3.1 - wxPython migration)
 # ============================================================================
-# pygame==2.1.2              # Migrated to wxPython (Issue #58)
+# pygame==2.1.2              # RE-AGGIUNTO in v3.4.0 (vedi sezione AUDIO SYSTEM sopra)
 # pygame-menu==4.3.7         # Migrated to wxPython (Issue #58)
 # numpy==1.23.0              # Not used in current codebase
 # Pillow==9.2.0              # Not used in current codebase

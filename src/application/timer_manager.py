@@ -69,7 +69,8 @@ class TimerManager:
         self,
         minutes: int = 10,
         warning_callback: Optional[Callable[[int], None]] = None,
-        warning_intervals: Optional[list[int]] = None
+        warning_intervals: Optional[list[int]] = None,
+        expired_callback: Optional[Callable[[], None]] = None  # NEW v3.4.2
     ) -> None:
         """Initialize timer manager.
         
@@ -77,6 +78,7 @@ class TimerManager:
             minutes: Timer duration in minutes (1-60)
             warning_callback: Function(minutes_left) for warnings
             warning_intervals: List of minutes at which to warn (default: [5,2,1])
+            expired_callback: Optional function() called once when timer expires
         
         Raises:
             ValueError: If minutes not in valid range 1-60
@@ -92,6 +94,10 @@ class TimerManager:
         self.warning_callback = warning_callback
         self.warning_intervals = warning_intervals or self.DEFAULT_WARNINGS
         self.warnings_issued: set[int] = set()
+        
+        # Expiration callback and firing flag
+        self.expired_callback = expired_callback
+        self._expired_fired: bool = False  # prevents repeated calls
     
     def start(self) -> None:
         """Start the timer.
@@ -204,10 +210,20 @@ class TimerManager:
         
         Warnings are triggered once per interval (not repeated).
         """
-        if not self.is_running() or self.warning_callback is None:
+        # If timer isn't active, nothing to do
+        if not self.is_running():
             return
         
         remaining_minutes = int(self.get_remaining() / 60)
+        
+        # First, check expiration callback (single-fire)
+        if self.is_expired() and not self._expired_fired and self.expired_callback is not None:
+            self._expired_fired = True
+            self.expired_callback()
+            # still continue to fire any warning that coincides with expiration
+        
+        if self.warning_callback is None:
+            return
         
         # Check each warning interval
         for warning_min in self.warning_intervals:
@@ -234,3 +250,5 @@ class TimerManager:
         self.pause_time = None
         self.paused_duration = 0.0
         self.warnings_issued.clear()
+        # Reset expiration flag so callback can fire again
+        self._expired_fired = False

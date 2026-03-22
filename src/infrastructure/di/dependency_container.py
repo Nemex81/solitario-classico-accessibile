@@ -16,38 +16,32 @@ from threading import Lock
 from typing import Callable, Any, Optional
 
 
+
 class DependencyContainer:
-    """IoC container per gestione centralizzata dipendenze.
-    
-    Port da hs_deckmanager con semplificazioni:
-    - Rimosso singleton flag (non usato in pratica)
-    - API minimalista: register(), resolve(), has()
-    - Thread-safe con Lock
-    - Circular dependency detection
-    
-    Pattern:
-        Factory-based resolution: ogni chiamata a resolve() invoca
-        la factory function registrata, creando una nuova istanza.
-        
-        Per singletons: caller deve gestire caching se necessario,
-        oppure la factory può ritornare sempre la stessa istanza.
-    
-    Example:
-        >>> container = DependencyContainer()
-        >>> container.register("settings", lambda: GameSettings())
-        >>> settings = container.resolve("settings")
-    
-    Thread Safety:
-        Lock acquisito durante resolution per prevenire race conditions
-        in registrazione/resolution concorrente.
-    
-    Circular Dependencies:
-        Rilevate tramite resolving_stack: se una dependency richiede
-        se stessa durante resolution, ValueError viene sollevato.
-    
-    Version:
-        v2.2.0: Initial implementation (port from hs_deckmanager)
     """
+    IoC container per gestione centralizzata dipendenze.
+    """
+
+    def get_audio_manager(self) -> Any:
+        """Restituisce l'istanza singleton di AudioManager (lazy-load). Se fallisce, ritorna uno stub no-op.
+        Conforme a Clean Architecture: nessuna dipendenza da Presentation/Application layer.
+        """
+        if not hasattr(self, '_audio_manager_instance'):
+            try:
+                from src.infrastructure.config.audio_config_loader import AudioConfigLoader
+                from src.infrastructure.audio.audio_manager import AudioManager
+                config = AudioConfigLoader.load()
+                manager = AudioManager(config)
+                manager.initialize()
+                self._audio_manager_instance = manager
+            except Exception as e:
+                import logging
+                logging.getLogger('error').exception("AudioManager init failed, fallback stub")
+                from src.infrastructure.audio.audio_manager import _AudioManagerStub
+                self._audio_manager_instance = _AudioManagerStub()
+        return self._audio_manager_instance
+
+
     
     def __init__(self):
         """Initialize empty container.
@@ -153,5 +147,8 @@ class DependencyContainer:
         Example:
             >>> if container.has("database"):
             ...     db = container.resolve("database")
+
         """
         return key in self._dependencies
+
+
