@@ -49,6 +49,21 @@ Il framework fornisce:
 - `copilot-instructions.md` — istruzioni globali Copilot per il progetto
 - `FRAMEWORK_CHANGELOG.md` — storico delle versioni del framework
 
+## Git Policy
+
+Il framework applica una policy git strutturata a 3 livelli:
+
+- **Regola globale**: `.github/copilot-instructions.md`
+   (fonte primaria, sempre caricata)
+- **Dettaglio operativo**: `.github/instructions/git-policy.instructions.md`
+   (rinforzo contestuale, attivo su tutti i file)
+- **Matrice autorizzazioni**: `.github/skills/git-execution.skill.md`
+   (riferimento tecnico per Agent-Code e Agent-Orchestrator)
+
+I soli 2 punti di esecuzione git diretta autorizzati sono:
+`#git-commit.prompt.md` e `#git-merge.prompt.md`.
+In tutti gli altri contesti Copilot propone i comandi senza eseguirli.
+
 ---
 
 ## Quick Start (3 passi)

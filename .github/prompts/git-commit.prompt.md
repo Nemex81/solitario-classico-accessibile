@@ -1,3 +1,11 @@
+<!--
+AUTORIZZAZIONE GIT ESPLICITA
+Questo prompt è autorizzato a eseguire git add e git commit
+tramite run_in_terminal per volontà esplicita dell'utente.
+Riferimento policy: .github/instructions/git-policy.instructions.md
+Riferimento skill: .github/skills/git-execution.skill.md
+-->
+
 ---
 mode: agent
 description: >

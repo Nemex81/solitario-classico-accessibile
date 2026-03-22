@@ -169,8 +169,8 @@ Delega tramite subagent:
 
 ## Regole invarianti
 
-- NON eseguire git commit, git push, git merge direttamente.
-  Proponi sempre i comandi: è l'utente a eseguirli.
+- Per git policy completa, comandi autorizzati e vietati per contesto:
+  → `.github/skills/git-execution.skill.md`
 - NON saltare un gate fallito. Se un gate fallisce, correggi o chiedi.
 - NON procedere oltre un checkpoint senza conferma esplicita dell'utente.
 - Per standard output strutturato e accessibilità NVDA:

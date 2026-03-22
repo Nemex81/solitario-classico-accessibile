@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD024 -->
+
 # Framework Copilot — Changelog
 
 Tutte le modifiche rilevanti al Framework Copilot sono documentate qui.
@@ -8,6 +10,30 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 ## [Unreleased]
 
+### Added
+
+- `git-policy.instructions.md`: policy git dettagliata con comandi
+  vietati, consentiti e procedure per agenti. applyTo: `**`.
+- `git-execution.skill.md`: matrice autorizzazioni comandi git per
+  contesto (agenti, git-commit.prompt.md, git-merge.prompt.md).
+- `instructions/README.md`: documentazione instructions files con
+  lista, scopo e meccanismo di attivazione.
+- `skills/README.md`: documentazione skills con lista completa e
+  tabella agenti/skills associate.
+
+### Changed
+
+- `copilot-instructions.md`: sezione Git policy espansa con eccezioni
+  autorizzate e riferimenti a instructions e skill.
+- `git-commit.prompt.md`: aggiunta dichiarazione autorizzazione git
+  esplicita in testa al file con riferimenti a policy e skill.
+- `git-merge.prompt.md`: aggiunta dichiarazione autorizzazione git
+  esplicita in testa al file con riferimenti a policy e skill.
+- Agent-Code: aggiunto riferimento a `git-execution.skill.md`.
+- Agent-Orchestrator: sostituita regola git inline con riferimento
+  a `git-execution.skill.md`.
+- `.github/README.md`: aggiunta sezione Git Policy con descrizione
+  struttura a 3 livelli.
 
 ## [v1.5.0] - 2026-03-22
 

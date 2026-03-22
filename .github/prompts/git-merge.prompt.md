@@ -1,3 +1,12 @@
+<!--
+AUTORIZZAZIONE GIT ESPLICITA
+Questo prompt è autorizzato a eseguire git merge --no-ff e
+git tag tramite run_in_terminal per volontà esplicita dell'utente.
+git push NON è autorizzato: viene proposto come comando testuale.
+Riferimento policy: .github/instructions/git-policy.instructions.md
+Riferimento skill: .github/skills/git-execution.skill.md
+-->
+
 ---
 mode: agent
 description: >

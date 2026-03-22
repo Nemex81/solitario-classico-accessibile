@@ -1,4 +1,4 @@
-﻿ee# Copilot Custom Instructions  Solitario Classico Accessibile
+﻿# Copilot Custom Instructions  Solitario Classico Accessibile
 
 ## Framework Copilot v1.5.0
 
@@ -205,7 +205,26 @@ Scope: domain, application, infrastructure, presentation, docs, tests
 5. Test coverage check (85%+)
 6. Feedback strutturato (file+linee, why, docs impact)
 
-**Git policy**: Copilot NON esegue direttamente git commit/push/merge. Propone comandi in blocco: l'utente decide. Read-only ok (git log, git diff).
+**Git policy**:
+
+Copilot NON esegue direttamente `git push`, `git merge` su main,
+né `git commit` durante implementazioni automatizzate degli agenti.
+Propone sempre i comandi in blocco testuale: è l'utente a eseguirli.
+Read-only sempre consentito: `git log`, `git diff`, `git status`.
+
+**Eccezioni autorizzate (unici contesti in cui Copilot può eseguire
+git tramite `run_in_terminal`)**:
+- `#git-commit.prompt.md` — autorizzato a eseguire `git add` e `git commit`
+- `#git-merge.prompt.md` — autorizzato a eseguire `git merge --no-ff`
+  e proporre `git tag` (mai `git push` autonomamente)
+
+Questi 2 prompt sono gli UNICI punti di esecuzione git diretta.
+In qualsiasi altro contesto (agenti, chat libera, altri prompt)
+la policy di blocco è assoluta.
+
+Per dettaglio operativo completo:
+→ `.github/instructions/git-policy.instructions.md`
+→ `.github/skills/git-execution.skill.md`
 
 ---
 
