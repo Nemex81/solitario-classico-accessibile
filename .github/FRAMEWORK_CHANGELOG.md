@@ -57,6 +57,11 @@ Versioning: [SemVer](https://semver.org/lang/it/)
   con modifiche v1.5.1 (riferimento Agent-Git, git-execution.skill.md).
 - `Agent-Git.md`: fix frontmatter — delimitatori corretti da `***` a `---`.
 
+### Fixed
+
+- `Agent-Git.md`: rimossa ultima occorrenza di `***` come separatore.
+  Tutti i separatori ora uniformi a `---`.
+
 ### Note tecniche
 
 - `copilot-instructions.md` e `AGENTS.md`: aggiornate anche le

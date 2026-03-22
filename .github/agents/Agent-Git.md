@@ -200,7 +200,7 @@ git push origin <tag>
   automatiche, chiedi istruzioni all'utente
 - Tag: sempre proposto come testo, mai eseguito autonomamente
 
-***
+---
 
 ## Gate di Completamento
 
