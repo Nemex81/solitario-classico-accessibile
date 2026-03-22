@@ -24,7 +24,7 @@
 | **Quick Reference** | Comandi rapidi, troubleshooting |
 | **Script Utility** | 8 script Python per automazione |
 
-### Gli 9 Agenti
+### I 9 Agenti
 
 0. **Agent-Orchestrator**: Coordinatore E2E, delega agli agenti specializzati
 1. **Agent-Analyze**: Discovery findings (read-only)
@@ -261,7 +261,7 @@ Scope: domain, application, infrastructure, presentation, docs, tests
 
 | Risorsa | Scopo |
 |---------|-------|
-| [.github/AGENTS.md](AGENTS.md) | 8-agent system |
+| [.github/AGENTS.md](AGENTS.md) | 9-agent system |
 | [docs/WORKFLOW.md](../docs/WORKFLOW.md) | E2E workflow |
 | [docs/CI_AUTOMATION.md](../docs/CI_AUTOMATION.md) | CI locale |
 | [.vscode/copilot-quick-start.md](../.vscode/copilot-quick-start.md) | Commands (5 min) |
