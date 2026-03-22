@@ -83,6 +83,8 @@ Agent-Release:
 
 - **Logica SemVer** (regole bump MAJOR/MINOR/PATCH, output strutturato):
    → `.github/skills/semver-bump.skill.md`
+- **Standard output accessibile** (struttura, NVDA, report):
+   → `.github/skills/accessibility-output.skill.md`
 
 ---
 
@@ -102,4 +104,3 @@ Agent-Release:
 - Copilot NON esegue direttamente git push/merge. Propone comandi, l'utente decide
 - CHANGELOG: trasformare [Unreleased] in versione datata alla release
 - Verificare che il build cx_freeze produca un eseguibile funzionante
-- Output testuale, strutturato con intestazioni, accessibile screen reader

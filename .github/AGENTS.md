@@ -89,9 +89,12 @@ Si trovano in `.github/instructions/`.
 Le skills sono abilità atomiche richiamabili da più agenti.
 Si trovano in `.github/skills/`.
 
-- `validate-accessibility.skill.md` — checklist WAI-ARIA + NVDA
+- `validate-accessibility.skill.md` — checklist WAI-ARIA + NVDA (UI)
 - `conventional-commit.skill.md` — regole Conventional Commits
 - `semver-bump.skill.md` — logica SemVer per release
+- `clean-architecture-rules.skill.md` — regole Clean Architecture 4 layer
+- `document-template.skill.md` — struttura DESIGN, PLAN e TODO
+- `accessibility-output.skill.md` — standard output accessibile (tutti gli agenti)
 
 ---
 

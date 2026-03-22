@@ -60,6 +60,13 @@ All'avvio, prima di qualsiasi scrittura:
 
 ---
 
+## Riferimenti Skills
+
+- **Standard output accessibile** (struttura, NVDA, report):
+  → `.github/skills/accessibility-output.skill.md`
+
+---
+
 ## Regole operative
 
 - NON modificare file fuori da `.github/`
@@ -67,7 +74,6 @@ All'avvio, prima di qualsiasi scrittura:
 - NON toccare file in `src/`, `docs/`, `tests/`
 - FRAMEWORK_CHANGELOG.md: usare [Unreleased] fino a release esplicita
 - Seguire formato Conventional Changelog (Added/Changed/Fixed/Removed)
-- Output testuale strutturato con header, accessibile screen reader NVDA
 - Proporre sempre i comandi git, mai eseguirli
 
 ---

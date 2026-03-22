@@ -106,9 +106,12 @@ handling e accessibilità sono nelle instructions contestuali:
   (attivo automaticamente su `src/domain/**/*.py`)
 
 Skills riutilizzabili tra agenti:
-- Accessibilità NVDA → `.github/skills/validate-accessibility.skill.md`
+- Accessibilità NVDA (UI) → `.github/skills/validate-accessibility.skill.md`
 - Conventional Commits → `.github/skills/conventional-commit.skill.md`
 - SemVer bump → `.github/skills/semver-bump.skill.md`
+- Clean Architecture → `.github/skills/clean-architecture-rules.skill.md`
+- Template documenti → `.github/skills/document-template.skill.md`
+- Output accessibile → `.github/skills/accessibility-output.skill.md`
 
 ---
 

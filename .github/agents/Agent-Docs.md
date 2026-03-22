@@ -9,7 +9,6 @@ tools:
   - insert_edit_into_file
 model: gpt-4o
 ---
-
 # Agent-Docs
 
 Scopo: Sincronizzazione documentazione, CHANGELOG update, link validation.
@@ -61,13 +60,22 @@ Agent-Code ha completato feature X con 5 commits
   |
 Agent-Docs:
   1. Analizza commit messages (feat/fix/refactor)
-  2. Propone versione next (SemVer: MAJOR/MINOR/PATCH)
+  2. Propone versione next (vedi semver-bump.skill.md)
   3. Aggiorna API.md con nuove classi
   4. Aggiorna ARCHITECTURE.md (se necessario)
   5. Aggiorna CHANGELOG.md: [UNRELEASED] -> Features sezione
   6. Valida cross-links (no broken links)
   7. Genera report: "Docs synced. Prossimo: release (Agent-Release)?"
 ```
+
+---
+
+## Riferimenti Skills
+
+- **Logica SemVer** (regole bump MAJOR/MINOR/PATCH per proposta versione):
+  → `.github/skills/semver-bump.skill.md`
+- **Standard output accessibile** (struttura, NVDA, report):
+  → `.github/skills/accessibility-output.skill.md`
 
 ---
 
@@ -87,4 +95,3 @@ Agent-Docs:
 - CHANGELOG.md: usare [Unreleased] nel branch, finalizzare alla release
 - Seguire formato Conventional Changelog (Added/Fixed/Changed/Removed)
 - Verificare che i link interni puntino a percorsi esistenti
-- Output testuale, strutturato con intestazioni, accessibile screen reader

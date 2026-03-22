@@ -9,14 +9,22 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 ## [Unreleased]
 
 ### Added
+
 - Instructions files: `python.instructions.md`, `tests.instructions.md`,
   `domain.instructions.md` — regole contestuali per filetype attivate
   automaticamente da VS Code Copilot.
 - Agent Skills: `validate-accessibility.skill.md`,
   `conventional-commit.skill.md`, `semver-bump.skill.md` — abilità
   atomiche riutilizzabili tra agenti.
+- `clean-architecture-rules.skill.md`: regole Clean Architecture 4 layer,
+  DI Container, vincoli di dipendenza tra layer.
+- `document-template.skill.md`: struttura e frontmatter YAML per documenti
+  DESIGN, PLAN e TODO con ciclo di vita stati.
+- `accessibility-output.skill.md`: standard output strutturato e accessibile
+  per tutti gli agenti del framework.
 
 ### Changed
+
 - `copilot-instructions.md`: sezioni Python standards, testing e
   critical warnings migrate nelle instructions contestuali.
   File alleggerito di circa un terzo.
@@ -29,6 +37,25 @@ Versioning: [SemVer](https://semver.org/lang/it/)
   `validate-accessibility.skill.md`.
 - Agent-Release: rimossa logica SemVer inline duplicata.
   Sostituita con riferimento a `semver-bump.skill.md`.
+- Agent-Analyze: aggiunta sezione Riferimenti Skills
+  (`clean-architecture-rules`, `accessibility-output`).
+- Agent-Design: aggiunta sezione Riferimenti Skills
+  (`clean-architecture-rules`, `document-template`, `accessibility-output`).
+  Rimosse regole duplicate inline.
+- Agent-Plan: aggiunta sezione Riferimenti Skills
+  (`document-template`, `accessibility-output`).
+- Agent-Code: aggiunti riferimenti a `clean-architecture-rules` e
+  `accessibility-output` nella sezione esistente.
+- Agent-Validate: aggiunto riferimento a `accessibility-output`.
+- Agent-Docs: aggiunta sezione Riferimenti Skills
+  (`semver-bump`, `accessibility-output`). Fix workflow SemVer inline.
+- Agent-Release: aggiunto riferimento a `accessibility-output`.
+- Agent-FrameworkDocs: aggiunta sezione Riferimenti Skills
+  (`accessibility-output`).
+- Agent-Orchestrator: aggiunto riferimento a `accessibility-output`.
+- Tutti gli agenti: rimossa la regola inline sull'output testuale
+  strutturato accessibile. Centralizzata in `accessibility-output.skill.md`.
+- `AGENTS.md` e `copilot-instructions.md`: lista skills aggiornata a 6 voci.
 
 ## [1.4.0] — 2026-03-22
 

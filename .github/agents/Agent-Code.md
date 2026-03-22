@@ -65,10 +65,14 @@ Le regole operative sono centralizzate nelle risorse framework:
 
 - **Standard Python** (type hints, logging, clean architecture, error handling):
   → `.github/instructions/python.instructions.md` (attivo automaticamente su `*.py`)
+- **Regole Clean Architecture** (layer, dipendenze, DI Container):
+  → `.github/skills/clean-architecture-rules.skill.md`
 - **Formato commit atomico** (Conventional Commits, scopes, atomicità):
   → `.github/skills/conventional-commit.skill.md`
 - **Accessibilità componenti UI** (WAI-ARIA, NVDA, checklist):
   → `.github/skills/validate-accessibility.skill.md`
+- **Standard output accessibile** (struttura, NVDA, report):
+  → `.github/skills/accessibility-output.skill.md`
 
 Pre-commit checklist di riferimento rapido:
 ```bash
@@ -93,4 +97,3 @@ pytest -m "not gui" --cov=src --cov-fail-under=85  # test + coverage
 
 - Un commit per fase, mai accorpare piu fasi
 - Spuntare TODO.md immediatamente dopo ogni commit
-- Output testuale, strutturato con intestazioni, accessibile screen reader

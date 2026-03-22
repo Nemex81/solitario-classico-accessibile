@@ -41,6 +41,17 @@ Scopo: Decisioni architetturali, creazione DESIGN doc, pattern selection.
 
 ---
 
+## Riferimenti Skills
+
+- **Regole Clean Architecture** (layer, dipendenze, pattern consentiti):
+  → `.github/skills/clean-architecture-rules.skill.md`
+- **Template documenti** (struttura DESIGN, frontmatter, stati):
+  → `.github/skills/document-template.skill.md`
+- **Standard output accessibile** (struttura, NVDA, report):
+  → `.github/skills/accessibility-output.skill.md`
+
+---
+
 ## Gate di Completamento
 
 - DESIGN_*.md creato e completo (nessuna sezione vuota)
@@ -72,6 +83,4 @@ Agent-Plan attende
 
 - Seguire il template DESIGN presente in docs/1 - templates/ (se disponibile)
 - Diagrammi solo testuali, nessun formato grafico
-- Rispettare la Clean Architecture a 4 layer nel design proposto
 - Non produrre codice implementativo: solo architettura e decisioni
-- Output testuale, strutturato con intestazioni, accessibile screen reader

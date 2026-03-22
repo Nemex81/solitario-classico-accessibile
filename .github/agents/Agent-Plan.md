@@ -48,6 +48,15 @@ Scopo: Breaking down architetturale in fasi implementabili, creazione PLAN doc e
 
 ---
 
+## Riferimenti Skills
+
+- **Template documenti** (struttura PLAN e TODO, frontmatter, stati):
+  → `.github/skills/document-template.skill.md`
+- **Standard output accessibile** (struttura, NVDA, report):
+  → `.github/skills/accessibility-output.skill.md`
+
+---
+
 ## Gate di Completamento
 
 - PLAN_*.md completato (tutte le fasi dettagliate)
@@ -85,4 +94,3 @@ Agent-Code attende (pronto per Fase 1)
 - Specificare sempre i file coinvolti per ogni fase (CREATE/MODIFY/DELETE)
 - Il TODO.md deve contenere link al PLAN di riferimento
 - Non produrre codice implementativo: solo pianificazione
-- Output testuale, strutturato con intestazioni, accessibile screen reader

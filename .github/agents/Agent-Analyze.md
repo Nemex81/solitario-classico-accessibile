@@ -43,6 +43,15 @@ Modalita operativa: **read-only**. Questo agente non modifica alcun file.
 
 ---
 
+## Riferimenti Skills
+
+- **Regole Clean Architecture** (layer, dipendenze, violazioni da cercare):
+  → `.github/skills/clean-architecture-rules.skill.md`
+- **Standard output accessibile** (struttura, NVDA, report):
+  → `.github/skills/accessibility-output.skill.md`
+
+---
+
 ## Gate di Completamento
 
 - Analisi completa (copertura breadth del codebase)
@@ -69,4 +78,3 @@ User: "Analizza l'architettura del timer system"
 - Consultare sempre ARCHITECTURE.md e API.md come punto di partenza
 - Riportare dipendenze tra layer (Domain, Application, Infrastructure, Presentation)
 - Segnalare eventuali violazioni della Clean Architecture trovate
-- Output testuale, strutturato con intestazioni, accessibile screen reader

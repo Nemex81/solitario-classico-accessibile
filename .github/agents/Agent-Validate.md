@@ -77,6 +77,8 @@ Agent-Validate:
   → `.github/instructions/tests.instructions.md` (attivo automaticamente su `tests/**/*.py`)
 - **Accessibilità componenti UI** (checklist WAI-ARIA + NVDA):
   → `.github/skills/validate-accessibility.skill.md`
+- **Standard output accessibile** (struttura, NVDA, report):
+  → `.github/skills/accessibility-output.skill.md`
 
 ---
 
@@ -94,4 +96,3 @@ Agent-Validate:
 
 - Non modificare codice sorgente in src/ (solo test in tests/)
 - Generare skeletons solo con approvazione utente
-- Output testuale, strutturato con intestazioni, accessibile screen reader

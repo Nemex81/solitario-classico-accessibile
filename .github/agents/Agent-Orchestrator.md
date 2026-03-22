@@ -173,6 +173,8 @@ Delega tramite subagent:
   Proponi sempre i comandi: è l'utente a eseguirli.
 - NON saltare un gate fallito. Se un gate fallisce, correggi o chiedi.
 - NON procedere oltre un checkpoint senza conferma esplicita dell'utente.
+- Per standard output strutturato e accessibilità NVDA:
+  → `.github/skills/accessibility-output.skill.md`
 - Se un subagente non produce l'output atteso, riprova con contesto
   più dettagliato prima di segnalare il problema all'utente.
 - Registra lo stato di ogni fase completata aggiornando docs/TODO.md.
