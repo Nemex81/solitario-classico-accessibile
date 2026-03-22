@@ -8,6 +8,9 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 ## [Unreleased]
 
+
+## [v1.5.0] - 2026-03-22
+
 ### Added
 
 - Instructions files: `python.instructions.md`, `tests.instructions.md`,
