@@ -42,7 +42,8 @@ Il framework fornisce:
 
 ## Struttura della cartella .github/
 
-- `agents/` — file agente nativi VS Code (uno per agente, formato `.md`)
+- `agents/` — file agente nativi VS Code (uno per agente, formato `.md`).
+  Indice: [`agents/README.md`](agents/README.md)
 - `skills/` — skill atomiche riutilizzabili tra agenti (`.skill.md`)
 - `instructions/` — regole contestuali per filetype (`.instructions.md`)
 - `prompts/` — prompt files per entry point e workflow
