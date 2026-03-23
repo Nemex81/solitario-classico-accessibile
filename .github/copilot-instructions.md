@@ -248,7 +248,7 @@ Dettaglio completo in:
 | Risorsa | Scopo |
 |---------|-------|
 | [.github/instructions/model-policy.instructions.md](instructions/model-policy.instructions.md) | Assegnazioni modelli agenti e criteri selezione |
-| [.github/AGENTS.md](AGENTS.md) | 9-agent system |
+| [.github/AGENTS.md](AGENTS.md) | 10-agent system |
 | [docs/WORKFLOW.md](../docs/WORKFLOW.md) | E2E workflow |
 | [docs/CI_AUTOMATION.md](../docs/CI_AUTOMATION.md) | CI locale |
 | [.vscode/copilot-quick-start.md](../.vscode/copilot-quick-start.md) | Commands (5 min) |
