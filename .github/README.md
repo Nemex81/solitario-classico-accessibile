@@ -1,6 +1,6 @@
 # Framework Copilot — Guida all'installazione e all'uso
 
-> **Versione corrente**: v1.4.0 — 22 Marzo 2026
+> **Versione corrente**: v1.6.0 — 23 Marzo 2026
 
 ---
 
@@ -10,7 +10,7 @@ Il Framework Copilot è una toolchain di orchestrazione per GitHub Copilot Chat 
 
 Il framework fornisce:
 
-- 9 agenti specializzati con ruoli distinti nel ciclo di sviluppo
+- 12 agenti specializzati con ruoli distinti nel ciclo di sviluppo
 - Prompt files per entry point e workflow comuni
 - Script Python per automazione e validazione
 - Convenzioni di commit, testing e documentazione
@@ -43,9 +43,11 @@ Il framework fornisce:
 ## Struttura della cartella .github/
 
 - `agents/` — file agente nativi VS Code (uno per agente, formato `.md`)
+- `skills/` — skill atomiche riutilizzabili tra agenti (`.skill.md`)
+- `instructions/` — regole contestuali per filetype (`.instructions.md`)
 - `prompts/` — prompt files per entry point e workflow
 - `workflows/` — workflow GitHub Actions (CI/CD)
-- `AGENTS.md` — documentazione di riferimento del framework
+- `AGENTS.md` — documentazione di riferimento del framework (12 agenti, v1.6.0)
 - `copilot-instructions.md` — istruzioni globali Copilot per il progetto
 - `instructions/model-policy.instructions.md` — Model Policy: assegnazioni
    modello per tutti gli agenti, criteri di selezione per tipo di task,

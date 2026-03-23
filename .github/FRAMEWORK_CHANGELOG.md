@@ -10,7 +10,7 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 ## [Unreleased]
 
-### Added (v1.6.0 — 23 Marzo 2026)
+### Added
 
 - `Agent-CodeRouter`: nuovo agente dispatcher del sotto-ciclo di codifica.
   Riceve task da Agent-Orchestrator (Fase 4), classifica ogni fase del TODO
@@ -29,8 +29,18 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 - `ui.instructions.md`: instruction file contestuale per `src/presentation/**/*.py`.
   Regole obbligatorie wxPython: SetTitle, SetLabel, SetFocus, TAB order,
   ESC handling, requisiti NVDA, logging apertura/chiusura dialog, marker pytest.gui.
+- `file-deletion-guard.skill.md`: nuova skill di protezione contro
+  eliminazione non autorizzata di file. Procedura obbligatoria con
+  blocco di conferma esplicita (keyword ELIMINA) prima di qualsiasi
+  operazione di eliminazione file, inclusi merge con conflitti,
+  git rm e git clean. Referenziata da Agent-Git, Agent-Code,
+  Agent-FrameworkDocs.
+- `.github/instructions/model-policy.instructions.md`: nuova istruzione
+  contestuale (applyTo: `.github/**`) con assegnazioni modello per tutti
+  e 12 gli agenti, criteri di selezione per tipo di task, lista modelli
+  deprecati e fallback ufficiali.
 
-### Changed (v1.6.0 — 23 Marzo 2026)
+### Changed
 
 - `Agent-Orchestrator.md`: Fase 4 aggiornata — delega ad Agent-CodeRouter
   invece di Agent-Code direttamente. Aggiunta nota sul sotto-ciclo interno.
@@ -41,36 +51,21 @@ Versioning: [SemVer](https://semver.org/lang/it/)
   lista agenti e flusso Fase 4 aggiornati.
 - `copilot-instructions.md`: versione bumped a v1.6.0, tabella componenti
   e lista skills aggiornate con nuovi file.
-- `skills/README.md`: aggiunta code-routing.skill.md e tabella agenti aggiornata.
+- `skills/README.md`: aggiunta code-routing.skill.md e tabella agenti aggiornata
+  con Agent-CodeRouter e Agent-CodeUI.
 - `instructions/README.md`: aggiunta ui.instructions.md.
-
-### Added
-
-- `file-deletion-guard.skill.md`: nuova skill di protezione contro
-  eliminazione non autorizzata di file. Procedura obbligatoria con
-  blocco di conferma esplicita (keyword ELIMINA) prima di qualsiasi
-  operazione di eliminazione file, inclusi merge con conflitti,
-  git rm e git clean. Referenziata da Agent-Git, Agent-Code,
-  Agent-FrameworkDocs.
-- `.github/instructions/model-policy.instructions.md`: nuova istruzione
-  contestuale (applyTo: `.github/**`) con assegnazioni modello per tutti
-  e 10 gli agenti, criteri di selezione per tipo di task, lista modelli
-  deprecati e fallback ufficiali.
-
-### Changed
-
-- `git-policy.instructions.md`: aggiunta sezione "Protezione
-  eliminazione file" con riferimento a file-deletion-guard.skill.md.
+- `README.md`: versione bumped a v1.6.0, conteggio agenti aggiornato a 12,
+  struttura cartelle aggiornata con skills/ e instructions/.
+- `model-policy.instructions.md`: aggiunta Agent-CodeRouter e Agent-CodeUI
+  nella tabella assegnazioni modello.
+- `git-policy.instructions.md`: aggiunta sezione "Protezione eliminazione file"
+  con riferimento a file-deletion-guard.skill.md.
 - `Agent-Git.md`: aggiunto riferimento a file-deletion-guard.skill.md
   in Riferimenti Skills e Regole Invarianti.
-- `skills/README.md`: skill list e tabella agenti aggiornate con
-  file-deletion-guard per Agent-Git, Agent-Code, Agent-FrameworkDocs.
 - Model policy: aggiornati `model` e `fallbackModels` nel frontmatter
-  di tutti e 10 gli agenti. Rimosso gpt-4o (legacy) come default universale.
+  di tutti e 12 gli agenti. Rimosso gpt-4o (legacy) come default universale.
 - `copilot-instructions.md`: aggiunta sezione `## Model Policy` leggera
   con rimando a model-policy.instructions.md.
-- `.github/README.md`: aggiunto riferimento a model-policy.instructions.md.
-- `.github/instructions/README.md`: aggiornato con il nuovo file di policy.
 
 ## [v1.5.1] - 2026-03-22
 
