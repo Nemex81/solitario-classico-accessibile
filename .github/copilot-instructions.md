@@ -2,7 +2,7 @@
 
 ## Framework Copilot v1.5.1
 
-**Questo progetto utilizza un framework orchestrazione Copilot con 9 agenti nativi VS Code.**
+**Questo progetto utilizza un framework orchestrazione Copilot con 10 agenti nativi VS Code.**
 
 ### Quick Start (3 passi)
 
@@ -14,7 +14,7 @@
 
 | Componente | Scopo |
 |-----------|-------|
-| **`.github/agents/*.md`** | 9 agenti nativi VS Code con tool restrictions |
+| **`.github/agents/*.md`** | 10 agenti nativi VS Code con tool restrictions |
 | **`.github/prompts/*.md`** | Prompt files per entry point e workflow |
 | **Ciclo Dev E2E** | Fase per fase, gate, transizioni |
 | **Automazione CLI** | Pre-commit hook, script validation, changelog, build |
@@ -27,7 +27,7 @@
 | **`.github/instructions/git-policy.instructions.md`** | Policy git operativa (applyTo: `**`) |
 | **`.github/skills/*.skill.md`** | Abilità atomiche riutilizzabili tra agenti |
 
-### I 9 Agenti
+### I 10 Agenti
 
 0. **Agent-Orchestrator**: Coordinatore E2E, delega agli agenti specializzati
 1. **Agent-Analyze**: Discovery findings (read-only)
@@ -38,6 +38,7 @@
 6. **Agent-Docs**: API.md, ARCHITECTURE.md, CHANGELOG.md sync
 7. **Agent-Release**: Versioning SemVer, cx_freeze build, tag proposal
 8. **Agent-FrameworkDocs**: Docs e changelog Framework Copilot (scope: .github/**)
+9. **Agent-Git**: Operazioni git autorizzate (commit, push, merge, tag)
 
 ### Comandi Entry Point
 

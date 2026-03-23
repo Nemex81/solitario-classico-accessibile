@@ -28,6 +28,9 @@ nel frontmatter degli agenti, non come chiave separata.
 
 ## Criteri di selezione per tipo di task
 
+Nota: i nomi modello qui sotto usano il formato breve per leggibilità.
+Il formato completo usato nel frontmatter degli agenti è `Nome Modello (copilot)`.
+
 - **Reasoning architetturale e decisioni E2E**: gpt-5.4 o claude-opus-4.6
 - **Analisi codebase, design e planning strutturato**: claude-sonnet-4.6
 - **Coding generale e review**: claude-sonnet-4.6
