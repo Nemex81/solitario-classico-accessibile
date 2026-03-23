@@ -47,6 +47,9 @@ Il framework fornisce:
 - `workflows/` — workflow GitHub Actions (CI/CD)
 - `AGENTS.md` — documentazione di riferimento del framework
 - `copilot-instructions.md` — istruzioni globali Copilot per il progetto
+- `instructions/model-policy.instructions.md` — Model Policy: assegnazioni
+   modello per tutti gli agenti, criteri di selezione per tipo di task,
+   lista modelli deprecati e fallback ufficiali. (applyTo: `.github/**`)
 - `FRAMEWORK_CHANGELOG.md` — storico delle versioni del framework
 
 ## Git Policy

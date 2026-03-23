@@ -8,7 +8,7 @@ tools:
   - create_file
   - insert_edit_into_file
   - run_in_terminal
-model: gpt-4o
+model: ['GPT-5 mini (copilot)', 'Raptor mini (copilot)']
 ---
 
 # Agent-Release

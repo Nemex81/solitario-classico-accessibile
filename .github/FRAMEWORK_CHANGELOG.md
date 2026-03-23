@@ -18,6 +18,10 @@ Versioning: [SemVer](https://semver.org/lang/it/)
   operazione di eliminazione file, inclusi merge con conflitti,
   git rm e git clean. Referenziata da Agent-Git, Agent-Code,
   Agent-FrameworkDocs.
+- `.github/instructions/model-policy.instructions.md`: nuova istruzione
+  contestuale (applyTo: `.github/**`) con assegnazioni modello per tutti
+  e 10 gli agenti, criteri di selezione per tipo di task, lista modelli
+  deprecati e fallback ufficiali.
 
 ### Changed
 
@@ -27,6 +31,12 @@ Versioning: [SemVer](https://semver.org/lang/it/)
   in Riferimenti Skills e Regole Invarianti.
 - `skills/README.md`: skill list e tabella agenti aggiornate con
   file-deletion-guard per Agent-Git, Agent-Code, Agent-FrameworkDocs.
+- Model policy: aggiornati `model` e `fallbackModels` nel frontmatter
+  di tutti e 10 gli agenti. Rimosso gpt-4o (legacy) come default universale.
+- `copilot-instructions.md`: aggiunta sezione `## Model Policy` leggera
+  con rimando a model-policy.instructions.md.
+- `.github/README.md`: aggiunto riferimento a model-policy.instructions.md.
+- `.github/instructions/README.md`: aggiornato con il nuovo file di policy.
 
 ## [v1.5.1] - 2026-03-22
 

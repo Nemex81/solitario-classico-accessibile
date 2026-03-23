@@ -11,6 +11,7 @@ tools:
   - replace_string_in_file
   - run_in_terminal
   - agent
+model: ['GPT-5.4 (copilot)', 'Claude Opus 4.6 (copilot)']
 user-invocable: true
 ---
 

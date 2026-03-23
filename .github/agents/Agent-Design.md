@@ -7,7 +7,7 @@ tools:
   - read_file
   - create_file
   - insert_edit_into_file
-model: gpt-4o
+model: ['Claude Opus 4.6 (copilot)', 'GPT-5.4 (copilot)']
 ---
 
 # Agent-Design

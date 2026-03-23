@@ -6,7 +6,7 @@ description: >
 tools:
   - read_file
   - run_in_terminal
-model: gpt-4o
+model: ['GPT-5.3-Codex (copilot)', 'Claude Sonnet 4.6 (copilot)']
 ---
 
 # Agent-Validate

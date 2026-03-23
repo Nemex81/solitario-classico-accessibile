@@ -8,7 +8,7 @@ tools:
   - read_file
   - search_code
   - list_directory
-model: gpt-4o
+model: ['Claude Sonnet 4.6 (copilot)', 'GPT-5.4 (copilot)']
 ---
 
 # Agent-Analyze

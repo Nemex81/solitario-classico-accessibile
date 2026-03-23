@@ -10,7 +10,7 @@ tools:
   - run_in_terminal
   - read_file
   - replace_string_in_file
-model: gpt-5-mini
+model: ['GPT-5 mini (copilot)', 'Raptor mini (copilot)']
 user-invocable: true
 ---
 

@@ -7,7 +7,7 @@ tools:
   - read_file
   - create_file
   - insert_edit_into_file
-model: gpt-4o
+model: ['GPT-5 mini (copilot)', 'Raptor mini (copilot)']
 ---
 # Agent-Docs
 

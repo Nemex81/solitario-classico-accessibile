@@ -234,10 +234,19 @@ Per dettaglio operativo completo:
 
 ---
 
+## Model Policy
+
+Regole di selezione modello per tutti gli agenti del framework.
+Dettaglio completo in:
+→ `.github/instructions/model-policy.instructions.md` (applyTo: `.github/**`)
+
+---
+
 ## Referimenti Rapidi
 
 | Risorsa | Scopo |
 |---------|-------|
+| [.github/instructions/model-policy.instructions.md](instructions/model-policy.instructions.md) | Assegnazioni modelli agenti e criteri selezione |
 | [.github/AGENTS.md](AGENTS.md) | 9-agent system |
 | [docs/WORKFLOW.md](../docs/WORKFLOW.md) | E2E workflow |
 | [docs/CI_AUTOMATION.md](../docs/CI_AUTOMATION.md) | CI locale |

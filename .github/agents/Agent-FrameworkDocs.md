@@ -10,7 +10,7 @@ tools:
   - create_file
   - insert_edit_into_file
   - agent
-model: gpt-4o
+model: ['Claude Sonnet 4.6 (copilot)', 'GPT-5 mini (copilot)']
 ---
 
 # Agent-FrameworkDocs
