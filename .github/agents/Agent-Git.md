@@ -236,8 +236,9 @@ git push origin <tag>
 ---
 
 ## Regole Invarianti
-
-- MAI eseguire `git push` senza "PUSH" maiuscolo dall'utente
+- MAI eseguire `git push` senza "PUSH" maiuscolo dall'utente,
+   eccetto in modalità COMMIT_E_PUSH (OP-2) dove il parametro
+   PUSH passato al dispatcher costituisce conferma implicita
 - MAI eseguire `git merge` senza "MERGE" maiuscolo dall'utente
 - MAI eseguire `git rebase`, `git reset --hard`, `git commit --amend`
 - MAI toccare branch diversi da quello corrente senza istruzione esplicita
