@@ -40,6 +40,17 @@ Versioning: [SemVer](https://semver.org/lang/it/)
   applicato automaticamente, push eseguito senza gate,
   riepilogo finale obbligatorio. Totale interazioni: 0.
 
+### Changed
+
+- `Agent-Git.md`: refactor OP-2 — logica generazione voce
+  CHANGELOG estratta in changelog-entry.skill.md (nuovo),
+  logica messaggio commit ora referenzia esplicitamente
+  conventional-commit.skill.md. Comportamento invariato,
+  corpo agente alleggerito. Sezione Riferimenti Skills
+  aggiornata con changelog-entry.
+- `skills/README.md`: aggiunta changelog-entry.skill.md
+  a lista skills e tabella agenti.
+
 ## [v1.6.0] - 2026-03-23
 
 ### Added

@@ -71,14 +71,9 @@ determinata dal contesto ricevuto dal dispatcher:
 2. Esegui: `git diff`
    Analizza le modifiche per determinare tipo e scope del commit.
 
-3. Leggi `CHANGELOG.md` (root). Se non esiste, crealo con struttura base:
-   ```
-   # Changelog
-   Formato: [Keep a Changelog](https://keepachangelog.com/)
-   ## [Unreleased]
-   ```
-   Genera la voce CHANGELOG appropriata per sezione [Unreleased]
-   e applicala automaticamente senza chiedere conferma.
+3. Applica voce CHANGELOG seguendo:
+   → `.github/skills/changelog-entry.skill.md`
+   Crea CHANGELOG.md se assente (struttura base nella skill).
    Mostra la voce applicata nel formato:
    ```
    CHANGELOG — Voce applicata:
@@ -90,8 +85,9 @@ determinata dal contesto ricevuto dal dispatcher:
 4. Esegui: `git add .`
 5. Esegui: `git diff --staged` — mostra output completo.
 
-6. Genera messaggio commit in formato Conventional Commits
-   basandoti sull'analisi del diff al passo 2.
+6. Genera messaggio commit seguendo:
+   → `.github/skills/conventional-commit.skill.md`
+   Base: analisi diff del passo 2.
 
 **Da qui il comportamento diverge per modalità:**
 
@@ -224,14 +220,18 @@ git push origin <tag>
 
 | Agente | Skills referenziate |
 | ------ | ------------------ |
-| Agent-Git | git-execution, conventional-commit, accessibility-output, file-deletion-guard |
+| Agent-Git | git-execution, conventional-commit, changelog-entry, accessibility-output, file-deletion-guard |
 
 - **Git policy e matrice autorizzazioni**:
   → `.github/skills/git-execution.skill.md`
 - **Conventional Commits** (formato messaggi commit):
   → `.github/skills/conventional-commit.skill.md`
+- **Generazione voce CHANGELOG da diff**:
+  → `.github/skills/changelog-entry.skill.md`
 - **Standard output accessibile** (struttura report):
   → `.github/skills/accessibility-output.skill.md`
+- **Protezione eliminazione file**:
+  → `.github/skills/file-deletion-guard.skill.md`
 
 ---
 

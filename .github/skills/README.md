@@ -15,6 +15,8 @@ esplicitamente nella sezione "Riferimenti Skills".
 - `git-execution.skill.md` — matrice autorizzazioni comandi git per contesto
 - `file-deletion-guard.skill.md` — guardia con conferma obbligatoria
   prima di eliminare file o directory
+- `changelog-entry.skill.md` — regole generazione voce CHANGELOG
+  da git diff: classificazione sezione, formato voce, struttura file
 - `code-routing.skill.md` — regole di classificazione fasi GUI/non-GUI per Agent-CodeRouter
 
 ## Agenti e skills associate
@@ -29,7 +31,7 @@ esplicitamente nella sezione "Riferimenti Skills".
 | Agent-Docs | semver-bump, accessibility-output |
 | Agent-Release | semver-bump, accessibility-output |
 | Agent-FrameworkDocs | accessibility-output, file-deletion-guard |
-| Agent-Git | git-execution, conventional-commit, accessibility-output, file-deletion-guard |
+| Agent-Git | git-execution, conventional-commit, changelog-entry, accessibility-output, file-deletion-guard |
 | Agent-Orchestrator | accessibility-output, git-execution |
 | Agent-CodeRouter | code-routing, accessibility-output, git-execution |
 | Agent-CodeUI | validate-accessibility, conventional-commit, accessibility-output, git-execution |
