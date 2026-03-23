@@ -19,6 +19,24 @@ La regola è assoluta in tutti questi contesti.
 - `git reset --hard` — mai, in nessun contesto
 - `git tag` — solo proposto come comando testuale, mai eseguito
 
+## Override per Agent-Git
+
+Quando il contesto attivo è Agent-Git (agente selezionato
+dal dropdown VS Code o invocato tramite subagent delegation),
+le regole elencate in "Comandi sempre vietati in autonomia"
+sono SOSPESE e sostituite dalla matrice autorizzazioni
+definita in:
+→ `.github/skills/git-execution.skill.md`
+   sezione "Contesto: Agent-Git"
+
+Agent-Git è autorizzato a usare run_in_terminal per i comandi
+nella propria matrice, con le conferme esplicite previste
+(PUSH maiuscolo per push, MERGE maiuscolo per merge,
+conferma messaggio per commit).
+
+Questa override ha priorità assoluta su tutte le altre
+regole di questo file quando Agent-Git è il contesto attivo.
+
 ## Comandi sempre consentiti (read-only)
 
 - `git log`, `git log --oneline`

@@ -8,6 +8,30 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 ---
 
+## [Unreleased]
+
+### Fixed
+
+- `git-policy.instructions.md`: aggiunta sezione "Override per
+  Agent-Git" con priorità esplicita. Risolve il conflitto tra
+  blocco globale applyTo:"**" e autorizzazione Agent-Git, che
+  causava output di comandi manuali invece dell'esecuzione
+  tramite run_in_terminal.
+- `git-commit.prompt.md`: aggiunto run_in_terminal alla lista
+  tools del frontmatter. Risolve il fallimento al passo 1
+  (git status) del workflow dispatcher.
+- `git-execution.skill.md`: corretti delimitatori frontmatter
+  da *** a ---. Risolve il mancato parsing YAML da parte di
+  VS Code che rendeva la skill invisibile come contesto
+  strutturato.
+- `git-commit.prompt.md`: aggiunto supporto parametro opzionale
+  PUSH. Se l'utente avvia il prompt senza parametri esegue solo
+  OP-2 (commit). Se avvia con parametro PUSH, dopo il commit
+  Agent-Git avvia automaticamente OP-3 (push) procedendo
+  direttamente al gate di conferma "PUSH" maiuscolo, senza
+  chiedere conferma intermedia. Aggiunto run_in_terminal ai tools
+  e input opzionale push_flag nel frontmatter.
+
 ## [v1.6.0] - 2026-03-23
 
 ### Added

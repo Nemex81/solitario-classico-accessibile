@@ -1,13 +1,13 @@
 <!-- markdownlint-disable MD041 -->
 
-***
+---
 name: git-execution
 description: >
   Lista tecnica dei comandi git autorizzati per contesto.
   Definisce cosa Copilot può eseguire tramite run_in_terminal
   e cosa deve invece proporre come testo all'utente.
   Richiamabile da Agent-Git, Agent-Code e Agent-Orchestrator.
-***
+---
 
 # Skill: Git Execution
 
