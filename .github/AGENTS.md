@@ -1,8 +1,8 @@
 # Framework Copilot — Solitario Classico Accessibile
 
-> **Versione Framework**: v1.5.1 — 22 Marzo 2026
+> **Versione Framework**: v1.6.0 — 23 Marzo 2026
 
-Questo framework orchestra lo sviluppo del progetto tramite 10 agenti specializzati
+Questo framework orchestra lo sviluppo del progetto tramite 12 agenti specializzati
 e prompt files nativi di VS Code. Ogni agente ha un ruolo specifico nel ciclo di
 sviluppo (dal concept al rilascio) con trigger di attivazione, output e gate di
 validazione. Il flusso E2E completo e descritto in [docs/WORKFLOW.md](../docs/WORKFLOW.md).
@@ -22,7 +22,15 @@ Ogni file agente contiene: scopo, trigger, deliverable, gate e workflow.
 - [Agent-Analyze](agents/Agent-Analyze.md) — Discovery e analisi codebase (read-only)
 - [Agent-Design](agents/Agent-Design.md) — Decisioni architetturali, creazione DESIGN_*.md
 - [Agent-Plan](agents/Agent-Plan.md) — Breaking down in fasi, PLAN_*.md e docs/TODO.md
+- [Agent-CodeRouter](agents/Agent-CodeRouter.md) — Dispatcher sotto-ciclo codifica
+  Coordinatore del sotto-ciclo implementazione. Classifica le fasi del TODO
+  come GUI o non-GUI e delega ad Agent-CodeUI o Agent-Code.
+  Invocato da Agent-Orchestrator in sostituzione diretta di Agent-Code.
 - [Agent-Code](agents/Agent-Code.md) — Implementazione incrementale, commit atomici
+  (invariato, ora sub-agente di Agent-CodeRouter per fasi non-GUI)
+- [Agent-CodeUI](agents/Agent-CodeUI.md) — Implementazione GUI wxPython + accessibilità NVDA
+  Sub-agente di Agent-CodeRouter per fasi che coinvolgono componenti UI.
+  Ogni componente deve superare checklist WAI-ARIA + NVDA prima del commit.
 - [Agent-Validate](agents/Agent-Validate.md) — Test coverage, quality gates
 - [Agent-Docs](agents/Agent-Docs.md) — Sync API.md, ARCHITECTURE.md, CHANGELOG.md
 - [Agent-Release](agents/Agent-Release.md) — Versioning SemVer, build cx_freeze, release
@@ -87,6 +95,7 @@ Si trovano in `.github/instructions/`.
 - `python.instructions.md` — standard Python (applyTo: `**/*.py`)
 - `tests.instructions.md` — standard test (applyTo: `tests/**/*.py`)
 - `domain.instructions.md` — regole layer domain (applyTo: `src/domain/**/*.py`)
+- `ui.instructions.md` — regole wxPython + accessibilità NVDA (applyTo: `src/presentation/**/*.py`)
 
 ## Agent Skills
 
@@ -100,6 +109,7 @@ Si trovano in `.github/skills/`.
 - `document-template.skill.md` — struttura DESIGN, PLAN e TODO
 - `accessibility-output.skill.md` — standard output accessibile (tutti gli agenti)
 - `git-execution.skill.md` — matrice autorizzazioni comandi git per contesto
+- `code-routing.skill.md` — classificazione fasi GUI/non-GUI per Agent-CodeRouter
 
 | Agente | Skills referenziate |
 | ------ | ------------------- |
@@ -113,7 +123,9 @@ Si trovano in `.github/skills/`.
 1. ANALYZE  — Agent-Analyze (read-only, findings report)
 2. DESIGN   — Agent-Design (DESIGN_*.md: DRAFT -> REVIEWED)
 3. PLAN     — Agent-Plan (PLAN_*.md: DRAFT -> READY, + TODO.md)
-4. CODE     — Agent-Code (loop per fase, commit atomici)
+4. CODE     — Agent-CodeRouter (dispatcher)
+               4a. Agent-Code    (fasi non-GUI)
+               4b. Agent-CodeUI  (fasi GUI + accessibilità)
 5. VALIDATE — Agent-Validate (coverage >= 85%, test skeletons)
 6. DOCS     — Agent-Docs (sync API.md, ARCHITECTURE.md, CHANGELOG.md)
 7. RELEASE  — Agent-Release (SemVer, build, tag proposal)

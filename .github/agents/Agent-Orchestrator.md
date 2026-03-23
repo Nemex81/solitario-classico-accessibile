@@ -105,21 +105,25 @@ Checkpoint: mostra PLAN e TODO all'utente. Chiedi: "Approvare e
 impostare status: READY per avviare l'implementazione?"
 Se confermato: aggiorna frontmatter status → READY.
 
-### Fase 4 — Implementazione (Agent-Code)
+### Fase 4 — Implementazione (Agent-CodeRouter)
 
 Delega tramite subagent:
-- Agente: Agent-Code
+- Agente: Agent-CodeRouter
 - Prompt: "Leggi docs/TODO.md e il PLAN in <path>.
   Implementa la prima fase non completata. Segui le istruzioni del PLAN:
   commit atomici, pre-commit checklist, spunta TODO dopo ogni commit."
 
 Loop per ogni fase del TODO:
-  1. Delega fase a Agent-Code
+  1. Delega fase a Agent-CodeRouter
   2. Attendi completamento
   3. Leggi TODO.md aggiornato
   4. Checkpoint: "Fase N completata. Proseguo con fase N+1?" 
   5. Se confermato: delega fase successiva
   6. Se TODO.md completato al 100%: esci dal loop
+
+Nota: Agent-CodeRouter smista internamente tra Agent-Code e Agent-CodeUI
+in base alla classificazione della fase. Agent-Orchestrator non conosce
+questo dettaglio: delega sempre e solo ad Agent-CodeRouter.
 
 Gate di uscita dal loop:
   python scripts/validate_gates.py --check-all

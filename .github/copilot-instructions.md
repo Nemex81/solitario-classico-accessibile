@@ -1,8 +1,8 @@
 ﻿# Copilot Custom Instructions  Solitario Classico Accessibile
 
-## Framework Copilot v1.5.1
+## Framework Copilot v1.6.0
 
-**Questo progetto utilizza un framework orchestrazione Copilot con 10 agenti nativi VS Code.**
+**Questo progetto utilizza un framework orchestrazione Copilot con 12 agenti nativi VS Code.**
 
 ### Quick Start (3 passi)
 
@@ -14,7 +14,7 @@
 
 | Componente | Scopo |
 |-----------|-------|
-| **`.github/agents/*.md`** | 10 agenti nativi VS Code con tool restrictions |
+| **`.github/agents/*.md`** | 12 agenti nativi VS Code con tool restrictions |
 | **`.github/prompts/*.md`** | Prompt files per entry point e workflow |
 | **Ciclo Dev E2E** | Fase per fase, gate, transizioni |
 | **Automazione CLI** | Pre-commit hook, script validation, changelog, build |
@@ -27,13 +27,15 @@
 | **`.github/instructions/git-policy.instructions.md`** | Policy git operativa (applyTo: `**`) |
 | **`.github/skills/*.skill.md`** | Abilità atomiche riutilizzabili tra agenti |
 
-### I 10 Agenti
+### I 12 Agenti
 
 0. **Agent-Orchestrator**: Coordinatore E2E, delega agli agenti specializzati
 1. **Agent-Analyze**: Discovery findings (read-only)
 2. **Agent-Design**: DESIGN_*.md doc (DRAFT  REVIEWED)
 3. **Agent-Plan**: PLAN_*.md + docs/TODO.md (DRAFT  READY)
 4. **Agent-Code**: Implementazione loop, commits atomici (TODO checklist)
+   4a. **Agent-CodeRouter**: Dispatcher sotto-ciclo codifica, classifica GUI vs non-GUI
+   4b. **Agent-CodeUI**: Implementazione GUI wxPython, accessibilità NVDA obbligatoria
 5. **Agent-Validate**: Test coverage (85%+ threshold)
 6. **Agent-Docs**: API.md, ARCHITECTURE.md, CHANGELOG.md sync
 7. **Agent-Release**: Versioning SemVer, cx_freeze build, tag proposal
@@ -106,6 +108,8 @@ handling e accessibilità sono nelle instructions contestuali:
   (attivo automaticamente su `tests/**/*.py`)
 - Domain rules → `.github/instructions/domain.instructions.md`
   (attivo automaticamente su `src/domain/**/*.py`)
+- UI wxPython → `.github/instructions/ui.instructions.md`
+  (attivo automaticamente su `src/presentation/**/*.py`)
 
 Skills riutilizzabili tra agenti:
 - Accessibilità NVDA (UI) → `.github/skills/validate-accessibility.skill.md`
@@ -115,6 +119,7 @@ Skills riutilizzabili tra agenti:
 - Template documenti → `.github/skills/document-template.skill.md`
 - Output accessibile → `.github/skills/accessibility-output.skill.md`
 - Git execution matrix → `.github/skills/git-execution.skill.md`
+- Routing fasi codifica → `.github/skills/code-routing.skill.md`
 
 ---
 

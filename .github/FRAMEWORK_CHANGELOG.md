@@ -10,6 +10,40 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 ## [Unreleased]
 
+### Added (v1.6.0 — 23 Marzo 2026)
+
+- `Agent-CodeRouter`: nuovo agente dispatcher del sotto-ciclo di codifica.
+  Riceve task da Agent-Orchestrator (Fase 4), classifica ogni fase del TODO
+  come GUI o non-GUI tramite code-routing.skill.md, delega ad Agent-CodeUI
+  o Agent-Code, verifica completamento e aggiorna docs/TODO.md.
+  Non scrive codice direttamente.
+- `Agent-CodeUI`: nuovo agente specializzato implementazione GUI wxPython
+  con accessibilità NVDA obbligatoria. Sub-agente di Agent-CodeRouter.
+  Ogni componente UI deve superare checklist validate-accessibility.skill.md
+  (7 punti WAI-ARIA + requisiti NVDA) prima del commit.
+  Scope commit obbligatorio: presentation.
+- `code-routing.skill.md`: skill atomica con regole di classificazione
+  deterministiche (pattern matching) per discriminare fasi GUI da fasi non-GUI.
+  Gestisce caso ambiguo con prompt strutturato all'utente.
+  Espandibile per nuovi agenti specializzati senza modificare Agent-CodeRouter.
+- `ui.instructions.md`: instruction file contestuale per `src/presentation/**/*.py`.
+  Regole obbligatorie wxPython: SetTitle, SetLabel, SetFocus, TAB order,
+  ESC handling, requisiti NVDA, logging apertura/chiusura dialog, marker pytest.gui.
+
+### Changed (v1.6.0 — 23 Marzo 2026)
+
+- `Agent-Orchestrator.md`: Fase 4 aggiornata — delega ad Agent-CodeRouter
+  invece di Agent-Code direttamente. Aggiunta nota sul sotto-ciclo interno.
+- `scripts/detect_agent.py`: Agent-Code rinominato in Agent-CodeRouter nei keyword.
+  Aggiunta voce Agent-CodeUI con keyword UI/wxPython/accessibilità.
+  AGENT_PRIORITY aggiornato con nuovo ordine.
+- `AGENTS.md`: versione bumped a v1.6.0, conteggio agenti da 10 a 12,
+  lista agenti e flusso Fase 4 aggiornati.
+- `copilot-instructions.md`: versione bumped a v1.6.0, tabella componenti
+  e lista skills aggiornate con nuovi file.
+- `skills/README.md`: aggiunta code-routing.skill.md e tabella agenti aggiornata.
+- `instructions/README.md`: aggiunta ui.instructions.md.
+
 ### Added
 
 - `file-deletion-guard.skill.md`: nuova skill di protezione contro

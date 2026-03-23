@@ -44,14 +44,20 @@ AGENT_KEYWORDS: Dict[str, List[str]] = {
         # inglese
         "plan", "phases", "milestones", "divide into steps",
     ],
-    "Agent-Code": [
+    "Agent-CodeRouter": [
         # italiano
         "implementa", "codifica", "scrivi il codice", "procedi",
         "inizia a scrivere", "aggiungi funzione", "modifica",
         "correggi il bug", "fix", "sviluppa",
+        "router", "smista", "codifica mista",
         # inglese
         "implement", "code", "write", "develop", "add feature",
         "modify", "fix bug", "create function",
+    ],
+    "Agent-CodeUI": [
+        "interfaccia grafica", "wxpython", "wx.", "dialog", "pannello",
+        "finestra", "componente ui", "gui", "accessibilità ui", "layout",
+        "widget", "schermata", "visualizzazione",
     ],
     "Agent-Validate": [
         # italiano
@@ -87,7 +93,8 @@ AGENT_PRIORITY: List[str] = [
     "Agent-Analyze",
     "Agent-Design",
     "Agent-Plan",
-    "Agent-Code",
+    "Agent-CodeRouter",
+    "Agent-CodeUI",
     "Agent-Validate",
     "Agent-Docs",
     "Agent-Release",

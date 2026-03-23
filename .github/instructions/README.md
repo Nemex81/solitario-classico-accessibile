@@ -16,6 +16,8 @@ in base al file aperto nell'editor (frontmatter `applyTo`).
 - `model-policy.instructions.md` — Model Policy agenti: assegnazioni modello
   primario e fallback per tutti e 10 gli agenti del framework. Attivo
   automaticamente su `.github/**`.
+- `ui.instructions.md` — regole wxPython + accessibilità NVDA
+  (applyTo: `src/presentation/**/*.py`)
 
 ## Come funzionano
 
