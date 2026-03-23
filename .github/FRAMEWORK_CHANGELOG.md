@@ -31,6 +31,14 @@ Versioning: [SemVer](https://semver.org/lang/it/)
   direttamente al gate di conferma "PUSH" maiuscolo, senza
   chiedere conferma intermedia. Aggiunto run_in_terminal ai tools
   e input opzionale push_flag nel frontmatter.
+- `Agent-Git.md`: ridotte conferme interattive in OP-2 e OP-3.
+  Changelog ora applicato automaticamente in entrambe le modalità.
+  Introdotta distinzione modale:
+  SOLO_COMMIT (default): conferma messaggio commit mantenuta,
+  gate "PUSH" maiuscolo mantenuto.
+  COMMIT_E_PUSH (parametro PUSH dal dispatcher): messaggio commit
+  applicato automaticamente, push eseguito senza gate,
+  riepilogo finale obbligatorio. Totale interazioni: 0.
 
 ## [v1.6.0] - 2026-03-23
 

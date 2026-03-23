@@ -56,6 +56,14 @@ Riferimento skill: `.github/skills/git-execution.skill.md`
 
 ### OP-2: Commit
 
+Questa operazione ha due modalità. La modalità è
+determinata dal contesto ricevuto dal dispatcher:
+- Se il contesto contiene "Modalità: solo commit" → SOLO_COMMIT
+- Se il contesto contiene "Modalità: commit e push" → COMMIT_E_PUSH
+- Se invocato direttamente senza contesto dispatcher → SOLO_COMMIT
+
+**Step comuni a entrambe le modalità:**
+
 1. Esegui: `git status`
    Se output mostra "nothing to commit": termina con messaggio
    "Nessuna modifica rilevata. Niente da committare." Non procedere.
@@ -69,21 +77,27 @@ Riferimento skill: `.github/skills/git-execution.skill.md`
    Formato: [Keep a Changelog](https://keepachangelog.com/)
    ## [Unreleased]
    ```
-
-4. Proponi voce CHANGELOG per sezione [Unreleased]:
+   Genera la voce CHANGELOG appropriata per sezione [Unreleased]
+   e applicala automaticamente senza chiedere conferma.
+   Mostra la voce applicata nel formato:
    ```
-   CHANGELOG — Voce proposta:
+   CHANGELOG — Voce applicata:
    ──────────────────────────────────────────
-   <voce proposta>
+   <voce applicata>
    ──────────────────────────────────────────
-   Confermi? "ok" / testo alternativo / "salta"
    ```
-   Attendi risposta. Applica la voce confermata o salta.
 
-5. Esegui: `git add .`
-6. Esegui: `git diff --staged` — mostra output completo.
+4. Esegui: `git add .`
+5. Esegui: `git diff --staged` — mostra output completo.
 
-7. Proponi messaggio commit (Conventional Commits):
+6. Genera messaggio commit in formato Conventional Commits
+   basandoti sull'analisi del diff al passo 2.
+
+**Da qui il comportamento diverge per modalità:**
+
+--- Modalità SOLO_COMMIT ---
+
+7. Proponi messaggio commit con conferma:
    ```
    COMMIT — Messaggio proposto:
    ──────────────────────────────────────────
@@ -91,7 +105,7 @@ Riferimento skill: `.github/skills/git-execution.skill.md`
    ──────────────────────────────────────────
    Confermi? "ok" / testo alternativo
    ```
-   Attendi risposta.
+   Attendi risposta. Usa il messaggio confermato o quello alternativo.
 
 8. Esegui: `git commit -m "<messaggio confermato>"`
 9. Mostra riepilogo:
@@ -106,10 +120,38 @@ Riferimento skill: `.github/skills/git-execution.skill.md`
    Per fare push scrivi: "push" o "pusha".
    ```
 
+--- Modalità COMMIT_E_PUSH ---
+
+7. Applica automaticamente il messaggio commit generato
+   senza chiedere conferma. Mostralo nel formato:
+   ```
+   COMMIT — Messaggio applicato:
+   ──────────────────────────────────────────
+   <type>(<scope>): <subject>
+   ──────────────────────────────────────────
+   ```
+
+8. Esegui: `git commit -m "<messaggio generato>"`
+9. Esegui: `git branch --show-current`
+10. Esegui: `git push origin <branch-corrente>`
+11. Mostra riepilogo finale obbligatorio:
+    ```
+    COMMIT + PUSH ESEGUITI
+    ──────────────────────────────────────────
+    Branch   : <branch corrente>
+    Messaggio: <messaggio commit>
+    File     : <numero file committati>
+    Remote   : origin/<branch> aggiornato
+    ──────────────────────────────────────────
+    ```
+    Nessuna ulteriore interazione. Operazione completata.
+
 ### OP-3: Push (solo su richiesta esplicita)
 
-Attiva SOLO se l'utente scrive "push" o "pusha".
-In nessun altro caso.
+Attiva SOLO in modalità SOLO_COMMIT, quando l'utente
+scrive "push" o "pusha" dopo un commit completato.
+Non attivare mai in modalità COMMIT_E_PUSH
+(il push è già stato eseguito in OP-2).
 
 1. Esegui: `git branch --show-current`
 2. Mostra conferma contestuale:
