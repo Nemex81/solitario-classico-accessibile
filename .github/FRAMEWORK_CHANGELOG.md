@@ -40,6 +40,16 @@ Versioning: [SemVer](https://semver.org/lang/it/)
   applicato automaticamente, push eseguito senza gate,
   riepilogo finale obbligatorio. Totale interazioni: 0.
 
+### Added
+
+- `agents/README.md`: nuovo file — indice della cartella
+  `.github/agents/` con lista dei 12 agenti in ordine di
+  flusso E2E, ruolo sintetico e link ai file agente.
+  Allinea la struttura a `skills/README.md` e
+  `instructions/README.md`. Colma il riferimento già
+  presente in AGENTS.md (sezione Dual-Track Documentation)
+  che indicava questo file come esistente.
+
 ### Changed
 
 - `Agent-Git.md`: refactor OP-2 — logica generazione voce
