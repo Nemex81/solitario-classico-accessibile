@@ -109,11 +109,26 @@ Si trovano in `.github/skills/`.
 - `document-template.skill.md` — struttura DESIGN, PLAN e TODO
 - `accessibility-output.skill.md` — standard output accessibile (tutti gli agenti)
 - `git-execution.skill.md` — matrice autorizzazioni comandi git per contesto
+- `file-deletion-guard.skill.md` — guardia con conferma
+  obbligatoria prima di eliminare file o directory
+- `changelog-entry.skill.md` — regole generazione voce
+  CHANGELOG da git diff: sezione, formato, struttura file
 - `code-routing.skill.md` — classificazione fasi GUI/non-GUI per Agent-CodeRouter
 
 | Agente | Skills referenziate |
-| ------ | ------------------- |
-| Agent-Git | git-execution, conventional-commit, accessibility-output |
+| ------ | ------------------ |
+| Agent-Analyze | clean-architecture-rules, accessibility-output |
+| Agent-Design | clean-architecture-rules, document-template, accessibility-output |
+| Agent-Plan | document-template, accessibility-output |
+| Agent-Code | conventional-commit, validate-accessibility, clean-architecture-rules, accessibility-output, git-execution, file-deletion-guard |
+| Agent-Validate | tests (instructions), validate-accessibility, accessibility-output |
+| Agent-Docs | semver-bump, accessibility-output |
+| Agent-Release | semver-bump, accessibility-output |
+| Agent-FrameworkDocs | accessibility-output, file-deletion-guard |
+| Agent-Git | git-execution, conventional-commit, changelog-entry, accessibility-output, file-deletion-guard |
+| Agent-Orchestrator | accessibility-output, git-execution |
+| Agent-CodeRouter | code-routing, accessibility-output, git-execution |
+| Agent-CodeUI | validate-accessibility, conventional-commit, accessibility-output, git-execution |
 
 ---
 

@@ -50,6 +50,10 @@ Versioning: [SemVer](https://semver.org/lang/it/)
   aggiornata con changelog-entry.
 - `skills/README.md`: aggiunta changelog-entry.skill.md
   a lista skills e tabella agenti.
+- `AGENTS.md`: aggiornata sezione Agent Skills — aggiunta
+  `file-deletion-guard.skill.md` e `changelog-entry.skill.md`
+  alla lista testuale. Tabella agenti allineata alla tabella
+  completa in skills/README.md (tutte le 12 righe agenti).
 
 ## [v1.6.0] - 2026-03-23
 
