@@ -115,6 +115,9 @@ Si trovano in `.github/instructions/`.
 - `ui.instructions.md` — regole wxPython + accessibilità NVDA (applyTo: `src/presentation/**/*.py`)
 - `project-init-gate.instructions.md` — gate inizializzazione progetto (applyTo: `**` —
   attivo in tutti i contesti)
+- `workflow-standard.instructions.md` — sequenza operativa standard
+  per ogni richiesta di modifica (applyTo: `**`): TODO gate, pre-commit
+  checklist, sync documentazione, feedback strutturato.
 
 ## Agent Skills
 

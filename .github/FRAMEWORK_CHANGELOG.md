@@ -12,6 +12,11 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 ### Added
 
+- `workflow-standard.instructions.md`: nuova instruction contestuale
+  (applyTo: `**`) — centralizza la sequenza operativa standard per
+  ogni richiesta di modifica: TODO gate, pre-commit checklist 6 passi,
+  regole sync documentazione, feedback strutturato. Estratta da
+  copilot-instructions.md per alleggerirlo.
 - `Agent-Helper.md`: nuovo agente consultivo read-only sul Framework
   Copilot. Risponde a domande su agenti, prompt, skill, istruzioni e
   struttura del framework. Non modifica file, non esegue comandi git.
@@ -101,6 +106,11 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 ### Changed
 
+- `copilot-instructions.md`: refactor alleggerimento. Rimossi blocchi
+  ridondanti (TODO Gate, Pre-Commit Checklist, Convenzioni Git inline,
+  lista skill). Sostituiti con rimandi a components già esistenti o a
+  workflow-standard.instructions.md. Dimensione stimata: da ~10.446 a
+  ~7.000 bytes. Funzionalità invariata per delega a instructions e skill.
 - `Agent-Git.md`: refactor OP-2 — logica generazione voce
   CHANGELOG estratta in changelog-entry.skill.md (nuovo),
   logica messaggio commit ora referenzia esplicitamente

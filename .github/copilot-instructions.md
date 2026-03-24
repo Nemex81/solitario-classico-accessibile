@@ -35,6 +35,7 @@ Se `initialized: false`: interrompi e segui
 | **Script Utility** | 8 script Python per automazione |
 | **`.github/instructions/*.instructions.md`** | Regole contestuali per filetype |
 | **`.github/instructions/git-policy.instructions.md`** | Policy git operativa (applyTo: `**`) |
+| **`.github/instructions/workflow-standard.instructions.md`** | Sequenza operativa standard per modifiche, TODO gate, pre-commit, sync docs |
 | **`.github/skills/*.skill.md`** | Abilità atomiche riutilizzabili tra agenti |
 
 ### I 14 Agenti
@@ -123,57 +124,18 @@ handling e accessibilità sono nelle instructions contestuali:
 - UI wxPython → `.github/instructions/ui.instructions.md`
   (attivo automaticamente su `src/presentation/**/*.py`)
 
-Skills riutilizzabili tra agenti:
-- Accessibilità NVDA (UI) → `.github/skills/validate-accessibility.skill.md`
-- Conventional Commits → `.github/skills/conventional-commit.skill.md`
-- SemVer bump → `.github/skills/semver-bump.skill.md`
-- Clean Architecture → `.github/skills/clean-architecture-rules.skill.md`
-- Template documenti → `.github/skills/document-template.skill.md`
-- Output accessibile → `.github/skills/accessibility-output.skill.md`
-- Git execution matrix → `.github/skills/git-execution.skill.md`
-- Routing fasi codifica → `.github/skills/code-routing.skill.md`
+Skills riutilizzabili tra agenti: lista completa in `.github/AGENTS.md`
+(sezione Agent Skills) e `.github/skills/README.md`.
 
 ---
 
-## Documentazione: TODO Gate + Sync (Essentials)
+## Documentazione e Workflow Operativo
 
-### TODO Gate
+Regole TODO gate, pre-commit checklist, sync docs e feedback strutturato:
+→ `.github/instructions/workflow-standard.instructions.md` (applyTo: `**`)
 
-Trigger: multi-file/multi-commit implementation.
-
-**Step rapido:**
-1. Controlla docs/TODO.md (crea se assente)
-2. Verifica TODO appartiene task corrente
-3. Leggi TODO + PLAN collegato
-4. Loop: CODIFICA  VERIFICA  COMMIT  SPUNTA
-
-### File Obbligatori
-
-| File | Trigger | Stato |
-|------|---------|-------|
-| DESIGN_*.md | Feature architetturale | DRAFT  REVIEWED |
-| PLAN_*.md | Task multi-commit | DRAFT  READY |
-| docs/TODO.md | PLAN approvato | Operativo |
-
-**Workflow**: DESIGN  PLAN  TODO  implementazione  sync docs
-
-### Sync Trigger
-
-Dopo ogni modifica .py:
-- **API.md**: Signature pubbliche, export da __init__.py?
-- **ARCHITECTURE.md**: Struttura, layer flow, pattern, dipendenze?
-- **CHANGELOG.md**: SEMPRE (Added/Fixed/Changed). Usa [Unreleased] nel branch.
-
-### Pre-Commit Checklist
-
-```
-1. Syntax: python -m py_compile src/**/*.py
-2. Type Hints: mypy src/ --strict
-3. Imports: pylint --enable=cyclic-import
-4. Logging: grep -r "print(" src/ (0 occorrenze)
-5. Tests: pytest --cov=src --cov-fail-under=85
-6. Gates: python scripts/validate_gates.py --check-all docs/2\ -\ projects/
-```
+Struttura DESIGN/PLAN/TODO e frontmatter:
+→ `.github/skills/document-template.skill.md`
 
 ---
 
@@ -186,44 +148,14 @@ markers, naming pattern e regole CI-safe.
 
 ## Convenzioni Git
 
-### Atomic Commits
-
-Format: <type>(<scope>): <subject>
-
-Types: feat, fix, docs, refactor, test, chore
-
-Scope: domain, application, infrastructure, presentation, docs, tests
-
-**Ordine consigliato**:
-1. Pre-requisiti
-2. Implementazione
-3. Test
-4. Update docs
-5. Update TODO.md
-
-### Branch & Release
-
-| Tipo | Pattern | Regola |
-|------|---------|--------|
-| Feature | feature/<slug> | Branch separato |
-| Fix | fix/<slug> | Branch separato |
-| Release | Merge --no-ff | Preserva storia |
-
-**Release steps**: Branch verificato  PR on main  Merge --no-ff  Tag vX.Y.Z  Update CHANGELOG.md
-
-**SemVer**: MAJOR (breaking), MINOR (feature), PATCH (bugfix)
+Formato commit, branch policy, SemVer e release steps:
+→ `.github/skills/conventional-commit.skill.md`
+→ `.github/instructions/git-policy.instructions.md`
+→ `.github/skills/semver-bump.skill.md`
 
 ---
 
-## Workflow Standard
-
-**Quando l'utente chiede modifiche:**
-1. TODO Gate (se multi-file): verifica/crea docs/TODO.md
-2. Type hints + logging semantico
-3. Verifica accessibilità
-4. Audit docs (proponi sync)
-5. Test coverage check (85%+)
-6. Feedback strutturato (file+linee, why, docs impact)
+## Git Policy (Summary)
 
 **Git policy**:
 
@@ -265,7 +197,7 @@ Dettaglio completo in:
 | Risorsa | Scopo |
 |---------|-------|
 | [.github/instructions/model-policy.instructions.md](instructions/model-policy.instructions.md) | Assegnazioni modelli agenti e criteri selezione |
-| [.github/AGENTS.md](AGENTS.md) | 12-agent system, v1.6.0 |
+| [.github/AGENTS.md](AGENTS.md) | 14-agent system, v1.6.0 |
 | [docs/WORKFLOW.md](../docs/WORKFLOW.md) | E2E workflow |
 | [docs/CI_AUTOMATION.md](../docs/CI_AUTOMATION.md) | CI locale |
 | [.vscode/copilot-quick-start.md](../.vscode/copilot-quick-start.md) | Commands (5 min) |

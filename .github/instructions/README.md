@@ -21,6 +21,9 @@ in base al file aperto nell'editor (frontmatter `applyTo`).
   automaticamente su `.github/**`.
 - `ui.instructions.md` — regole wxPython + accessibilità NVDA
   (applyTo: `src/presentation/**/*.py`)
+- `workflow-standard.instructions.md` — sequenza operativa modifiche,
+  TODO gate, pre-commit checklist, sync docs
+  (applyTo: `**` — attivo in tutti i contesti)
 
 ## Come funzionano
 
