@@ -118,7 +118,9 @@ in base al linguaggio primario dichiarato.
 Genera .github/project-profile.md compilando
 tutti i campi con i valori raccolti.
 Imposta initialized: true.
-Usa la struttura canonica in:
+Carica la struttura base da:
+→ .github/templates/project-profile.template.md
+Segui la procedura in:
 → .github/skills/project-profile.skill.md
 sezione "Struttura Canonica project-profile.md"
 
@@ -199,6 +201,9 @@ come default per ogni campo.
 ### Passo 5 — Applicazione modifiche
 
 Aggiorna .github/project-profile.md con i nuovi valori.
+Se il file deve essere resettato completamente:
+carica .github/templates/project-profile.template.md
+come base e ripopola con i valori aggiornati.
 
 Se il linguaggio primario è cambiato:
 consulta la matrice in project-profile.skill.md

@@ -132,6 +132,10 @@ Si trovano in `.github/skills/`.
 - `accessibility-output.skill.md` — standard output accessibile (tutti gli agenti)
 - `project-profile.skill.md` — struttura project-profile.md,
   matrice componenti per linguaggio, template instructions
+- `project-profile.template.md` *(template)* — struttura
+  neutra resettabile del profilo progetto. Sorgente canonica
+  per Agent-Welcome in OP-1 e OP-2. Percorso:
+  `.github/templates/`
 - `git-execution.skill.md` — matrice autorizzazioni comandi git per contesto
 - `file-deletion-guard.skill.md` — guardia con conferma
   obbligatoria prima di eliminare file o directory
@@ -149,7 +153,7 @@ Si trovano in `.github/skills/`.
 
 | Agente | Skills referenziate |
 | ------ | ------------------ |
-| Agent-Welcome | project-profile, accessibility-output, file-deletion-guard |
+| Agent-Welcome | project-profile, accessibility-output, file-deletion-guard, project-profile-template¹ |
 | Agent-Analyze | clean-architecture-rules, accessibility-output |
 | Agent-Design | clean-architecture-rules, document-template, accessibility-output |
 | Agent-Plan | document-template, accessibility-output |
@@ -163,6 +167,8 @@ Si trovano in `.github/skills/`.
 | Agent-CodeRouter | code-routing, accessibility-output, git-execution |
 | Agent-CodeUI | validate-accessibility, conventional-commit, accessibility-output, git-execution |
 | Agent-Helper | framework-query, framework-index, agent-selector, framework-scope-guard, accessibility-output |
+
+¹ `project-profile-template` non è una skill ma un template in `.github/templates/`. Agent-Welcome lo usa in lettura; la manutenzione è di Agent-FrameworkDocs.
 
 ---
 
@@ -190,6 +196,8 @@ Per il flusso dettagliato: [docs/WORKFLOW.md](../docs/WORKFLOW.md)
 - `CHANGELOG.md` — source of truth per versioni
 - `pyproject.toml` — entry point build
 - `.github/workflows/` -- CI/CD (GitHub Actions: ci.yml, assistant-commit.yml)
+- `.github/templates/project-profile.template.md` —
+  template neutro profilo progetto (non eliminare)
 
 ---
 

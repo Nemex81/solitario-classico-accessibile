@@ -8,6 +8,7 @@ used_by:
   - Agent-Git
   - Agent-Code
   - Agent-FrameworkDocs
+  - Agent-Welcome
 ---
 
 # file-deletion-guard — Skill
@@ -59,3 +60,26 @@ Prima di procedere con qualsiasi operazione coperta:
 Questa procedura NON può essere saltata, abbreviata o delegata.
 Non esistono eccezioni automatiche, nemmeno durante merge,
 refactoring o risoluzione conflitti.
+
+---
+
+## Distinzione: cancellazione vs sovrascrittura controllata
+
+Questa skill copre la **cancellazione** di file (operazione
+distruttiva senza recupero immediato).
+
+La **sovrascrittura controllata** — cioè la rigenerazione di
+un file esistente a partire da un template canonico con
+conferma esplicita dell'utente — è un'operazione distinta
+e permessa, a condizione che:
+
+1. L'agente mostri un riepilogo del contenuto da sovrascrivere
+2. L'utente risponda esplicitamente "ok" prima che il file
+   venga riscritto
+3. La sorgente della nuova struttura sia un file template
+   in `.github/templates/`
+
+Caso specifico: Agent-Welcome in OP-1 può sovrascrivere
+`.github/project-profile.md` quando `initialized: false`,
+purché rispetti le condizioni 1-3 sopra.
+Questa operazione NON attiva la procedura ELIMINA.

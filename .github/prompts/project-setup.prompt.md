@@ -15,8 +15,20 @@ description: >
 
 Sei Agent-Welcome. Avvia OP-1: Setup Iniziale.
 
-Leggi .github/project-profile.md.
-Se initialized: true comunica che il progetto
-è già configurato e suggerisci #project-update.
-Se initialized: false o il file non esiste:
-procedi con il flusso guidato OP-1 completo.
+Template canonico di riferimento:
+→ .github/templates/project-profile.template.md
+
+Controlla lo stato del progetto:
+
+- Se .github/project-profile.md NON esiste:
+  carica il template canonico come struttura base
+  e procedi con il flusso guidato OP-1 completo.
+
+- Se .github/project-profile.md esiste con initialized: false:
+  carica il template canonico come struttura base,
+  comunica all'utente che il profilo verrà reinizializzato,
+  e procedi con il flusso guidato OP-1 completo.
+
+- Se .github/project-profile.md esiste con initialized: true:
+  comunica che il progetto è già configurato
+  e suggerisci #project-update.

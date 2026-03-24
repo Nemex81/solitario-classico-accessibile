@@ -2,36 +2,28 @@
 skill: project-profile
 scope: [Agent-Welcome]
 description: >
-  Struttura canonica di project-profile.md,
+  Procedura di caricamento da template canonico,
   matrice componenti language-specific,
   template instructions per linguaggi non-Python.
+  Template sorgente: .github/templates/project-profile.template.md
 ---
 
 # Skill: project-profile
 
 ## Struttura Canonica project-profile.md
 
-Usa questa struttura quando generi o aggiorni
-`.github/project-profile.md`.
+La struttura canonica è definita in:
+→ `.github/templates/project-profile.template.md`
 
-Il frontmatter YAML deve essere la prima sezione
-del file. Il campo `initialized` deve essere
-sempre in prima riga.
+Quando generi o aggiorni `.github/project-profile.md`:
+1. Leggi `.github/templates/project-profile.template.md`
+2. Copia la struttura del frontmatter YAML e del corpo Markdown
+3. Sostituisci i placeholder con i valori raccolti dall'utente
+4. Imposta `initialized: true`
+5. Scrivi il file in `.github/project-profile.md`
 
-Frontmatter obbligatorio:
-
-  initialized: true/false
-  project_name: "Nome Progetto"
-  version: "0.1.0"
-  primary_language: "Python"
-  secondary_languages: ["C"]
-  ui_framework: "wxPython"
-  test_runner: "pytest"
-  build_system: "cx_freeze"
-  architecture: "clean-architecture-4-layer"
-  accessibility: true/false
-  platform: "Windows"
-  screen_reader: "NVDA"
+Per valori non applicabili usa stringa vuota ""
+o lista vuota []. Non usare null o None.
 
 Valori ammessi per architecture:
 - "clean-architecture-4-layer"
@@ -39,9 +31,6 @@ Valori ammessi per architecture:
 - "mvvm"
 - "layered"
 - "none"
-
-Per campi non applicabili usa stringa vuota ""
-o lista vuota []. Non usare null o None.
 
 ---
 

@@ -12,6 +12,17 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 ### Added
 
+- `.github/templates/`: nuova cartella deposito template
+  neutri e resettabili. Convenzione naming: `*.template.md`.
+  Proprietà: Agent-FrameworkDocs (manutenzione),
+  Agent-Welcome (lettura). README.md interno con tabella
+  file presenti e regole di accesso.
+- `.github/templates/project-profile.template.md`:
+  template neutro del profilo progetto. Frontmatter YAML
+  completo con tutti i campi vuoti e `initialized: false`.
+  Struttura Markdown con placeholder. Sorgente canonica per
+  Agent-Welcome in OP-1 e OP-2. Elimina la duplicazione
+  della struttura inline in project-profile.skill.md.
 - `workflow-standard.instructions.md`: nuova instruction contestuale
   (applyTo: `**`) — centralizza la sequenza operativa standard per
   ogni richiesta di modifica: TODO gate, pre-commit checklist 6 passi,
@@ -106,6 +117,29 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 ### Changed
 
+- `project-profile.skill.md`: sezione "Struttura Canonica"
+  convertita da definizione inline a puntatore a
+  `.github/templates/project-profile.template.md`.
+  Aggiunta sezione "Procedura di Caricamento Template"
+  con 5 passi espliciti. Matrice componenti e template
+  instructions invariati. Campo `description` frontmatter
+  aggiornato con riferimento al template.
+- `file-deletion-guard.skill.md`: aggiunta sezione
+  "Distinzione: cancellazione vs sovrascrittura controllata".
+  Definisce le condizioni (3 punti) sotto cui Agent-Welcome
+  può sovrascrivere project-profile.md senza attivare
+  il gate ELIMINA. Campo `used_by` aggiornato con
+  Agent-Welcome.
+- `Agent-Welcome.md`: OP-1 Passo 5 e OP-2 Passo 5
+  aggiornati per caricare il template canonico come
+  sorgente della struttura invece di ricostruirla
+  dalla skill. Logica del flusso e regole invarianti
+  invariate.
+- `project-setup.prompt.md`: corpo prompt riscritto
+  con riferimento esplicito al template canonico.
+  Condizione di attivazione OP-1 ora copre esplicitamente
+  entrambi i casi: file assente e initialized: false.
+  Struttura a tre rami distinti per maggiore leggibilità.
 - `copilot-instructions.md`: refactor alleggerimento. Rimossi blocchi
   ridondanti (TODO Gate, Pre-Commit Checklist, Convenzioni Git inline,
   lista skill). Sostituiti con rimandi a components già esistenti o a
