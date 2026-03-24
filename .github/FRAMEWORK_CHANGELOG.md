@@ -141,6 +141,15 @@ Versioning: [SemVer](https://semver.org/lang/it/)
   vieta git add/commit/push/merge diretti fuori dallo script.
   Aggiunto riferimento a git_runner.py nella sezione
   Riferimenti Skills.
+
+- `Agent-Git.md`: OP-2 — aggiunto riconoscimento
+  deterministico keyword utente per selezione modalità
+  COMMIT_E_PUSH. Keyword riconosciute: "commit e push",
+  "commit and push", "commita e pusha", "push dopo commit",
+  "commit + push" (case-insensitive). Ordine di priorità
+  esplicito: contesto dispatcher > keyword utente >
+  default SOLO_COMMIT. Rende il comportamento prevedibile
+  anche in invocazione diretta dal dropdown senza contesto.
 - `git-execution.skill.md`: aggiunta sezione "Pattern di
   invocazione git_runner.py" con contratto di invocazione
   CLI completo, contratto di output strutturato e matrice

@@ -57,10 +57,23 @@ Riferimento skill: `.github/skills/git-execution.skill.md`
 ### OP-2: Commit
 
 Questa operazione ha due modalità. La modalità è
-determinata dal contesto ricevuto dal dispatcher:
-- Se il contesto contiene "Modalità: solo commit" → SOLO_COMMIT
-- Se il contesto contiene "Modalità: commit e push" → COMMIT_E_PUSH
-- Se invocato direttamente senza contesto dispatcher → SOLO_COMMIT
+determinata nell'ordine seguente (prima regola che
+corrisponde vince):
+
+1. Se il contesto contiene "Modalità: commit e push"
+  → COMMIT_E_PUSH
+
+2. Se il messaggio dell'utente contiene una di queste
+  espressioni (case-insensitive):
+  "commit e push", "commit and push", "commita e pusha",
+  "push dopo commit", "commit + push"
+  → COMMIT_E_PUSH
+
+3. Se il contesto contiene "Modalità: solo commit"
+  → SOLO_COMMIT
+
+4. Qualsiasi altro caso (invocazione diretta senza
+  keyword esplicite) → SOLO_COMMIT
 
 **Step comuni a entrambe le modalità:**
 
