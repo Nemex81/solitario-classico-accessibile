@@ -2,7 +2,7 @@
 
 > **Versione Framework**: v1.6.0 — 23 Marzo 2026
 
-Questo framework orchestra lo sviluppo del progetto tramite 12 agenti specializzati
+Questo framework orchestra lo sviluppo del progetto tramite 13 agenti specializzati
 e prompt files nativi di VS Code. Ogni agente ha un ruolo specifico nel ciclo di
 sviluppo (dal concept al rilascio) con trigger di attivazione, output e gate di
 validazione. Il flusso E2E completo e descritto in [docs/WORKFLOW.md](../docs/WORKFLOW.md).
@@ -14,6 +14,13 @@ validazione. Il flusso E2E completo e descritto in [docs/WORKFLOW.md](../docs/WO
 Gli agenti sono disponibili nel dropdown agenti della chat di VS Code.
 Ogni file agente contiene: scopo, trigger, deliverable, gate e workflow.
 
+- [Agent-Welcome](agents/Agent-Welcome.md) — Setup profilo progetto
+  Agente di inizializzazione. Raccoglie le info fondamentali
+  del progetto, genera .github/project-profile.md come
+  source of truth, adatta i componenti language-specific.
+  Non partecipa al ciclo E2E. Invocabile dal dropdown o
+  tramite #project-setup.prompt.md e #project-update.prompt.md.
+  Modelli: gpt-5-mini, Raptor mini.
 - [Agent-Orchestrator](agents/Agent-Orchestrator.md) — Coordinatore E2E
   Orchestratore del ciclo completo. Usa subagent delegation per
   coordinare tutti gli agenti specializzati. Gate oggettivi verificati
@@ -73,6 +80,11 @@ I due binari non si incrociano.
 I prompt files si attivano dal file picker di VS Code (scrivi # in chat) o digitando
 il nome del file. Usano variabili di input con sintassi `${input:label}`.
 
+- `#project-setup.prompt.md` — Setup iniziale framework
+  per nuovo progetto. Da eseguire prima di qualsiasi
+  altra operazione. Delega ad Agent-Welcome OP-1.
+- `#project-update.prompt.md` — Aggiorna campi del
+  profilo progetto. Delega ad Agent-Welcome OP-2.
 - `#init.prompt.md` — Avvia nuovo task, suggerisce agente appropriato
 - `#start.prompt.md` — Riprendi codifica dal primo task non completato in TODO.md
 - `#status.prompt.md` — Mostra stato attuale del workflow in corso
@@ -108,6 +120,8 @@ Si trovano in `.github/skills/`.
 - `clean-architecture-rules.skill.md` — regole Clean Architecture 4 layer
 - `document-template.skill.md` — struttura DESIGN, PLAN e TODO
 - `accessibility-output.skill.md` — standard output accessibile (tutti gli agenti)
+- `project-profile.skill.md` — struttura project-profile.md,
+  matrice componenti per linguaggio, template instructions
 - `git-execution.skill.md` — matrice autorizzazioni comandi git per contesto
 - `file-deletion-guard.skill.md` — guardia con conferma
   obbligatoria prima di eliminare file o directory
@@ -117,6 +131,7 @@ Si trovano in `.github/skills/`.
 
 | Agente | Skills referenziate |
 | ------ | ------------------ |
+| Agent-Welcome | project-profile, accessibility-output, file-deletion-guard |
 | Agent-Analyze | clean-architecture-rules, accessibility-output |
 | Agent-Design | clean-architecture-rules, document-template, accessibility-output |
 | Agent-Plan | document-template, accessibility-output |

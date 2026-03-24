@@ -10,6 +10,44 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 ## [Unreleased]
 
+### Added
+
+- `project-profile.md`: nuovo file — source of truth
+  profilo progetto. Frontmatter YAML con campo
+  `initialized` in prima riga per intercettazione
+  rapida dello stato. Distribuito con initialized: false.
+  Compilato da Agent-Welcome in OP-1.
+- `Agent-Welcome.md`: nuovo agente — setup iniziale
+  e aggiornamento profilo progetto. Flusso guidato
+  in 7 passi con conferma riepilogo prima di scrivere
+  qualsiasi file. Modelli gpt-5-mini e Raptor mini.
+  Non partecipa al ciclo E2E. Delega git ad Agent-Git.
+- `project-profile.skill.md`: nuova skill — struttura
+  canonica project-profile.md, matrice componenti
+  per linguaggio (Python, C/C++, JS, TS, C#, generico),
+  template instructions per linguaggi non-Python.
+  Referenziata da Agent-Welcome.
+- `project-setup.prompt.md`: nuovo prompt — entry point
+  setup iniziale framework. Nessun input richiesto.
+  Flusso guidato gestito da Agent-Welcome OP-1.
+  Da eseguire come primo comando su qualsiasi progetto.
+- `project-update.prompt.md`: nuovo prompt — entry point
+  aggiornamento profilo progetto. Input opzionale:
+  se vuoto mostra help con esempi d'uso. Delega
+  ad Agent-Welcome OP-2.
+- `project-init-gate.instructions.md`: nuova instruction
+  (applyTo: "**") — gate di inizializzazione attivo
+  in tutti i contesti. Intercetta initialized: false
+  e guida l'utente al setup con messaggio strutturato.
+  Eccezione: Agent-Welcome opera sempre senza blocco.
+- `agents/README.md`: nuovo file — indice della cartella
+  `.github/agents/` con lista dei 12 agenti in ordine di
+  flusso E2E, ruolo sintetico e link ai file agente.
+  Allinea la struttura a `skills/README.md` e
+  `instructions/README.md`. Colma il riferimento già
+  presente in AGENTS.md (sezione Dual-Track Documentation)
+  che indicava questo file come esistente.
+
 ### Fixed
 
 - `git-policy.instructions.md`: aggiunta sezione "Override per
@@ -40,16 +78,6 @@ Versioning: [SemVer](https://semver.org/lang/it/)
   applicato automaticamente, push eseguito senza gate,
   riepilogo finale obbligatorio. Totale interazioni: 0.
 
-### Added
-
-- `agents/README.md`: nuovo file — indice della cartella
-  `.github/agents/` con lista dei 12 agenti in ordine di
-  flusso E2E, ruolo sintetico e link ai file agente.
-  Allinea la struttura a `skills/README.md` e
-  `instructions/README.md`. Colma il riferimento già
-  presente in AGENTS.md (sezione Dual-Track Documentation)
-  che indicava questo file come esistente.
-
 ### Changed
 
 - `Agent-Git.md`: refactor OP-2 — logica generazione voce
@@ -64,6 +92,15 @@ Versioning: [SemVer](https://semver.org/lang/it/)
   `file-deletion-guard.skill.md` e `changelog-entry.skill.md`
   alla lista testuale. Tabella agenti allineata alla tabella
   completa in skills/README.md (tutte le 12 righe agenti).
+- `copilot-instructions.md`: aggiunta sezione
+  "Contesto Progetto" in prima posizione. Trigger
+  gate inizializzazione con riferimento a
+  project-init-gate.instructions.md. Riferimento
+  dinamico a project-profile.md come source of truth.
+- `AGENTS.md`: contatore aggiornato da 12 a 13 agenti.
+  Agent-Welcome aggiunto in cima alla lista.
+  project-profile.skill.md aggiunta a lista skills
+  e tabella agenti.
 
 ## [v1.6.0] - 2026-03-23
 

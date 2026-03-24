@@ -12,6 +12,8 @@ esplicitamente nella sezione "Riferimenti Skills".
 - `clean-architecture-rules.skill.md` — regole Clean Architecture 4 layer
 - `document-template.skill.md` — struttura DESIGN, PLAN e TODO
 - `accessibility-output.skill.md` — standard output accessibile (tutti gli agenti)
+- `project-profile.skill.md` — struttura profilo progetto,
+  matrice componenti language-specific, template instructions
 - `git-execution.skill.md` — matrice autorizzazioni comandi git per contesto
 - `file-deletion-guard.skill.md` — guardia con conferma obbligatoria
   prima di eliminare file o directory
@@ -23,6 +25,7 @@ esplicitamente nella sezione "Riferimenti Skills".
 
 | Agente | Skills referenziate |
 | ------ | ------------------ |
+| Agent-Welcome | project-profile, accessibility-output, file-deletion-guard |
 | Agent-Analyze | clean-architecture-rules, accessibility-output |
 | Agent-Design | clean-architecture-rules, document-template, accessibility-output |
 | Agent-Plan | document-template, accessibility-output |

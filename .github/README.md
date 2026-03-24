@@ -42,6 +42,10 @@ Il framework fornisce:
 
 ## Struttura della cartella .github/
 
+- `project-profile.md` — profilo progetto: source of truth
+  per nome, stack tecnico e architettura. Campo
+  `initialized: false` di default. Compilato da
+  Agent-Welcome durante il setup iniziale.
 - `agents/` — file agente nativi VS Code (uno per agente, formato `.md`).
   Indice: [`agents/README.md`](agents/README.md)
 - `skills/` — skill atomiche riutilizzabili tra agenti (`.skill.md`)

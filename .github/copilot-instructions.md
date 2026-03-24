@@ -1,5 +1,15 @@
 ﻿# Copilot Custom Instructions  Solitario Classico Accessibile
 
+## Contesto Progetto
+
+Leggi `.github/project-profile.md` prima di
+qualsiasi operazione. È la source of truth per
+nome, stack tecnico e architettura del progetto.
+Non usare valori hardcoded in questo file come
+riferimento al progetto corrente.
+Se `initialized: false`: interrompi e segui
+→ `.github/instructions/project-init-gate.instructions.md`
+
 ## Framework Copilot v1.6.0
 
 **Questo progetto utilizza un framework orchestrazione Copilot con 12 agenti nativi VS Code.**
