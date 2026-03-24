@@ -147,7 +147,7 @@ def cmd_commit(message: str, push: bool) -> int:
     rc, out_commit, err_commit = run_git(["commit", "-m", message])
     if rc != 0:
         # Rollback stage
-        run_git(["reset", "HEAD"])
+        run_git(["reset"])
         print_report(
             "COMMIT",
             "FAIL",
@@ -308,7 +308,6 @@ def cmd_merge(source: str, target: str, message: str) -> int:
 
 def cmd_tag(name: str, push: bool) -> int:
     """Propone un tag senza eseguire nulla."""
-    push_line = f"git push origin {name}    \u2190 solo se --push specificato" if push else ""
     lines = [
         f"# Comandi da eseguire manualmente nel terminale:",
         f"git tag {name}",

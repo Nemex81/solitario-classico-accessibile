@@ -205,7 +205,7 @@ Non attivare mai in modalità COMMIT_E_PUSH
    git tag <tag-proposto>
    git push origin <tag-proposto>
    ```
-8. Mostra riepilogo merge.
+7. Mostra riepilogo merge.
 
 ### OP-5: Tag (solo proposto, mai eseguito autonomamente)
 
