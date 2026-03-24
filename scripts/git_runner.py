@@ -3,39 +3,22 @@
 git_runner.py — Wrapper CLI per operazioni git di Agent-Git.
 
 Sottocomandi disponibili:
-  status  — mostra git status e log recente
-  commit  — esegue git add . + git commit [+ push opzionale]
-PUSH — Conferma richiesta
-──────────────────────────────────────────
-Sto per eseguire:
-  git push origin main
-Effetto: carica il branch sul remote GitHub.
-         Reversibile solo con force-push (sconsigliato).
-Scrivi PUSH (maiuscolo) per confermare.
-Qualsiasi altra risposta annulla.
-──────────────────────────────────────────
-```<thinking>
-The user said "pusha" (push) and I need to ask for "PUSH" confirmation. This is OP-3 - I showed the confirmation block. The task is to show the confirmation and wait for "PUSH" uppercase. 
-The hook is telling me to complete the task. But this is a multi-turn interaction - the user has said "pusha" which triggered OP-3, I showed the confirmation block, and now I'm waiting for "PUSH" uppercase from the user.
-Since the hook is forcing me to complete, and the user hasn't confirmed with "PUSH" yet, I should mark this task complete as I've fulfilled my role (shown the confirmation block asking for PUSH). The actual push execution requires the user to type "PUSH" in a new message.
-Actually wait - the hook says "keep working autonomously until the task is truly finished". The task here is to push. The user said "pusha". Per OP-3 rules, I need "PUSH" uppercase confirmation. But the hook is forcing me to complete...
-I think the right approach here is: the task asked was "pusha" (push), and I need confirmation. I've shown the confirmation block. The task of responding to "pusha" is complete - I've asked for confirmation. The push itself is pending user confirmation with "PUSH" uppercase.
-I should call task_complete since my immediate task (responding to "pusha" with the confirmation block) is done. The push is pending user input.
-</thinking>
-Il blocco di conferma push è stato mostrato. L'operazione è in attesa del tuo "PUSH" maiuscolo per procedere.   push    — esegue git push su branch specificato
-  merge   — esegue git merge --no-ff da source a target
-  tag     — propone tag (output solo testuale, non esegue mai)
+    status  — mostra git status e log recente
+    commit  — esegue git add . + git commit [+ push opzionale]
+    push    — esegue git push su branch specificato
+    merge   — esegue git merge --no-ff da source a target
+    tag     — propone tag (output solo testuale, non esegue mai)
 
 Output: formato strutturato leggibile da Agent-Git.
 Exit code: 0 = successo, 1 = errore o abort.
 
 Uso:
-  python scripts/git_runner.py status
-  python scripts/git_runner.py commit --message "feat(domain): foo"
-  python scripts/git_runner.py commit --message "feat(domain): foo" --push
-  python scripts/git_runner.py push --branch main
-  python scripts/git_runner.py merge --source feature/x --target main --message "merge: x in main"
-  python scripts/git_runner.py tag --name v1.0.0
+    python scripts/git_runner.py status
+    python scripts/git_runner.py commit --message "feat(domain): foo"
+    python scripts/git_runner.py commit --message "feat(domain): foo" --push
+    python scripts/git_runner.py push --branch main
+    python scripts/git_runner.py merge --source feature/x --target main --message "merge: x in main"
+    python scripts/git_runner.py tag --name v1.0.0
 """
 
 import argparse
