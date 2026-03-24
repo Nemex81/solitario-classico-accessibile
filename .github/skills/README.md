@@ -20,6 +20,14 @@ esplicitamente nella sezione "Riferimenti Skills".
 - `changelog-entry.skill.md` — regole generazione voce CHANGELOG
   da git diff: classificazione sezione, formato voce, struttura file
 - `code-routing.skill.md` — regole di classificazione fasi GUI/non-GUI per Agent-CodeRouter
+- `framework-query.skill.md` — contratto output per risposte descrittive,
+  comparative e di workflow (Agent-Helper)
+- `framework-index.skill.md` — sequenza lettura e formato panoramica
+  framework da fonti interne (Agent-Helper, Agent-Orchestrator)
+- `agent-selector.skill.md` — routing deterministico per selezione agente
+  dato un task (Agent-Helper, Agent-Orchestrator)
+- `framework-scope-guard.skill.md` — limiti operativi e risposte standard
+  per agenti read-only (Agent-Helper)
 
 ## Agenti e skills associate
 
@@ -38,3 +46,4 @@ esplicitamente nella sezione "Riferimenti Skills".
 | Agent-Orchestrator | accessibility-output, git-execution |
 | Agent-CodeRouter | code-routing, accessibility-output, git-execution |
 | Agent-CodeUI | validate-accessibility, conventional-commit, accessibility-output, git-execution |
+| Agent-Helper | framework-query, framework-index, agent-selector, framework-scope-guard, accessibility-output |

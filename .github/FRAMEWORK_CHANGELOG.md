@@ -12,6 +12,27 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 ### Added
 
+- `Agent-Helper.md`: nuovo agente consultivo read-only sul Framework
+  Copilot. Risponde a domande su agenti, prompt, skill, istruzioni e
+  struttura del framework. Non modifica file, non esegue comandi git.
+  Scope esclusivo: lettura di .github/. Modelli: Claude Sonnet 4.6,
+  gpt-5-mini. Invocabile dal dropdown agenti.
+- `framework-query.skill.md`: nuova skill — contratto output per
+  risposte descrittive (Pattern 1), comparative (Pattern 2) e
+  di workflow (Pattern 3) su componenti del framework.
+  Referenziata da Agent-Helper.
+- `framework-index.skill.md`: nuova skill — sequenza di lettura
+  obbligatoria (6 file) e formato indice navigabile per costruire
+  una panoramica completa del framework. Riutilizzabile da
+  Agent-Helper e Agent-Orchestrator.
+- `agent-selector.skill.md`: nuova skill — routing deterministico
+  per selezione agente dato un task o una domanda. Pattern matching
+  con regola "prima corrispondenza vince". Riutilizzabile da
+  Agent-Helper e Agent-Orchestrator.
+- `framework-scope-guard.skill.md`: nuova skill — limiti operativi
+  e risposte standard per agenti read-only. Definisce path autorizzati
+  in lettura, azioni vietate e blocchi di risposta standardizzati.
+  Referenziata da Agent-Helper.
 - `project-profile.md`: nuovo file — source of truth
   profilo progetto. Frontmatter YAML con campo
   `initialized` in prima riga per intercettazione
@@ -97,7 +118,17 @@ Versioning: [SemVer](https://semver.org/lang/it/)
   gate inizializzazione con riferimento a
   project-init-gate.instructions.md. Riferimento
   dinamico a project-profile.md come source of truth.
-- `AGENTS.md`: contatore aggiornato da 12 a 13 agenti.
+- `AGENTS.md`: contatore aggiornato da 12 a 13 agenti (Agent-Welcome);
+  da 13 a 14 agenti (Agent-Helper). Aggiunta voce Agent-Helper
+  in cima alla lista, nuove skill e riga tabella Agent-Helper.
+  Sezione Instructions Files arricchita con project-init-gate.
+- `copilot-instructions.md`: contatore aggiornato a 14 agenti.
+  Aggiunte voci 0 Agent-Helper e 0 Agent-Welcome nella lista agenti.
+  Tabella Componenti Framework allineata a 14 agenti.
+- `agents/README.md`: aggiunta riga Agent-Helper in prima posizione.
+- `skills/README.md`: aggiunte 4 skill framework (framework-query,
+  framework-index, agent-selector, framework-scope-guard) a lista
+  e tabella agente/skill.
   Agent-Welcome aggiunto in cima alla lista.
   project-profile.skill.md aggiunta a lista skills
   e tabella agenti.

@@ -12,7 +12,7 @@ Se `initialized: false`: interrompi e segui
 
 ## Framework Copilot v1.6.0
 
-**Questo progetto utilizza un framework orchestrazione Copilot con 12 agenti nativi VS Code.**
+**Questo progetto utilizza un framework orchestrazione Copilot con 14 agenti nativi VS Code.**
 
 ### Quick Start (3 passi)
 
@@ -24,7 +24,7 @@ Se `initialized: false`: interrompi e segui
 
 | Componente | Scopo |
 |-----------|-------|
-| **`.github/agents/*.md`** | 12 agenti nativi VS Code con tool restrictions |
+| **`.github/agents/*.md`** | 14 agenti nativi VS Code con tool restrictions |
 | **`.github/prompts/*.md`** | Prompt files per entry point e workflow |
 | **Ciclo Dev E2E** | Fase per fase, gate, transizioni |
 | **Automazione CLI** | Pre-commit hook, script validation, changelog, build |
@@ -37,9 +37,11 @@ Se `initialized: false`: interrompi e segui
 | **`.github/instructions/git-policy.instructions.md`** | Policy git operativa (applyTo: `**`) |
 | **`.github/skills/*.skill.md`** | Abilità atomiche riutilizzabili tra agenti |
 
-### I 12 Agenti
+### I 14 Agenti
 
-0. **Agent-Orchestrator**: Coordinatore E2E, delega agli agenti specializzati
+0. **Agent-Helper**: Consultivo read-only sul Framework Copilot (non-E2E)
+0. **Agent-Welcome**: Setup profilo progetto, inizializzazione framework (non-E2E)
+1. **Agent-Orchestrator**: Coordinatore E2E, delega agli agenti specializzati
 1. **Agent-Analyze**: Discovery findings (read-only)
 2. **Agent-Design**: DESIGN_*.md doc (DRAFT  REVIEWED)
 3. **Agent-Plan**: PLAN_*.md + docs/TODO.md (DRAFT  READY)

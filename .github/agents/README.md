@@ -5,6 +5,7 @@ Ogni file `.md` è un agente nativo attivabile dal dropdown agenti di VS Code.
 
 ## Agenti presenti
 
+- [`Agent-Helper`](Agent-Helper.md) — Consultivo read-only sul Framework Copilot
 - [`Agent-Welcome`](Agent-Welcome.md) — Setup e manutenzione profilo progetto
 - [`Agent-Orchestrator`](Agent-Orchestrator.md) — Coordinatore E2E, delega agli agenti specializzati
 - [`Agent-Analyze`](Agent-Analyze.md) — Discovery e analisi codebase (read-only)
