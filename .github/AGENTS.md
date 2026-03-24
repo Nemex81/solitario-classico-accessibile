@@ -205,6 +205,11 @@ Per il flusso dettagliato: [docs/WORKFLOW.md](../docs/WORKFLOW.md)
 
 Script Python per automazione del framework:
 
+- `scripts/git_runner.py` — Wrapper CLI operazioni git per
+  Agent-Git. Sottocomandi: status, commit, push, merge, tag.
+  Esegue sequenze git atomiche con gestione exit code e
+  output strutturato prefissato GIT_RUNNER: per rilevamento
+  esito da parte dell'agente. Dipendenze: solo stdlib Python.
 - `scripts/detect_agent.py` -- Rileva l'agente appropriato dalla descrizione di un task
 - `scripts/validate_gates.py` -- Valida il frontmatter YAML dei documenti DESIGN/PLAN/TODO
 - `scripts/ci-local-validate.py` -- Pre-commit checklist (syntax, types, coverage)

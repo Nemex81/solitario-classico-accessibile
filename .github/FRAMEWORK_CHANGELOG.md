@@ -12,6 +12,17 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 ### Added
 
+- `scripts/git_runner.py`: nuovo script wrapper CLI Python
+  per operazioni git di Agent-Git. Sottocomandi: status,
+  commit (flag --push), push, merge, tag. Esegue sequenze
+  git atomiche in un singolo run_in_terminal invece di
+  chiamate multiple separate. Output strutturato con
+  prefisso GIT_RUNNER: <SUBCOMMAND> <OK|FAIL> per
+  rilevamento esito deterministico. Recovery automatico
+  su merge fallito (merge --abort + checkout branch iniziale)
+  e su commit fallito (reset HEAD per annullare stage).
+  Tag sempre solo proposto, mai eseguito. Solo stdlib Python,
+  zero dipendenze esterne.
 - `.github/templates/`: nuova cartella deposito template
   neutri e resettabili. Convenzione naming: `*.template.md`.
   Proprietà: Agent-FrameworkDocs (manutenzione),
@@ -117,6 +128,21 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 ### Changed
 
+- `Agent-Git.md`: OP-2, OP-3, OP-4 aggiornati per invocare
+  scripts/git_runner.py invece di eseguire comandi git
+  diretti tramite run_in_terminal multipli. L'agente
+  mantiene tutte le responsabilità di analisi diff,
+  generazione messaggio commit, scrittura CHANGELOG e
+  dialogo con l'utente. Aggiunta regola invariante che
+  vieta git add/commit/push/merge diretti fuori dallo script.
+  Aggiunto riferimento a git_runner.py nella sezione
+  Riferimenti Skills.
+- `git-execution.skill.md`: aggiunta sezione "Pattern di
+  invocazione git_runner.py" con contratto di invocazione
+  CLI completo, contratto di output strutturato e matrice
+  autorizzazioni aggiornata per contesto Agent-Git.
+  Distinzione esplicita tra comandi eseguibili direttamente
+  (status, log, diff) e comandi eseguibili solo via script.
 - `project-profile.skill.md`: sezione "Struttura Canonica"
   convertita da definizione inline a puntatore a
   `.github/templates/project-profile.template.md`.

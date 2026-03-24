@@ -38,17 +38,17 @@ La git policy del progetto distingue tre categorie di comandi:
 
 ### Contesto: `Agent-Git`
 
-| Comando | Autorizzazione |
-| ------- | -------------- |
-| git status, log, diff | ESEGUIBILE |
-| git add | ESEGUIBILE (solo nel flusso OP-2 Commit) |
-| git commit -m "..." | ESEGUIBILE (con conferma messaggio) |
-| git merge --no-ff | ESEGUIBILE (solo con conferma "MERGE") |
-| git push | ESEGUIBILE (solo con conferma "PUSH") |
-| git tag | PROPONIBILE (mai eseguito autonomamente) |
-| git commit --amend | VIETATO |
-| git rebase | VIETATO |
-| git reset --hard | VIETATO |
+| Comando | Autorizzazione | Modalità |
+| ------- | -------------- | -------- |
+| git status, log, diff | ESEGUIBILE diretto | read-only, senza script |
+| git add | ESEGUIBILE | solo via git_runner.py |
+| git commit -m "..." | ESEGUIBILE | solo via git_runner.py |
+| git merge --no-ff | ESEGUIBILE | solo via git_runner.py |
+| git push | ESEGUIBILE | solo via git_runner.py |
+| git tag | PROPONIBILE | git_runner.py tag (output testuale) |
+| git commit --amend | VIETATO | — |
+| git rebase | VIETATO | — |
+| git reset --hard | VIETATO | — |
 
 ### Contesto: `#git-commit.prompt.md`
 
@@ -85,6 +85,62 @@ git commit -m "feat(domain): aggiungi CardStack"
 
 Mai presentare comandi proponibili inline nel testo senza
 il blocco bash e il commento esplicativo.
+
+---
+
+## Pattern di invocazione: git_runner.py
+
+Agent-Git non esegue git add/commit/push/merge tramite
+run_in_terminal diretto. Usa scripts/git_runner.py
+come wrapper atomico.
+
+### Contratto di invocazione
+
+```bash
+# Commit locale
+python scripts/git_runner.py commit --message "<msg>"
+
+# Commit + push in un solo comando
+python scripts/git_runner.py commit --message "<msg>" --push
+
+# Push su branch esplicito
+python scripts/git_runner.py push --branch <branch>
+
+# Merge no-fast-forward
+python scripts/git_runner.py merge \
+  --source <branch-sorgente> \
+  --target <branch-target> \
+  --message "<msg>"
+
+# Tag (solo proposto, mai eseguito)
+python scripts/git_runner.py tag --name <tag>
+```
+
+### Contratto di output
+
+Ogni invocazione produce su stdout:
+
+```
+GIT_RUNNER: <SUBCOMMAND> <OK|FAIL>
+──────────────────────────────────────────
+<output tecnico raw>
+──────────────────────────────────────────
+RIEPILOGO:
+  <chiave>  : <valore>
+```
+
+Agent-Git legge la prima riga per determinare
+esito (OK → procedi, FAIL → blocca e mostra errore).
+Il blocco RIEPILOGO fornisce i dati strutturati per
+costruire il feedback finale all'utente.
+
+### Cosa lo script NON fa
+
+- Non legge né scrive file .md
+- Non genera messaggi commit
+- Non aggiorna CHANGELOG
+- Non prende decisioni: esegue solo ciò che riceve
+- Non esegue mai tag autonomamente
 
 ## Agenti che usano questa skill
 

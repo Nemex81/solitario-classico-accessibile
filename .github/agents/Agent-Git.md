@@ -82,10 +82,7 @@ determinata dal contesto ricevuto dal dispatcher:
    ──────────────────────────────────────────
    ```
 
-4. Esegui: `git add .`
-5. Esegui: `git diff --staged` — mostra output completo.
-
-6. Genera messaggio commit seguendo:
+4. Genera messaggio commit seguendo:
    → `.github/skills/conventional-commit.skill.md`
    Base: analisi diff del passo 2.
 
@@ -103,18 +100,16 @@ determinata dal contesto ricevuto dal dispatcher:
    ```
    Attendi risposta. Usa il messaggio confermato o quello alternativo.
 
-8. Esegui: `git commit -m "<messaggio confermato>"`
-9. Mostra riepilogo:
+8. Esegui:
    ```
-   COMMIT ESEGUITO
-   ──────────────────────────────────────────
-   Branch   : <branch corrente>
-   Messaggio: <messaggio>
-   File     : <numero file>
-   ──────────────────────────────────────────
-   Il commit è locale. Remote non aggiornato.
-   Per fare push scrivi: "push" o "pusha".
+   python scripts/git_runner.py commit --message "<messaggio confermato>"
    ```
+   Se output inizia con "GIT_RUNNER: COMMIT FAIL":
+     mostra il blocco output completo all'utente.
+     Non procedere. Chiedi istruzioni.
+
+   Se output inizia con "GIT_RUNNER: COMMIT OK":
+     mostra il riepilogo e procedi al gate finale.
 
 --- Modalità COMMIT_E_PUSH ---
 
@@ -127,20 +122,17 @@ determinata dal contesto ricevuto dal dispatcher:
    ──────────────────────────────────────────
    ```
 
-8. Esegui: `git commit -m "<messaggio generato>"`
-9. Esegui: `git branch --show-current`
-10. Esegui: `git push origin <branch-corrente>`
-11. Mostra riepilogo finale obbligatorio:
-    ```
-    COMMIT + PUSH ESEGUITI
-    ──────────────────────────────────────────
-    Branch   : <branch corrente>
-    Messaggio: <messaggio commit>
-    File     : <numero file committati>
-    Remote   : origin/<branch> aggiornato
-    ──────────────────────────────────────────
-    ```
-    Nessuna ulteriore interazione. Operazione completata.
+8. Esegui:
+   ```
+   python scripts/git_runner.py commit --message "<messaggio generato>" --push
+   ```
+   Se output inizia con "GIT_RUNNER: COMMIT FAIL":
+     mostra il blocco output completo all'utente.
+     Non procedere. Chiedi istruzioni.
+
+   Se output inizia con "GIT_RUNNER: COMMIT OK":
+     usa i dati del RIEPILOGO per costruire
+     il blocco "COMMIT + PUSH ESEGUITI" finale.
 
 ### OP-3: Push (solo su richiesta esplicita)
 
@@ -165,17 +157,15 @@ Non attivare mai in modalità COMMIT_E_PUSH
    ──────────────────────────────────────────
    ```
 3. Attendi risposta:
-   - "PUSH" (maiuscolo esatto): esegui `git push origin <branch>`
-   - qualsiasi altra cosa: annulla senza eseguire
-4. Se push eseguito:
-   ```
-   PUSH ESEGUITO
-   ──────────────────────────────────────────
-   Branch : <branch>
-   Remote : origin/<branch>
-   Stato  : aggiornato
-   ──────────────────────────────────────────
-   ```
+   - qualsiasi risposta tranne "PUSH" maiuscolo: annulla senza eseguire.
+   - "PUSH" (maiuscolo esatto): esegui:
+     ```
+     python scripts/git_runner.py push --branch <branch-corrente>
+     ```
+     Se output inizia con "GIT_RUNNER: PUSH FAIL":
+       mostra il blocco output completo all'utente.
+     Se output inizia con "GIT_RUNNER: PUSH OK":
+       mostra il blocco riepilogo finale.
 
 ### OP-4: Merge
 
@@ -196,9 +186,20 @@ Non attivare mai in modalità COMMIT_E_PUSH
    ──────────────────────────────────────────
    ```
 4. Attendi "MERGE" maiuscolo. Altrimenti annulla.
-5. Esegui: `git checkout <branch-target>`
-6. Esegui: `git merge --no-ff <branch-corrente> -m "<messaggio>"`
-7. Proponi tag se richiesto (mai eseguire senza conferma esplicita):
+5. Esegui:
+   ```
+   python scripts/git_runner.py merge \
+     --source <branch-corrente> \
+     --target <branch-target> \
+     --message "<messaggio merge>"
+   ```
+   Se output inizia con "GIT_RUNNER: MERGE FAIL":
+     mostra il blocco output completo all'utente.
+     Lo script ha già eseguito git merge --abort
+     e ripristinato il branch iniziale.
+   Se output inizia con "GIT_RUNNER: MERGE OK":
+     procedi con OP-5 (proposta tag) se richiesto.
+6. Proponi tag se richiesto (mai eseguire senza conferma esplicita):
    ```bash
    # Esegui manualmente se vuoi taggare:
    git tag <tag-proposto>
@@ -232,6 +233,11 @@ git push origin <tag>
   → `.github/skills/accessibility-output.skill.md`
 - **Protezione eliminazione file**:
   → `.github/skills/file-deletion-guard.skill.md`
+- **Script wrapper esecuzione git**:
+  → `scripts/git_runner.py`
+  Invocato da OP-2, OP-3, OP-4 con i parametri
+  già validati dall'agente. Output strutturato
+  con prefisso GIT_RUNNER: per rilevamento esito.
 
 ---
 
@@ -248,6 +254,11 @@ git push origin <tag>
 - Tag: sempre proposto come testo, mai eseguito autonomamente
 - MAI eliminare file senza seguire la procedura in
    `.github/skills/file-deletion-guard.skill.md`
+- MAI eseguire git add, git commit, git push, git merge
+  tramite run_in_terminal diretto: usare sempre
+  scripts/git_runner.py con i parametri appropriati.
+  Eccezione: git status, git log, git diff sono ancora
+  eseguibili direttamente per lettura contestuale.
 
 ---
 
