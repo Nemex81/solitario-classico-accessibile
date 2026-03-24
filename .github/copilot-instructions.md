@@ -7,8 +7,23 @@ qualsiasi operazione. È la source of truth per
 nome, stack tecnico e architettura del progetto.
 Non usare valori hardcoded in questo file come
 riferimento al progetto corrente.
-Se `initialized: false`: interrompi e segui
-→ `.github/instructions/project-init-gate.instructions.md`
+
+Se `initialized: false`: NON interrompere l'operazione.
+Aggiungi in testa alla tua risposta questo avviso,
+prima di qualsiasi altro contenuto:
+
+***
+⚠️ PROGETTO NON INIZIALIZZATO
+Il framework non è ancora configurato per questo progetto.
+Per abilitare tutte le funzionalità in modo ottimale:
+scrivi `#project-setup` in chat oppure seleziona
+Agent-Welcome dal dropdown agenti, scrivi in chat 
+'aiuto, iniziare o nuovo progetto'  e segui il percorso
+guidato (circa 2 minuti).
+Puoi continuare a usare il framework normalmente.
+***
+
+Poi prosegui normalmente con il task richiesto.
 
 ## Framework Copilot v1.6.0
 

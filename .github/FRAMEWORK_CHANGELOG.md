@@ -132,6 +132,15 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 ### Changed
 
+- `copilot-instructions.md`: sezione "Contesto Progetto"
+  refactored — rimosso rimando a project-init-gate e
+  sostituito con avviso morbido inline per initialized: false.
+  Il framework non interrompe più l'operazione ma mostra
+  un banner visibile in testa alla risposta dell'agente.
+  Motivazione: le instruction files non sono gate runtime;
+  un blocco testuale ignorato silenziosamente è peggio
+  di un avviso esplicito non bloccante.
+
 - `Agent-Git.md`: OP-2, OP-3, OP-4 aggiornati per invocare
   scripts/git_runner.py invece di eseguire comandi git
   diretti tramite run_in_terminal multipli. L'agente
@@ -215,6 +224,14 @@ Versioning: [SemVer](https://semver.org/lang/it/)
   Agent-Welcome aggiunto in cima alla lista.
   project-profile.skill.md aggiunta a lista skills
   e tabella agenti.
+
+### Removed
+
+- `project-init-gate.instructions.md`: eliminato.
+  Sostituito da avviso morbido inline in copilot-instructions.md.
+  Il meccanismo di blocco duro con applyTo:"**" non era
+  affidabile: in presenza di agente attivo con istruzioni
+  specifiche veniva sistematicamente ignorato.
 
 ## [v1.6.0] - 2026-03-23
 

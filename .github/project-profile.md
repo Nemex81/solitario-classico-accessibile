@@ -50,7 +50,7 @@ screen_reader: ""
 ## Componenti Framework Attivi
 
 Instructions language-specific attive per questo progetto:
-- (da compilare durante setup)
+-(da compilare durante setup)
 
 ## Note Progetto
 
