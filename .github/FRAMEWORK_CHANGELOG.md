@@ -98,6 +98,10 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 ### Fixed
 
+- `scripts/git_runner.py`: rimosso variabile non usata in `cmd_tag`; migliorato rollback su commit fallito (`git reset` invece di `git reset HEAD`).
+- `.github/agents/Agent-Git.md`: rinumerati i passi in OP-4 per continuità e chiarezza.
+- `.github/skills/git-execution.skill.md`: consolidata la tabella autorizzazioni Agent-Git e corretto il formato frontmatter/delimitatori.
+
 - `git-policy.instructions.md`: aggiunta sezione "Override per
   Agent-Git" con priorità esplicita. Risolve il conflitto tra
   blocco globale applyTo:"**" e autorizzazione Agent-Git, che
