@@ -18,6 +18,7 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 ### Changed
 
+- `Agent-Welcome.md` e `Agent-Docs.md`: chiariscono l'eccezione di scrittura per `project-profile.md` nel setup e rimuovono riferimenti ridondanti a `framework-guard` dallo scope documentazione.
 - `Agent-Git.md`, `git-commit.prompt.md`, `git-merge.prompt.md`, `git-execution.skill.md`, `model-policy.instructions.md`, `AGENTS.md` e `prompts/README.md`: riallineano il wiring git del framework, chiariscono che i prompt git sono wrapper agent, fissano `COMMIT_E_PUSH` come commit+push immediato via script e aggiornano il fallback modello di Agent-Git.
 - `scripts/git_runner.py`: normalizza l'output del sottocomando `tag` a `GIT_RUNNER: TAG OK`, aggiunge il controllo del branch locale in `push`, classifica meglio i fallimenti di `merge` e include nel riepilogo del commit lo stato di `CHANGELOG.md`.
 - `tests/unit/scripts/test_git_runner.py`: aggiunge smoke test per i percorsi principali di `tag`, `push`, `commit` e `merge` del wrapper git.

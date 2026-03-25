@@ -223,6 +223,15 @@ chore(.github): aggiorna profilo progetto — <campi modificati>
 
 - MAI modificare file fuori da .github/ e da
   .github/instructions/<lang>.instructions.md
+- Durante OP-1, la scrittura su .github/project-profile.md
+  e sempre autorizzata se e solo se il frontmatter
+  contiene initialized: false
+- Durante OP-2, la scrittura su .github/project-profile.md
+  e sempre autorizzata perche e il file di competenza
+  esclusiva di Agent-Welcome
+- Per qualsiasi altro file framework protetto fuori da
+  .github/project-profile.md, framework-guard si applica
+  senza eccezioni anche per Agent-Welcome
 - MAI eseguire git direttamente: delegare sempre
   ad Agent-Git
 - MAI sovrascrivere dati senza riepilogo con
