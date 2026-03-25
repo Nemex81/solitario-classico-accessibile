@@ -7,10 +7,14 @@ Sottocomandi disponibili:
     commit  — esegue git add . + git commit [+ push opzionale]
     push    — esegue git push su branch specificato
     merge   — esegue git merge --no-ff da source a target
-    tag     — propone tag (output solo testuale, non esegue mai)
+    tag     — propone tag (output strutturato, non esegue mai)
 
 Output: formato strutturato leggibile da Agent-Git.
 Exit code: 0 = successo, 1 = errore o abort.
+
+Nota: i messaggi di commit e merge devono essere gia validati
+dal livello agente. Questo script non prende decisioni e non
+genera testo Conventional Commit.
 
 Uso:
     python scripts/git_runner.py status
@@ -66,6 +70,12 @@ def run_git(args: list[str]) -> tuple[int, str, str]:
         return result.returncode, result.stdout, result.stderr
     except Exception as exc:  # noqa: BLE001
         return 1, "", str(exc)
+
+
+def local_branch_exists(branch: str) -> bool:
+    """Restituisce True se il branch locale esiste."""
+    rc, out, _ = run_git(["branch", "--list", branch])
+    return rc == 0 and bool(out.strip())
 
 
 # ---------------------------------------------------------------------------
@@ -139,6 +149,8 @@ def cmd_commit(message: str, push: bool) -> int:
 
     # 3. Cattura stat staged
     _, out_stat, _ = run_git(["diff", "--staged", "--stat"])
+    _, staged_names, _ = run_git(["diff", "--staged", "--name-only"])
+    _, staged_added, _ = run_git(["diff", "--staged", "--name-only", "--diff-filter=A"])
     # Conta righe file (ultima riga è il riepilogo)
     stat_lines = [l for l in out_stat.splitlines() if l.strip()]
     files_count = str(max(0, len(stat_lines) - 1)) if stat_lines else "0"
@@ -168,6 +180,15 @@ def cmd_commit(message: str, push: bool) -> int:
         "push": "non richiesto",
     }
 
+    staged_name_set = {line.strip() for line in staged_names.splitlines() if line.strip()}
+    staged_added_set = {line.strip() for line in staged_added.splitlines() if line.strip()}
+    if "CHANGELOG.md" in staged_added_set:
+        summary["changelog"] = "creato"
+    elif "CHANGELOG.md" in staged_name_set:
+        summary["changelog"] = "modificato"
+    else:
+        summary["changelog"] = "non toccato"
+
     raw_output = f"--- git add . ---\n{out_add}\n--- git diff --staged --stat ---\n{out_stat}\n--- git commit ---\n{out_commit}"
 
     # 5. Push opzionale
@@ -193,6 +214,16 @@ def cmd_commit(message: str, push: bool) -> int:
 
 def cmd_push(branch: str) -> int:
     """Esegue git push origin <branch>."""
+
+    if not local_branch_exists(branch):
+        print_report(
+            "PUSH",
+            "FAIL",
+            "",
+            {},
+            error_message=f"Branch locale non trovato: {branch}.",
+        )
+        return 1
 
     # 1. Working tree pulito
     rc, out, err = run_git(["status", "--porcelain"])
@@ -284,11 +315,20 @@ def cmd_merge(source: str, target: str, message: str) -> int:
         # Recovery automatico
         run_git(["merge", "--abort"])
         run_git(["checkout", initial_branch])
+        summary = {"nota": f"merge abortito, ripristinato branch {initial_branch}"}
+        error_output = err_merge.strip()
+        upper_error = error_output.upper()
+        if "CONFLICT" in upper_error:
+            summary["tipo_errore"] = "conflitti"
+        elif "NOT FOUND" in upper_error or "UNKNOWN REVISION" in upper_error:
+            summary["tipo_errore"] = "branch non trovato"
+        else:
+            summary["tipo_errore"] = "merge fallito"
         print_report(
             "MERGE",
             "FAIL",
             raw,
-            {"nota": f"merge abortito, ripristinato branch {initial_branch}"},
+            summary,
             error_message=err_merge.strip() or "git merge fallito.",
         )
         return 1
@@ -316,13 +356,12 @@ def cmd_tag(name: str, push: bool) -> int:
         lines.append(f"git push origin {name}")
     raw = "\n".join(lines)
 
-    print(f"GIT_RUNNER: TAG PROPOSTO")
-    print(_SEP)
-    print(raw)
-    print(_SEP)
-    print("RIEPILOGO:")
-    print(f"  {'tag':<10}: {name}")
-    print(f"  {'azione':<10}: proposto \u2014 eseguire manualmente")
+    print_report(
+        "TAG",
+        "OK",
+        raw,
+        {"tag": name, "azione": "proposto — eseguire manualmente"},
+    )
     return 0
 
 

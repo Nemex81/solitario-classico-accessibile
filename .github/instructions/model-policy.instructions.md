@@ -24,7 +24,7 @@ nel frontmatter degli agenti, non come chiave separata.
 | Agent-Docs | ['GPT-5 mini (copilot)', 'Raptor mini (copilot)'] |
 | Agent-Release | ['GPT-5 mini (copilot)', 'Raptor mini (copilot)'] |
 | Agent-FrameworkDocs | ['Claude Sonnet 4.6 (copilot)', 'GPT-5 mini (copilot)'] |
-| Agent-Git | ['GPT-5 mini (copilot)', 'Raptor mini (copilot)'] |
+| Agent-Git | ['GPT-5 mini (copilot)', 'GPT-5.3-Codex (copilot)'] |
 | Agent-CodeRouter | ['Claude Sonnet 4.6 (copilot)', 'GPT-5.3-Codex (copilot)'] |
 | Agent-CodeUI | ['Claude Sonnet 4.6 (copilot)', 'GPT-5.3-Codex (copilot)'] |
 

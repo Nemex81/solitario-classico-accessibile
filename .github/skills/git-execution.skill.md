@@ -45,7 +45,7 @@ La git policy del progetto distingue tre categorie di comandi:
 | git commit -m "..." | ESEGUIBILE | solo via git_runner.py |
 | git merge --no-ff | ESEGUIBILE | solo via git_runner.py |
 | git push | ESEGUIBILE | solo via git_runner.py |
-| git tag | PROPONIBILE | git_runner.py tag (output testuale) |
+| git tag | PROPONIBILE | git_runner.py tag (output `TAG OK`, nessuna esecuzione) |
 | git commit --amend | VIETATO | — |
 | git rebase | VIETATO | — |
 | git reset --hard | VIETATO | — |
@@ -54,10 +54,11 @@ La git policy del progetto distingue tre categorie di comandi:
 
 | Comando | Autorizzazione |
 | ------- | -------------- |
-| git status, log, diff | ESEGUIBILE |
-| git add &lt;file&gt; | ESEGUIBILE (con conferma utente) |
-| git commit -m "..." | ESEGUIBILE (Conventional Commits) |
-| git push | PROPONIBILE |
+| subagent Agent-Git | ESEGUIBILE |
+| git status, log, diff | NON DIRETTO — delegato |
+| git add &lt;file&gt; | NON DIRETTO — delegato |
+| git commit -m "..." | NON DIRETTO — delegato |
+| git push | NON DIRETTO — delegato |
 | git commit --amend | VIETATO |
 | git reset | VIETATO |
 
@@ -65,10 +66,11 @@ La git policy del progetto distingue tre categorie di comandi:
 
 | Comando | Autorizzazione |
 | ------- | -------------- |
-| git status, log, diff | ESEGUIBILE |
-| git checkout &lt;branch&gt; | ESEGUIBILE |
-| git merge --no-ff | ESEGUIBILE (con conferma utente) |
-| git tag &lt;tag&gt; | ESEGUIBILE (con conferma esplicita) |
+| subagent Agent-Git | ESEGUIBILE |
+| git status, log, diff | NON DIRETTO — delegato |
+| git checkout &lt;branch&gt; | NON DIRETTO — delegato |
+| git merge --no-ff | NON DIRETTO — delegato |
+| git tag &lt;tag&gt; | PROPONIBILE |
 | git push | PROPONIBILE |
 | git merge --squash | VIETATO |
 | git rebase | VIETATO |
@@ -92,7 +94,8 @@ il blocco bash e il commento esplicativo.
 
 Agent-Git non esegue git add/commit/push/merge tramite
 run_in_terminal diretto. Usa scripts/git_runner.py
-come wrapper atomico.
+come wrapper atomico. I prompt git-commit e git-merge
+non eseguono git: raccolgono contesto e delegano ad Agent-Git.
 
 ### Contratto di invocazione
 
@@ -141,6 +144,7 @@ costruire il feedback finale all'utente.
 - Non aggiorna CHANGELOG
 - Non prende decisioni: esegue solo ciò che riceve
 - Non esegue mai tag autonomamente
+- Non decide se chiedere conferme utente: questo resta compito dell'agente
 
 ## Agenti che usano questa skill
 

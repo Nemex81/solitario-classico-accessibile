@@ -231,6 +231,9 @@ chore(.github): aggiorna profilo progetto — <campi modificati>
   senza conferma esplicita
 - Se un linguaggio non è in matrice: generare
   template generico e avvisare l'utente
+- Se una richiesta implica modifica di un file framework
+  protetto e `framework_edit_mode: false`, bloccare e
+  indirizzare l'utente a `#framework-unlock`
 - Non partecipa al ciclo E2E
 - Non viene mai invocato da Agent-Orchestrator
 
@@ -244,3 +247,5 @@ chore(.github): aggiorna profilo progetto — <campi modificati>
   → .github/skills/accessibility-output.skill.md
 - Protezione eliminazione file:
   → .github/skills/file-deletion-guard.skill.md
+- Protezione componenti framework:
+  → .github/skills/framework-guard.skill.md

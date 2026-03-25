@@ -12,6 +12,21 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 <!-- Le voci non rilasciate vanno inserite qui. Rimane vuoto dopo la release. -->
 
+### Added
+
+- `framework-guard.skill.md`, `framework-guard.instructions.md`, `framework-unlock.prompt.md`: introducono il sistema Framework Guard con blocco standardizzato dei path protetti, sblocco temporaneo esplicito e workflow di ripristino automatico del flag di sicurezza.
+
+### Changed
+
+- `Agent-Git.md`, `git-commit.prompt.md`, `git-merge.prompt.md`, `git-execution.skill.md`, `model-policy.instructions.md`, `AGENTS.md` e `prompts/README.md`: riallineano il wiring git del framework, chiariscono che i prompt git sono wrapper agent, fissano `COMMIT_E_PUSH` come commit+push immediato via script e aggiornano il fallback modello di Agent-Git.
+- `scripts/git_runner.py`: normalizza l'output del sottocomando `tag` a `GIT_RUNNER: TAG OK`, aggiunge il controllo del branch locale in `push`, classifica meglio i fallimenti di `merge` e include nel riepilogo del commit lo stato di `CHANGELOG.md`.
+- `tests/unit/scripts/test_git_runner.py`: aggiunge smoke test per i percorsi principali di `tag`, `push`, `commit` e `merge` del wrapper git.
+- `.github/FRAMEWORK_CHANGELOG.md`: normalizza il markdown storico della sezione `v1.6.0 - 2026-03-24` correggendo heading, indentazioni lista e testo che il linter interpretava come HTML inline.
+- `framework-unlock.prompt.md`: puo derivare automaticamente file, motivazione, impatto e rischio da un piano o riepilogo gia presente nella chat corrente, mantenendo il riepilogo finale con conferma esplicita prima della scrittura.
+- `.github/project-profile.md` e `.github/templates/project-profile.template.md`: aggiungono `framework_edit_mode: false` e la nota descrittiva sul controllo delle modifiche ai componenti framework.
+- `Agent-FrameworkDocs.md`, `Agent-Release.md`, `Agent-Welcome.md`, `Agent-Orchestrator.md`, `Agent-Docs.md`: adottano `framework-guard` e il comportamento obbligatorio di blocco con invito al prompt `#framework-unlock`.
+- `AGENTS.md`, `instructions/README.md`, `skills/README.md`, `prompts/README.md`: allineano gli indici del framework ai nuovi componenti di protezione.
+
 ## [v1.6.1] - 2026-03-25
 
 ### Added
@@ -20,139 +35,135 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 ## [v1.6.0] - 2026-03-24
 
-  ### Added
+### Added
 
-  - `scripts/git_runner.py`: nuovo script wrapper CLI Python
-    per operazioni git di Agent-Git. Sottocomandi: status,
-    commit (flag --push), push, merge, tag. Esegue sequenze
-    git atomiche in un singolo run_in_terminal invece di
-    chiamate multiple separate. Output strutturato con
-    prefisso GIT_RUNNER: <SUBCOMMAND> <OK|FAIL> per
-    rilevamento esito deterministico. Recovery automatico
-    su merge fallito (merge --abort + checkout branch iniziale)
-    e su commit fallito (reset HEAD per annullare stage).
-    Tag sempre solo proposto, mai eseguito. Solo stdlib Python,
-    zero dipendenze esterne.
-  - `.github/templates/`: nuova cartella deposito template
-    neutri e resettabili. Convenzione naming: `*.template.md`.
-    Proprietà: Agent-FrameworkDocs (manutenzione),
-    Agent-Welcome (lettura). README.md interno con tabella
-    file presenti e regole di accesso.
-  - `.github/templates/project-profile.template.md`:
-    template neutro del profilo progetto. Frontmatter YAML
-    completo con tutti i campi vuoti e `initialized: false`.
-    Struttura Markdown con placeholder. Sorgente canonica per
-    Agent-Welcome in OP-1 e OP-2. Elimina la duplicazione
-    della struttura inline in project-profile.skill.md.
-  - `workflow-standard.instructions.md`: nuova instruction contestuale
-    (applyTo: `**`) — centralizza la sequenza operativa standard per
-    ogni richiesta di modifica: TODO gate, pre-commit checklist 6 passi,
-    regole sync documentazione, feedback strutturato. Estratta da
-    copilot-instructions.md per alleggerirlo.
-  - `Agent-Helper.md`: nuovo agente consultivo read-only sul Framework
-    Copilot. Risponde a domande su agenti, prompt, skill, istruzioni e
-    struttura del framework. Non modifica file, non esegue comandi git.
-    Scope esclusivo: lettura di .github/. Modelli: Claude Sonnet 4.6,
-    gpt-5-mini. Invocabile dal dropdown agenti.
-  - `framework-query.skill.md`: nuova skill — contratto output per
-    risposte descrittive (Pattern 1), comparative (Pattern 2) e
-    di workflow (Pattern 3) su componenti del framework.
-    Referenziata da Agent-Helper.
-  - `framework-index.skill.md`: nuova skill — sequenza di lettura
-    obbligatoria (6 file) e formato indice navigabile per costruire
-    una panoramica completa del framework. Riutilizzabile da
-    Agent-Helper e Agent-Orchestrator.
-  - `agent-selector.skill.md`: nuova skill — routing deterministico
-    per selezione agente dato un task o una domanda. Pattern matching
-    con regola "prima corrispondenza vince". Riutilizzabile da
-    Agent-Helper e Agent-Orchestrator.
-  - `framework-scope-guard.skill.md`: nuova skill — limiti operativi
-    e risposte standard per agenti read-only. Definisce path autorizzati
-    in lettura, azioni vietate e blocchi di risposta standardizzati.
-    Referenziata da Agent-Helper.
-  - `project-profile.md`: nuovo file — source of truth
-    profilo progetto. Frontmatter YAML con campo
-    `initialized` in prima riga per intercettazione
-    rapida dello stato. Distribuito con initialized: false.
-    Compilato da Agent-Welcome in OP-1.
-  - `Agent-Welcome.md`: nuovo agente — setup iniziale
-    e aggiornamento profilo progetto. Flusso guidato
-    in 7 passi con conferma riepilogo prima di scrivere
-    qualsiasi file. Modelli gpt-5-mini e Raptor mini.
-    Non partecipa al ciclo E2E. Delega git ad Agent-Git.
-  - `project-profile.skill.md`: nuova skill — struttura
-    canonica project-profile.md, matrice componenti
-    per linguaggio (Python, C/C++, JS, TS, C#, generico),
-    template instructions per linguaggi non-Python.
-    Referenziata da Agent-Welcome.
-  - `project-setup.prompt.md`: nuovo prompt — entry point
-    setup iniziale framework. Nessun input richiesto.
-    Flusso guidato gestito da Agent-Welcome OP-1.
-    Da eseguire come primo comando su qualsiasi progetto.
-  - `project-update.prompt.md`: nuovo prompt — entry point
-    aggiornamento profilo progetto. Input opzionale:
-    se vuoto mostra help con esempi d'uso. Delega
-    ad Agent-Welcome OP-2.
-  - `project-init-gate.instructions.md`: nuova instruction
-    (applyTo: "**") — gate di inizializzazione attivo
-    in tutti i contesti. Intercetta initialized: false
-    e guida l'utente al setup con messaggio strutturato.
-    Eccezione: Agent-Welcome opera sempre senza blocco.
-  - `agents/README.md`: nuovo file — indice della cartella
-    `.github/agents/` con lista dei 12 agenti in ordine di
-    flusso E2E, ruolo sintetico e link ai file agente.
-    Allinea la struttura a `skills/README.md` e
-    `instructions/README.md`. Colma il riferimento già
-    presente in AGENTS.md (sezione Dual-Track Documentation)
-    che indicava questo file come esistente.
+- `scripts/git_runner.py`: nuovo script wrapper CLI Python
+  per operazioni git di Agent-Git. Sottocomandi: status,
+  commit (flag --push), push, merge, tag. Esegue sequenze
+  git atomiche in un singolo run_in_terminal invece di
+  chiamate multiple separate. Output strutturato con
+  prefisso `GIT_RUNNER: <SUBCOMMAND> <OK|FAIL>` per
+  rilevamento esito deterministico. Recovery automatico
+  su merge fallito (merge --abort + checkout branch iniziale)
+  e su commit fallito (reset HEAD per annullare stage).
+  Tag sempre solo proposto, mai eseguito. Solo stdlib Python,
+  zero dipendenze esterne.
+- `.github/templates/`: nuova cartella deposito template
+  neutri e resettabili. Convenzione naming: `*.template.md`.
+  Proprietà: Agent-FrameworkDocs (manutenzione),
+  Agent-Welcome (lettura). README.md interno con tabella
+  file presenti e regole di accesso.
+- `.github/templates/project-profile.template.md`:
+  template neutro del profilo progetto. Frontmatter YAML
+  completo con tutti i campi vuoti e `initialized: false`.
+  Struttura Markdown con placeholder. Sorgente canonica per
+  Agent-Welcome in OP-1 e OP-2. Elimina la duplicazione
+  della struttura inline in project-profile.skill.md.
+- `workflow-standard.instructions.md`: nuova instruction contestuale
+  (applyTo: `**`) — centralizza la sequenza operativa standard per
+  ogni richiesta di modifica: TODO gate, pre-commit checklist 6 passi,
+  regole sync documentazione, feedback strutturato. Estratta da
+  copilot-instructions.md per alleggerirlo.
+- `Agent-Helper.md`: nuovo agente consultivo read-only sul Framework
+  Copilot. Risponde a domande su agenti, prompt, skill, istruzioni e
+  struttura del framework. Non modifica file, non esegue comandi git.
+  Scope esclusivo: lettura di .github/. Modelli: Claude Sonnet 4.6,
+  gpt-5-mini. Invocabile dal dropdown agenti.
+- `framework-query.skill.md`: nuova skill — contratto output per
+  risposte descrittive (Pattern 1), comparative (Pattern 2) e
+  di workflow (Pattern 3) su componenti del framework.
+  Referenziata da Agent-Helper.
+- `framework-index.skill.md`: nuova skill — sequenza di lettura
+  obbligatoria (6 file) e formato indice navigabile per costruire
+  una panoramica completa del framework. Riutilizzabile da
+  Agent-Helper e Agent-Orchestrator.
+- `agent-selector.skill.md`: nuova skill — routing deterministico
+  per selezione agente dato un task o una domanda. Pattern matching
+  con regola "prima corrispondenza vince". Riutilizzabile da
+  Agent-Helper e Agent-Orchestrator.
+- `framework-scope-guard.skill.md`: nuova skill — limiti operativi
+  e risposte standard per agenti read-only. Definisce path autorizzati
+  in lettura, azioni vietate e blocchi di risposta standardizzati.
+  Referenziata da Agent-Helper.
+- `project-profile.md`: nuovo file — source of truth
+  profilo progetto. Frontmatter YAML con campo
+  `initialized` in prima riga per intercettazione
+  rapida dello stato. Distribuito con initialized: false.
+  Compilato da Agent-Welcome in OP-1.
+- `Agent-Welcome.md`: nuovo agente — setup iniziale
+  e aggiornamento profilo progetto. Flusso guidato
+  in 7 passi con conferma riepilogo prima di scrivere
+  qualsiasi file. Modelli gpt-5-mini e Raptor mini.
+  Non partecipa al ciclo E2E. Delega git ad Agent-Git.
+- `project-profile.skill.md`: nuova skill — struttura
+  canonica project-profile.md, matrice componenti
+  per linguaggio (Python, C/C++, JS, TS, C#, generico),
+  template instructions per linguaggi non-Python.
+  Referenziata da Agent-Welcome.
+- `project-setup.prompt.md`: nuovo prompt — entry point
+  setup iniziale framework. Nessun input richiesto.
+  Flusso guidato gestito da Agent-Welcome OP-1.
+  Da eseguire come primo comando su qualsiasi progetto.
+- `project-update.prompt.md`: nuovo prompt — entry point
+  aggiornamento profilo progetto. Input opzionale:
+  se vuoto mostra help con esempi d'uso. Delega
+  ad Agent-Welcome OP-2.
+- `project-init-gate.instructions.md`: nuova instruction
+  (applyTo: "**") — gate di inizializzazione attivo
+  in tutti i contesti. Intercetta initialized: false
+  e guida l'utente al setup con messaggio strutturato.
+  Eccezione: Agent-Welcome opera sempre senza blocco.
+- `agents/README.md`: nuovo file — indice della cartella
+  `.github/agents/` con lista dei 12 agenti in ordine di
+  flusso E2E, ruolo sintetico e link ai file agente.
+  Allinea la struttura a `skills/README.md` e
+  `instructions/README.md`. Colma il riferimento già
+  presente in AGENTS.md (sezione Dual-Track Documentation)
+  che indicava questo file come esistente.
 
-  ### Fixed
+### Fixed
 
-  - `scripts/git_runner.py`: rimosso variabile non usata in `cmd_tag`; migliorato rollback su commit fallito (`git reset` invece di `git reset HEAD`).
-  - `.github/agents/Agent-Git.md`: rinumerati i passi in OP-4 per continuità e chiarezza.
-  - `.github/skills/git-execution.skill.md`: consolidata la tabella autorizzazioni Agent-Git e corretto il formato frontmatter/delimitatori.
+- `scripts/git_runner.py`: rimosso variabile non usata in `cmd_tag`; migliorato rollback su commit fallito (`git reset` invece di `git reset HEAD`).
+- `.github/agents/Agent-Git.md`: rinumerati i passi in OP-4 per continuità e chiarezza.
+- `.github/skills/git-execution.skill.md`: consolidata la tabella autorizzazioni Agent-Git e corretto il formato frontmatter/delimitatori.
+- `git-policy.instructions.md`: aggiunta sezione "Override per
+  Agent-Git" con priorità esplicita. Risolve il conflitto tra
+  blocco globale applyTo:"**" e autorizzazione Agent-Git, che
+  causava output di comandi manuali invece dell'esecuzione
+  tramite run_in_terminal.
+- `git-commit.prompt.md`: aggiunto run_in_terminal alla lista
+  tools del frontmatter. Risolve il fallimento al passo 1
+  (git status) del workflow dispatcher.
+- `git-execution.skill.md`: corretti delimitatori frontmatter
+  da *** a ---. Risolve il mancato parsing YAML da parte di
+  VS Code che rendeva la skill invisibile come contesto
+  strutturato.
+- `git-commit.prompt.md`: aggiunto supporto parametro opzionale
+  PUSH. Se l'utente avvia il prompt senza parametri esegue solo
+  OP-2 (commit). Se avvia con parametro PUSH, dopo il commit
+  Agent-Git avvia automaticamente OP-3 (push) procedendo
+  direttamente al gate di conferma "PUSH" maiuscolo, senza
+  chiedere conferma intermedia. Aggiunto run_in_terminal ai tools
+  e input opzionale push_flag nel frontmatter.
+- `Agent-Git.md`: ridotte conferme interattive in OP-2 e OP-3.
+  Changelog ora applicato automaticamente in entrambe le modalità.
+  Introdotta distinzione modale:
+  SOLO_COMMIT (default): conferma messaggio commit mantenuta,
+  gate "PUSH" maiuscolo mantenuto.
+  COMMIT_E_PUSH (parametro PUSH dal dispatcher): messaggio commit
+  applicato automaticamente, push eseguito senza gate,
+  riepilogo finale obbligatorio. Totale interazioni: 0.
 
-  - `git-policy.instructions.md`: aggiunta sezione "Override per
-    Agent-Git" con priorità esplicita. Risolve il conflitto tra
-    blocco globale applyTo:"**" e autorizzazione Agent-Git, che
-    causava output di comandi manuali invece dell'esecuzione
-    tramite run_in_terminal.
-  - `git-commit.prompt.md`: aggiunto run_in_terminal alla lista
-    tools del frontmatter. Risolve il fallimento al passo 1
-    (git status) del workflow dispatcher.
-  - `git-execution.skill.md`: corretti delimitatori frontmatter
-    da *** a ---. Risolve il mancato parsing YAML da parte di
-    VS Code che rendeva la skill invisibile come contesto
-    strutturato.
-  - `git-commit.prompt.md`: aggiunto supporto parametro opzionale
-    PUSH. Se l'utente avvia il prompt senza parametri esegue solo
-    OP-2 (commit). Se avvia con parametro PUSH, dopo il commit
-    Agent-Git avvia automaticamente OP-3 (push) procedendo
-    direttamente al gate di conferma "PUSH" maiuscolo, senza
-    chiedere conferma intermedia. Aggiunto run_in_terminal ai tools
-    e input opzionale push_flag nel frontmatter.
-  - `Agent-Git.md`: ridotte conferme interattive in OP-2 e OP-3.
-    Changelog ora applicato automaticamente in entrambe le modalità.
-    Introdotta distinzione modale:
-    SOLO_COMMIT (default): conferma messaggio commit mantenuta,
-    gate "PUSH" maiuscolo mantenuto.
-    COMMIT_E_PUSH (parametro PUSH dal dispatcher): messaggio commit
-    applicato automaticamente, push eseguito senza gate,
-    riepilogo finale obbligatorio. Totale interazioni: 0.
+### Changed
 
-  ### Changed
-
-  - `copilot-instructions.md`: sezione "Contesto Progetto"
-    refactored — rimosso rimando a project-init-gate e
-    sostituito con avviso morbido inline per initialized: false.
-    Il framework non interrompe più l'operazione ma mostra
-    un banner visibile in testa alla risposta dell'agente.
-    Motivazione: le instruction files non sono gate runtime;
-    un blocco testuale ignorato silenziosamente è peggio
-    di un avviso esplicito non bloccante.
-
-  ... (content continues) ...
-  Riferimenti Skills.
+- `copilot-instructions.md`: sezione "Contesto Progetto"
+  refactored — rimosso rimando a project-init-gate e
+  sostituito con avviso morbido inline per initialized: false.
+  Il framework non interrompe più l'operazione ma mostra
+  un banner visibile in testa alla risposta dell'agente.
+  Motivazione: le instruction files non sono gate runtime;
+  un blocco testuale ignorato silenziosamente è peggio
+  di un avviso esplicito non bloccante.
 
 - `Agent-Git.md`: OP-2 — aggiunto riconoscimento
   deterministico keyword utente per selezione modalità

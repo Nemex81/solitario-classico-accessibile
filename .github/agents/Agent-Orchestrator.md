@@ -181,6 +181,9 @@ Delega tramite subagent:
   → `.github/skills/git-execution.skill.md`
 - Per operazioni git nel workflow E2E (commit checkpoint, merge finale):
   delega ad Agent-Git tramite subagent. Non eseguire git direttamente.
+- Se una fase richiede modifica di un file framework protetto e
+  `framework_edit_mode: false`, blocca il workflow e chiedi
+  all'utente di usare `#framework-unlock`.
 - NON saltare un gate fallito. Se un gate fallisce, correggi o chiedi.
 - NON procedere oltre un checkpoint senza conferma esplicita dell'utente.
 - Per standard output strutturato e accessibilità NVDA:
@@ -188,6 +191,11 @@ Delega tramite subagent:
 - Se un subagente non produce l'output atteso, riprova con contesto
   più dettagliato prima di segnalare il problema all'utente.
 - Registra lo stato di ogni fase completata aggiornando docs/TODO.md.
+
+## Riferimenti Skills
+
+- Protezione componenti framework:
+  → `.github/skills/framework-guard.skill.md`
 
 ## Come invocare l'Orchestratore
 

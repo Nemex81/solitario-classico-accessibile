@@ -89,6 +89,8 @@ Agent-Release:
    → `.github/skills/accessibility-output.skill.md`
 - **Operazioni Git strutturate** (tag proposal via Agent-Git):
    → `.github/skills/git-execution.skill.md`
+- **Protezione componenti framework** (blocco scrittura su path protetti):
+   → `.github/skills/framework-guard.skill.md`
    
 ---
 
@@ -109,6 +111,9 @@ Agent-Release:
   Per tag proposal: delega ad Agent-Git (OP-5).
   Per merge finale: delega ad Agent-Git (OP-4).
   In entrambi i casi l'utente conferma con parola chiave maiuscola.
+- Se una release richiede scrittura su file framework protetti e
+   `framework_edit_mode: false`, interrompere e richiedere il prompt
+   `#framework-unlock` prima di procedere.
 - CHANGELOG: trasformare [Unreleased] in versione datata alla release
 - Verificare che il build cx_freeze produca un eseguibile funzionante
 

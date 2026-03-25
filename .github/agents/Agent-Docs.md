@@ -76,6 +76,8 @@ Agent-Docs:
   → `.github/skills/semver-bump.skill.md`
 - **Standard output accessibile** (struttura, NVDA, report):
   → `.github/skills/accessibility-output.skill.md`
+- **Protezione componenti framework** (blocco scrittura su path protetti):
+  → `.github/skills/framework-guard.skill.md`
 
 ---
 
@@ -92,6 +94,9 @@ Agent-Docs:
 ## Regole Operative
 
 - Non modificare file in src/ o tests/
+- Se una richiesta richiede scrittura su file framework protetti e
+  `framework_edit_mode: false`, bloccare e indirizzare l'utente a
+  `#framework-unlock`
 - CHANGELOG.md: usare [Unreleased] nel branch, finalizzare alla release
 - Seguire formato Conventional Changelog (Added/Fixed/Changed/Removed)
 - Verificare che i link interni puntino a percorsi esistenti

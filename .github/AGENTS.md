@@ -53,7 +53,7 @@ Ogni file agente contiene: scopo, trigger, deliverable, gate e workflow.
 - [Agent-Git](agents/Agent-Git.md) — Operazioni Git autorizzate
   Unico agente autorizzato a eseguire git tramite run_in_terminal.
   Gestisce commit, push, merge, tag con conferme esplicite obbligatorie.
-  Modello: gpt-5-mini. Invocabile dal dropdown o come subagente.
+  Modelli: gpt-5-mini, GPT-5.3-Codex. Invocabile dal dropdown o come subagente.
 
 ---
 
@@ -96,9 +96,14 @@ il nome del file. Usano variabili di input con sintassi `${input:label}`.
 - `#sync-docs.prompt.md` — Avvia Agent-Docs per sync documentazione
 - `#release.prompt.md` — Avvia Agent-Release per versioning e build
 - `#help.prompt.md` — Spiega come funziona un agente specifico
+- `#git-commit.prompt.md` — Wrapper agent per commit
+  (input opzionale `PUSH` per commit + push immediato)
+- `#git-merge.prompt.md` — Wrapper agent per merge
+  (delega ad Agent-Git senza eseguire git direttamente)
 - `#framework-update.prompt.md` — Aggiorna AGENTS.md e copilot-instructions.md dopo modifica al framework
 - `#framework-changelog.prompt.md` — Aggiunge voce a FRAMEWORK_CHANGELOG.md sezione [Unreleased]
 - `#framework-release.prompt.md` — Consolida [Unreleased] in una versione rilasciata del framework
+- `#framework-unlock.prompt.md` — Sblocca temporaneamente i path protetti del framework
 
 I file si trovano in `.github/prompts/`.
 
@@ -113,8 +118,8 @@ Si trovano in `.github/instructions/`.
 - `tests.instructions.md` — standard test (applyTo: `tests/**/*.py`)
 - `domain.instructions.md` — regole layer domain (applyTo: `src/domain/**/*.py`)
 - `ui.instructions.md` — regole wxPython + accessibilità NVDA (applyTo: `src/presentation/**/*.py`)
-- `project-init-gate.instructions.md` — gate inizializzazione progetto (applyTo: `**` —
-  attivo in tutti i contesti)
+- `framework-guard.instructions.md` — guardia scrittura componenti framework
+  (applyTo: `**` — prevale sui path protetti)
 - `workflow-standard.instructions.md` — sequenza operativa standard
   per ogni richiesta di modifica (applyTo: `**`): TODO gate, pre-commit
   checklist, sync documentazione, feedback strutturato.
@@ -139,6 +144,8 @@ Si trovano in `.github/skills/`.
 - `git-execution.skill.md` — matrice autorizzazioni comandi git per contesto
 - `file-deletion-guard.skill.md` — guardia con conferma
   obbligatoria prima di eliminare file o directory
+- `framework-guard.skill.md` — blocco standardizzato per modifiche
+  ai componenti protetti del framework
 - `changelog-entry.skill.md` — regole generazione voce
   CHANGELOG da git diff: sezione, formato, struttura file
 - `code-routing.skill.md` — classificazione fasi GUI/non-GUI per Agent-CodeRouter
@@ -153,17 +160,17 @@ Si trovano in `.github/skills/`.
 
 | Agente | Skills referenziate |
 | ------ | ------------------ |
-| Agent-Welcome | project-profile, accessibility-output, file-deletion-guard, project-profile-template¹ |
+| Agent-Welcome | project-profile, accessibility-output, file-deletion-guard, framework-guard, project-profile-template¹ |
 | Agent-Analyze | clean-architecture-rules, accessibility-output |
 | Agent-Design | clean-architecture-rules, document-template, accessibility-output |
 | Agent-Plan | document-template, accessibility-output |
 | Agent-Code | conventional-commit, validate-accessibility, clean-architecture-rules, accessibility-output, git-execution, file-deletion-guard |
 | Agent-Validate | tests (instructions), validate-accessibility, accessibility-output |
-| Agent-Docs | semver-bump, accessibility-output |
-| Agent-Release | semver-bump, accessibility-output |
-| Agent-FrameworkDocs | accessibility-output, file-deletion-guard |
+| Agent-Docs | semver-bump, accessibility-output, framework-guard |
+| Agent-Release | semver-bump, accessibility-output, framework-guard |
+| Agent-FrameworkDocs | accessibility-output, file-deletion-guard, framework-guard |
 | Agent-Git | git-execution, conventional-commit, changelog-entry, accessibility-output, file-deletion-guard |
-| Agent-Orchestrator | accessibility-output, git-execution |
+| Agent-Orchestrator | accessibility-output, git-execution, framework-guard |
 | Agent-CodeRouter | code-routing, accessibility-output, git-execution |
 | Agent-CodeUI | validate-accessibility, conventional-commit, accessibility-output, git-execution |
 | Agent-Helper | framework-query, framework-index, agent-selector, framework-scope-guard, accessibility-output |

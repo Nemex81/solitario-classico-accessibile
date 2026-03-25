@@ -17,6 +17,8 @@ esplicitamente nella sezione "Riferimenti Skills".
 - `git-execution.skill.md` — matrice autorizzazioni comandi git per contesto
 - `file-deletion-guard.skill.md` — guardia con conferma obbligatoria
   prima di eliminare file o directory
+- `framework-guard.skill.md` — blocco standardizzato per modifiche
+  ai componenti protetti del framework
 - `changelog-entry.skill.md` — regole generazione voce CHANGELOG
   da git diff: classificazione sezione, formato voce, struttura file
 - `code-routing.skill.md` — regole di classificazione fasi GUI/non-GUI per Agent-CodeRouter
@@ -33,17 +35,17 @@ esplicitamente nella sezione "Riferimenti Skills".
 
 | Agente | Skills referenziate |
 | ------ | ------------------ |
-| Agent-Welcome | project-profile, accessibility-output, file-deletion-guard |
+| Agent-Welcome | project-profile, accessibility-output, file-deletion-guard, framework-guard |
 | Agent-Analyze | clean-architecture-rules, accessibility-output |
 | Agent-Design | clean-architecture-rules, document-template, accessibility-output |
 | Agent-Plan | document-template, accessibility-output |
 | Agent-Code | conventional-commit, validate-accessibility, clean-architecture-rules, accessibility-output, git-execution, file-deletion-guard |
 | Agent-Validate | tests (instructions), validate-accessibility, accessibility-output |
-| Agent-Docs | semver-bump, accessibility-output |
-| Agent-Release | semver-bump, accessibility-output |
-| Agent-FrameworkDocs | accessibility-output, file-deletion-guard |
+| Agent-Docs | semver-bump, accessibility-output, framework-guard |
+| Agent-Release | semver-bump, accessibility-output, framework-guard |
+| Agent-FrameworkDocs | accessibility-output, file-deletion-guard, framework-guard |
 | Agent-Git | git-execution, conventional-commit, changelog-entry, accessibility-output, file-deletion-guard |
-| Agent-Orchestrator | accessibility-output, git-execution |
+| Agent-Orchestrator | accessibility-output, git-execution, framework-guard |
 | Agent-CodeRouter | code-routing, accessibility-output, git-execution |
 | Agent-CodeUI | validate-accessibility, conventional-commit, accessibility-output, git-execution |
 | Agent-Helper | framework-query, framework-index, agent-selector, framework-scope-guard, accessibility-output |

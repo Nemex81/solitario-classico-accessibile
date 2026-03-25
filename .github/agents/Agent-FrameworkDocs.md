@@ -64,6 +64,8 @@ All'avvio, prima di qualsiasi scrittura:
 
 - **Standard output accessibile** (struttura, NVDA, report):
   → `.github/skills/accessibility-output.skill.md`
+- **Protezione componenti framework** (blocco scrittura su path protetti):
+  → `.github/skills/framework-guard.skill.md`
 
 ---
 
@@ -72,6 +74,9 @@ All'avvio, prima di qualsiasi scrittura:
 - NON modificare file fuori da `.github/`
 - NON toccare `CHANGELOG.md` della root
 - NON toccare file in `src/`, `docs/`, `tests/`
+- Se il task richiede scrittura su un path framework protetto e
+  `framework_edit_mode: false`, bloccare l'operazione e indirizzare
+  l'utente al prompt `#framework-unlock`
 - FRAMEWORK_CHANGELOG.md: usare [Unreleased] fino a release esplicita
 - Seguire formato Conventional Changelog (Added/Changed/Fixed/Removed)
 - Proporre sempre i comandi git, mai eseguirli
@@ -84,4 +89,4 @@ All'avvio, prima di qualsiasi scrittura:
 - `AGENTS.md` riflette conteggio e versione corretti
 - README `.github/` e sottocartelle allineati con stato reale
 - Nessun link interno broken
-- Report finale: "Framework docs synced. Versione: vX.Y.Z"
+  - Report finale: "Framework docs synced. Versione: vX.Y.Z"

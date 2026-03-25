@@ -9,6 +9,7 @@ test_runner: ""
 build_system: ""
 architecture: ""
 accessibility: false
+framework_edit_mode: false
 platform: ""
 screen_reader: ""
 ---
@@ -53,6 +54,10 @@ Instructions language-specific attive per questo progetto:
 -(da compilare durante setup)
 
 ## Note Progetto
+
+- **Framework Edit Mode**: Variabile di controllo sicurezza. Se `false`,
+  i componenti del framework sono protetti da modifiche accidentali.
+  Modificabile solo tramite il prompt `#framework-unlock`.
 
 (spazio per note contestuali — aggiornabile tramite
 #project-update in qualsiasi momento)

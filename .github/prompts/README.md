@@ -17,15 +17,18 @@ Usano variabili di input con sintassi `${input:label}`.
 - `sync-docs.prompt.md` — avvia Agent-Docs per sync documentazione
 - `release.prompt.md` — avvia Agent-Release per versioning e build
 - `help.prompt.md` — spiega come funziona un agente specifico
-- `git-commit.prompt.md` — dispatcher commit (input opzionale PUSH per commit + push)
-- `git-merge.prompt.md` — dispatcher merge (delega ad Agent-Git)
+- `git-commit.prompt.md` — wrapper agent commit (input opzionale PUSH per commit + push immediato)
+- `git-merge.prompt.md` — wrapper agent merge (delega ad Agent-Git)
 - `orchestrate.prompt.md` — ciclo E2E completo tramite Agent-Orchestrator
 - `framework-update.prompt.md` — aggiorna AGENTS.md e copilot-instructions.md
 - `framework-changelog.prompt.md` — aggiunge voce a FRAMEWORK_CHANGELOG.md
 - `framework-release.prompt.md` — consolida [Unreleased] in una versione rilasciata
+- `framework-unlock.prompt.md` — sblocca temporaneamente i path protetti del framework
 
 ## Note
 
 - I prompt `project-setup` e `project-update` delegano ad Agent-Welcome.
-- I prompt `git-commit` e `git-merge` delegano ad Agent-Git.
+- I prompt `git-commit` e `git-merge` sono wrapper agent e delegano ad Agent-Git.
+- Il prompt `framework-unlock` abilita una finestra controllata di modifica
+  dei componenti protetti del framework.
 - Documento di riferimento completo: [AGENTS.md](../AGENTS.md) sezione "Prompt Files".

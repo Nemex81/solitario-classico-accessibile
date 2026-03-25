@@ -6,11 +6,7 @@ description: >
   Unico agente autorizzato a eseguire comandi git tramite run_in_terminal.
   Invocabile manualmente dal dropdown o tramite subagent delegation
   da git-commit.prompt.md, git-merge.prompt.md e Agent-Orchestrator.
-tools:
-  - run_in_terminal
-  - read_file
-  - replace_string_in_file
-model: ['GPT-5 mini (copilot)', 'Raptor mini (copilot)']
+model: ['GPT-5 mini (copilot)', 'GPT-5.3-Codex (copilot)']
 user-invocable: true
 ---
 
@@ -26,8 +22,8 @@ Modello: gpt-5-mini — sufficiente per operazioni meccaniche e strutturate.
 Questo agente è uno dei 3 contesti autorizzati a eseguire git
 tramite `run_in_terminal`:
 
-- `#git-commit.prompt.md` — dispatcher per commit
-- `#git-merge.prompt.md` — dispatcher per merge
+- `#git-commit.prompt.md` — wrapper agent per commit
+- `#git-merge.prompt.md` — wrapper agent per merge
 - **`Agent-Git`** — questo agente, logica operativa completa
 
 Riferimento policy: `.github/instructions/git-policy.instructions.md`
@@ -146,6 +142,10 @@ corrisponde vince):
    Se output inizia con "GIT_RUNNER: COMMIT OK":
      usa i dati del RIEPILOGO per costruire
      il blocco "COMMIT + PUSH ESEGUITI" finale.
+
+   In questa modalità il parametro PUSH passato dal wrapper
+   costituisce conferma implicita del push: non chiedere
+   un secondo gate testuale all'utente.
 
 ### OP-3: Push (solo su richiesta esplicita)
 
