@@ -10,16 +10,15 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 ## [Unreleased]
 
+<!-- Le voci non rilasciate vanno inserite qui. Rimane vuoto dopo la release. -->
+
+## [v1.6.1] - 2026-03-25
+
 ### Added
 
-- `scripts/git_runner.py`: nuovo script wrapper CLI Python
-  per operazioni git di Agent-Git. Sottocomandi: status,
-  commit (flag --push), push, merge, tag. Esegue sequenze
-  ## [Unreleased]
+- `scripts/git_runner.py`: nuovo script wrapper CLI Python per operazioni git di Agent-Git. Sottocomandi: status, commit (flag --push), push, merge, tag. Esegue sequenze git atomiche in un singolo `run_in_terminal` invece di chiamate multiple separate. Output strutturato con prefisso `GIT_RUNNER: <SUBCOMMAND> <OK|FAIL>` per rilevamento esito deterministico. Recovery automatico su merge fallito (merge --abort + checkout branch iniziale) e su commit fallito (reset HEAD per annullare stage). Tag sempre solo proposto, mai eseguito. Solo stdlib Python, zero dipendenze esterne.
 
-  <!-- Le voci non rilasciate vanno inserite qui. Rimane vuoto dopo la release. -->
-
-  ## [v1.6.0] - 2026-03-24
+## [v1.6.0] - 2026-03-24
 
   ### Added
 

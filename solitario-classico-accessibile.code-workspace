@@ -1,8 +1,15 @@
 {
-	"folders": [
-		{
-			"path": "."
+	"servers": {
+		"github": {
+			"type": "http",
+			"url": "https://api.githubcopilot.com/mcp/"
+		},
+		"io.github.github/github-mcp-server": {
+			"type": "http",
+			"url": "https://api.githubcopilot.com/mcp/",
+			"gallery": "https://api.mcp.github.com",
+			"version": "0.31.0"
 		}
-	],
-	"settings": {}
+	},
+	"inputs": []
 }
