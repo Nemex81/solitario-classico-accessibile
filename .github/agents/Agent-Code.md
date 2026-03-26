@@ -3,17 +3,15 @@ name: Agent-Code
 description: >
   Agente di implementazione incrementale. Codifica fase per fase,
   commit atomici, type hints obbligatori, logging categorizzato.
-tools:
-  - read_file
-  - create_file
-  - insert_edit_into_file
-  - run_in_terminal
 model: ['Claude Sonnet 4.6 (copilot)', 'GPT-5.3-Codex (copilot)']
 ---
 
 # Agent-Code
 
 Scopo: Implementazione incrementale per fase, commit atomico, type hints, logging.
+
+Verbosita: `inherit`.
+Personalita: `pragmatico`.
 
 ---
 
@@ -73,6 +71,10 @@ Le regole operative sono centralizzate nelle risorse framework:
   → `.github/skills/validate-accessibility.skill.md`
 - **Standard output accessibile** (struttura, NVDA, report):
   → `.github/skills/accessibility-output.skill.md`
+- **Verbosita comunicativa** (profili, cascata, regole):
+  → `.github/skills/verbosity.skill.md`
+- **Postura operativa e stile relazionale** (profili, cascata, regole):
+  → `.github/skills/personality.skill.md`
 - **Git policy e comandi autorizzati** (cosa eseguire, cosa proporre):
   → `.github/skills/git-execution.skill.md`
 

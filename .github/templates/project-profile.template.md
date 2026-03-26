@@ -10,6 +10,8 @@ build_system: ""
 architecture: ""
 accessibility: false
 framework_edit_mode: false
+verbosity: "collaborator"
+personality: "pragmatico"
 platform: ""
 screen_reader: ""
 ---
@@ -60,6 +62,16 @@ Instructions language-specific attive per questo progetto:
 - **Framework Edit Mode**: Variabile di controllo sicurezza. Se `false`,
   i componenti del framework sono protetti da modifiche accidentali.
   Modificabile solo tramite il prompt `#framework-unlock`.
+- **Verbosity**: Livello di verbosita comunicativa globale degli
+    agenti. Valori: `tutor` | `collaborator` | `nerd`. Default:
+    `collaborator`. Modificabile tramite `#verbosity`.
+    Override temporaneo di sessione: dichiaralo verbalmente in chat
+    senza modificare questo file.
+- **Personality**: Postura operativa e stile relazionale degli
+    agenti. Valori: `mentor` | `pragmatico` | `reviewer` |
+    `architect`. Default: `pragmatico`. Modificabile tramite
+    `#personality`. Override temporaneo di sessione: dichiaralo
+    verbalmente in chat senza modificare questo file.
 
 (spazio per note contestuali — aggiornabile tramite
-#project-update in qualsiasi momento)
+`#project-update` in qualsiasi momento)

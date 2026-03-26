@@ -25,7 +25,8 @@ Ogni file agente contiene: scopo, trigger, deliverable, gate e workflow.
   source of truth, adatta i componenti language-specific.
   Non partecipa al ciclo E2E. Invocabile dal dropdown o
   tramite #project-setup.prompt.md e #project-update.prompt.md.
-  Modelli: gpt-5-mini, Raptor mini.
+  Modelli: GPT-5 mini nel frontmatter del framework; Raptor mini disponibile
+  operativamente nell'ambiente quando supportato dal validator.
 - [Agent-Orchestrator](agents/Agent-Orchestrator.md) — Coordinatore E2E
   Orchestratore del ciclo completo. Usa subagent delegation per
   coordinare tutti gli agenti specializzati. Gate oggettivi verificati
@@ -90,6 +91,14 @@ il nome del file. Usano variabili di input con sintassi `${input:label}`.
   altra operazione. Delega ad Agent-Welcome OP-1.
 - `#project-update.prompt.md` — Aggiorna campi del
   profilo progetto. Delega ad Agent-Welcome OP-2.
+- `#verbosity.prompt.md` — Modifica il livello di verbosita
+  comunicativa globale degli agenti.
+  Richiede `framework_edit_mode: true`; se il framework e lockato,
+  usare prima `#framework-unlock.prompt.md`.
+- `#personality.prompt.md` — Modifica la postura operativa
+  globale degli agenti.
+  Richiede `framework_edit_mode: true`; se il framework e lockato,
+  usare prima `#framework-unlock.prompt.md`.
 - `#init.prompt.md` — Avvia nuovo task, suggerisce agente appropriato
 - `#start.prompt.md` — Riprendi codifica dal primo task non completato in TODO.md
 - `#status.prompt.md` — Mostra stato attuale del workflow in corso
@@ -118,6 +127,10 @@ Si trovano in `.github/instructions/`.
 - `tests.instructions.md` — standard test (applyTo: `tests/**/*.py`)
 - `domain.instructions.md` — regole layer domain (applyTo: `src/domain/**/*.py`)
 - `ui.instructions.md` — regole wxPython + accessibilità NVDA (applyTo: `src/presentation/**/*.py`)
+- `verbosity.instructions.md` — gestione della verbosita comunicativa
+  degli agenti framework (applyTo: `.github/**`)
+- `personality.instructions.md` — gestione della postura operativa
+  e dello stile relazionale degli agenti framework (applyTo: `.github/**`)
 - `framework-guard.instructions.md` — guardia scrittura componenti framework
   (applyTo: `**` — prevale sui path protetti)
 - `workflow-standard.instructions.md` — sequenza operativa standard
@@ -146,6 +159,10 @@ Si trovano in `.github/skills/`.
   obbligatoria prima di eliminare file o directory
 - `framework-guard.skill.md` — blocco standardizzato per modifiche
   ai componenti protetti del framework
+- `verbosity.skill.md` — gestione della verbosita comunicativa
+  globale e per-agente tramite cascata
+- `personality.skill.md` — gestione della postura operativa
+  globale e per-agente tramite cascata
 - `changelog-entry.skill.md` — regole generazione voce
   CHANGELOG da git diff: sezione, formato, struttura file
 - `code-routing.skill.md` — classificazione fasi GUI/non-GUI per Agent-CodeRouter
@@ -160,22 +177,26 @@ Si trovano in `.github/skills/`.
 
 | Agente | Skills referenziate |
 | ------ | ------------------ |
-| Agent-Welcome | project-profile, accessibility-output, file-deletion-guard, framework-guard, project-profile-template¹ |
-| Agent-Analyze | clean-architecture-rules, accessibility-output |
-| Agent-Design | clean-architecture-rules, document-template, accessibility-output |
-| Agent-Plan | document-template, accessibility-output |
-| Agent-Code | conventional-commit, validate-accessibility, clean-architecture-rules, accessibility-output, git-execution, file-deletion-guard |
-| Agent-Validate | tests (instructions), validate-accessibility, accessibility-output |
-| Agent-Docs | semver-bump, accessibility-output, framework-guard |
-| Agent-Release | semver-bump, accessibility-output, framework-guard |
-| Agent-FrameworkDocs | accessibility-output, file-deletion-guard, framework-guard |
+| Agent-Welcome | project-profile, accessibility-output, verbosity, personality, file-deletion-guard, framework-guard, project-profile-template¹ |
+| Agent-Analyze | clean-architecture-rules, accessibility-output, verbosity, personality |
+| Agent-Design | clean-architecture-rules, document-template, accessibility-output, verbosity, personality |
+| Agent-Plan | document-template, accessibility-output, verbosity, personality |
+| Agent-Code | conventional-commit, validate-accessibility, clean-architecture-rules, accessibility-output, verbosity, personality, git-execution, file-deletion-guard |
+| Agent-Validate | tests (instructions), validate-accessibility, accessibility-output, verbosity, personality |
+| Agent-Docs | semver-bump, accessibility-output, verbosity, personality |
+| Agent-Release | semver-bump, accessibility-output, verbosity, personality, git-execution, framework-guard |
+| Agent-FrameworkDocs | accessibility-output, verbosity, personality, framework-guard |
 | Agent-Git | git-execution, conventional-commit, changelog-entry, accessibility-output, file-deletion-guard |
-| Agent-Orchestrator | accessibility-output, git-execution, framework-guard |
-| Agent-CodeRouter | code-routing, accessibility-output, git-execution |
-| Agent-CodeUI | validate-accessibility, conventional-commit, accessibility-output, git-execution |
-| Agent-Helper | framework-query, framework-index, agent-selector, framework-scope-guard, accessibility-output |
+| Agent-Orchestrator | accessibility-output, verbosity, personality, git-execution, framework-guard |
+| Agent-CodeRouter | code-routing, accessibility-output, verbosity, personality, git-execution |
+| Agent-CodeUI | validate-accessibility, conventional-commit, accessibility-output, verbosity, personality, git-execution |
+| Agent-Helper | framework-query, framework-index, agent-selector, framework-scope-guard, accessibility-output, verbosity, personality |
 
 ¹ `project-profile-template` non è una skill ma un template in `.github/templates/`. Agent-Welcome lo usa in lettura; la manutenzione è di Agent-FrameworkDocs.
+
+Nota: `Agent-Git` e un'eccezione intenzionale. Non referenzia
+`verbosity`/`personality` per design, perche produce output strutturato
+e operativo invece di output conversazionale guidato da quei profili.
 
 ---
 

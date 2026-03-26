@@ -4,16 +4,15 @@ description: >
   Coordinatore del sotto-ciclo di codifica. Riceve task da Agent-Orchestrator,
   classifica ogni fase del TODO come GUI o non-GUI tramite code-routing.skill.md,
   delega ad Agent-CodeUI o Agent-Code, verifica completamento e aggiorna TODO.
-tools:
-  - read_file
-  - replace_string_in_file
-  - agent
 model: ['Claude Sonnet 4.6 (copilot)', 'GPT-5.3-Codex (copilot)']
 ---
 
 # Agent-CodeRouter
 
 Scopo: Dispatcher del sotto-ciclo implementazione. Non scrive codice.
+
+Verbosita: `inherit`.
+Personalita: `pragmatico`.
 
 ---
 
@@ -49,4 +48,5 @@ Scopo: Dispatcher del sotto-ciclo implementazione. Non scrive codice.
 
 - Regole di routing: `.github/skills/code-routing.skill.md`
 - Output accessibile: `.github/skills/accessibility-output.skill.md`
+- Postura operativa e stile relazionale: `.github/skills/personality.skill.md`
 - Git policy: `.github/skills/git-execution.skill.md`

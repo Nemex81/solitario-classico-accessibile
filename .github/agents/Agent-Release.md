@@ -3,17 +3,15 @@ name: Agent-Release
 description: >
   Agente per versioning semantico, build con cx_freeze, package creation
   e release coordination. Gestisce tag, CHANGELOG e distribuzione.
-tools:
-  - read_file
-  - create_file
-  - insert_edit_into_file
-  - run_in_terminal
-model: ['GPT-5 mini (copilot)', 'Raptor mini (copilot)']
+model: ['GPT-5 mini (copilot)']
 ---
 
 # Agent-Release
 
 Scopo: Versioning semantico, build con cx_freeze, package creation, release coordination.
+
+Verbosita: `inherit`.
+Personalita: `pragmatico`.
 
 ---
 
@@ -87,6 +85,10 @@ Agent-Release:
    → `.github/skills/semver-bump.skill.md`
 - **Standard output accessibile** (struttura, NVDA, report):
    → `.github/skills/accessibility-output.skill.md`
+- **Verbosita comunicativa** (profili, cascata, regole):
+   → `.github/skills/verbosity.skill.md`
+- **Postura operativa e stile relazionale** (profili, cascata, regole):
+   → `.github/skills/personality.skill.md`
 - **Operazioni Git strutturate** (tag proposal via Agent-Git):
    → `.github/skills/git-execution.skill.md`
 - **Protezione componenti framework** (blocco scrittura su path protetti):

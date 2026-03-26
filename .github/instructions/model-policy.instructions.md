@@ -13,6 +13,13 @@ o tipo di task, o quando devi valutare la coerenza di una configurazione.
 Nota: il fallback è espresso come secondo elemento dell'array `model`
 nel frontmatter degli agenti, non come chiave separata.
 
+Nota operativa: questa tabella descrive i valori da usare nel frontmatter
+degli agenti del framework quando serve una configurazione validator-safe.
+Non coincide necessariamente con tutti i modelli effettivamente disponibili
+nell'ambiente Copilot dell'utente. In particolare, `Raptor mini` puo essere
+disponibile e usato operativamente anche quando la sua forma canonica non e
+verificata o non viene accettata dal validator del frontmatter.
+
 | Agente | model (array ordinato) |
 |--------|-------------------------|
 | Agent-Orchestrator | ['GPT-5.4 (copilot)', 'Claude Opus 4.6 (copilot)'] |
@@ -21,8 +28,8 @@ nel frontmatter degli agenti, non come chiave separata.
 | Agent-Plan | ['Claude Sonnet 4.6 (copilot)', 'GPT-5.4 (copilot)'] |
 | Agent-Code | ['Claude Sonnet 4.6 (copilot)', 'GPT-5.3-Codex (copilot)'] |
 | Agent-Validate | ['GPT-5.3-Codex (copilot)', 'Claude Sonnet 4.6 (copilot)'] |
-| Agent-Docs | ['GPT-5 mini (copilot)', 'Raptor mini (copilot)'] |
-| Agent-Release | ['GPT-5 mini (copilot)', 'Raptor mini (copilot)'] |
+| Agent-Docs | ['GPT-5 mini (copilot)'] |
+| Agent-Release | ['GPT-5 mini (copilot)'] |
 | Agent-FrameworkDocs | ['Claude Sonnet 4.6 (copilot)', 'GPT-5 mini (copilot)'] |
 | Agent-Git | ['GPT-5 mini (copilot)', 'GPT-5.3-Codex (copilot)'] |
 | Agent-CodeRouter | ['Claude Sonnet 4.6 (copilot)', 'GPT-5.3-Codex (copilot)'] |
@@ -55,3 +62,16 @@ gpt-5.1-codex-max, gemini-3-pro
 - gpt-5.1* → gpt-5.3-codex
 - claude-sonnet-4 → claude-sonnet-4.6
 - claude-opus-4.5 → claude-opus-4.6
+
+## Modelli riconosciuti (forme canoniche)
+
+Per evitare falsi positivi del validator, dichiariamo esplicitamente le forme canoniche riconosciute per i modelli usati nel framework. Aggiungi qui nuovi modelli quando servono.
+
+Questa lista rappresenta le forme documentate o gia validate nel contesto del
+framework. Non prova da sola che ogni forma elencata sia sempre accettata in
+ogni build del validator di VS Code/Copilot.
+
+- GPT-5 mini (copilot)
+- Raptor mini (copilot)
+- gpt-5-mini
+- raptor-mini

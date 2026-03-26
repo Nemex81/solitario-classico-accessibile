@@ -1,18 +1,13 @@
 ---
-mode: agent
+agent: agent
 model:
-  - gpt-5-mini (copilot)
-  - Raptor mini (copilot)
+  - GPT-5 mini (copilot)
+  - GPT-5 mini (copilot)
 description: >
   Aggiorna uno o più campi del profilo progetto.
   Se non specifichi cosa aggiornare, Agent-Welcome
   mostra un help con esempi d'uso.
-inputs:
-  - id: update_request
-    description: >
-      Cosa vuoi aggiornare nel profilo progetto?
-      (opzionale — lascia vuoto per vedere il help)
-    required: false
+argument-hint: "update_request — Cosa vuoi aggiornare nel profilo progetto? (opzionale — lascia vuoto per vedere il help)"
 ---
 
 # Project Update — Aggiornamento Profilo Progetto

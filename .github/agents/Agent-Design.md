@@ -3,16 +3,15 @@ name: Agent-Design
 description: >
   Agente per decisioni architetturali, creazione DESIGN doc e pattern
   selection. Produce documenti DESIGN_*.md in docs/2 - projects/.
-tools:
-  - read_file
-  - create_file
-  - insert_edit_into_file
 model: ['Claude Opus 4.6 (copilot)', 'GPT-5.4 (copilot)']
 ---
 
 # Agent-Design
 
 Scopo: Decisioni architetturali, creazione DESIGN doc, pattern selection.
+
+Verbosita: `inherit`.
+Personalita: `architect`.
 
 ---
 
@@ -49,6 +48,10 @@ Scopo: Decisioni architetturali, creazione DESIGN doc, pattern selection.
   → `.github/skills/document-template.skill.md`
 - **Standard output accessibile** (struttura, NVDA, report):
   → `.github/skills/accessibility-output.skill.md`
+- **Verbosita comunicativa** (profili, cascata, regole):
+  → `.github/skills/verbosity.skill.md`
+- **Postura operativa e stile relazionale** (profili, cascata, regole):
+  → `.github/skills/personality.skill.md`
 
 ---
 

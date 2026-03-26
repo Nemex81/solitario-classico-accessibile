@@ -3,15 +3,14 @@ name: Agent-Docs
 description: >
   Agente per sincronizzazione documentazione. Aggiorna API.md,
   ARCHITECTURE.md, CHANGELOG.md dopo commit di codice.
-tools:
-  - read_file
-  - create_file
-  - insert_edit_into_file
-model: ['GPT-5 mini (copilot)', 'Raptor mini (copilot)']
+model: ['GPT-5 mini (copilot)']
 ---
 # Agent-Docs
 
 Scopo: Sincronizzazione documentazione, CHANGELOG update, link validation.
+
+Verbosita: `inherit`.
+Personalita: `pragmatico`.
 
 ---
 
@@ -76,6 +75,10 @@ Agent-Docs:
   → `.github/skills/semver-bump.skill.md`
 - **Standard output accessibile** (struttura, NVDA, report):
   → `.github/skills/accessibility-output.skill.md`
+- **Verbosita comunicativa** (profili, cascata, regole):
+  → `.github/skills/verbosity.skill.md`
+- **Postura operativa e stile relazionale** (profili, cascata, regole):
+  → `.github/skills/personality.skill.md`
 
 ---
 

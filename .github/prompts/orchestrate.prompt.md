@@ -1,5 +1,5 @@
 ---
-mode: agent
+agent: agent
 description: Avvia l'Agent-Orchestrator per gestire un task E2E completo.
 ---
 

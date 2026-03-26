@@ -5,11 +5,6 @@ description: >
   Aggiorna FRAMEWORK_CHANGELOG.md, AGENTS.md, copilot-instructions.md,
   README.md di .github/ e README.md delle sottocartelle agents/ e prompts/.
   Non tocca mai file fuori da .github/.
-tools:
-  - read_file
-  - create_file
-  - insert_edit_into_file
-  - agent
 model: ['Claude Sonnet 4.6 (copilot)', 'GPT-5 mini (copilot)']
 ---
 
@@ -17,6 +12,9 @@ model: ['Claude Sonnet 4.6 (copilot)', 'GPT-5 mini (copilot)']
 
 Scopo: manutenzione documentazione e changelog del Framework Copilot.
 Scope esclusivo: `.github/**`. Nessun file fuori da questo perimetro.
+
+Verbosita: `inherit`.
+Personalita: `pragmatico`.
 
 ---
 
@@ -64,6 +62,10 @@ All'avvio, prima di qualsiasi scrittura:
 
 - **Standard output accessibile** (struttura, NVDA, report):
   → `.github/skills/accessibility-output.skill.md`
+- **Verbosita comunicativa** (profili, cascata, regole):
+  → `.github/skills/verbosity.skill.md`
+- **Postura operativa e stile relazionale** (profili, cascata, regole):
+  → `.github/skills/personality.skill.md`
 - **Protezione componenti framework** (blocco scrittura su path protetti):
   → `.github/skills/framework-guard.skill.md`
 

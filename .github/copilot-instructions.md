@@ -86,6 +86,8 @@ Poi prosegui normalmente con il task richiesto.
 | `/framework-update` | `#framework-update.prompt.md` |
 | `/framework-changelog` | `#framework-changelog.prompt.md` |
 | `/framework-release` | `#framework-release.prompt.md` |
+| `#verbosity` | `#verbosity.prompt.md` (richiede `#framework-unlock` se `framework_edit_mode: false`) |
+| `#personality` | `#personality.prompt.md` (richiede `#framework-unlock` se `framework_edit_mode: false`) |
 
 Per dettagli completi: [.github/AGENTS.md](AGENTS.md) e [docs/WORKFLOW.md](../docs/WORKFLOW.md).
 

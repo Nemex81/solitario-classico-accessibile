@@ -4,10 +4,6 @@ description: >
   Agente di discovery e analisi codebase. Attivalo per analizzare
   architettura, trovare dipendenze, capire come funziona un componente.
   Modalita read-only: non modifica file.
-tools:
-  - read_file
-  - search_code
-  - list_directory
 model: ['Claude Sonnet 4.6 (copilot)', 'GPT-5.4 (copilot)']
 ---
 
@@ -16,6 +12,9 @@ model: ['Claude Sonnet 4.6 (copilot)', 'GPT-5.4 (copilot)']
 Scopo: Discovery, analisi codebase, requirement gathering.
 
 Modalita operativa: **read-only**. Questo agente non modifica alcun file.
+
+Verbosita: `inherit`.
+Personalita: `reviewer`.
 
 ---
 
@@ -49,6 +48,10 @@ Modalita operativa: **read-only**. Questo agente non modifica alcun file.
   → `.github/skills/clean-architecture-rules.skill.md`
 - **Standard output accessibile** (struttura, NVDA, report):
   → `.github/skills/accessibility-output.skill.md`
+- **Verbosita comunicativa** (profili, cascata, regole):
+  → `.github/skills/verbosity.skill.md`
+- **Postura operativa e stile relazionale** (profili, cascata, regole):
+  → `.github/skills/personality.skill.md`
 
 ---
 

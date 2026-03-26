@@ -9,13 +9,7 @@ description: >
   Non partecipa al ciclo E2E. Invocabile solo manualmente
   o tramite #project-setup.prompt.md e
   #project-update.prompt.md.
-tools:
-  - read_file
-  - create_file
-  - replace_string_in_file
-model:
-  - gpt-5-mini (copilot)
-  - Raptor mini (copilot)
+model: ['GPT-5 mini (copilot)']
 ---
 
 # Agent-Welcome
@@ -23,6 +17,9 @@ model:
 Scopo: setup iniziale e aggiornamento del profilo progetto.
 Non scrive codice applicativo. Non esegue git direttamente.
 Delega i commit ad Agent-Git al termine di ogni operazione.
+
+Verbosita: `tutor`.
+Personalita: `mentor`.
 
 ---
 
@@ -254,6 +251,10 @@ chore(.github): aggiorna profilo progetto — <campi modificati>
   → .github/skills/project-profile.skill.md
 - Standard output accessibile:
   → .github/skills/accessibility-output.skill.md
+- Verbosita comunicativa (profili, cascata, regole):
+  → `.github/skills/verbosity.skill.md`
+- Postura operativa e stile relazionale (profili, cascata, regole):
+  → `.github/skills/personality.skill.md`
 - Protezione eliminazione file:
   → .github/skills/file-deletion-guard.skill.md
 - Protezione componenti framework:

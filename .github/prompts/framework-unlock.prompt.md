@@ -1,5 +1,5 @@
 ---
-mode: agent
+agent: agent
 description: Sblocca temporaneamente i path protetti del framework per una modifica dichiarata e circoscritta.
 ---
 

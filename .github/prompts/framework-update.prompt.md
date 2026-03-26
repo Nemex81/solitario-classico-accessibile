@@ -1,5 +1,5 @@
 ---
-mode: agent
+agent: agent
 description: Aggiorna il Framework Copilot dopo aggiunta o modifica di agenti/prompt.
 ---
 

@@ -3,16 +3,15 @@ name: Agent-Plan
 description: >
   Agente per breaking down architetturale in fasi implementabili.
   Crea PLAN_*.md in docs/3 - coding plans/ e docs/TODO.md.
-tools:
-  - read_file
-  - create_file
-  - insert_edit_into_file
 model: ['Claude Sonnet 4.6 (copilot)', 'GPT-5.4 (copilot)']
 ---
 
 # Agent-Plan
 
 Scopo: Breaking down architetturale in fasi implementabili, creazione PLAN doc e TODO.
+
+Verbosita: `inherit`.
+Personalita: `architect`.
 
 ---
 
@@ -54,6 +53,10 @@ Scopo: Breaking down architetturale in fasi implementabili, creazione PLAN doc e
   → `.github/skills/document-template.skill.md`
 - **Standard output accessibile** (struttura, NVDA, report):
   → `.github/skills/accessibility-output.skill.md`
+- **Verbosita comunicativa** (profili, cascata, regole):
+  → `.github/skills/verbosity.skill.md`
+- **Postura operativa e stile relazionale** (profili, cascata, regole):
+  → `.github/skills/personality.skill.md`
 
 ---
 

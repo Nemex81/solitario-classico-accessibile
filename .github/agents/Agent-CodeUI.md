@@ -4,17 +4,15 @@ description: >
   Implementazione incrementale componenti GUI wxPython con accessibilità
   NVDA obbligatoria. Ogni componente deve superare la checklist
   validate-accessibility.skill.md prima del commit.
-tools:
-  - read_file
-  - create_file
-  - insert_edit_into_file
-  - run_in_terminal
 model: ['Claude Sonnet 4.6 (copilot)', 'GPT-5.3-Codex (copilot)']
 ---
 
 # Agent-CodeUI
 
 Scopo: Implementazione GUI wxPython + accessibilità NVDA. Commit atomici per fase.
+
+Verbosita: `inherit`.
+Personalita: `pragmatico`.
 
 ---
 
@@ -53,4 +51,6 @@ Scopo: Implementazione GUI wxPython + accessibilità NVDA. Commit atomici per fa
 - Regole presentation layer: `.github/instructions/ui.instructions.md`
 - Commit atomici: `.github/skills/conventional-commit.skill.md`
 - Output accessibile: `.github/skills/accessibility-output.skill.md`
+- Verbosita comunicativa: `.github/skills/verbosity.skill.md`
+- Postura operativa e stile relazionale: `.github/skills/personality.skill.md`
 - Git policy: `.github/skills/git-execution.skill.md`

@@ -1,8 +1,8 @@
 ---
-mode: agent
+agent: agent
 model:
-  - gpt-5-mini (copilot)
-  - Raptor mini (copilot)
+  - GPT-5 mini (copilot)
+  - GPT-5 mini (copilot)
 description: >
   Setup iniziale del framework per il progetto corrente.
   Raccoglie le informazioni fondamentali e genera

@@ -34,7 +34,7 @@ output_atteso: |
   - Modifiche preparate in `.github/AGENTS.md` e `.github/copilot-instructions.md`
     se applicabili.
 ---
-mode: agent
+agent: agent
 description: Consolida [Unreleased] in una versione rilasciata del framework.
 ---
 

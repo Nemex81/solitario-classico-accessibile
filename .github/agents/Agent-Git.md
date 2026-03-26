@@ -15,6 +15,11 @@ user-invocable: true
 Scopo: gestione completa delle operazioni git autorizzate.
 Modello: gpt-5-mini — sufficiente per operazioni meccaniche e strutturate.
 
+Verbosita e Personalita: questo agente non applica la cascata
+`verbosity`/`personality`. L'output e strutturato e operativo,
+non conversazionale; per questo le skill `.github/skills/verbosity.skill.md`
+e `.github/skills/personality.skill.md` non sono referenziate.
+
 ---
 
 ## Autorizzazione Esplicita

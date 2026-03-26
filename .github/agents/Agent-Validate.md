@@ -3,15 +3,15 @@ name: Agent-Validate
 description: >
   Agente di validazione e test coverage. Esegue test, genera report,
   propone test skeleton per moduli sotto threshold. Quality gates.
-tools:
-  - read_file
-  - run_in_terminal
 model: ['GPT-5.3-Codex (copilot)', 'Claude Sonnet 4.6 (copilot)']
 ---
 
 # Agent-Validate
 
 Scopo: Test coverage, test generation, validation report, quality gates.
+
+Verbosita: `inherit`.
+Personalita: `reviewer`.
 
 ---
 
@@ -79,6 +79,10 @@ Agent-Validate:
   → `.github/skills/validate-accessibility.skill.md`
 - **Standard output accessibile** (struttura, NVDA, report):
   → `.github/skills/accessibility-output.skill.md`
+- **Verbosita comunicativa** (profili, cascata, regole):
+  → `.github/skills/verbosity.skill.md`
+- **Postura operativa e stile relazionale** (profili, cascata, regole):
+  → `.github/skills/personality.skill.md`
 
 ---
 
