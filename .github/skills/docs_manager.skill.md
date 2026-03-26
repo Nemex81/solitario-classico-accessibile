@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD029 MD031 MD032 MD040 MD060 -->
+
 # docs_manager — Skill operativa per la gestione documenti
 
 Questa skill definisce le istruzioni operative che gli agenti eseguono
@@ -69,7 +71,7 @@ Per ciascun tipo di documento, seguire questa sequenza:
 
 | Tipo | Template |
 |------|----------|
-| project | `.github/templates/project.md` |
+| design | `.github/templates/design.md` |
 | coding_plan | `.github/templates/coding_plan.md` |
 | report | `.github/templates/report.md` |
 | todo_task | `.github/templates/todo_task.md` |
@@ -81,7 +83,7 @@ Nessun placeholder deve rimanere nel file finale.
 
 | Tipo | Destinazione |
 |------|-------------|
-| project | `docs/2 - projects/` |
+| design | `docs/2 - projects/` |
 | coding_plan | `docs/3 - coding plans/` |
 | report | `docs/4 - reports/` |
 | todo_task | `docs/5 - todolist/` |
@@ -98,7 +100,7 @@ Il file coordinatore operativo è sempre `docs/TODO.md`.
 Regole per l'aggiornamento:
 
 - Aggiungere in append nella sezione corretta:
-  - project → sezione `### Progetti`
+  - design → sezione `### Progetti`
   - coding_plan → sezione `### Piani`
   - report → sezione `### Reports`
   - todo_task → sezione `### Tasks`
@@ -203,7 +205,7 @@ della colonna SCOPO esteso con il nome della convenzione naming.
 
 | Azione | Template | Destinazione |
 |--------|----------|--------------|
-| Nuovo progetto | `.github/templates/project.md` | `docs/2 - projects/` |
+| Nuovo design | `.github/templates/design.md` | `docs/2 - projects/` |
 | Nuovo piano | `.github/templates/coding_plan.md` | `docs/3 - coding plans/` |
 | Nuovo report | `.github/templates/report.md` | `docs/4 - reports/` |
 | Nuovo task | `.github/templates/todo_task.md` | `docs/5 - todolist/` |

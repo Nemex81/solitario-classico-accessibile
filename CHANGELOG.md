@@ -40,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentazione: API.md, ARCHITECTURE.md, README.md dettagliate con audio v3.5.0
 - acs_wx.py ristrutturato per inizializzare audio e collegare audio_manager al frame
 - InputHandler segnala audio solo se fornito dall'esterno
+- Aggiornate istruzioni e template del framework (.github/**) e documentazione correlata (docs/TODO.md).
 
 ### Fixed
 - KeyError risolte: AudioManager._load_event_mapping() usa `getattr(AudioEventType, key)`

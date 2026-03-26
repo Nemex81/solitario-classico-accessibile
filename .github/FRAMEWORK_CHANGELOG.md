@@ -1,4 +1,4 @@
-<!-- markdownlint-disable MD024 -->
+<!-- markdownlint-disable MD012 MD024 -->
 
 # Framework Copilot — Changelog
 
@@ -11,6 +11,15 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 ## [Unreleased]
 
 <!-- Le voci non rilasciate vanno inserite qui. Rimane vuoto dopo la release. -->
+
+## [v1.9.1] - 2026-03-26
+
+### Changed
+
+- `.github/skills/docs_manager.skill.md`: rinomina la skill documentale e allinea i riferimenti legacy.
+- `.github/templates/design.md`: sostituisce `project.md` e uniforma il tipo documento `design`.
+- `.github/FRAMEWORK_CHANGELOG.md` e `docs/4 - reports/REPORT_gate-validation_2026-03-26.md`: corretti due riferimenti storici allineandoli alla nomenclatura attuale.
+- `.github/project-profile.md`: `framework_edit_mode` gestito con #framework-unlock per scritture controllate del framework.
 
 ## [v1.9.0] - 2026-03-26
 
@@ -69,7 +78,7 @@ Versioning: [SemVer](https://semver.org/lang/it/)
   `## Stato Avanzamento`) in tutti i template tranne `readme_folder.md` (parametrico
   con 6 placeholder). `todo_coordinator.md` usato solo al bootstrap iniziale di
   `docs/TODO.md`; dopo il bootstrap il file reale viene aggiornato direttamente.
-- `.github/skills/docs_manager.md`: skill operativa per la gestione documenti.
+- `.github/skills/docs_manager.skill.md`: skill operativa per la gestione documenti.
   Definisce path del sistema (unica fonte di verità), distinzione tra template
   framework e template utente, convenzione naming `AAAA-MM-GG_slug.md`, flusso
   salvataggio per tipo, regole idempotenza coordinatore su path relativo, regola

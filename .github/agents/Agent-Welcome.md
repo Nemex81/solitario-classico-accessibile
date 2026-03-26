@@ -247,7 +247,7 @@ Presenta esattamente questo messaggio:
 ### Passo 2 — Ramo S (attiva)
 
 Seguire la sequenza bootstrap definita in:
-→ .github/skills/docs_manager.md
+→ .github/skills/docs_manager.skill.md
    sezione "Bootstrap struttura docs/"
 
 Il bootstrap è strettamente additivo:
@@ -319,4 +319,4 @@ Fine OP-3.
 - Protezione componenti framework:
   → .github/skills/framework-guard.skill.md
 - Bootstrap struttura docs e gestione documenti:
-  → .github/skills/docs_manager.md
+  → .github/skills/docs_manager.skill.md

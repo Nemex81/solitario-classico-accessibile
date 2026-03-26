@@ -37,7 +37,7 @@ esplicitamente nella sezione "Riferimenti Skills".
 - `style-setup.skill.md` — presentazione e selezione guidata dei parametri
   `verbosity` e `personality`; formato output valori correnti e branching
   salta/personalizza. Scrittura autorizzata solo per Agent-Welcome (OP-1/OP-2)
-- `docs_manager.md` — sistema di tracciamento documenti: path canonici docs/,
+- `docs_manager.skill.md` — sistema di tracciamento documenti: path canonici docs/,
   distinzione template framework vs template utente, convenzione naming file,
   flusso salvataggio per tipo, idempotenza coordinatore, regola additiva,
   bootstrap struttura docs/ portabile e non distruttivo

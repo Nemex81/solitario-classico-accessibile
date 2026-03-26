@@ -24,7 +24,7 @@ Esito dei controlli eseguiti:
 
 Durante la validazione sono state corrette due incoerenze nella nuova implementazione:
 - aggiunto frontmatter valido a `docs/5 - todolist/TODO_document-governance_v1.9.0.md`
-- corretto il riferimento errato da `.github/skills/docs_manager.skill.md` a `.github/skills/docs_manager.md` in `docs/TODO.md`
+- corretto il riferimento errato da `.github/skills/docs_manager.md` a `.github/skills/docs_manager.skill.md` in `docs/TODO.md`
 
 ### Dettaglio osservazioni
 

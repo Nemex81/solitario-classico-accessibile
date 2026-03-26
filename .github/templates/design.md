@@ -1,6 +1,8 @@
+<!-- markdownlint-disable MD041 -->
+
 ## Metadati
 
-tipo: project
+tipo: design
 titolo: {{TITOLO}}
 data_creazione: {{DATA}}
 agente: {{AGENTE}}

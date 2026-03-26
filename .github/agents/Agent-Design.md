@@ -49,7 +49,7 @@ Personalita: `architect`.
 - **Template documenti** (struttura DESIGN, frontmatter, stati):
   → `.github/skills/document-template.skill.md`
 - **Gestione documenti** (path canonici docs/2 - projects/, naming):
-  → `.github/skills/docs_manager.md`
+  → `.github/skills/docs_manager.skill.md`
 - **Standard output accessibile** (struttura, NVDA, report):
   → `.github/skills/accessibility-output.skill.md`
 - **Verbosita comunicativa** (profili, cascata, regole):

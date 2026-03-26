@@ -8,7 +8,7 @@ stato: attivo
 Questo file è il coordinatore persistente del sistema documentale.
 NON è una checklist di task: è l'indice dei lavori attivi.
 Per i TODO specifici di implementazione: docs/5 - todolist/
-Per aggiornamento e struttura: .github/skills/docs_manager.md
+Per aggiornamento e struttura: .github/skills/docs_manager.skill.md
 -->
 
 ## Metadati

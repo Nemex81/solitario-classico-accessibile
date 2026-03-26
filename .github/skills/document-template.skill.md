@@ -100,4 +100,4 @@ Struttura attesa:
 Regole:
 - Non sovrascrivere mai il contenuto esistente: solo append nelle sezioni
 - Aggiornato da `Agent-Plan` (link al nuovo TODO per-task) e `Agent-Docs` (validazione)
-- Per la gestione operativa completa: → `.github/skills/docs_manager.md`
+- Per la gestione operativa completa: → `.github/skills/docs_manager.skill.md`
