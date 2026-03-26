@@ -4,6 +4,21 @@ applyTo: "**"
 
 # Git Policy — Solitario Classico Accessibile
 
+## ROUTING CONTESTUALE — LEGGI PRIMA
+
+Se stai elaborando queste istruzioni come agente **Agent-Git**:
+→ SALTA le sezioni "Regola fondamentale" e "Comandi sempre vietati
+  in autonomia".
+→ Applica SOLO la sezione "Override per Agent-Git" e la matrice
+  in `.github/skills/git-execution.skill.md` sezione "Contesto: Agent-Git".
+→ Hai autorizzazione completa per `run_in_terminal` con `git_runner.py`.
+
+Se sei qualsiasi altro agente (Code, Docs, Analyze, Plan, ecc.):
+→ Applica la "Regola fondamentale" e i divieti indicati nelle sezioni
+  seguenti.
+
+---
+
 ## Regola fondamentale
 
 Copilot NON esegue comandi git in autonomia durante implementazioni,
