@@ -11,7 +11,9 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 <!-- Le voci non rilasciate vanno inserite qui. Rimane vuoto dopo la release. -->
 
-Nessuna voce non rilasciata al momento.
+### Added
+
+- `docs/3 - coding plans/PLAN_e2e-resilience_v1.11.0.md`: plan convalidato (DRAFT → REVIEWED) per rafforzamento E2E su 4 aree: gate semantici Analyze→Design→Plan, smoke test CLI bootstrap, procedura rollback E2E, centralizzazione coverage SOT in `pyproject.toml`. Scope negativo esplicito: timeout/stallo subagenti esclusi. Target: v1.11.0.
 
 ## [v1.9.2] - 2026-03-26
 
