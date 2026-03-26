@@ -177,7 +177,7 @@ Si trovano in `.github/skills/`.
 
 | Agente | Skills referenziate |
 | ------ | ------------------ |
-| Agent-Welcome | project-profile, accessibility-output, verbosity, personality, file-deletion-guard, framework-guard, project-profile-template¹ |
+| Agent-Welcome | project-profile, accessibility-output, verbosity, personality, style-setup, file-deletion-guard, framework-guard, project-profile-template¹ |
 | Agent-Analyze | clean-architecture-rules, accessibility-output, verbosity, personality |
 | Agent-Design | clean-architecture-rules, document-template, accessibility-output, verbosity, personality |
 | Agent-Plan | document-template, accessibility-output, verbosity, personality |

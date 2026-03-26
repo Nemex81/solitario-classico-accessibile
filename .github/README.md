@@ -1,6 +1,6 @@
 # Framework Copilot — Guida all'installazione e all'uso
 
-> **Versione corrente**: v1.7.0 — 26 Marzo 2026
+> **Versione corrente**: v1.7.1 — 26 Marzo 2026
 
 ---
 
