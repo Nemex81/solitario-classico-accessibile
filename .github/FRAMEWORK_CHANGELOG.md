@@ -10,6 +10,23 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 ## [Unreleased]
 
+<!-- Le voci non rilasciate vanno inserite qui. Rimane vuoto dopo la release. -->
+
+## [v1.8.1] - 2026-03-26
+
+### Fixed
+
+- `.github/agents/Agent-Git.md`: aggiunto blocco `## AUTORIZZAZIONE OPERATIVA — LEGGI PRIMA DI TUTTO`
+  come prima sezione del corpo, prima del testo introduttivo. Il blocco dichiara in modo imperativo
+  che l'agente HA autorizzazione completa su `run_in_terminal` e che l'override della policy è
+  attivo immediatamente, senza richiedere auto-riconoscimento contestuale da parte del modello.
+- `.github/instructions/git-policy.instructions.md`: aggiunto blocco `## ROUTING CONTESTUALE — LEGGI PRIMA`
+  come prima sezione del corpo, prima di `## Regola fondamentale`. Il blocco instrada esplicitamente
+  Agent-Git alla sezione "Override per Agent-Git" e gli altri agenti alla regola di divieto,
+  eliminando l'ambiguità dell'override testuale implicito per modelli conservativi (GPT-5 mini).
+
+## [v1.8.0] - 2026-03-26
+
 ### Added
 
 - `.github/templates/project.md`, `coding_plan.md`, `report.md`, `todo_task.md`,
@@ -35,8 +52,6 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 - `.github/AGENTS.md`: aggiunta `style-setup` alla riga `Agent-Helper` (documentazione interna aggiornata).
 - `.github/AGENTS.md`: aggiornata voce Agent-Welcome con menzione OP-3 e skill docs_manager.
 - `.github/skills/README.md`: aggiunta `docs_manager.md` alla lista skill e alla tabella agenti.
-
-<!-- Le voci non rilasciate vanno inserite qui. Rimane vuoto dopo la release. -->
 
 ## [v1.7.1] - 2026-03-26
 
