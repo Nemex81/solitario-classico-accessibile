@@ -25,7 +25,7 @@ Puoi continuare a usare il framework normalmente.
 
 Poi prosegui normalmente con il task richiesto.
 
-## Framework Copilot v1.9.1
+## Framework Copilot v1.9.2
 
 **Questo progetto utilizza un framework orchestrazione Copilot con 14 agenti nativi VS Code.**
 

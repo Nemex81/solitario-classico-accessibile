@@ -6,11 +6,27 @@ Tutte le modifiche rilevanti al Framework Copilot sono documentate qui.
 Formato: [Conventional Changelog](https://keepachangelog.com/it/1.0.0/)
 Versioning: [SemVer](https://semver.org/lang/it/)
 
----
 
 ## [Unreleased]
 
 <!-- Le voci non rilasciate vanno inserite qui. Rimane vuoto dopo la release. -->
+
+Nessuna voce non rilasciata al momento.
+
+## [v1.9.2] - 2026-03-26
+
+### Added
+
+- `.github/skills/error-recovery.skill.md`: nuova skill standardizzata per retry ed escalata di subagenti (max 2 tentativi, formato di escalata all'utente).
+- `docs/3 - coding plans/PLAN_framework-optimization_v1.10.0.md`: nuovo plan `framework-optimization v1.10.0` (DRAFT).
+- `docs/5 - todolist/TODO_framework-optimization_v1.10.0.md`: nuovo TODO per-task associato al plan.
+
+### Changed
+
+- `.github/skills/docs_manager.skill.md`: tabella naming unificata per tipo di documento (DESIGN, PLAN, TODO, REPORT) con motivazioni; corretta tabella bootstrap; aggiunta sezione `File temporanei` (es. findings.md).
+- `.github/agents/Agent-Orchestrator.md`: Fase 0 estesa (punti 2a/2b/2c) per ripresa sessione robusta; Fase 2/3 prompt aggiornati per richiedere l'aggiornamento del coordinatore; aggiunto gate informale in Fase 6; referenze skills aggiornate (docs_manager, error-recovery).
+- `.github/skills/README.md`: inventario skills aggiornato (aggiunta `error-recovery.skill.md`) e matrice agenti→skills aggiornata (docs_manager su Design/Plan/Orchestrator; error-recovery su Orchestrator).
+- `docs/TODO.md`: aggiornato con link al nuovo plan e al nuovo TODO per-task.
 
 ## [v1.9.1] - 2026-03-26
 
