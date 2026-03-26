@@ -37,12 +37,16 @@ esplicitamente nella sezione "Riferimenti Skills".
 - `style-setup.skill.md` — presentazione e selezione guidata dei parametri
   `verbosity` e `personality`; formato output valori correnti e branching
   salta/personalizza. Scrittura autorizzata solo per Agent-Welcome (OP-1/OP-2)
+- `docs_manager.md` — sistema di tracciamento documenti: path canonici docs/,
+  distinzione template framework vs template utente, convenzione naming file,
+  flusso salvataggio per tipo, idempotenza coordinatore, regola additiva,
+  bootstrap struttura docs/ portabile e non distruttivo
 
 ## Agenti e skills associate
 
 | Agente | Skills referenziate |
 | ------ | ------------------ |
-| Agent-Welcome | project-profile, accessibility-output, file-deletion-guard, framework-guard, verbosity, personality, style-setup |
+| Agent-Welcome | project-profile, accessibility-output, file-deletion-guard, framework-guard, verbosity, personality, style-setup, docs_manager |
 | Agent-Analyze | clean-architecture-rules, accessibility-output, verbosity, personality |
 | Agent-Design | clean-architecture-rules, document-template, accessibility-output, verbosity, personality |
 | Agent-Plan | document-template, accessibility-output, verbosity, personality |

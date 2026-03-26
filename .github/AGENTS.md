@@ -23,6 +23,8 @@ Ogni file agente contiene: scopo, trigger, deliverable, gate e workflow.
   Agente di inizializzazione. Raccoglie le info fondamentali
   del progetto, genera .github/project-profile.md come
   source of truth, adatta i componenti language-specific.
+  OP-3: bootstrap opzionale della struttura docs/ tramite skill docs_manager
+  (flusso S/N, additivo e non distruttivo).
   Non partecipa al ciclo E2E. Invocabile dal dropdown o
   tramite #project-setup.prompt.md e #project-update.prompt.md.
   Modelli: GPT-5 mini nel frontmatter del framework; Raptor mini disponibile

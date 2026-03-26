@@ -10,9 +10,31 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 ## [Unreleased]
 
+### Added
+
+- `.github/templates/project.md`, `coding_plan.md`, `report.md`, `todo_task.md`,
+  `todo_coordinator.md`, `readme_folder.md`: sei template framework operativi per il
+  sistema di tracciamento documenti. Struttura H2 fissa (`## Metadati`, `## Contenuto`,
+  `## Stato Avanzamento`) in tutti i template tranne `readme_folder.md` (parametrico
+  con 6 placeholder). `todo_coordinator.md` usato solo al bootstrap iniziale di
+  `docs/TODO.md`; dopo il bootstrap il file reale viene aggiornato direttamente.
+- `.github/skills/docs_manager.md`: skill operativa per la gestione documenti.
+  Definisce path del sistema (unica fonte di verità), distinzione tra template
+  framework e template utente, convenzione naming `AAAA-MM-GG_slug.md`, flusso
+  salvataggio per tipo, regole idempotenza coordinatore su path relativo, regola
+  additiva (no overwrite), sequenza bootstrap strettamente additiva e portabile.
+
+### Changed
+
+- `.github/agents/Agent-Welcome.md`: aggiunto OP-3 "Bootstrap Struttura Documentazione"
+  con flusso a due rami (S = bootstrap additivo, N = salta). Aggiunto riferimento
+  a `docs_manager.md` nella sezione Riferimenti Skills.
+
 ### Docs
 
 - `.github/AGENTS.md`: aggiunta `style-setup` alla riga `Agent-Helper` (documentazione interna aggiornata).
+- `.github/AGENTS.md`: aggiornata voce Agent-Welcome con menzione OP-3 e skill docs_manager.
+- `.github/skills/README.md`: aggiunta `docs_manager.md` alla lista skill e alla tabella agenti.
 
 <!-- Le voci non rilasciate vanno inserite qui. Rimane vuoto dopo la release. -->
 

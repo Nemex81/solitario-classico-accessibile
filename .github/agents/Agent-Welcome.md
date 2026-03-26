@@ -227,6 +227,52 @@ chore(.github): aggiorna profilo progetto — <campi modificati>
 
 ---
 
+## OP-3: Bootstrap Struttura Documentazione
+
+Attiva quando richiesto manualmente o al termine di OP-1
+(passo opzionale proposto da Agent-Welcome dopo il setup).
+
+### Passo 1 — Proposta all'utente
+
+Presenta esattamente questo messaggio:
+
+  BOOTSTRAP DOCUMENTAZIONE
+  ──────────────────────────────────────────
+  Vuoi attivare la struttura cartelle docs/?
+  ──────────────────────────────────────────
+  S — Crea/completa la struttura docs/ con README orientativi
+  N — Salta. Il sistema documenti non viene configurato.
+  ──────────────────────────────────────────
+
+### Passo 2 — Ramo S (attiva)
+
+Seguire la sequenza bootstrap definita in:
+→ .github/skills/docs_manager.md
+   sezione "Bootstrap struttura docs/"
+
+Il bootstrap è strettamente additivo:
+- Cartelle già esistenti vengono usate senza modificarne il contenuto
+- File già presenti non vengono mai sovrascritti
+- Il comportamento è identico per progetti nuovi e progetti esistenti
+
+Al termine mostrare le azioni eseguite in formato lista accessibile:
+
+  BOOTSTRAP COMPLETATO
+  ──────────────────────────────────────────
+  Creato:   <lista cartelle/file creati>
+  Saltato:  <lista cartelle/file già esistenti>
+  ──────────────────────────────────────────
+
+### Passo 3 — Ramo N (salta)
+
+Non creare alcun file o cartella.
+Comunicare:
+"Bootstrap saltato. Il sistema documenti non è configurato.
+ Puoi eseguirlo in qualsiasi momento richiamando Agent-Welcome."
+Fine OP-3.
+
+---
+
 ## Regole Invarianti
 
 - MAI modificare file fuori da .github/ e da
@@ -272,3 +318,5 @@ chore(.github): aggiorna profilo progetto — <campi modificati>
   → .github/skills/file-deletion-guard.skill.md
 - Protezione componenti framework:
   → .github/skills/framework-guard.skill.md
+- Bootstrap struttura docs e gestione documenti:
+  → .github/skills/docs_manager.md
