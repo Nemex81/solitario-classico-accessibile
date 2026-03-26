@@ -12,6 +12,40 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 <!-- Le voci non rilasciate vanno inserite qui. Rimane vuoto dopo la release. -->
 
+## [v1.9.0] - 2026-03-26
+
+### Added
+
+- `docs/4 - reports/README.md`: nuova cartella canonica per report di validazione prodotti da Agent-Validate,
+  con convenzione naming `REPORT_<tipo>_YYYY-MM-DD.md`.
+- `docs/5 - todolist/README.md`: nuova cartella canonica per TODO specifici per implementazione prodotti
+  da Agent-Plan, con convenzione naming `TODO_<feature>_vX.Y.Z.md`.
+
+### Changed
+
+- `.github/skills/document-template.skill.md`: sezione `docs/TODO.md` riscritta. Aggiunta nuova sezione
+  `docs/5 - todolist/TODO_*.md` con struttura obbligatoria per TODO per-task. `docs/TODO.md` ridefinito
+  come coordinatore persistente (append-only), non più checklist di task.
+- `.github/agents/Agent-Plan.md`: deliverable aggiornato — produce `docs/5 - todolist/TODO_<feature>_vX.Y.Z.md`
+  invece di sovrascrivere `docs/TODO.md`. Aggiunto aggiornamento append-only del coordinatore.
+  Aggiunto riferimento a `docs_manager.md`. Workflow tipico e regole operative allineati.
+- `.github/agents/Agent-Design.md`: ownership esplicita di `docs/2 - projects/` dichiarata nel deliverable.
+  Aggiunto riferimento a `docs_manager.md`.
+- `.github/agents/Agent-Validate.md`: ownership esplicita di `docs/4 - reports/` dichiarata nel deliverable.
+  Aggiunto deliverable `REPORT_<tipo>_YYYY-MM-DD.md`.
+- `.github/agents/Agent-Code.md`: TODO Gate Protocol aggiornato — legge prima `docs/TODO.md` (coordinatore)
+  poi il TODO per-task in `docs/5 - todolist/`. Spunta il TODO per-task dopo ogni commit.
+  Regola esplicita: non sovrascrivere `docs/TODO.md`.
+- `.github/agents/Agent-Docs.md`: aggiunto deliverable di validazione strutturale `docs/`.
+  Aggiunto step 7 nel workflow (validazione struttura docs/). Aggiornati gate di completamento.
+  Aggiunto riferimento a `docs_manager.md`. Regola esplicita: non scrive in cartelle di
+  ownership degli agenti specializzati.
+- `scripts/validate_gates.py`: scan esteso a `docs/4 - reports/` e `docs/5 - todolist/`.
+  Aggiunta funzione `check_docs_structure()` e flag `--check-structure` per verifica
+  presenza cartelle canoniche e coordinatore. Aggiornato docstring modulo.
+- `.github/copilot-instructions.md`: aggiornata intestazione Framework a `v1.9.0` per allineamento con le modifiche documentate.
+- `.github/AGENTS.md`: aggiornata voce `Versione Framework` a `v1.9.0` per coerenza con il changelog.
+
 ## [v1.8.1] - 2026-03-26
 
 ### Fixed

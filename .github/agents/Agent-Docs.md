@@ -35,6 +35,8 @@ Personalita: `pragmatico`.
 - **API.md** aggiornato (entry per ogni public class/function/constant)
 - **ARCHITECTURE.md** aggiornato (reflection di struttura folder, data flow changes)
 - **CHANGELOG.md** con sezione draft per next versione
+- **Validazione strutturale docs/**: verificare presenza cartelle canoniche,
+  naming file, frontmatter e link tra design, piani, TODO e report
 
 ---
 
@@ -64,7 +66,8 @@ Agent-Docs:
   4. Aggiorna ARCHITECTURE.md (se necessario)
   5. Aggiorna CHANGELOG.md: [UNRELEASED] -> Features sezione
   6. Valida cross-links (no broken links)
-  7. Genera report: "Docs synced. Prossimo: release (Agent-Release)?"
+  7. Valida struttura docs/ (cartelle, naming, frontmatter, coordinatore)
+  8. Genera report: "Docs synced. Prossimo: release (Agent-Release)?"
 ```
 
 ---
@@ -73,6 +76,8 @@ Agent-Docs:
 
 - **Logica SemVer** (regole bump MAJOR/MINOR/PATCH per proposta versione):
   → `.github/skills/semver-bump.skill.md`
+- **Gestione documenti** (path canonici, validazione struttura, coordinatore):
+  → `.github/skills/docs_manager.md`
 - **Standard output accessibile** (struttura, NVDA, report):
   → `.github/skills/accessibility-output.skill.md`
 - **Verbosita comunicativa** (profili, cascata, regole):
@@ -88,6 +93,7 @@ Agent-Docs:
 - ARCHITECTURE.md allineato con struttura codebase
 - CHANGELOG.md ha sezione feature completa
 - Cross-link validation: 0 broken
+- Struttura docs/ valida (cartelle canoniche, naming, frontmatter, coordinatore aggiornato)
 - Pronto per Agent-Release
 
 ---
@@ -98,3 +104,5 @@ Agent-Docs:
 - CHANGELOG.md: usare [Unreleased] nel branch, finalizzare alla release
 - Seguire formato Conventional Changelog (Added/Fixed/Changed/Removed)
 - Verificare che i link interni puntino a percorsi esistenti
+- Non produrre file in docs/2 - projects/, docs/3 - coding plans/, docs/4 - reports/, docs/5 - todolist/:
+  queste cartelle sono di ownership degli agenti specializzati; Agent-Docs le valida, non le scrive

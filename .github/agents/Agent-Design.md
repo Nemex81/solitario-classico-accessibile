@@ -34,6 +34,8 @@ Personalita: `architect`.
 ## Deliverable
 
 - **DESIGN_<feature>.md** salvato in `docs/2 - projects/`
+  - Cartella di ownership esclusiva: Agent-Design è l'unico agente che crea
+    file in `docs/2 - projects/`
   - Status: **DRAFT** iniziale
   - Sezioni: Metadata, Idea 3-righe, Attori/Concetti, Flussi Concettuali
   - Diagrammi **solo testuali** (ASCII o Mermaid semplice)
@@ -46,6 +48,8 @@ Personalita: `architect`.
   → `.github/skills/clean-architecture-rules.skill.md`
 - **Template documenti** (struttura DESIGN, frontmatter, stati):
   → `.github/skills/document-template.skill.md`
+- **Gestione documenti** (path canonici docs/2 - projects/, naming):
+  → `.github/skills/docs_manager.md`
 - **Standard output accessibile** (struttura, NVDA, report):
   → `.github/skills/accessibility-output.skill.md`
 - **Verbosita comunicativa** (profili, cascata, regole):

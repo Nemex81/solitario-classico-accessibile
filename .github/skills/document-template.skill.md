@@ -64,9 +64,40 @@ Ciclo di vita stati:
 - `DRAFT` → prodotto da Agent-Plan, in attesa di review
 - `READY` → confermato dall'utente, Agent-Code può procedere
 
-## docs/TODO.md — Struttura obbligatoria
+## docs/5 - todolist/TODO_*.md — Struttura obbligatoria
+
+Percorso: `docs/5 - todolist/TODO_<feature>_vX.Y.Z.md`
 
 - Link al PLAN di riferimento in testa al file
 - Checklist spuntabile per ogni fase (`[ ]` / `[x]`)
 - Istruzioni per Agent-Code (workflow incrementale)
 - Aggiornato immediatamente dopo ogni commit di Agent-Code
+
+Prodotto da: `Agent-Plan`
+Aggiornato da: `Agent-Code` (solo il file del task attivo)
+
+## docs/TODO.md — Ruolo (coordinatore persistente)
+
+`docs/TODO.md` è il coordinatore persistente del sistema documentale.
+NON è una checklist di task: è l'indice dei lavori attivi.
+
+Struttura attesa:
+
+```markdown
+### Progetti
+<!-- link relativi ai file attivi in docs/2 - projects/ -->
+
+### Piani
+<!-- link relativi ai file attivi in docs/3 - coding plans/ -->
+
+### Reports
+<!-- link relativi ai file attivi in docs/4 - reports/ -->
+
+### Tasks
+<!-- link relativi ai file attivi in docs/5 - todolist/ -->
+```
+
+Regole:
+- Non sovrascrivere mai il contenuto esistente: solo append nelle sezioni
+- Aggiornato da `Agent-Plan` (link al nuovo TODO per-task) e `Agent-Docs` (validazione)
+- Per la gestione operativa completa: → `.github/skills/docs_manager.md`

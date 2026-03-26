@@ -48,6 +48,10 @@ pytest tests/test_<modulo>.py -v
 ## Deliverable
 
 - Test coverage report (term + HTML)
+- **REPORT_<tipo>_YYYY-MM-DD.md** salvato in `docs/4 - reports/`
+  - Cartella di ownership esclusiva: Agent-Validate è l'unico agente che crea
+    file in `docs/4 - reports/`
+  - Contenuto: sommario coverage, gate superati/falliti, moduli sotto threshold
 - **Test skeleton auto-generated** per file sotto threshold
 - Propone casi test mancanti (richiede user approval)
 - Gap analysis (quale modulo/funzione non coperto)

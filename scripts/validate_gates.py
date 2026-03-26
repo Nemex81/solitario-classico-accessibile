@@ -2,13 +2,16 @@
 """
 validate_gates.py -- Valida il frontmatter YAML dei documenti di progetto.
 
-Controlla che i file DESIGN_*.md, PLAN_*.md e TODO.md abbiano
+Controlla che i file DESIGN_*.md, PLAN_*.md e TODO*.md abbiano
 un frontmatter YAML valido con i campi obbligatori.
+Verifica inoltre la presenza delle cartelle documentali canoniche.
 
 Uso:
     python scripts/validate_gates.py --check-design docs/2\ -\ projects/DESIGN_audio.md
-    python scripts/validate_gates.py --check-plan docs/2\ -\ projects/PLAN_audio.md
+    python scripts/validate_gates.py --check-plan docs/3\ -\ coding\ plans/PLAN_audio.md
+    python scripts/validate_gates.py --check-todo docs/5\ -\ todolist/TODO_feature_v1.0.0.md
     python scripts/validate_gates.py --check-all
+    python scripts/validate_gates.py --check-structure
     python scripts/validate_gates.py --help
 
 Exit code: 0 se valido o warning, 1 se errori bloccanti.
@@ -228,6 +231,46 @@ def check_all(directory: str) -> Tuple[int, List[str]]:
     return max_code, all_messages
 
 
+def check_docs_structure(docs_root: str) -> Tuple[int, List[str]]:
+    """Verifica la presenza delle cartelle documentali canoniche.
+
+    Args:
+        docs_root: Percorso alla cartella docs/ del progetto.
+
+    Returns:
+        Tupla (exit_code, lista_messaggi).
+        exit_code: 0=ok/warning, 1=errore bloccante.
+    """
+    messages: List[str] = []
+    max_code: int = 0
+
+    required_dirs: List[str] = [
+        "2 - projects",
+        "3 - coding plans",
+        "4 - reports",
+        "5 - todolist",
+    ]
+
+    for subdir in required_dirs:
+        path = os.path.join(docs_root, subdir)
+        if not os.path.isdir(path):
+            messages.append(f"ERRORE struttura: cartella mancante: {path}")
+            max_code = 1
+        else:
+            messages.append(f"OK struttura: {path}")
+
+    coordinator = os.path.join(docs_root, "TODO.md")
+    if not os.path.isfile(coordinator):
+        messages.append(
+            f"GATE WARN: {coordinator} assente — "
+            "coordinatore documentale non inizializzato."
+        )
+    else:
+        messages.append(f"OK struttura: {coordinator} (coordinatore presente)")
+
+    return max_code, messages
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Costruisce il parser degli argomenti CLI.
 
@@ -265,7 +308,16 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help=(
             "Valida tutti i DESIGN/PLAN/TODO nelle directory "
-            "docs/2 - projects/ e docs/3 - coding plans/."
+            "docs/2 - projects/, docs/3 - coding plans/, "
+            "docs/4 - reports/ e docs/5 - todolist/."
+        ),
+    )
+    parser.add_argument(
+        "--check-structure",
+        action="store_true",
+        help=(
+            "Verifica la presenza delle cartelle documentali canoniche "
+            "e del file coordinatore docs/TODO.md."
         ),
     )
     return parser
@@ -282,7 +334,7 @@ def main() -> int:
 
     # Nessuna opzione specificata
     if not any([args.check_design, args.check_plan,
-                args.check_todo, args.check_all]):
+                args.check_todo, args.check_all, args.check_structure]):
         parser.print_help()
         return 1
 
@@ -310,12 +362,20 @@ def main() -> int:
         dirs_to_scan = [
             "docs/2 - projects",
             "docs/3 - coding plans",
+            "docs/4 - reports",
+            "docs/5 - todolist",
         ]
         for scan_dir in dirs_to_scan:
             code, msgs = check_all(scan_dir)
             for msg in msgs:
                 sys.stdout.write(msg + "\n")
             max_code = max(max_code, code)
+
+    if args.check_structure:
+        code, msgs = check_docs_structure("docs")
+        for msg in msgs:
+            sys.stdout.write(msg + "\n")
+        max_code = max(max_code, code)
 
     return max_code
 

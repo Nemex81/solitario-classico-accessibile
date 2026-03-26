@@ -26,9 +26,11 @@ Personalita: `pragmatico`.
 
 Prima di qualsiasi implementazione:
 
-1. Leggi docs/TODO.md
-2. User esegue #start.prompt.md -> Copilot riprende da prima fase non spuntata
-3. Se blocco precedente: riprendi da li (no restart)
+1. Leggi `docs/TODO.md` (coordinatore) per identificare il TODO per-task attivo
+2. Leggi il file TODO per-task in `docs/5 - todolist/TODO_<feature>_vX.Y.Z.md`
+3. User esegue #start.prompt.md -> Copilot riprende da prima fase non spuntata
+4. Se blocco precedente: riprendi da li (no restart)
+5. Aggiorna SOLO il TODO per-task attivo — mai sovrascrivere docs/TODO.md
 
 ---
 
@@ -45,14 +47,15 @@ Prima di qualsiasi implementazione:
 
 ```
 Agent-Code:
-  1. LEGGI docs/TODO.md -> identifica prima fase non spuntata
-  2. LEGGI PLAN + DESIGN per dettagli tecnici
-  3. CODIFICA -> implementa solo quella fase
-  4. VERIFICA -> pre-commit checklist (syntax, types, logging)
-  5. COMMIT -> messaggio atomico convenzionale
-  6. SPUNTA -> docs/TODO.md: [x] FASE N
-  7. COMUNICAZIONE -> "FASE N completata. Dettagli commit: <hash>. Procedo FASE N+1?"
-  8. ATTENDI -> user confirm o procedi (se user disse "no stop between phases")
+  1. LEGGI docs/TODO.md -> trova link al TODO per-task attivo
+  2. LEGGI docs/5 - todolist/TODO_<feature>_vX.Y.Z.md -> identifica prima fase non spuntata
+  3. LEGGI PLAN + DESIGN per dettagli tecnici
+  4. CODIFICA -> implementa solo quella fase
+  5. VERIFICA -> pre-commit checklist (syntax, types, logging)
+  6. COMMIT -> messaggio atomico convenzionale
+  7. SPUNTA -> docs/5 - todolist/TODO_<feature>_vX.Y.Z.md: [x] FASE N
+  8. COMUNICAZIONE -> "FASE N completata. Dettagli commit: <hash>. Procedo FASE N+1?"
+  9. ATTENDI -> user confirm o procedi (se user disse "no stop between phases")
 ```
 
 ---
@@ -99,4 +102,5 @@ pytest -m "not gui" --cov=src --cov-fail-under=85  # test + coverage
 
 ## Regole Operative
 
-- Spuntare TODO.md immediatamente dopo ogni commit
+- Spuntare il TODO per-task (`docs/5 - todolist/TODO_<feature>_vX.Y.Z.md`) immediatamente dopo ogni commit
+- NON sovrascrivere `docs/TODO.md`: è il coordinatore persistente, gestito da Agent-Plan e Agent-Docs
