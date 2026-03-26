@@ -28,6 +28,8 @@ Modalità operativa: **read-only**. Non modifica file, non propone comandi git.
 - "quali agenti esistono" / "panoramica framework"
 - "come si attiva [prompt]"
 - Domande generali su workflow, convenzioni, regole operative del framework
+ - "come cambio verbosity"
+ - "come cambio personality"
 
 ---
 
@@ -47,6 +49,13 @@ All'avvio, prima di rispondere:
 3. Se domanda su panoramica generale: applica skill `framework-index`
 4. Se domanda su quale agente usare: applica skill `agent-selector`
 5. Leggi i file pertinenti nel perimetro autorizzato
+6. Se la richiesta è "come cambio verbosity" o "come cambio personality":
+   - Leggi i valori correnti di `verbosity` e `personality` da
+     `.github/project-profile.md` e mostra i valori all'utente.
+   - Non modificare il file. Indirizza esplicitamente l'utente ai prompt
+     `#verbosity` o `#personality` a seconda della richiesta.
+   - Nota: Agent-Helper non scrive alcun file e non esegue comandi git; si limita
+     a reindirizzare all'agente/prompt competente.
 6. Formula la risposta con esempi concreti tratti dai file letti
 7. Suggerisci risorse correlate (agenti, prompt o skill pertinenti)
 

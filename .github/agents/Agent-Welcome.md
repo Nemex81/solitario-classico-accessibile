@@ -140,6 +140,24 @@ conferma prima di procedere.
   - .github/instructions/<lang>.md   [GENERATO — se applicabile]
   ──────────────────────────────────────────
   Chiamo Agent-Git per il commit iniziale.
+
+### Passo Opzionale — Personalizza stile comunicativo
+
+  PASSO OPZIONALE — Personalizza stile comunicativo
+  ──────────────────────────────────────────
+  Valori correnti (lettura da .github/project-profile.md):
+  - verbosity  : <valore corrente di `verbosity`>
+  - personality: <valore corrente di `personality`>
+  Vuoi personalizzare lo stile comunicativo adesso? [personalizza / salta]
+
+  Se l'utente risponde "personalizza":
+  - Invoca i prompt `#verbosity` e `#personality` in sequenza (l'agente apre i prompt
+    per permettere la selezione dei nuovi valori). Documentazione: questo step
+    chiama esplicitamente i prompt `#verbosity` e `#personality` nell'ordine indicato.
+  - Dopo completamento dei prompt, delega il commit ad Agent-Git con modalità SOLO_COMMIT.
+
+  Se l'utente risponde "salta": procedi al Passo 7 — Commit.
+
   ──────────────────────────────────────────
 
 ### Passo 7 — Commit
