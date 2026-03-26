@@ -34,10 +34,26 @@ Prima di qualsiasi azione:
 
 1. Leggi docs/TODO.md (se esiste): se c'è un task in corso, riprendi da
    lì senza chiedere conferma, ma mostra all'utente lo stato corrente.
+   
 2. Leggi docs/2 - projects/ e docs/3 - coding plans/: verifica se
    esistono DESIGN o PLAN già prodotti per il task.
+   
+   2a. Cerca DESIGN_<feature>.md: se esiste e status=DRAFT, il task è in fase design review.
+   
+   2b. Se esiste docs/5 - todolist/TODO_<feature>_vX.Y.Z.md con fasi non spuntate,
+       il task è in ripresa: identifica la PRIMA fase non spuntata come punto di ripresa.
+       Il workflow NON ricomincia da zero — entra nel loop implementazione già avviato.
+   
+   2c. Se NON esiste TODO_<feature> attivo, ma esiste PLAN_<feature>_vX.Y.Z.md
+       in stato READY, il task è appena uscito dalla fase planning: Agent-Code
+       deve essere invocato per la prima volta.
+       Se nessun TODO esiste E nessun PLAN READY, controlla se esiste PLAN in stato DRAFT:
+       il task è in planning review — procedi con Agent-Plan review.
+       Se nessun TODO, PLAN, o DESIGN esiste per questo task, il task è nuovo.
+   
 3. Esegui: python scripts/detect_agent.py "<descrizione task>"
    per determinare il punto di ingresso consigliato.
+   
 4. Mostra all'utente un report di stato iniziale in questo formato:
 
    STATO WORKFLOW
@@ -45,9 +61,10 @@ Prima di qualsiasi azione:
    Task: <nome task>
    Fase rilevata: <nome fase>
    Agente suggerito: <Agent-X>
-   DESIGN esistente: <SI path | NO>
-   PLAN esistente: <SI path | NO>
+   DESIGN esistente: <SI path | NO | DRAFT | REVIEWED>
+   PLAN esistente: <SI path | NO | DRAFT | READY>
    TODO in corso: <SI fase N/M | NO>
+   Punto di ripresa: <Se applicabile>
    ──────────────────────────────────────────
    Procedo con <Agent-X> — Fase: <nome fase>
    Conferma? [S per proseguire / N per modificare]
@@ -72,7 +89,9 @@ Delega tramite subagent:
 - Agente: Agent-Design
 - Prompt: "Sulla base dei findings: <findings>.
   Produci docs/2 - projects/DESIGN_<feature>.md con frontmatter YAML
-  status: DRAFT. Feature: <feature>, Agent: Agent-Design."
+  status: DRAFT. Feature: <feature>, Agent: Agent-Design.
+  Al salvataggio, aggiorna docs/TODO.md sezione '### Progetti' con il link relativo
+  al file (vedi docs_manager.skill.md Step 4)."
 
 Gate di uscita:
   python scripts/validate_gates.py --check-design \
@@ -90,7 +109,9 @@ Delega tramite subagent:
 - Agente: Agent-Plan
 - Prompt: "Sulla base del DESIGN approvato in <path>.
   Produci docs/3 - coding plans/PLAN_<feature>.md con frontmatter YAML
-  status: DRAFT e docs/TODO.md con checklist fasi."
+  status: DRAFT e docs/5 - todolist/TODO_<feature>_vX.Y.Z.md con checklist fasi.
+  Al salvataggio, aggiorna docs/TODO.md sezioni '### Piani' e '### Tasks' con i link relativi
+  ai file creati (vedi docs_manager.skill.md Step 4)."
 
 Gate di uscita:
   python scripts/validate_gates.py --check-plan \
@@ -154,7 +175,12 @@ Delega tramite subagent:
   docs/ARCHITECTURE.md (se struttura cambiata),
   CHANGELOG.md sezione [Unreleased] (Added/Fixed/Changed)."
 
-Gate: nessuno automatico. Revisione umana.
+Gate informale (validazione veloce):
+  git diff --name-only HEAD | grep -E 'docs/API.md|docs/ARCHITECTURE.md|CHANGELOG.md'
+  Se nessun file target è modificato: avverti l'utente "Agent-Docs non ha modificato
+  alcun file target (API.md, ARCHITECTURE.md, CHANGELOG.md). Verifica che il task
+  sia effettivamente completato prima di procedere."
+
 Nota: se il task corrente ha modificato file in `.github/agents/` o
 `.github/prompts/`, notifica l'utente che è necessario invocare
 Agent-FrameworkDocs manualmente per aggiornare la documentazione
@@ -191,6 +217,10 @@ Delega tramite subagent:
 
 ## Riferimenti Skills
 
+- Gestione documenti (path canonici, naming, aggiornamento coordinatore):
+  → `.github/skills/docs_manager.skill.md`
+- Recovery da errori subagenti (retry max 2, escalata standardizzata):
+  → `.github/skills/error-recovery.skill.md`
 - Verbosita comunicativa (profili, cascata, regole):
   → `.github/skills/verbosity.skill.md`
 - Postura operativa e stile relazionale (profili, cascata, regole):

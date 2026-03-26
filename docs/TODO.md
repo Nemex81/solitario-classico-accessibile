@@ -29,6 +29,7 @@ stato: attivo
 
 <!-- Link relativi ai file attivi in docs/3 - coding plans/ -->
 
+- [PLAN_framework-optimization_v1.10.0.md](3%20-%20coding%20plans/PLAN_framework-optimization_v1.10.0.md) — ottimizzazione framework (in corso)
 - [PLAN_document-governance_v1.9.0.md](3%20-%20coding%20plans/PLAN_document-governance_v1.9.0.md) — governance documentale (in corso)
 - [PLAN_game-engine-refactoring_v3.6.0.md](3%20-%20coding%20plans/PLAN_game-engine-refactoring_v3.6.0.md) — refactoring engine (legacy)
 
@@ -42,6 +43,7 @@ stato: attivo
 
 <!-- Link relativi ai file attivi in docs/5 - todolist/ -->
 
+- [TODO_framework-optimization_v1.10.0.md](5%20-%20todolist/TODO_framework-optimization_v1.10.0.md) — framework optimization (completato)
 - [TODO_document-governance_v1.9.0.md](5%20-%20todolist/TODO_document-governance_v1.9.0.md) — governance documentale (in corso)
 
 ## Stato Avanzamento

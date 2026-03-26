@@ -45,21 +45,19 @@ o da qualsiasi operazione automatica degli agenti.
 
 ---
 
-## Convenzione naming file
+## Convenzione naming file — Per tipo di documento
 
-Tutti i file generati dagli agenti seguono questo formato:
+Ogni tipo di documento ha una convenzione specifica. Non esiste una convenzione universale: il naming è semantico per il tipo.
 
-```
-AAAA-MM-GG_slug-descrittivo.md
-```
+| Tipo | Convenzione | Cartella | Motivazione |
+|------|-------------|----------|-------------|
+| DESIGN | `DESIGN_<feature>.md` | `docs/2 - projects/` | Documento di analisi che evolve in-place; senza versione perché è la sorgente autoritative per ogni feature. |
+| PLAN | `PLAN_<feature>_vX.Y.Z.md` | `docs/3 - coding plans/` | Legato a un target release specifico; versione + feature combinati assicurano tracciabilità per ogni tag. |
+| TODO task | `TODO_<feature>_vX.Y.Z.md` | `docs/5 - todolist/` | Operatico per-task; versione perché legato al PLAN di destinazione che ha versione. |
+| REPORT | `REPORT_<tipo>_AAAA-MM-GG.md` | `docs/4 - reports/` | Documento punto-nel-tempo (es. coverage, validation); data perché è evidence storica non versionata. |
+| README | `README.md` | In ogni cartella | Readme folders, nessuna versione. |
 
-Regole:
-- Slug derivato dal titolo, in minuscolo, spazi sostituiti da trattini
-- Caratteri speciali rimossi (solo lettere, cifre, trattini)
-- Se il titolo è assente: usare il tipo come fallback
-  (es. `2026-03-26_report.md`)
-- Nessun file viene mai sovrascritto: se il path esiste già,
-  segnalare il conflitto all'utente (vedi sezione Regola additiva)
+**Regola generale:** Nessun file viene mai sovrascritto: se il path esiste già, segnalare il conflitto all'utente (vedi sezione Regola additiva).
 
 ---
 
@@ -176,10 +174,21 @@ Per `docs/TODO.md`:
 | Cartella | NOME_CARTELLA | SCOPO | AGENTE_SCRITTURA | AGENTE_LETTURA | CONVENZIONE_NAMING |
 |----------|---------------|-------|------------------|----------------|-------------------|
 | `docs/1 - templates` | docs/1 - templates | Template personali del progetto | — (utente) | Agent-Plan, Agent-Code | `TEMPLATE_*.md` |
-| `docs/2 - projects` | docs/2 - projects | Documenti DESIGN prodotti da Agent-Design | Agent-Design | Agent-Plan | `DESIGN_<feature>_vX.Y.Z.md` |
+| `docs/2 - projects` | docs/2 - projects | Documenti DESIGN prodotti da Agent-Design | Agent-Design | Agent-Plan | `DESIGN_<feature>.md` |
 | `docs/3 - coding plans` | docs/3 - coding plans | Piani di implementazione prodotti da Agent-Plan | Agent-Plan | Agent-Code | `PLAN_<feature>_vX.Y.Z.md` |
 | `docs/4 - reports` | docs/4 - reports | Report copertura e validazione gate, output CI | Agent-Validate | Agent-Docs | `REPORT_<tipo>_<data>.md` |
-| `docs/5 - todolist` | docs/5 - todolist | Checklist operative per feature in sviluppo | Agent-Plan | Agent-Code | `TODO_<feature>.md` |
+| `docs/5 - todolist` | docs/5 - todolist | Checklist operative per feature in sviluppo | Agent-Plan | Agent-Code | `TODO_<feature>_vX.Y.Z.md` |
+
+---
+
+## File temporanei (esclusi dal sistema di tracking)
+
+I seguenti file sono generati durante operazioni agenti ma NON vengono tracciati dal sistema:
+
+- `findings.md` (generato da Agent-Analyze come report draft, non committed)
+- File `.tmp_*` o suffisso `_draft_` (file di lavoro temporanei)
+
+Esclusi dal coordinatore: questi file non vengono mai linkati in `docs/TODO.md` e non entrano nel bootstrap structure.
 
 ### Contenuto `{{ISTRUZIONI_SPECIFICHE}}` per `docs/1 - templates/`
 
