@@ -12,6 +12,26 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 <!-- Le voci non rilasciate vanno inserite qui. Rimane vuoto dopo la release. -->
 
+## [v1.7.1] - 2026-03-26
+
+### Added
+
+- `style-setup.skill.md`: skill condivisa per presentazione e selezione guidata
+  dei parametri `verbosity` e `personality`. Definisce il formato di output per
+  valori correnti, opzioni disponibili e branching salta/personalizza. Usata da
+  Agent-Welcome in OP-1/OP-2 e da Agent-Helper in modalità read-only. La sezione
+  di scrittura è autorizzata solo per Agent-Welcome durante OP-1 o OP-2.
+
+### Docs
+
+- `skills/README.md`: aggiunti `verbosity.skill.md`, `personality.skill.md`,
+  `style-setup.skill.md` mancanti dall'elenco; aggiornata tabella agente→skills
+  con colonne verbosity e personality per tutti gli agenti.
+- `instructions/README.md`: aggiunte `verbosity.instructions.md` e
+  `personality.instructions.md` mancanti dall'elenco.
+- `.github/README.md`: aggiornata versione a v1.7.0 — 26 Marzo 2026,
+  conteggio agenti da 12 a 14, riferimento AGENTS.md allineato.
+
 ## [v1.7.0] - 2026-03-26
 
 - chore(framework): improve verbosity/personality discoverability — Agent-Welcome, Agent-Helper

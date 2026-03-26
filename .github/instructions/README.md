@@ -23,6 +23,10 @@ in base al file aperto nell'editor (frontmatter `applyTo`).
 - `workflow-standard.instructions.md` — sequenza operativa modifiche,
   TODO gate, pre-commit checklist, sync docs
   (applyTo: `**` — attivo in tutti i contesti)
+- `verbosity.instructions.md` — gestione della verbosità comunicativa
+  degli agenti framework (applyTo: `.github/**`)
+- `personality.instructions.md` — gestione della postura operativa
+  e dello stile relazionale degli agenti framework (applyTo: `.github/**`)
 
 ## Come funzionano
 

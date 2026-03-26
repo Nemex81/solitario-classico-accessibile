@@ -141,8 +141,6 @@ conferma prima di procedere.
   ──────────────────────────────────────────
   Chiamo Agent-Git per il commit iniziale.
 
-### Passo Opzionale — Personalizza stile comunicativo
-
 ### Passo 6b — Personalizzazione stile comunicativo (opzionale)
 
 Applica skill `style-setup.skill.md` — Sezione 2 (selezione e scrittura).

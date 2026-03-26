@@ -30,22 +30,29 @@ esplicitamente nella sezione "Riferimenti Skills".
   dato un task (Agent-Helper, Agent-Orchestrator)
 - `framework-scope-guard.skill.md` — limiti operativi e risposte standard
   per agenti read-only (Agent-Helper)
+- `verbosity.skill.md` — gestione della verbosità comunicativa globale
+  e per-agente tramite cascata di risoluzione
+- `personality.skill.md` — gestione della postura operativa globale
+  e per-agente tramite cascata di risoluzione
+- `style-setup.skill.md` — presentazione e selezione guidata dei parametri
+  `verbosity` e `personality`; formato output valori correnti e branching
+  salta/personalizza. Scrittura autorizzata solo per Agent-Welcome (OP-1/OP-2)
 
 ## Agenti e skills associate
 
 | Agente | Skills referenziate |
 | ------ | ------------------ |
-| Agent-Welcome | project-profile, accessibility-output, file-deletion-guard, framework-guard |
-| Agent-Analyze | clean-architecture-rules, accessibility-output |
-| Agent-Design | clean-architecture-rules, document-template, accessibility-output |
-| Agent-Plan | document-template, accessibility-output |
-| Agent-Code | conventional-commit, validate-accessibility, clean-architecture-rules, accessibility-output, git-execution, file-deletion-guard |
-| Agent-Validate | tests (instructions), validate-accessibility, accessibility-output |
-| Agent-Docs | semver-bump, accessibility-output, framework-guard |
-| Agent-Release | semver-bump, accessibility-output, framework-guard |
-| Agent-FrameworkDocs | accessibility-output, file-deletion-guard, framework-guard |
+| Agent-Welcome | project-profile, accessibility-output, file-deletion-guard, framework-guard, verbosity, personality, style-setup |
+| Agent-Analyze | clean-architecture-rules, accessibility-output, verbosity, personality |
+| Agent-Design | clean-architecture-rules, document-template, accessibility-output, verbosity, personality |
+| Agent-Plan | document-template, accessibility-output, verbosity, personality |
+| Agent-Code | conventional-commit, validate-accessibility, clean-architecture-rules, accessibility-output, git-execution, file-deletion-guard, verbosity, personality |
+| Agent-Validate | tests (instructions), validate-accessibility, accessibility-output, verbosity, personality |
+| Agent-Docs | semver-bump, accessibility-output, framework-guard, verbosity, personality |
+| Agent-Release | semver-bump, accessibility-output, framework-guard, verbosity, personality |
+| Agent-FrameworkDocs | accessibility-output, file-deletion-guard, framework-guard, verbosity, personality |
 | Agent-Git | git-execution, conventional-commit, changelog-entry, accessibility-output, file-deletion-guard |
-| Agent-Orchestrator | accessibility-output, git-execution, framework-guard |
-| Agent-CodeRouter | code-routing, accessibility-output, git-execution |
-| Agent-CodeUI | validate-accessibility, conventional-commit, accessibility-output, git-execution |
-| Agent-Helper | framework-query, framework-index, agent-selector, framework-scope-guard, accessibility-output |
+| Agent-Orchestrator | accessibility-output, git-execution, framework-guard, verbosity, personality |
+| Agent-CodeRouter | code-routing, accessibility-output, git-execution, verbosity, personality |
+| Agent-CodeUI | validate-accessibility, conventional-commit, accessibility-output, git-execution, verbosity, personality |
+| Agent-Helper | framework-query, framework-index, agent-selector, framework-scope-guard, accessibility-output, verbosity, personality, style-setup |
