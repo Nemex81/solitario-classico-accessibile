@@ -143,22 +143,17 @@ conferma prima di procedere.
 
 ### Passo Opzionale — Personalizza stile comunicativo
 
-  PASSO OPZIONALE — Personalizza stile comunicativo
-  ──────────────────────────────────────────
-  Valori correnti (lettura da .github/project-profile.md):
-  - verbosity  : <valore corrente di `verbosity`>
-  - personality: <valore corrente di `personality`>
-  Vuoi personalizzare lo stile comunicativo adesso? [personalizza / salta]
+### Passo 6b — Personalizzazione stile comunicativo (opzionale)
 
-  Se l'utente risponde "personalizza":
-  - Invoca i prompt `#verbosity` e `#personality` in sequenza (l'agente apre i prompt
-    per permettere la selezione dei nuovi valori). Documentazione: questo step
-    chiama esplicitamente i prompt `#verbosity` e `#personality` nell'ordine indicato.
-  - Dopo completamento dei prompt, delega il commit ad Agent-Git con modalità SOLO_COMMIT.
+Applica skill `style-setup.skill.md` — Sezione 2 (selezione e scrittura).
 
-  Se l'utente risponde "salta": procedi al Passo 7 — Commit.
+Nota: sei in OP-1, la scrittura su `.github/project-profile.md`
+è già autorizzata. Non richiedere `framework-unlock`.
+Non invocare `#verbosity` o `#personality`: esegui la procedura
+interattiva direttamente come definita dalla skill.
 
-  ──────────────────────────────────────────
+Dopo il completamento (sia "salta" che "ok+scrittura"),
+procedi al Passo 7 — Commit.
 
 ### Passo 7 — Commit
 
@@ -273,6 +268,8 @@ chore(.github): aggiorna profilo progetto — <campi modificati>
   → `.github/skills/verbosity.skill.md`
 - Postura operativa e stile relazionale (profili, cascata, regole):
   → `.github/skills/personality.skill.md`
+ - Presentazione e selezione guidata verbosity/personality:
+  → `.github/skills/style-setup.skill.md`
 - Protezione eliminazione file:
   → .github/skills/file-deletion-guard.skill.md
 - Protezione componenti framework:

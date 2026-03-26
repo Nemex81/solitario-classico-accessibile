@@ -49,15 +49,15 @@ All'avvio, prima di rispondere:
 3. Se domanda su panoramica generale: applica skill `framework-index`
 4. Se domanda su quale agente usare: applica skill `agent-selector`
 5. Leggi i file pertinenti nel perimetro autorizzato
-6. Se la richiesta è "come cambio verbosity" o "come cambio personality":
-   - Leggi i valori correnti di `verbosity` e `personality` da
-     `.github/project-profile.md` e mostra i valori all'utente.
-   - Non modificare il file. Indirizza esplicitamente l'utente ai prompt
-     `#verbosity` o `#personality` a seconda della richiesta.
-   - Nota: Agent-Helper non scrive alcun file e non esegue comandi git; si limita
-     a reindirizzare all'agente/prompt competente.
 6. Formula la risposta con esempi concreti tratti dai file letti
-7. Suggerisci risorse correlate (agenti, prompt o skill pertinenti)
+7. Se la richiesta riguarda modifica di `verbosity` o `personality`:
+   - Applica skill `style-setup.skill.md` — Sezione 1 (solo
+     presentazione informativa, nessuna scrittura)
+   - Mostra i valori correnti letti da `project-profile.md`
+   - Indirizza esplicitamente a `#verbosity` o `#personality`
+     per la modifica, specificando quale usare in base alla richiesta
+   - Ricorda: Agent-Helper è read-only, non scrive file
+8. Suggerisci risorse correlate (agenti, prompt o skill pertinenti)
 
 ---
 
@@ -78,6 +78,8 @@ All'avvio, prima di rispondere:
 ## Riferimenti Skills
 
 - **Output consultivo strutturato**: → `.github/skills/framework-query.skill.md`
+- Presentazione stile comunicativo (solo informativa):
+  → `.github/skills/style-setup.skill.md`
 - **Panoramica framework**: → `.github/skills/framework-index.skill.md`
 - **Selezione agente corretto**: → `.github/skills/agent-selector.skill.md`
 - **Limiti operativi read-only**: → `.github/skills/framework-scope-guard.skill.md`
