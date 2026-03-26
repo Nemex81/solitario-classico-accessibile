@@ -246,13 +246,33 @@ git tag <tag>
 git push origin <tag>
 ```
 
+### OP-6: Revert / Reset soft (rollback E2E)
+
+Usato da Agent-Orchestrator quando una fase fallisce dopo commit parziali.
+Per la decision tree completa:
+→ `.github/skills/rollback-procedure.skill.md`
+
+**Modalità Revert** (commit già pushato su origin):
+- Richiede: "REVERT" maiuscolo dall'utente
+- Esegui: `python scripts/git_runner.py revert --sha <commit-sha>`
+- Equivale a: `git revert <sha> --no-edit`
+
+**Modalità Reset soft** (commit solo locale, non pushato):
+- Richiede: "RESET" maiuscolo dall'utente
+- Esegui: `python scripts/git_runner.py reset-soft --count <N>`
+- Equivale a: `git reset --soft HEAD~N`
+- Default N = 1
+
+In entrambe le modalità: MAI procedere senza conferma esplicita.
+Se N > 3 commit da revertire: fermarsi e chiedere istruzioni.
+
 ---
 
 ## Riferimenti Skills
 
 | Agente | Skills referenziate |
 | ------ | ------------------ |
-| Agent-Git | git-execution, conventional-commit, changelog-entry, accessibility-output, file-deletion-guard |
+| Agent-Git | git-execution, conventional-commit, changelog-entry, accessibility-output, file-deletion-guard, rollback-procedure |
 
 - **Git policy e matrice autorizzazioni**:
   → `.github/skills/git-execution.skill.md`
@@ -266,9 +286,11 @@ git push origin <tag>
   → `.github/skills/file-deletion-guard.skill.md`
 - **Script wrapper esecuzione git**:
   → `scripts/git_runner.py`
-  Invocato da OP-2, OP-3, OP-4 con i parametri
+  Invocato da OP-2, OP-3, OP-4, OP-6 con i parametri
   già validati dall'agente. Output strutturato
   con prefisso GIT_RUNNER: per rilevamento esito.
+- **Procedura rollback/revert (OP-6)**:
+  → `.github/skills/rollback-procedure.skill.md`
 
 ---
 

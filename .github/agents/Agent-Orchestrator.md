@@ -32,6 +32,15 @@ Mai saltare un gate. Mai procedere senza conferma ai checkpoint.
 
 Prima di qualsiasi azione:
 
+0. Smoke test CLI bootstrap:
+   Esegui: `python scripts/validate_gates.py --help`
+   - Exit code 0: ambiente verificato, procedi.
+   - Exit code diverso da 0: blocca il workflow e comunica:
+     "ERRORE BOOTSTRAP: scripts/validate_gates.py non disponibile.
+     Verifica che il file esista e sia eseguibile nell'ambiente
+     Python corrente prima di procedere."
+     Non proseguire fino a risoluzione.
+
 1. Leggi docs/TODO.md (se esiste): se c'è un task in corso, riprendi da
    lì senza chiedere conferma, ma mostra all'utente lo stato corrente.
    
@@ -79,8 +88,18 @@ Delega tramite subagent:
   Produci findings report strutturato con: componenti coinvolti,
   dipendenze, rischi, vincoli di accessibilità NVDA."
 
-Output atteso: findings report testuale.
-Gate: nessun file modificato (Agent-Analyze è read-only).
+Output atteso: findings report strutturato.
+
+Gate semantico (semantic-gate.skill.md — Gate 1):
+  Verifica che il findings report contenga TUTTE le sezioni obbligatorie:
+  - "Componenti coinvolti"
+  - "Dipendenze"
+  - "Rischi"
+  - "Vincoli accessibilità NVDA"
+  Se una o più sezioni mancano: non avanzare. Richiedi ad Agent-Analyze
+  di completare il report prima di procedere.
+
+Gate strutturale: nessun file modificato (Agent-Analyze è read-only).
 Checkpoint: mostra findings all'utente, chiedi se procedere con Design.
 
 ### Fase 2 — Design (Agent-Design)
@@ -104,6 +123,13 @@ status: REVIEWED per procedere al planning?"
 Se confermato: aggiorna frontmatter status → REVIEWED.
 
 ### Fase 3 — Planning (Agent-Plan)
+
+Precondizione (semantic-gate.skill.md — Gate 2):
+  Verifica che DESIGN_<feature>.md abbia `status: REVIEWED`.
+  python scripts/validate_gates.py --check-design \
+    "docs/2 - projects/DESIGN_<feature>.md"
+  Se status non è REVIEWED: blocca e chiedi conferma approvazione
+  DESIGN prima di delegare ad Agent-Plan.
 
 Delega tramite subagent:
 - Agente: Agent-Plan
@@ -159,7 +185,7 @@ Delega tramite subagent:
   Target: 85% minimo su domain/ e application/."
 
 Gate di uscita:
-  pytest -m "not gui" --cov=src --cov-fail-under=85 -q
+  pytest -m "not gui" --cov=src -q
   Exit code atteso: 0
 
 Se gate fallisce: mostra report coverage, chiedi se procedere comunque
@@ -198,6 +224,19 @@ Delega tramite subagent:
   CHANGELOG [Unreleased] completo, TODO.md completato, gate CI verde.
   Proponi comandi tag senza eseguirli."
 
+## Gestione Fallimento Post-Commit (Rollback E2E)
+
+Se una fase fallisce dopo commit parziali già eseguiti:
+
+1. Identifica i commit della fase fallita: `git log --oneline -5`
+2. Determina se sono stati pushati: `git status` + conferma utente
+3. Delega ad Agent-Git OP-6:
+   - Commit pushato: Modalità Revert (richiede "REVERT" maiuscolo)
+   - Commit solo locale: Modalità Reset soft (richiede "RESET" maiuscolo)
+4. Dopo il rollback: rimuovi la spunta dalla fase nel TODO per-task.
+5. Per la procedura completa:
+   → `.github/skills/rollback-procedure.skill.md`
+
 ## Regole invarianti
 
 - Per git policy completa, comandi autorizzati e vietati per contesto:
@@ -219,6 +258,10 @@ Delega tramite subagent:
 
 - Gestione documenti (path canonici, naming, aggiornamento coordinatore):
   → `.github/skills/docs_manager.skill.md`
+- Gate semantici findings/Design/Plan (criteri osservabili per avanzamento):
+  → `.github/skills/semantic-gate.skill.md`
+- Procedura rollback/revert dopo commit parziali:
+  → `.github/skills/rollback-procedure.skill.md`
 - Recovery da errori subagenti (retry max 2, escalata standardizzata):
   → `.github/skills/error-recovery.skill.md`
 - Verbosita comunicativa (profili, cascata, regole):

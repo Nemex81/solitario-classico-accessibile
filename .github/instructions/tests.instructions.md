@@ -7,7 +7,7 @@ applyTo: "tests/**/*.py"
 ## Coverage minima richiesta
 
 - 85% minimo su `src/domain/` e `src/application/`
-- Comando verifica: `pytest --cov=src --cov-fail-under=85 -q`
+- Comando verifica: `pytest --cov=src -q`  (soglia letta da `[tool.coverage.report]` in `pyproject.toml`)
 
 ## Markers obbligatori
 
@@ -27,7 +27,7 @@ Esempio: `test_draw_card_empty_stock_raises_exception`
 ## CI-safe
 
 Per merge su main eseguire SEMPRE:
-`pytest -m "not gui" --cov=src --cov-fail-under=85`
+`pytest -m "not gui" --cov=src`  (soglia letta da `[tool.coverage.report]` in `pyproject.toml`)
 
 I test marcati `@pytest.mark.gui` non devono mai bloccare la pipeline CI.
 

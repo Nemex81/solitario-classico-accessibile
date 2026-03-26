@@ -215,7 +215,7 @@ NON anticipare fasi future. NON accorpare fasi.
 ## Test Execution
 
 ```bash
-pytest -m "not gui" --cov=src --cov-report=term --cov-fail-under=85
+pytest -m "not gui" --cov=src --cov-report=term
 ```
 
 ## Notes

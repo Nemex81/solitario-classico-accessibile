@@ -24,7 +24,7 @@ Quando l'utente chiede modifiche al codice, applica questa sequenza:
    - `mypy src/ --strict`
    - `pylint --enable=cyclic-import`
    - `grep -r "print(" src/` (deve restituire 0 occorrenze)
-   - `pytest --cov=src --cov-fail-under=85`
+   - `pytest --cov=src`  # soglia letta da pyproject.toml
    - `python scripts/validate_gates.py --check-all docs/2\ -\ projects/`
 
 4. Sync documentazione (dopo ogni modifica .py):

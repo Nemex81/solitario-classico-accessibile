@@ -45,6 +45,8 @@ La git policy del progetto distingue tre categorie di comandi:
 | git commit -m "..." | ESEGUIBILE | solo via git_runner.py |
 | git merge --no-ff | ESEGUIBILE | solo via git_runner.py |
 | git push | ESEGUIBILE | solo via git_runner.py |
+| git revert <sha> | ESEGUIBILE | solo via git_runner.py, richiede "REVERT" maiuscolo |
+| git reset --soft HEAD~N | ESEGUIBILE | solo via git_runner.py, richiede "RESET" maiuscolo, solo su commit non pushati |
 | git tag | PROPONIBILE | git_runner.py tag (output `TAG OK`, nessuna esecuzione) |
 | git commit --amend | VIETATO | — |
 | git rebase | VIETATO | — |

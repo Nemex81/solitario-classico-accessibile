@@ -14,6 +14,23 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 ### Added
 
 - `docs/3 - coding plans/PLAN_e2e-resilience_v1.11.0.md`: plan convalidato (DRAFT → REVIEWED) per rafforzamento E2E su 4 aree: gate semantici Analyze→Design→Plan, smoke test CLI bootstrap, procedura rollback E2E, centralizzazione coverage SOT in `pyproject.toml`. Scope negativo esplicito: timeout/stallo subagenti esclusi. Target: v1.11.0.
+- `.github/skills/semantic-gate.skill.md`: nuova skill con criteri osservabili per gate semantici tra Analyze, Design e Plan. Definisce sezioni obbligatorie nei findings (Componenti coinvolti, Dipendenze, Rischi, Vincoli accessibilità NVDA), precondizione status REVIEWED per avanzare a Planning, precondizione status READY per avanzare a Codifica.
+- `.github/skills/rollback-procedure.skill.md`: nuova skill con decision tree per rollback E2E dopo commit parziali. Distingue `git revert` (commit pushati) da `git reset --soft` (commit locali). Definisce OP-6 in Agent-Git, vincoli inviolabili e procedura per Agent-Orchestrator.
+
+### Changed
+
+- `docs/3 - coding plans/PLAN_e2e-resilience_v1.11.0.md`: completata convalida formale pre-implementazione con spunta dei tre check `Approvals & Validation`; aggiunto ordine operativo consigliato **Fase 1 -> Fase 4 -> Fase 2 -> Fase 3**.
+- `pyproject.toml`: aggiunto `fail_under = 85` in `[tool.coverage.report]` come source of truth unica per la soglia minima coverage.
+- `.github/workflows/ci.yml`: rimosso `--cov-fail-under=85` dal comando pytest; la soglia è ora letta da `pyproject.toml`.
+- `.github/agents/Agent-Code.md`: rimosso `--cov-fail-under=85` dal pre-commit command; aggiunto commento SOT.
+- `.github/agents/Agent-Orchestrator.md`: aggiunto Step 0 smoke test CLI in Fase 0; aggiunto gate semantico (semantic-gate.skill.md) in Fase 1; aggiunta precondizione DESIGN REVIEWED in Fase 3; aggiunta sezione Gestione Fallimento Post-Commit; aggiornati Riferimenti Skills.
+- `.github/agents/Agent-Validate.md`: aggiunto riferimento a `pyproject.toml` come SOT coverage.
+- `.github/agents/Agent-Git.md`: aggiunto OP-6 Revert/Reset soft; aggiornati Riferimenti Skills con `rollback-procedure.skill.md`.
+- `.github/skills/git-execution.skill.md`: aggiunta matrice righe `git revert` e `git reset --soft` per Agent-Git con modalità di conferma esplicita.
+- `.github/skills/README.md`: aggiunte `semantic-gate.skill.md` e `rollback-procedure.skill.md`; aggiornata tabella agenti-skill per Agent-Orchestrator e Agent-Git.
+- `.github/instructions/tests.instructions.md`: rimosso `--cov-fail-under=85`; aggiunto riferimento a `pyproject.toml` come SOT.
+- `.github/instructions/workflow-standard.instructions.md`: rimosso `--cov-fail-under=85`; aggiunto commento SOT.
+- `scripts/ci-local-validate.py`, `scripts/create-project-files.py`, `scripts/pre-commit-hook-template.sh`: rimosso `--cov-fail-under=85` dai comandi pytest.
 
 ## [v1.9.2] - 2026-03-26
 

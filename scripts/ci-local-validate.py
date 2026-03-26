@@ -128,7 +128,6 @@ def check_test_coverage(skip: bool = False, verbose: bool = False) -> bool:
             "-m", "not gui",
             "--cov=src",
             "--cov-report=term-missing",
-            "--cov-fail-under=85",
             "-q"
         ],
         capture_output=True,

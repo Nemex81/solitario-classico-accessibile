@@ -85,7 +85,7 @@ Pre-commit checklist di riferimento rapido:
 ```bash
 python -m py_compile src/**/*.py          # syntax
 mypy src/ --strict --python-version 3.8   # types
-pytest -m "not gui" --cov=src --cov-fail-under=85  # test + coverage
+pytest -m "not gui" --cov=src  # test + coverage (soglia da pyproject.toml)
 ```
 
 ---

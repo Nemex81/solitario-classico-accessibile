@@ -130,4 +130,4 @@ jobs:
           pip install pytest pytest-cov
 
       - name: Run unit tests (no GUI)
-        run: pytest -m "not gui" --cov=src --cov-fail-under=85 -v
+        run: pytest -m "not gui" --cov=src -v

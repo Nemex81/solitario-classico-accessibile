@@ -200,6 +200,7 @@ Commit suggerito:
 ## Dependencies
 
 - Fase 1 puo essere implementata indipendentemente dalle altre ed e la migliore candidata per iniziare.
+- Ordine operativo consigliato per minimizzare rischio di overlap: **Fase 1 -> Fase 4 -> Fase 2 -> Fase 3**.
 - Fase 2 dipende solo dalla creazione della nuova skill e dall'aggiornamento dell'Orchestrator.
 - Fase 3 dipende da Agent-Git e dalla matrice `git-execution`.
 - Fase 4 e indipendente e puo essere eseguita in parallelo a Fase 2 o a valle.
@@ -229,9 +230,9 @@ Commit suggerito:
 
 Prima dell'implementazione:
 
-- [ ] Confermata l'esclusione del problema 6 dalla presente iterazione
-- [ ] Confermato `pyproject.toml` come source of truth coverage
-- [ ] Confermata l'introduzione delle nuove skill `semantic-gate` e `rollback-procedure`
+- [x] Confermata l'esclusione del problema 6 dalla presente iterazione
+- [x] Confermato `pyproject.toml` come source of truth coverage
+- [x] Confermata l'introduzione delle nuove skill `semantic-gate` e `rollback-procedure`
 
 Prima del commit finale di ciascuna fase:
 

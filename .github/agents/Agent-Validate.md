@@ -92,7 +92,7 @@ Agent-Validate:
 
 ## Gate di Completamento
 
-- Coverage >= 85% (pre-commit) o 90% (release)
+- Coverage >= 85% (pre-commit) o 90% (release), soglia configurata in `pyproject.toml`
 - Tutti i test passano (`pytest -v` senza errori)
 - Test markers appropriati (`@pytest.mark.unit` / `@pytest.mark.gui`)
 - HTML report generato e reviewed

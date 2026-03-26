@@ -17,6 +17,10 @@ esplicitamente nella sezione "Riferimenti Skills".
   bootstrap struttura docs/ portabile e non distruttivo
 - `error-recovery.skill.md` — procedura standardizzata di retry (max 2 tentativi)
   e escalata quando un subagente fallisce (Orchestrator)
+- `semantic-gate.skill.md` — criteri minimi osservabili per avanzamento tra fasi
+  Analyze→Design→Plan: sezioni obbligatorie nei findings, status REVIEWED/READY
+- `rollback-procedure.skill.md` — decision tree e procedura standard per rollback
+  E2E dopo commit parziali: git revert (pushati) vs git reset --soft (locali)
 
 ## Agenti e skills associate
 
@@ -31,8 +35,8 @@ esplicitamente nella sezione "Riferimenti Skills".
 | Agent-Docs | semver-bump, accessibility-output, framework-guard, verbosity, personality |
 | Agent-Release | semver-bump, accessibility-output, framework-guard, verbosity, personality |
 | Agent-FrameworkDocs | accessibility-output, file-deletion-guard, framework-guard, verbosity, personality |
-| Agent-Git | git-execution, conventional-commit, changelog-entry, accessibility-output, file-deletion-guard |
-| Agent-Orchestrator | docs_manager, error-recovery, accessibility-output, git-execution, framework-guard, verbosity, personality |
+| Agent-Git | git-execution, conventional-commit, changelog-entry, accessibility-output, file-deletion-guard, rollback-procedure |
+| Agent-Orchestrator | docs_manager, error-recovery, semantic-gate, rollback-procedure, accessibility-output, git-execution, framework-guard, verbosity, personality |
 | Agent-CodeRouter | code-routing, accessibility-output, git-execution, verbosity, personality |
 | Agent-CodeUI | validate-accessibility, conventional-commit, accessibility-output, git-execution, verbosity, personality |
 | Agent-Helper | framework-query, framework-index, agent-selector, framework-scope-guard, accessibility-output, verbosity, personality, style-setup |

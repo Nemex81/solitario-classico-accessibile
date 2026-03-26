@@ -61,8 +61,8 @@ echo "✓ No print statements found"
 # 5. Unit Tests & Coverage
 echo ""
 echo "[5/5] Unit tests & coverage..."
-if ! python -m pytest -m "not gui" --cov=src --cov-report=term-missing --cov-fail-under=85 -q 2>/dev/null; then
-    echo "✗ Test coverage check failed (target: >= 85%)"
+if ! python -m pytest -m "not gui" --cov=src --cov-report=term-missing -q 2>/dev/null; then
+    echo "✗ Test coverage check failed (target: >= 85%, configurata in pyproject.toml)"
     echo "   Run: pytest -m \"not gui\" --cov=src --cov-report=html"
     exit 1
 fi
