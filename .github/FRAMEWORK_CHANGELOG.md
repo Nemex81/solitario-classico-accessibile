@@ -10,6 +10,10 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 ## [Unreleased]
 
+### Docs
+
+- `.github/AGENTS.md`: aggiunta `style-setup` alla riga `Agent-Helper` (documentazione interna aggiornata).
+
 <!-- Le voci non rilasciate vanno inserite qui. Rimane vuoto dopo la release. -->
 
 ## [v1.7.1] - 2026-03-26

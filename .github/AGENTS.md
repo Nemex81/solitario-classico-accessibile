@@ -190,7 +190,7 @@ Si trovano in `.github/skills/`.
 | Agent-Orchestrator | accessibility-output, verbosity, personality, git-execution, framework-guard |
 | Agent-CodeRouter | code-routing, accessibility-output, verbosity, personality, git-execution |
 | Agent-CodeUI | validate-accessibility, conventional-commit, accessibility-output, verbosity, personality, git-execution |
-| Agent-Helper | framework-query, framework-index, agent-selector, framework-scope-guard, accessibility-output, verbosity, personality |
+| Agent-Helper | framework-query, framework-index, agent-selector, framework-scope-guard, accessibility-output, verbosity, personality, style-setup |
 
 ¹ `project-profile-template` non è una skill ma un template in `.github/templates/`. Agent-Welcome lo usa in lettura; la manutenzione è di Agent-FrameworkDocs.
 
