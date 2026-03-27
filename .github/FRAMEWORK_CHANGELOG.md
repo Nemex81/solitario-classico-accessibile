@@ -11,6 +11,21 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 <!-- Le voci non rilasciate vanno inserite qui. Rimane vuoto dopo la release. -->
 
+## [v1.10.3] - 2026-03-27
+
+### Added
+
+- `.github/skills/project-reset.skill.md`: nuova skill per il reset sicuro e guidato del
+  profilo progetto (`.github/project-profile.md`) con backup e istruzioni per il
+  rilancio del setup.
+- `.github/instructions/project-reset.instructions.md`: instruction operative che
+  impongono controlli di `framework_edit_mode`, conferma esplicita e backup.
+
+### Changed
+
+- `.github/agents/Agent-Welcome.md`: integrata opzione "Reset profilo progetto" che
+  invoca la skill `project-reset` come flusso guidato (richiede conferma esplicita).
+
 ## [v1.10.2] - 2026-03-27
 
 ### Changed

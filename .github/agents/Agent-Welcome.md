@@ -210,8 +210,15 @@ come default per ogni campo.
 
 Aggiorna .github/project-profile.md con i nuovi valori.
 Se il file deve essere resettato completamente:
-carica .github/templates/project-profile.template.md
-come base e ripopola con i valori aggiornati.
+- Offri all'utente l'opzione guidata "Reset profilo progetto".
+  Questa opzione invoca la skill `project-reset` (vedi
+  `.github/skills/project-reset.skill.md`) e segue le regole in
+  `.github/instructions/project-reset.instructions.md`.
+- In alternativa, carica `.github/templates/project-profile.template.md`
+  come base e ripopola con i valori aggiornati.
+
+Nota: qualunque scrittura su `.github/**` segue il framework guard.
+Se `framework_edit_mode: false` interrompi e richiedi `#framework-unlock`.
 
 Se il linguaggio primario è cambiato:
 consulta la matrice in project-profile.skill.md
