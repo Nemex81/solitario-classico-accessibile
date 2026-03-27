@@ -2,11 +2,11 @@
 feature: E2E Resilience — Gate semantici, rollback procedure, coverage SOT
 agent: Agent-Plan
 status: REVIEWED
-version: v1.11.0
+version: v1.10.0
 date: 2026-03-26
 ---
 
-# Plan: E2E Resilience v1.11.0
+# Plan: E2E Resilience v1.10.0
 
 ## Executive Summary
 
@@ -19,7 +19,7 @@ Rafforzamento del ciclo E2E del framework su quattro aree operative, escludendo 
 
 **Obiettivo:** rendere il ciclo E2E piu robusto e coerente senza introdurre nuove feature di prodotto, centralizzando la soglia coverage, formalizzando i gate semantici, aggiungendo una procedura di rollback e inserendo un controllo bootstrap leggero sugli script CLI.
 
-**Versione target:** v1.11.0  
+**Versione target:** v1.10.0  
 **Priorita:** Alta  
 **Scope escluso:** nessuna implementazione di timeout o watchdog per subagenti in questa iterazione.
 

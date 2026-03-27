@@ -1,13 +1,13 @@
 ---
 feature: E2E Resilience — Gate semantici, rollback procedure, coverage SOT
-version: v1.11.0
-plan_ref: docs/3 - coding plans/PLAN_e2e-resilience_v1.11.0.md
+version: v1.10.0
+plan_ref: docs/3 - coding plans/PLAN_e2e-resilience_v1.10.0.md
 date: 2026-03-26
 ---
 
-# TODO: E2E Resilience v1.11.0
+# TODO: E2E Resilience v1.10.0
 
-Implementazione del piano `PLAN_e2e-resilience_v1.11.0.md`: gate semantici, rollback E2E, source of truth coverage, smoke test CLI.
+Implementazione del piano `PLAN_e2e-resilience_v1.10.0.md`: gate semantici, rollback E2E, source of truth coverage, smoke test CLI.
 
 ## Fasi
 

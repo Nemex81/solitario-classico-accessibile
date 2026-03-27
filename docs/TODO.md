@@ -31,7 +31,7 @@ stato: attivo
 
 - [PLAN_document-governance_v1.9.0.md](3%20-%20coding%20plans/PLAN_document-governance_v1.9.0.md) — governance documentale (in corso)
 - [PLAN_game-engine-refactoring_v3.6.0.md](3%20-%20coding%20plans/PLAN_game-engine-refactoring_v3.6.0.md) — refactoring engine (legacy)
-- [PLAN_e2e-resilience_v1.11.0.md](3%20-%20coding%20plans/PLAN_e2e-resilience_v1.11.0.md) — gate semantici, rollback, coverage SOT (in corso)
+- [PLAN_e2e-resilience_v1.10.0.md](3%20-%20coding%20plans/PLAN_e2e-resilience_v1.10.0.md) — gate semantici, rollback, coverage SOT (in corso)
 
 ## Reports
 
@@ -44,7 +44,7 @@ stato: attivo
 <!-- Link relativi ai file attivi in docs/5 - todolist/ -->
 
 - [TODO_document-governance_v1.9.0.md](5%20-%20todolist/TODO_document-governance_v1.9.0.md) — governance documentale (in corso)
-- [TODO_e2e-resilience_v1.11.0.md](5%20-%20todolist/TODO_e2e-resilience_v1.11.0.md) — e2e resilience (in corso)
+- [TODO_e2e-resilience_v1.10.0.md](5%20-%20todolist/TODO_e2e-resilience_v1.10.0.md) — e2e resilience (in corso)
 
 ## Stato Avanzamento
 

@@ -13,13 +13,14 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 ### Added
 
-- `docs/3 - coding plans/PLAN_e2e-resilience_v1.11.0.md`: plan convalidato (DRAFT → REVIEWED) per rafforzamento E2E su 4 aree: gate semantici Analyze→Design→Plan, smoke test CLI bootstrap, procedura rollback E2E, centralizzazione coverage SOT in `pyproject.toml`. Scope negativo esplicito: timeout/stallo subagenti esclusi. Target: v1.11.0.
+- `docs/3 - coding plans/PLAN_e2e-resilience_v1.10.0.md`: plan convalidato (DRAFT → REVIEWED) per rafforzamento E2E su 4 aree: gate semantici Analyze→Design→Plan, smoke test CLI bootstrap, procedura rollback E2E, centralizzazione coverage SOT in `pyproject.toml`. Scope negativo esplicito: timeout/stallo subagenti esclusi. Target: v1.10.0.
 - `.github/skills/semantic-gate.skill.md`: nuova skill con criteri osservabili per gate semantici tra Analyze, Design e Plan. Definisce sezioni obbligatorie nei findings (Componenti coinvolti, Dipendenze, Rischi, Vincoli accessibilità NVDA), precondizione status REVIEWED per avanzare a Planning, precondizione status READY per avanzare a Codifica.
 - `.github/skills/rollback-procedure.skill.md`: nuova skill con decision tree per rollback E2E dopo commit parziali. Distingue `git revert` (commit pushati) da `git reset --soft` (commit locali). Definisce OP-6 in Agent-Git, vincoli inviolabili e procedura per Agent-Orchestrator.
 
 ### Changed
 
-- `docs/3 - coding plans/PLAN_e2e-resilience_v1.11.0.md`: completata convalida formale pre-implementazione con spunta dei tre check `Approvals & Validation`; aggiunto ordine operativo consigliato **Fase 1 -> Fase 4 -> Fase 2 -> Fase 3**.
+- `docs/3 - coding plans/PLAN_e2e-resilience_v1.10.0.md`: completata convalida formale pre-implementazione con spunta dei tre check `Approvals & Validation`; aggiunto ordine operativo consigliato **Fase 1 -> Fase 4 -> Fase 2 -> Fase 3**.
+- `docs/3 - coding plans/PLAN_e2e-resilience_v1.10.0.md`, `docs/5 - todolist/TODO_e2e-resilience_v1.10.0.md`, `docs/TODO.md`: riallineata la nomenclatura versione da `v1.11.0` a `v1.10.0` per coerenza numerica con il ciclo release successivo a `v1.9.2`.
 - `pyproject.toml`: aggiunto `fail_under = 85` in `[tool.coverage.report]` come source of truth unica per la soglia minima coverage.
 - `.github/workflows/ci.yml`: rimosso `--cov-fail-under=85` dal comando pytest; la soglia è ora letta da `pyproject.toml`.
 - `.github/agents/Agent-Code.md`: rimosso `--cov-fail-under=85` dal pre-commit command; aggiunto commento SOT.
