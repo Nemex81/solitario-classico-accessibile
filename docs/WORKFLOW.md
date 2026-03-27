@@ -273,7 +273,7 @@ Agent-Plan prende il controllo (Phase 3)
    
    ## Test Execution
    ```bash
-   pytest -m "not gui" --cov=src --cov-fail-under=85
+   pytest -m "not gui" --cov=src
    ```
    ```
 
@@ -321,7 +321,7 @@ LOOP per ogni ☐ in docs/TODO.md:
      ✓ mypy src/ --strict (type hints 100%)
      ✓ pylint cyclic-import check (no circular)
      ✓ grep "print(" = 0 occurrenze in src/ (no prints)
-     ✓ pytest -m "not gui" --cov=src --cov-fail-under=85 (unit test K)
+   ✓ pytest -m "not gui" --cov=src (unit test K, soglia coverage da pyproject.toml)
   
   6. COMMIT (atomico, convenzionale):
      Message: <type>(<scope>): <subject>
@@ -376,7 +376,7 @@ Agent-Validate prende il controllo (Phase 5)
 **Responsabilità Agent-Validate**:
 1. **Coverage Report**:
    ```bash
-   pytest -m "not gui" --cov=src --cov-report=html --cov-fail-under=85
+   pytest -m "not gui" --cov=src --cov-report=html
    ```
    - Genera htmlcov/index.html
    - Identifica file sotto threshold

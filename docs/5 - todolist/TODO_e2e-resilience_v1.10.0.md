@@ -1,5 +1,7 @@
 ---
 feature: E2E Resilience — Gate semantici, rollback procedure, coverage SOT
+type: todo
+status: COMPLETED
 version: v1.10.0
 plan_ref: docs/3 - coding plans/PLAN_e2e-resilience_v1.10.0.md
 date: 2026-03-26

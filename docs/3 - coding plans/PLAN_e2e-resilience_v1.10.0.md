@@ -1,5 +1,6 @@
 ---
 feature: E2E Resilience — Gate semantici, rollback procedure, coverage SOT
+type: plan
 agent: Agent-Plan
 status: REVIEWED
 version: v1.10.0

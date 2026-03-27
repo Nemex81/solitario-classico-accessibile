@@ -10,15 +10,15 @@ Ogni file `.md` è un agente nativo attivabile dal dropdown agenti di VS Code.
 - [`Agent-Orchestrator`](Agent-Orchestrator.md) — Coordinatore E2E, delega agli agenti specializzati
 - [`Agent-Analyze`](Agent-Analyze.md) — Discovery e analisi codebase (read-only)
 - [`Agent-Design`](Agent-Design.md) — Decisioni architetturali, crea DESIGN_*.md
-- [`Agent-Plan`](Agent-Plan.md) — Breaking down in fasi, crea PLAN_*.md e TODO.md
+- [`Agent-Plan`](Agent-Plan.md) — Breaking down in fasi, crea PLAN_*.md e TODO per-task
 - [`Agent-CodeRouter`](Agent-CodeRouter.md) — Dispatcher sotto-ciclo codifica GUI/non-GUI
 - [`Agent-Code`](Agent-Code.md) — Implementazione incrementale, fasi non-GUI
 - [`Agent-CodeUI`](Agent-CodeUI.md) — Implementazione GUI wxPython + accessibilità NVDA
 - [`Agent-Validate`](Agent-Validate.md) — Test coverage e quality gates
-- [`Agent-Docs`](Agent-Docs.md) — Sync documentazione progetto (API.md, CHANGELOG.md)
+- [`Agent-Docs`](Agent-Docs.md) — Sync documentazione progetto (API.md, ARCHITECTURE.md, CHANGELOG.md)
 - [`Agent-Release`](Agent-Release.md) — Versioning SemVer, build cx_freeze, release
 - [`Agent-FrameworkDocs`](Agent-FrameworkDocs.md) — Manutenzione Framework Copilot (scope: .github/**)
-- [`Agent-Git`](Agent-Git.md) — Operazioni git autorizzate (modello: gpt-5-mini)
+- [`Agent-Git`](Agent-Git.md) — Operazioni git autorizzate (modelli: gpt-5-mini, GPT-5.3-Codex)
 
 ## Note
 

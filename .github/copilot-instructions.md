@@ -25,15 +25,14 @@ Puoi continuare a usare il framework normalmente.
 
 Poi prosegui normalmente con il task richiesto.
 
-## Framework Copilot v1.9.2
+## Framework Copilot v1.10.0
 
-**Questo progetto utilizza un framework orchestrazione Copilot con 14 agenti nativi VS Code.**
+**Questo progetto utilizza un framework orchestrazione Copilot con agenti nativi VS Code.**
 
 ### Quick Start (3 passi)
 
 1. **Seleziona agente**: dal dropdown agenti nella chat di VS Code (`.github/agents/`)
 2. **Scopri gli agenti**: [.github/agents/Agent-NAME.md](agents/) per la specifica di ciascuno
-3. **Inizio task**: scrivi `#init` in chat e seleziona `init.prompt.md` dal file picker
 
 ### Componenti Framework
 
@@ -53,7 +52,7 @@ Poi prosegui normalmente con il task richiesto.
 | **`.github/instructions/workflow-standard.instructions.md`** | Sequenza operativa standard per modifiche, TODO gate, pre-commit, sync docs |
 | **`.github/skills/*.skill.md`** | Abilità atomiche riutilizzabili tra agenti |
 
-### I 14 Agenti
+### Gli Agenti
 
 0. **Agent-Helper**: Consultivo read-only sul Framework Copilot (non-E2E)
 0. **Agent-Welcome**: Setup profilo progetto, inizializzazione framework (non-E2E)
@@ -103,6 +102,9 @@ e documentazione del progetto ospite.
 - `.github/FRAMEWORK_CHANGELOG.md`: storico evoluzione framework
 - `.github/AGENTS.md`: riferimento agenti e versioni
 - `.github/README.md`: guida importazione framework
+- `.github/skills/README.md`: catalogo skills
+- `.github/instructions/README.md`: catalogo instructions
+- `.github/prompts/README.md`: catalogo prompt files
 
 **Binario Progetto** — gestito da Agent-Docs nel ciclo E2E:
 

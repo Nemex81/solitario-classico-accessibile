@@ -22,7 +22,7 @@ Questo documento descrive come impostare **automazioni locali** per il ciclo di 
 ✓ Type hints: mypy src/ --strict --python-version 3.8
 ✓ Import cycles: pylint --disable=all --enable=cyclic-import
 ✓ No print statements: grep -r "print(" src/ (must = 0)
-✓ Unit tests: pytest -m "not gui" --cov=src --cov-fail-under=85
+✓ Unit tests: pytest -m "not gui" --cov=src (soglia coverage da pyproject.toml)
 ```
 
 **Configurazione**: Vedi sezione [Setup Pre-Commit](#setup-pre-commit) sotto.
@@ -273,7 +273,7 @@ if grep -r "print(" src/ --include="*.py" | grep -v "__main__"; then
 fi
 
 # 5. Unit tests + coverage
-pytest -m "not gui" --cov=src --cov-report=term --cov-fail-under=85 || {
+pytest -m "not gui" --cov=src --cov-report=term || {
     echo "✗ Test coverage check failed"
     exit 1
 }

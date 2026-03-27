@@ -11,6 +11,14 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 <!-- Le voci non rilasciate vanno inserite qui. Rimane vuoto dopo la release. -->
 
+### Changed
+
+- `docs/3 - coding plans/PLAN_e2e-resilience_v1.10.0.md`: aggiunto `type: plan` nel frontmatter per allineamento ai gate automatici di validazione.
+- `docs/5 - todolist/TODO_e2e-resilience_v1.10.0.md`: aggiunti `type: todo` e `status: COMPLETED` nel frontmatter per allineamento ai gate automatici di validazione.
+- `docs/WORKFLOW.md`, `docs/CI_AUTOMATION.md`: allineati i comandi operativi di test alla coverage source of truth in `pyproject.toml`, rimuovendo `--cov-fail-under` dai runbook.
+
+## [v1.10.0] - 2026-03-27
+
 ### Added
 
 - `docs/3 - coding plans/PLAN_e2e-resilience_v1.10.0.md`: plan convalidato (DRAFT → REVIEWED) per rafforzamento E2E su 4 aree: gate semantici Analyze→Design→Plan, smoke test CLI bootstrap, procedura rollback E2E, centralizzazione coverage SOT in `pyproject.toml`. Scope negativo esplicito: timeout/stallo subagenti esclusi. Target: v1.10.0.
@@ -32,6 +40,11 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 - `.github/instructions/tests.instructions.md`: rimosso `--cov-fail-under=85`; aggiunto riferimento a `pyproject.toml` come SOT.
 - `.github/instructions/workflow-standard.instructions.md`: rimosso `--cov-fail-under=85`; aggiunto commento SOT.
 - `scripts/ci-local-validate.py`, `scripts/create-project-files.py`, `scripts/pre-commit-hook-template.sh`: rimosso `--cov-fail-under=85` dai comandi pytest.
+- `.github/AGENTS.md`: aggiornata voce versione framework a `v1.10.0` con data `27 Marzo 2026`.
+- `.github/copilot-instructions.md`: aggiornata intestazione framework a `v1.10.0`.
+- `.github/README.md`: aggiornata versione corrente a `v1.10.0` e allineato riferimento interno ad `AGENTS.md`.
+- `.github/instructions/README.md`: corretto testo informativo da `12` a `14` agenti framework.
+- `.github/agents/README.md`: allineate descrizioni informative per Agent-Plan, Agent-Docs e Agent-Git.
 
 ## [v1.9.2] - 2026-03-26
 

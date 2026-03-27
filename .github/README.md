@@ -1,6 +1,6 @@
 # Framework Copilot — Guida all'installazione e all'uso
 
-> **Versione corrente**: v1.7.1 — 26 Marzo 2026
+> **Versione corrente**: v1.10.0 — 27 Marzo 2026
 
 ---
 
@@ -52,7 +52,7 @@ Il framework fornisce:
 - `instructions/` — regole contestuali per filetype (`.instructions.md`)
 - `prompts/` — prompt files per entry point e workflow
 - `workflows/` — workflow GitHub Actions (CI/CD)
-- `AGENTS.md` — documentazione di riferimento del framework (14 agenti, v1.7.0)
+- `AGENTS.md` — documentazione di riferimento del framework (14 agenti, v1.10.0)
 - `copilot-instructions.md` — istruzioni globali Copilot per il progetto
 - `instructions/model-policy.instructions.md` — Model Policy: assegnazioni
    modello per tutti gli agenti, criteri di selezione per tipo di task,
