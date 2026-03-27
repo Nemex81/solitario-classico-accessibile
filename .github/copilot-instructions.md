@@ -14,18 +14,14 @@ prima di qualsiasi altro contenuto:
 
 ***
 ⚠️ PROGETTO NON INIZIALIZZATO
-Il framework non è ancora configurato per questo progetto.
-Per abilitare tutte le funzionalità in modo ottimale:
-scrivi `#project-setup` in chat oppure seleziona
-Agent-Welcome dal dropdown agenti, scrivi in chat 
-'aiuto, iniziare o nuovo progetto'  e segui il percorso
-guidato (circa 2 minuti).
+Framework non configurato. Per abilitare tutte le funzionalità:
+scrivi `#project-setup` in chat, oppure seleziona Agent-Welcome e scrivi "nuovo progetto".
 Puoi continuare a usare il framework normalmente.
 ***
 
 Poi prosegui normalmente con il task richiesto.
 
-## Framework Copilot v1.10.1
+## Framework Copilot v1.10.2
 
 **Questo progetto utilizza un framework orchestrazione Copilot con agenti nativi VS Code.**
 
@@ -38,82 +34,47 @@ Poi prosegui normalmente con il task richiesto.
 
 | Componente | Scopo |
 |-----------|-------|
-| **`.github/agents/*.md`** | 14 agenti nativi VS Code con tool restrictions |
-| **`.github/prompts/*.md`** | Prompt files per entry point e workflow |
-| **Ciclo Dev E2E** | Fase per fase, gate, transizioni |
-| **Automazione CLI** | Pre-commit hook, script validation, changelog, build |
-| **CI GitHub Actions** | Workflow syntax, types, lint, test |
-| **Agent-Orchestrator** | Coordinatore E2E con subagent delegation |
-| **Agent-FrameworkDocs** | Manutenzione docs e changelog framework |
-| **Quick Reference** | Comandi rapidi, troubleshooting |
-| **Script Utility** | 8 script Python per automazione |
+| **`.github/agents/*.md`** | 14 agenti nativi VS Code |
+| **`.github/skills/*.skill.md`** | Abilità atomiche riutilizzabili |
 | **`.github/instructions/*.instructions.md`** | Regole contestuali per filetype |
-| **`.github/instructions/git-policy.instructions.md`** | Policy git operativa (applyTo: `**`) |
-| **`.github/instructions/workflow-standard.instructions.md`** | Sequenza operativa standard per modifiche, TODO gate, pre-commit, sync docs |
-| **`.github/skills/*.skill.md`** | Abilità atomiche riutilizzabili tra agenti |
+| **`.github/prompts/*.md`** | Entry point e workflow |
+
+Dettaglio completo: → `.github/AGENTS.md`
 
 ### Gli Agenti
 
-0. **Agent-Helper**: Consultivo read-only sul Framework Copilot (non-E2E)
-0. **Agent-Welcome**: Setup profilo progetto, inizializzazione framework (non-E2E)
-1. **Agent-Orchestrator**: Coordinatore E2E, delega agli agenti specializzati
-1. **Agent-Analyze**: Discovery findings (read-only)
-2. **Agent-Design**: DESIGN_*.md doc (DRAFT  REVIEWED)
-3. **Agent-Plan**: PLAN_*.md + docs/TODO.md (DRAFT  READY)
-4. **Agent-Code**: Implementazione loop, commits atomici (TODO checklist)
-   4a. **Agent-CodeRouter**: Dispatcher sotto-ciclo codifica, classifica GUI vs non-GUI
-   4b. **Agent-CodeUI**: Implementazione GUI wxPython, accessibilità NVDA obbligatoria
-5. **Agent-Validate**: Test coverage (85%+ threshold)
-6. **Agent-Docs**: API.md, ARCHITECTURE.md, CHANGELOG.md sync
-7. **Agent-Release**: Versioning SemVer, cx_freeze build, tag proposal
-8. **Agent-FrameworkDocs**: Docs e changelog Framework Copilot (scope: .github/**)
-9. **Agent-Git**: Operazioni git autorizzate (commit, push, merge, tag)
+14 agenti disponibili nel dropdown VS Code. Ruoli, trigger e deliverable:
+→ `.github/AGENTS.md`
 
 ### Comandi Entry Point
 
 | Comando testuale | Metodo nativo VS Code |
 |-----------------|----------------------|
-| `/init <task>` | `#init.prompt.md` (file picker o scrivi #init in chat) |
-| `/start` | `#start.prompt.md` |
-| `/status` | `#status.prompt.md` |
-| `/sync-docs` | `#sync-docs.prompt.md` |
-| `/release vX.Y.Z` | `#release.prompt.md` |
-| `#orchestrate` | `#orchestrate.prompt.md` (ciclo E2E completo) |
+| `/init <task>` | `#init.prompt.md` |
+| `#orchestrate` | `#orchestrate.prompt.md` |
+| `#framework-unlock` | `#framework-unlock.prompt.md` |
+| `#verbosity` | `#verbosity.prompt.md` |
+| `#personality` | `#personality.prompt.md` |
 | `/Agent-<Name>` | Seleziona dal dropdown agenti VS Code |
-| `/create-agent` | Comando nativo VS Code per generare nuovo file agente |
-| `/create-prompt` | Comando nativo VS Code per generare nuovo prompt file |
-| `/framework-update` | `#framework-update.prompt.md` |
-| `/framework-changelog` | `#framework-changelog.prompt.md` |
-| `/framework-release` | `#framework-release.prompt.md` |
-| `#verbosity` | `#verbosity.prompt.md` (richiede `#framework-unlock` se `framework_edit_mode: false`) |
-| `#personality` | `#personality.prompt.md` (richiede `#framework-unlock` se `framework_edit_mode: false`) |
 
-Per dettagli completi: [.github/AGENTS.md](AGENTS.md) e [docs/WORKFLOW.md](../docs/WORKFLOW.md).
+Lista completa comandi: → `.github/AGENTS.md` sezione Prompt Files
 
 ---
 
 ## Dual-Track Documentation
 
-Il framework adotta una separazione netta tra documentazione del framework
-e documentazione del progetto ospite.
+Framework: Agent-FrameworkDocs gestisce `.github/**` e `FRAMEWORK_CHANGELOG.md`.
+Progetto: Agent-Docs gestisce `CHANGELOG.md`, `docs/API.md`, `docs/ARCHITECTURE.md`.
+Regola invariante: i due scope non si incrociano mai.
+Dettaglio: → `.github/AGENTS.md` sezione Dual-Track Documentation
 
-**Binario Framework** — gestito da Agent-FrameworkDocs:
+---
 
-- `.github/FRAMEWORK_CHANGELOG.md`: storico evoluzione framework
-- `.github/AGENTS.md`: riferimento agenti e versioni
-- `.github/README.md`: guida importazione framework
-- `.github/skills/README.md`: catalogo skills
-- `.github/instructions/README.md`: catalogo instructions
-- `.github/prompts/README.md`: catalogo prompt files
+## Script di Supporto
 
-**Binario Progetto** — gestito da Agent-Docs nel ciclo E2E:
-
-- `CHANGELOG.md` della root: storico del progetto applicativo
-- `docs/API.md`, `docs/ARCHITECTURE.md`: documentazione tecnica progetto
-
-**Regola invariante**: Agent-FrameworkDocs non tocca mai `CHANGELOG.md`
-della root. Agent-Docs non tocca mai `FRAMEWORK_CHANGELOG.md`.
-I due binari non si incrociano.
+Script di supporto in `scripts/` per automazione git, validation, changelog, build e scaffolding.
+Dettaglio completo: → `.github/AGENTS.md` sezione Script di Supporto.
+Per operazioni git, delega ad Agent-Git.
 
 ---
 
@@ -176,28 +137,19 @@ Formato commit, branch policy, SemVer e release steps:
 
 ## Git Policy (Summary)
 
-**Git policy**:
+Copilot NON esegue direttamente: `git push`, `git merge` su main,
+`git commit` in implementazioni automatizzate. Propone i comandi come
+testo. Read-only sempre consentito: `git log`, `git diff`, `git status`.
 
-Copilot NON esegue direttamente `git push`, `git merge` su main,
-né `git commit` durante implementazioni automatizzate degli agenti.
-Propone sempre i comandi in blocco testuale: è l'utente a eseguirli.
-Read-only sempre consentito: `git log`, `git diff`, `git status`.
+| Contesto autorizzato | Modalità |
+|---|---|
+| Agent-Git | Unico agente con `run_in_terminal` su git |
+| `#git-commit.prompt.md` | Dispatcher → delega ad Agent-Git |
+| `#git-merge.prompt.md` | Dispatcher → delega ad Agent-Git |
 
-**Eccezioni autorizzate (unici contesti in cui Copilot può eseguire
-git tramite `run_in_terminal`)**:
-- `Agent-Git` — agente dedicato, unico punto di esecuzione git diretta
-- `#git-commit.prompt.md` — dispatcher leggero, delega ad Agent-Git
-- `#git-merge.prompt.md` — dispatcher leggero, delega ad Agent-Git
+In qualsiasi altro contesto il blocco è assoluto.
 
-Agent-Git è l'unico agente autorizzato a eseguire git tramite
-run_in_terminal. Tutti gli altri agenti propongono i comandi come
-testo e delegano ad Agent-Git quando necessario.
-
-Questi 2 prompt sono gli UNICI punti di esecuzione git diretta.
-In qualsiasi altro contesto (agenti, chat libera, altri prompt)
-la policy di blocco è assoluta.
-
-Per dettaglio operativo completo:
+Policy completa: → `.github/instructions/git-policy.instructions.md`
 → `.github/instructions/git-policy.instructions.md`
 → `.github/skills/git-execution.skill.md`
 
@@ -215,9 +167,6 @@ Dettaglio completo in:
 
 | Risorsa | Scopo |
 |---------|-------|
-| [.github/instructions/model-policy.instructions.md](instructions/model-policy.instructions.md) | Assegnazioni modelli agenti e criteri selezione |
-| [.github/AGENTS.md](AGENTS.md) | 14-agent system, v1.6.0 |
 | [docs/WORKFLOW.md](../docs/WORKFLOW.md) | E2E workflow |
 | [docs/CI_AUTOMATION.md](../docs/CI_AUTOMATION.md) | CI locale |
 | [.vscode/copilot-quick-start.md](../.vscode/copilot-quick-start.md) | Commands (5 min) |
-| docs/1 - templates/ | DESIGN/PLAN/TODO scaffold |
