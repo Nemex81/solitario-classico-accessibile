@@ -11,6 +11,8 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 <!-- Le voci non rilasciate vanno inserite qui. Rimane vuoto dopo la release. -->
 
+## [v1.10.1] - 2026-03-27
+
 ### Changed
 
 - `docs/3 - coding plans/PLAN_e2e-resilience_v1.10.0.md`: aggiunto `type: plan` nel frontmatter per allineamento ai gate automatici di validazione.
