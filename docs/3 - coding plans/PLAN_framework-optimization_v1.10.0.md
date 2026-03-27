@@ -1,7 +1,8 @@
 ---
+type: plan
 feature: Framework Optimization — Coerenza sistema documenti e protocolli Orchestrator
 agent: Agent-Plan
-status: DRAFT
+status: COMPLETED
 version: v1.10.0
 date: 2026-03-26
 ---

@@ -1,5 +1,7 @@
 ---
+type: todo
 feature: Framework Optimization — Coerenza sistema documenti e protocolli Orchestrator
+status: COMPLETED
 version: v1.10.0
 plan_ref: docs/3 - coding plans/PLAN_framework-optimization_v1.10.0.md
 date: 2026-03-26

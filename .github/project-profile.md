@@ -71,5 +71,7 @@ Instructions language-specific attive per questo progetto:
     `#personality`. Override temporaneo di sessione: dichiaralo
     verbalmente in chat senza modificare questo file.
 
+framework_edit_mode: true
+
 (spazio per note contestuali — aggiornabile tramite
 `#project-update` in qualsiasi momento)

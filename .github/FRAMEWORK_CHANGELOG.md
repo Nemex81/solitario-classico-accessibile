@@ -15,6 +15,8 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 - `docs/3 - coding plans/PLAN_e2e-resilience_v1.10.0.md`: aggiunto `type: plan` nel frontmatter per allineamento ai gate automatici di validazione.
 - `docs/5 - todolist/TODO_e2e-resilience_v1.10.0.md`: aggiunti `type: todo` e `status: COMPLETED` nel frontmatter per allineamento ai gate automatici di validazione.
+- `docs/3 - coding plans/PLAN_framework-optimization_v1.10.0.md`: aggiunti `type: plan` e `status: COMPLETED` per risolvere falso blocco di validazione release.
+- `docs/5 - todolist/TODO_framework-optimization_v1.10.0.md`: aggiunti `type: todo` e `status: COMPLETED` per risolvere falso blocco di validazione release.
 - `docs/WORKFLOW.md`, `docs/CI_AUTOMATION.md`: allineati i comandi operativi di test alla coverage source of truth in `pyproject.toml`, rimuovendo `--cov-fail-under` dai runbook.
 
 ## [v1.10.0] - 2026-03-27

@@ -1,18 +1,18 @@
-versione: v1.5.1
+versione: vX.Y.Z
 parole_chiave:
   - RELEASE
 
 descrizione: |
   Prompt per l'operazione di release del framework. Obiettivo: consolidare la
   sezione `[Unreleased]` presente in `.github/FRAMEWORK_CHANGELOG.md` in una
-  nuova voce di release `v1.5.1` datata oggi (22 marzo 2026). Questo prompt è
+  nuova voce di release `X.Y.Z` datata alla data attuale. Questo prompt è
   pensato per l'agente `Agent-Release` o per l'operatore umano che esegue la
   release.
 
 istruzioni: |
   1. Apri `.github/FRAMEWORK_CHANGELOG.md` e individua la sezione `## [Unreleased]`.
   2. Se la sezione contiene contenuti, sposta tutto il contenuto sotto una nuova
-    intestazione `## [v1.5.1] - 2026-03-22` mantenendo la formattazione delle
+    intestazione `## [X.Y.Z] - YYYY-MM-DD` mantenendo la formattazione delle
      sottosezioni (Added, Changed, Fixed, ecc.). Rimuovi la sezione `[Unreleased]`
      oppure lascia una intestazione vuota se preferito dal maintainer.
     3. Aggiorna i metadati rilevanti in `.github/AGENTS.md` e `.github/copilot-instructions.md`
