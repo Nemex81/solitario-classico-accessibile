@@ -262,4 +262,5 @@ Script Python per automazione del framework:
 - **Workflow E2E dettagliato**: [docs/WORKFLOW.md](../docs/WORKFLOW.md)
 - **Automazione CLI**: [docs/CI_AUTOMATION.md](../docs/CI_AUTOMATION.md)
 - **Quick Start**: [.vscode/copilot-quick-start.md](../.vscode/copilot-quick-start.md)
-- **Template Progetti**: [docs/1 - templates/](../docs/1%20-%20templates/)
+- **Template sistema framework**: [.github/templates
+- **Template Progetti utente**: [docs/1 - templates/](../docs/1%20-%20templates/)
