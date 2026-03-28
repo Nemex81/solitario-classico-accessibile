@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD012 -->
+
 # Coordinatore Documenti Attivi
 
 <!--
@@ -24,6 +26,7 @@ stato: attivo
 <!-- Link relativi ai file attivi in docs/2 - projects/ -->
 
 - [DESIGN_audio_system.md](2%20-%20projects/DESIGN_audio_system.md) — sistema audio (completato)
+- [DESIGN_framework-template-bootstrap.md](2%20-%20projects/DESIGN_framework-template-bootstrap.md) — integrazione template framework e bootstrap Agent-Welcome (reviewed)
 
 ## Piani
 
@@ -32,6 +35,7 @@ stato: attivo
 - [PLAN_document-governance_v1.9.0.md](3%20-%20coding%20plans/PLAN_document-governance_v1.9.0.md) — governance documentale (in corso)
 - [PLAN_game-engine-refactoring_v3.6.0.md](3%20-%20coding%20plans/PLAN_game-engine-refactoring_v3.6.0.md) — refactoring engine (legacy)
 - [PLAN_e2e-resilience_v1.10.0.md](3%20-%20coding%20plans/PLAN_e2e-resilience_v1.10.0.md) — gate semantici, rollback, coverage SOT (in corso)
+- [PLAN_template-bootstrap-integration_v1.10.3.md](3%20-%20coding%20plans/PLAN_template-bootstrap-integration_v1.10.3.md) — bootstrap documentale core e integrazione template framework (in_progress)
 
 ## Reports
 
@@ -45,6 +49,7 @@ stato: attivo
 
 - [TODO_document-governance_v1.9.0.md](5%20-%20todolist/TODO_document-governance_v1.9.0.md) — governance documentale (in corso)
 - [TODO_e2e-resilience_v1.10.0.md](5%20-%20todolist/TODO_e2e-resilience_v1.10.0.md) — e2e resilience (in corso)
+- [TODO_template-bootstrap-integration_v1.10.3.md](5%20-%20todolist/TODO_template-bootstrap-integration_v1.10.3.md) — implementazione bootstrap template/framework (in_progress)
 
 ## Stato Avanzamento
 

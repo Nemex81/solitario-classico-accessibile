@@ -280,7 +280,126 @@ Fine OP-3.
 
 ---
 
-## Regole Invarianti
+## OP-4: Bootstrap Documentale Core
+
+Attiva quando richiesto manualmente o proposto da Agent-Welcome
+al termine di OP-3 (passo opzionale).
+
+### Passo 1 — Verifica prerequisito
+
+Leggi `.github/project-profile.md`.
+Se `initialized: false` interrompi e comunica:
+"Il profilo progetto non e configurato.
+ Esegui prima OP-1 (setup progetto) per abilitare il bootstrap documentale core."
+
+### Passo 2 — Proposta livello bootstrap
+
+Presenta esattamente questo messaggio:
+
+  BOOTSTRAP DOCUMENTALE CORE
+  ──────────────────────────────────────────
+  Scegli il livello di bootstrap per il progetto:
+
+  1 — Solo struttura docs/
+      Crea le cartelle e i README orientativi.
+      (equivale a OP-3)
+
+  2 — Struttura + Documenti core
+      Aggiunge: docs/API.md, docs/ARCHITECTURE.md, CHANGELOG.md
+
+  3 — Struttura + Documenti core + Istruzioni progetto
+      Aggiunge anche: .github/instructions/project.instructions.md
+      (richiede sblocco framework)
+
+  N — Salta. Nessun file viene creato.
+  ──────────────────────────────────────────
+  Risposta: 1 / 2 / 3 / N
+
+### Passo 3 — Ramo N (salta)
+
+Non creare alcun file.
+Comunicare:
+"Bootstrap documentale core saltato.
+ Puoi eseguirlo in qualsiasi momento richiamando Agent-Welcome."
+Fine OP-4.
+
+### Passo 4 — Ramo 1 (solo struttura)
+
+Delega a OP-3 (Bootstrap Struttura Documentazione).
+Fine OP-4.
+
+### Passo 5 — Rami 2 e 3 (con documenti core)
+
+Seguire il contratto in:
+→ .github/skills/project-doc-bootstrap.skill.md
+
+Sequenza:
+
+1. Leggere `project_name` e gli altri campi necessari da `.github/project-profile.md`.
+2. Per ogni file nel livello scelto:
+   - Caricare il template corrispondente da `.github/templates/`.
+   - Sostituire i placeholder con i valori reali da `project-profile.md`.
+   - Verificare se il file di destinazione esiste gia.
+   - Se esiste: segnalare SALTATO, non sovrascrivere.
+   - Se non esiste: creare il file nel path di destinazione.
+3. Se livello 3: verificare `framework_edit_mode: true` prima di creare
+   `.github/instructions/project.instructions.md`.
+   Se `framework_edit_mode: false`: interrompere il livello 3 e comunicare:
+   "Per creare project.instructions.md e richiesto lo sblocco framework.
+    Usa #framework-unlock, poi ripeti OP-4 livello 3."
+
+Al termine mostrare le azioni eseguite in formato lista accessibile:
+
+  BOOTSTRAP DOCUMENTALE CORE COMPLETATO
+  ──────────────────────────────────────────
+  Livello: <1 / 2 / 3>
+  Creato:   <lista file creati>
+  Saltato:  <lista file gia esistenti>
+  ──────────────────────────────────────────
+
+### Passo 6 — Commit
+
+Delega ad Agent-Git con modalita SOLO_COMMIT.
+Messaggio commit:
+docs(project): bootstrap documentale core — livello <N>
+
+---
+
+## Competenza: Ripristino copilot-instructions
+
+Questa competenza e SEPARATA dal bootstrap progetto standard (OP-1-4).
+Agent-Welcome la esegue SOLO su richiesta esplicita dell'utente.
+
+**Quando attivare**: l'utente richiede esplicitamente il ripristino
+di `.github/copilot-instructions.md` dal template neutro.
+
+**Sequenza**:
+
+1. Mostrare un riepilogo del contenuto corrente di `.github/copilot-instructions.md`.
+2. Leggere `project_name` e il profilo utente da `project-profile.md`.
+3. Mostrare i valori che verranno inseriti nei tre placeholder:
+   - `{{NOME_PROGETTO}}` — valore di `project_name`
+   - `{{VERSIONE_FRAMEWORK}}` — versione corrente del framework
+   - `{{PROFILO_UTENTE}}` — righe profilo utente da `project-profile.md`
+4. Chiedere conferma esplicita:
+   "Confermi la sovrascrittura di .github/copilot-instructions.md?
+    Scrivi RIPRISTINA per procedere."
+5. Dopo RIPRISTINA: verificare `framework_edit_mode: true`.
+   Se `framework_edit_mode: false`: interrompere, usare `#framework-unlock`.
+6. Caricare `.github/templates/copilot-instructions.md`.
+7. Sostituire i tre placeholder con i valori reali.
+8. Sovrascrivere `.github/copilot-instructions.md`.
+9. Delegare commit ad Agent-Git:
+   `chore(.github): ripristina copilot-instructions dal template neutro`
+
+**Vincoli invarianti**:
+
+- MAI eseguire automaticamente (solo su richiesta esplicita con RIPRISTINA).
+- MAI eseguire durante OP-1, OP-2, OP-3 o OP-4 standard.
+- Richiede sempre conferma esplicita "RIPRISTINA" prima della sovrascrittura.
+- Richiede sempre `framework_edit_mode: true`.
+
+---
 
 - MAI modificare file fuori da .github/ e da
   .github/instructions/<lang>.instructions.md
@@ -327,3 +446,5 @@ Fine OP-3.
   → .github/skills/framework-guard.skill.md
 - Bootstrap struttura docs e gestione documenti:
   → .github/skills/docs_manager.skill.md
+- Bootstrap documentale core (OP-4, livelli 1-3, ripristino):
+  → .github/skills/project-doc-bootstrap.skill.md

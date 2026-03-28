@@ -11,6 +11,43 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 <!-- Le voci non rilasciate vanno inserite qui. Rimane vuoto dopo la release. -->
 
+## [v1.10.3-bootstrap] - 2026-03-28
+
+### Added
+
+- `.github/templates/api.md`: template canonico neutro per bootstrap di `docs/API.md`;
+  placeholder `{{NOME_PROGETTO}}`.
+- `.github/templates/architecture.md`: template canonico neutro per bootstrap di
+  `docs/ARCHITECTURE.md`; placeholder `{{NOME_PROGETTO}}`.
+- `.github/templates/changelog.md`: template canonico per bootstrap di `CHANGELOG.md`
+  (root); formato Keep a Changelog + SemVer; placeholder `{{NOME_PROGETTO}}`.
+- `.github/templates/project.instructions.md`: template canonico per bootstrap di
+  `.github/instructions/project.instructions.md`; separato da `copilot-instructions.md`;
+  placeholder: `{{NOME_PROGETTO}}`, `{{LINGUAGGIO_PRIMARIO}}`, `{{FRAMEWORK_UI}}`, `{{TEST_RUNNER}}`.
+- `.github/templates/copilot-instructions.md`: template neutro per ripristino esplicito
+  di `.github/copilot-instructions.md`; mai compilato durante bootstrap standard;
+  tre placeholder: `{{NOME_PROGETTO}}`, `{{VERSIONE_FRAMEWORK}}`, `{{PROFILO_UTENTE}}`.
+- `.github/skills/project-doc-bootstrap.skill.md`: skill che formalizza il contratto
+  operativo del bootstrap documentale core: mapping template-destinazione, 3 livelli
+  (struttura / +core docs / +istruzioni progetto), regola additiva, idempotenza,
+  competenza ripristino copilot-instructions separata.
+
+### Changed
+
+- `.github/agents/Agent-Welcome.md`: aggiunge OP-4 (Bootstrap Documentale Core) con
+  3 livelli espliciti e scelta guidata; aggiunge sezione "Competenza: Ripristino
+  copilot-instructions" come operazione separata, richiede RIPRISTINA esplicito.
+  Aggiorna sezione Riferimenti Skills con `project-doc-bootstrap.skill.md`.
+- `.github/skills/docs_manager.skill.md`: aggiunge tabella bootstrap documentale core
+  e sezione "Distinzione: bootstrap struttura vs bootstrap documentale core" con
+  riferimento a `project-doc-bootstrap.skill.md`.
+- `.github/templates/README.md`: aggiunge 5 righe nella tabella "File presenti"
+  per i nuovi template canonici (`api.md`, `architecture.md`, `changelog.md`,
+  `project.instructions.md`, `copilot-instructions.md`).
+- `.github/AGENTS.md`: aggiorna voce Agent-Welcome con OP-4 e competenza ripristino;
+  aggiunge `project-doc-bootstrap` alla riga skills di Agent-Welcome nella tabella;
+  aggiunge nota `²` per la nuova skill.
+
 ## [v1.10.3] - 2026-03-27
 
 ### Added

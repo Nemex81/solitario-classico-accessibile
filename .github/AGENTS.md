@@ -25,6 +25,10 @@ Ogni file agente contiene: scopo, trigger, deliverable, gate e workflow.
   source of truth, adatta i componenti language-specific.
   OP-3: bootstrap opzionale della struttura docs/ tramite skill docs_manager
   (flusso S/N, additivo e non distruttivo).
+  OP-4: bootstrap documentale core con 3 livelli (struttura / +core docs /
+  +istruzioni progetto); proposto al termine di OP-3.
+  Competenza separata: ripristino .github/copilot-instructions.md da template
+  neutro, solo su richiesta esplicita con "RIPRISTINA" e framework_edit_mode: true.
   Non partecipa al ciclo E2E. Invocabile dal dropdown o
   tramite #project-setup.prompt.md e #project-update.prompt.md.
   Modelli: GPT-5 mini nel frontmatter del framework; Raptor mini disponibile
@@ -179,7 +183,7 @@ Si trovano in `.github/skills/`.
 
 | Agente | Skills referenziate |
 | ------ | ------------------ |
-| Agent-Welcome | project-profile, accessibility-output, verbosity, personality, style-setup, file-deletion-guard, framework-guard, project-profile-template¹ |
+| Agent-Welcome | project-profile, accessibility-output, verbosity, personality, style-setup, file-deletion-guard, framework-guard, project-profile-template¹, project-doc-bootstrap² |
 | Agent-Analyze | clean-architecture-rules, accessibility-output, verbosity, personality |
 | Agent-Design | clean-architecture-rules, document-template, accessibility-output, verbosity, personality |
 | Agent-Plan | document-template, accessibility-output, verbosity, personality |
@@ -195,6 +199,7 @@ Si trovano in `.github/skills/`.
 | Agent-Helper | framework-query, framework-index, agent-selector, framework-scope-guard, accessibility-output, verbosity, personality, style-setup |
 
 ¹ `project-profile-template` non è una skill ma un template in `.github/templates/`. Agent-Welcome lo usa in lettura; la manutenzione è di Agent-FrameworkDocs.
+² `project-doc-bootstrap` è la skill che definisce il contratto per il bootstrap documentale core (OP-4 livelli 1-3) e la competenza di ripristino copilot-instructions.
 
 Nota: `Agent-Git` e un'eccezione intenzionale. Non referenzia
 `verbosity`/`personality` per design, perche produce output strutturato

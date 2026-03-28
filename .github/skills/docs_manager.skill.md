@@ -220,3 +220,33 @@ della colonna SCOPO esteso con il nome della convenzione naming.
 | Nuovo task | `.github/templates/todo_task.md` | `docs/5 - todolist/` |
 | README cartella | `.github/templates/readme_folder.md` | cartella specifica |
 | Coordinatore | `.github/templates/todo_coordinator.md` | `docs/TODO.md` (solo bootstrap) |
+
+Bootstrap documentale core (livelli 2-3) — vedi `.github/skills/project-doc-bootstrap.skill.md`:
+
+| Azione | Template | Destinazione |
+|--------|----------|--------------|
+| Bootstrap API | `.github/templates/api.md` | `docs/API.md` |
+| Bootstrap ARCHITECTURE | `.github/templates/architecture.md` | `docs/ARCHITECTURE.md` |
+| Bootstrap CHANGELOG | `.github/templates/changelog.md` | `CHANGELOG.md` |
+| Bootstrap istruzioni progetto | `.github/templates/project.instructions.md` | `.github/instructions/project.instructions.md` |
+| Ripristino copilot-instructions | `.github/templates/copilot-instructions.md` | `.github/copilot-instructions.md` (solo su richiesta esplicita) |
+
+---
+
+## Distinzione: bootstrap struttura vs bootstrap documentale core
+
+**Bootstrap struttura docs/** (questa skill, sezione "Bootstrap struttura docs/"):
+- Crea cartelle e README orientativi in `docs/`
+- Crea `docs/TODO.md` se non esiste
+- Operazione leggera, sempre sicura, nessun file core toccato
+- Corrisponde al Livello 1 di OP-4
+
+**Bootstrap documentale core** (`.github/skills/project-doc-bootstrap.skill.md`):
+- Crea i documenti core del progetto (API.md, ARCHITECTURE.md, CHANGELOG.md)
+- Opzionalmente crea `.github/instructions/project.instructions.md`
+- Compila placeholder da `project-profile.md`
+- Corrisponde ai Livelli 2 e 3 di OP-4
+- Richiede che il profilo progetto sia inizializzato
+
+La skill `project-doc-bootstrap.skill.md` e il contratto esecutivo per i livelli 2 e 3.
+Questa skill (docs_manager) delega a quella per tutto cio che supera il bootstrap struttura.

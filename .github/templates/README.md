@@ -26,6 +26,11 @@ non documenti operativi.
 | `report.md` | docs_manager.skill.md, Agent-Validate | Template operativo per report |
 | `todo_coordinator.md` | docs_manager.skill.md, Agent-Welcome | Template bootstrap per docs/TODO.md |
 | `todo_task.md` | docs_manager.skill.md, Agent-Plan | Template operativo per TODO per-task |
+| `api.md` | project-doc-bootstrap.skill.md, Agent-Welcome (OP-4) | Template bootstrap per docs/API.md |
+| `architecture.md` | project-doc-bootstrap.skill.md, Agent-Welcome (OP-4) | Template bootstrap per docs/ARCHITECTURE.md |
+| `changelog.md` | project-doc-bootstrap.skill.md, Agent-Welcome (OP-4) | Template bootstrap per CHANGELOG.md root |
+| `project.instructions.md` | project-doc-bootstrap.skill.md, Agent-Welcome (OP-4 livello 3) | Template bootstrap per .github/instructions/project.instructions.md |
+| `copilot-instructions.md` | project-doc-bootstrap.skill.md, Agent-Welcome (ripristino esplicito) | Template neutro per ripristino .github/copilot-instructions.md su richiesta esplicita |
 
 ## Chi può leggere / scrivere
 
