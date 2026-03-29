@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased] — targeting v3.5.0
+## [Unreleased]
+
+---
+
+## [3.6.0] - 2026-03-29
 
 ### Added
 - **Sistema Audio Centralizzato v3.5.0** (implementazione completa in branch `supporto-audio-centralizzato`):

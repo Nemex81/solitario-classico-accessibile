@@ -1,20 +1,19 @@
 ---
-initialized: false
-project_name: ""
-version: ""
-primary_language: ""
+initialized: true
+project_name: "solitario-classico-accessibile"
+version: "3.6.0"
+primary_language: "Python"
 secondary_languages: []
-ui_framework: ""
-test_runner: ""
-build_system: ""
-architecture: ""
-accessibility: false
+ui_framework: "wxPython"
+test_runner: "pytest"
+build_system: "cx_freeze"
+architecture: "clean-architecture"
+accessibility: true
 framework_edit_mode: false
 verbosity: "collaborator"
 personality: "pragmatico"
-platform: ""
-screen_reader: ""
----
+platform: "Windows"
+screen_reader: "NVDA"
 
 # Profilo Progetto
 
@@ -24,18 +23,18 @@ screen_reader: ""
 
 ## Identità
 
-- **Nome**: —
-- **Versione corrente**: —
-- **Descrizione**: —
+- **Nome**: solitario-classico-accessibile
+- **Versione corrente**: 
+- **Descrizione**: Solitario classico accessibile con supporto NVDA e test automatizzati.
 
 ## Stack Tecnico
 
-- **Linguaggio primario**: —
-- **Linguaggi secondari**: —
-- **Framework UI**: —
-- **Test runner**: —
-- **Build system**: —
-- **Piattaforma target**: —
+- **Linguaggio primario**: Python
+- **Linguaggi secondari**: 
+- **Framework UI**: wxPython
+- **Test runner**: pytest
+- **Build system**: cx_freeze
+- **Piattaforma target**: Windows
 
 ## Architettura
 
@@ -45,15 +44,16 @@ screen_reader: ""
 
 ## Accessibilità
 
-- **Richiesta**: —
-- **Screen reader**: —
-- **Standard**: —
-- **Riferimento**: —
+- **Richiesta**: Accessibilità per utenti non vedenti (NVDA)
+- **Screen reader**: NVDA
+- **Standard**: WCAG/ARIA where applicable
+- **Riferimento**: docs/ARCHITECTURE.md, .github/instructions/ui.instructions.md
 
 ## Componenti Framework Attivi
 
 Instructions language-specific attive per questo progetto:
--(da compilare durante setup)
+- `python.instructions.md` (attivo)
+
 
 ## Note Progetto
 

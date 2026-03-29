@@ -92,7 +92,7 @@ class SolitarioController:
     
     def __init__(self):
         """Initialize application with all components."""
-        log.debug_state("app_startup", {"version": "v3.2.2", "status": "starting"})
+        log.debug_state("app_startup", {"version": "v3.6.0", "status": "starting"})
         
         # v3.2.2: Initialize DependencyContainer (bridge mode)
         log.debug_state("dependency_container_init", {"status": "starting"})
