@@ -1,7 +1,7 @@
 ---
 feature: Template Bootstrap Integration
 type: todo
-status: IN_PROGRESS
+status: COMPLETED
 version: v1.10.3
 plan_ref: docs/3 - coding plans/PLAN_template-bootstrap-integration_v1.10.3.md
 date: 2026-03-28
@@ -86,13 +86,12 @@ docs(framework): sincronizza documentazione del bootstrap template
 
 ## Vincoli espliciti
 
-- [ ] Attivare lo sblocco framework prima di modificare `.github/**`
-- [ ] Mantenere additivo il bootstrap: nessun overwrite implicito
-- [ ] Non introdurre un formato TODO alternativo al modello corrente
-- [ ] Non usare `.github/copilot-instructions.md` come output del bootstrap progetto
+- [x] Attivare lo sblocco framework prima di modificare `.github/**`
+- [x] Mantenere additivo il bootstrap: nessun overwrite implicito
+- [x] Non introdurre un formato TODO alternativo al modello corrente
+- [x] Non usare `.github/copilot-instructions.md` come output del bootstrap progetto
 
 ## Prossimi step
 
-1. Sbloccare il framework se si vuole passare subito all'implementazione delle fasi su `.github/**`
-2. Implementare le fasi in ordine 1 -> 2 -> 3 -> 4 -> 5
-3. Aggiornare il changelog framework dopo l'integrazione effettiva
+1. Task completato: mantenere questo file come storico di implementazione.
+2. Allineare eventuali release framework future tramite `#framework-release`.
