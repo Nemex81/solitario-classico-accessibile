@@ -36,6 +36,7 @@ stato: attivo
 - [PLAN_game-engine-refactoring_v3.6.0.md](3%20-%20coding%20plans/PLAN_game-engine-refactoring_v3.6.0.md) — refactoring engine (legacy)
 - [PLAN_e2e-resilience_v1.10.0.md](3%20-%20coding%20plans/PLAN_e2e-resilience_v1.10.0.md) — gate semantici, rollback, coverage SOT (in corso)
 - [PLAN_template-bootstrap-integration_v1.10.3.md](3%20-%20coding%20plans/PLAN_template-bootstrap-integration_v1.10.3.md) — bootstrap documentale core e integrazione template framework (in_progress)
+- [PLAN_scf-mcp-server_v1.0.0.md](3%20-%20coding%20plans/PLAN_scf-mcp-server_v1.0.0.md) — server MCP locale per esposizione runtime del framework SCF (ready)
 
 ## Reports
 
@@ -50,6 +51,7 @@ stato: attivo
 - [TODO_document-governance_v1.9.0.md](5%20-%20todolist/TODO_document-governance_v1.9.0.md) — governance documentale (in corso)
 - [TODO_e2e-resilience_v1.10.0.md](5%20-%20todolist/TODO_e2e-resilience_v1.10.0.md) — e2e resilience (in corso)
 - [TODO_template-bootstrap-integration_v1.10.3.md](5%20-%20todolist/TODO_template-bootstrap-integration_v1.10.3.md) — implementazione bootstrap template/framework (in_progress)
+- [TODO_scf-mcp-server_v1.0.0.md](5%20-%20todolist/TODO_scf-mcp-server_v1.0.0.md) — implementazione server MCP SCF (completed)
 
 ## Stato Avanzamento
 

@@ -11,6 +11,13 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 <!-- Le voci non rilasciate vanno inserite qui. Rimane vuoto dopo la release. -->
 
+### Added
+
+- `scf-mcp/scf-mcp-server.py`: server MCP stdio per esporre agenti, skill,
+  instructions, prompt e script del framework come resources, prompts e tools.
+- `scf-mcp/scf-mcp-config.json`: configurazione MCP per registrare il server
+  `scfMcp` in VS Code con `WORKSPACE_FOLDER` valorizzato dal workspace.
+
 ## [v1.10.3-bootstrap] - 2026-03-28
 
 ### Added

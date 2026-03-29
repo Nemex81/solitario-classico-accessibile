@@ -1,0 +1,14 @@
+{
+  "servers": {
+    "scfMcp": {
+      "type": "stdio",
+      "command": "python",
+      "args": [
+        "${workspaceFolder}/scf-mcp/scf-mcp-server.py"
+      ],
+      "env": {
+        "WORKSPACE_FOLDER": "${workspaceFolder}"
+      }
+    }
+  }
+}
