@@ -24,7 +24,7 @@ screen_reader: "NVDA"
 ## Identità
 
 - **Nome**: solitario-classico-accessibile
-- **Versione corrente**: 
+- **Versione corrente**: 3.6.0
 - **Descrizione**: Solitario classico accessibile con supporto NVDA e test automatizzati.
 
 ## Stack Tecnico

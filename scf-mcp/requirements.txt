@@ -1,3 +1,0 @@
-# SCF-MCP-Server runtime dependencies
-# Python 3.10+ required (MCP SDK baseline)
-mcp
