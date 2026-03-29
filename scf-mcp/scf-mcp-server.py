@@ -1,8 +1,12 @@
-"""SCF-MCP-Server: expose the SPARK Code Framework as MCP Resources, Tools and Prompts.
+"""SCF-MCP-Server: expose the SPARK Code Framework as MCP Resources and Tools.
 
 Transport: stdio only.
 Logging: stderr or file — never stdout (would corrupt the JSON-RPC stream).
 Python: 3.10+ required (MCP SDK baseline).
+
+Domain boundary:
+- Slash commands (/scf-*): handled by VS Code natively from .github/prompts/
+- Tools and Resources: handled by this server — dynamic, on-demand, Agent mode only
 """
 from __future__ import annotations
 
@@ -16,8 +20,7 @@ from pathlib import Path
 from typing import Any
 
 # ---------------------------------------------------------------------------
-# Logging — Fase 1
-# Configure before any other import so that import errors are visible.
+# Logging — configure before any other import so import errors are visible.
 # ---------------------------------------------------------------------------
 logging.basicConfig(
     level=logging.INFO,
@@ -27,7 +30,7 @@ logging.basicConfig(
 _log: logging.Logger = logging.getLogger("scf-mcp")
 
 # ---------------------------------------------------------------------------
-# FastMCP import guard — Fase 1
+# FastMCP import guard
 # ---------------------------------------------------------------------------
 try:
     from mcp.server.fastmcp import FastMCP
@@ -64,7 +67,7 @@ class FrameworkFile:
 
 
 # ---------------------------------------------------------------------------
-# Fase 1 — WorkspaceLocator
+# WorkspaceLocator
 # ---------------------------------------------------------------------------
 
 
@@ -110,7 +113,7 @@ class WorkspaceLocator:
 
 
 # ---------------------------------------------------------------------------
-# Fase 2 — standalone parsers
+# Standalone parsers
 # ---------------------------------------------------------------------------
 
 
@@ -159,7 +162,6 @@ def extract_framework_version(changelog_path: Path) -> str:
     except OSError as exc:
         _log.error("Cannot read FRAMEWORK_CHANGELOG.md: %s", exc)
         return "unknown"
-    # Matches: ## [v1.10.3], ## [v1.10.3-bootstrap], ## v1.10.3, etc.
     pattern = re.compile(
         r"^\s*#{1,3}\s+\[?(v?[\d]+\.[\d]+\.[\d]+[^\]\s]*)\]?",
         re.MULTILINE,
@@ -168,21 +170,8 @@ def extract_framework_version(changelog_path: Path) -> str:
     return match.group(1) if match else "unknown"
 
 
-def normalize_prompt_name(filename: str) -> str:
-    """Convert a .prompt.md filename into a stable camelCase MCP prompt name.
-
-    Example: 'framework-unlock.prompt.md' -> 'frameworkUnlock'
-    """
-    stem = re.sub(r"\.prompt\.md$", "", filename, flags=re.IGNORECASE)
-    stem = re.sub(r"\.md$", "", stem, flags=re.IGNORECASE)
-    parts = re.split(r"[-_.]", stem)
-    if not parts:
-        return stem
-    return parts[0].lower() + "".join(p.capitalize() for p in parts[1:])
-
-
 # ---------------------------------------------------------------------------
-# Fase 2 — FrameworkInventory
+# FrameworkInventory
 # ---------------------------------------------------------------------------
 
 
@@ -196,10 +185,6 @@ class FrameworkInventory:
     def __init__(self, context: WorkspaceContext) -> None:
         self._ctx = context
 
-    # ------------------------------------------------------------------
-    # Internal helpers
-    # ------------------------------------------------------------------
-
     def _build_framework_file(self, path: Path, category: str) -> FrameworkFile:
         """Read a file from disk and return a populated FrameworkFile."""
         name = path.stem
@@ -209,7 +194,6 @@ class FrameworkInventory:
             _log.warning("Cannot read %s: %s", path, exc)
             content = ""
         metadata = parse_markdown_frontmatter(content)
-        # First non-empty, non-heading, non-frontmatter line as summary
         summary = ""
         for raw in content.splitlines():
             stripped = raw.strip()
@@ -241,10 +225,6 @@ class FrameworkInventory:
             key=lambda ff: ff.name,
         )
 
-    # ------------------------------------------------------------------
-    # Public API — discovery
-    # ------------------------------------------------------------------
-
     def list_agents(self) -> list[FrameworkFile]:
         """Return all agent files from .github/agents/."""
         return self._list_by_pattern(
@@ -266,7 +246,14 @@ class FrameworkInventory:
         )
 
     def list_prompts(self) -> list[FrameworkFile]:
-        """Return all prompt files from .github/prompts/."""
+        """Return all prompt files from .github/prompts/ (read-only, not registered as MCP Prompts).
+
+        Prompt files are served as Resources (prompts://list, prompts://{name})
+        and via scf_list_prompts / scf_get_prompt tools so that Agent mode can
+        read their content on demand. They are NOT registered as MCP Prompts to
+        avoid duplicating the slash commands that VS Code already creates natively
+        from .github/prompts/*.prompt.md.
+        """
         return self._list_by_pattern(
             self._ctx.github_root / "prompts", "*.prompt.md", "prompt"
         )
@@ -274,10 +261,6 @@ class FrameworkInventory:
     def list_scripts(self) -> list[FrameworkFile]:
         """Return all Python scripts from scripts/."""
         return self._list_by_pattern(self._ctx.scripts_root, "*.py", "script")
-
-    # ------------------------------------------------------------------
-    # Public API — single-file accessors
-    # ------------------------------------------------------------------
 
     def get_project_profile(self) -> FrameworkFile | None:
         """Return project-profile.md as FrameworkFile, or None if absent."""
@@ -315,7 +298,7 @@ class FrameworkInventory:
 
 
 # ---------------------------------------------------------------------------
-# Fase 2 — workspace-info builder
+# workspace-info builder
 # ---------------------------------------------------------------------------
 
 
@@ -323,12 +306,7 @@ def build_workspace_info(
     context: WorkspaceContext,
     inventory: FrameworkInventory,
 ) -> dict[str, Any]:
-    """Assemble a structured summary of workspace paths, init state and SCF assets.
-
-    The 'initialized' flag reflects .github/project-profile.md:initialized.
-    When project-profile.md is absent or initialized=false, the server surfaces
-    this state explicitly rather than attempting auto-correction.
-    """
+    """Assemble a structured summary of workspace paths, init state and SCF assets."""
     profile = inventory.get_project_profile()
     initialized: bool = False
     if profile:
@@ -348,7 +326,7 @@ def build_workspace_info(
 
 
 # ---------------------------------------------------------------------------
-# Fase 5 — ScriptExecutor
+# ScriptExecutor
 # ---------------------------------------------------------------------------
 
 _SCRIPT_TIMEOUT_SECONDS: int = 30
@@ -378,13 +356,7 @@ class ScriptExecutor:
         self._ctx = context
 
     def run(self, script_name: str, args: list[str]) -> dict[str, Any]:
-        """Execute an allowlisted script from scripts/ and return a structured result.
-
-        Returns a dict with keys:
-            success (bool), stdout (str), stderr (str), returncode (int),
-            and error (str) on failure before execution.
-        Output is captured; nothing is written to the MCP stdio stream.
-        """
+        """Execute an allowlisted script from scripts/ and return a structured result."""
         if script_name not in self._ALLOWLIST:
             return {
                 "success": False,
@@ -445,84 +417,20 @@ class ScriptExecutor:
 
 
 # ---------------------------------------------------------------------------
-# Fase 4 — PromptCatalog
-# ---------------------------------------------------------------------------
-
-# Matches VS Code input variable syntax: ${input:some label here}
-_INPUT_VAR_RE: re.Pattern[str] = re.compile(r"\$\{input:([^}]+)\}")
-
-
-class PromptCatalog:
-    """Map .prompt.md files from .github/prompts/ to MCP prompt names.
-
-    Normalises filenames to camelCase prompt names and substitutes
-    ${input:label} placeholders when arguments are provided.
-    """
-
-    def __init__(self, inventory: FrameworkInventory) -> None:
-        self._inventory = inventory
-
-    def list_prompts(self) -> list[FrameworkFile]:
-        """Return all discovered prompt files."""
-        return self._inventory.list_prompts()
-
-    def _find_by_name(self, name: str) -> FrameworkFile | None:
-        """Return the FrameworkFile whose normalised name matches *name*."""
-        target = name.lower()
-        for ff in self._inventory.list_prompts():
-            if normalize_prompt_name(ff.path.name).lower() == target:
-                return ff
-        return None
-
-    def get_prompt(
-        self,
-        name: str,
-        arguments: dict[str, str] | None = None,
-    ) -> dict[str, Any]:
-        """Return an MCP-ready prompt payload for the given normalised name.
-
-        The .prompt.md content is returned as a user message. ${input:label}
-        placeholders are substituted with values from *arguments* when
-        provided; unmatched placeholders are left intact.
-        """
-        ff = self._find_by_name(name)
-        if ff is None:
-            return {
-                "error": f"Prompt '{name}' not found.",
-                "available": [
-                    normalize_prompt_name(p.path.name)
-                    for p in self._inventory.list_prompts()
-                ],
-            }
-        try:
-            content = ff.path.read_text(encoding="utf-8", errors="replace")
-        except OSError as exc:
-            return {"error": f"Cannot read prompt file: {exc}"}
-
-        rendered = content
-        if arguments:
-            def _substitute(match: re.Match[str]) -> str:
-                label = match.group(1).strip()
-                return arguments.get(label, match.group(0))
-            rendered = _INPUT_VAR_RE.sub(_substitute, content)
-
-        description = str(
-            ff.metadata.get("description", ff.metadata.get("name", name))
-        )
-        return {
-            "name": name,
-            "description": description,
-            "messages": [{"role": "user", "content": rendered}],
-        }
-
-
-# ---------------------------------------------------------------------------
-# ScfMcpApplication — resources (Fase 3), prompts (Fase 4), tools (Fase 2+5)
+# ScfMcpApplication — Resources (16) and Tools (13)
 # ---------------------------------------------------------------------------
 
 
 class ScfMcpApplication:
-    """Register MCP resources, prompts and tools over FastMCP via workspace discovery."""
+    """Register MCP resources and tools over FastMCP via workspace discovery.
+
+    MCP Prompts are intentionally NOT registered here.
+    VS Code already exposes .github/prompts/*.prompt.md as native slash commands
+    (/scf-*). Registering them again via MCP would create duplicate entries in
+    the / command picker. The prompt files remain accessible as Resources
+    (prompts://list, prompts://{name}) and via scf_list_prompts / scf_get_prompt
+    tools for Agent mode consumption.
+    """
 
     def __init__(
         self,
@@ -530,16 +438,14 @@ class ScfMcpApplication:
         context: WorkspaceContext,
         inventory: FrameworkInventory,
         executor: ScriptExecutor,
-        catalog: PromptCatalog,
     ) -> None:
         self._mcp = mcp
         self._ctx = context
         self._inventory = inventory
         self._executor = executor
-        self._catalog = catalog
 
     def register_resources(self) -> None:
-        """Register all 16 MCP resources — Fase 3.
+        """Register all 16 MCP resources.
 
         List resources: agents://list, skills://list, instructions://list,
             prompts://list, scripts://list.
@@ -618,7 +524,7 @@ class ScfMcpApplication:
                 "Use resource instructions://list to see available instruction names."
             )
 
-        # ---- prompts ----
+        # ---- prompts (read-only resources, NOT MCP Prompts) ----
 
         @self._mcp.resource("prompts://list")
         async def resource_prompts_list() -> str:  # type: ignore[misc]
@@ -703,57 +609,8 @@ class ScfMcpApplication:
             "Resources registered: 5 list + 5 template + 6 scf:// singletons (16 total)"
         )
 
-    def register_prompts(self) -> None:
-        """Register all discovered .prompt.md files as MCP prompts — Fase 4.
-
-        Each file maps to a camelCase name derived from its filename:
-            'framework-unlock.prompt.md' -> 'frameworkUnlock'
-
-        In VS Code with server name 'scfMcp' the prompt appears as:
-            /scfMcp.frameworkUnlock
-
-        The raw file content is returned as a user message so VS Code can
-        display ${input:...} placeholders as its native input fields.
-        """
-        registered: list[str] = []
-
-        for ff in self._catalog.list_prompts():
-            mcp_name = normalize_prompt_name(ff.path.name)
-            # Prefer frontmatter 'description', then 'name', then camelCase name
-            description = str(
-                ff.metadata.get(
-                    "description", ff.metadata.get("name", mcp_name)
-                )
-            )
-
-            def _make_handler(
-                framework_file: FrameworkFile,
-                prompt_name: str,
-            ) -> Any:
-                async def _prompt_handler() -> str:  # type: ignore[misc]
-                    try:
-                        return framework_file.path.read_text(
-                            encoding="utf-8", errors="replace"
-                        )
-                    except OSError as exc:
-                        return f"Error reading prompt file '{prompt_name}': {exc}"
-
-                _prompt_handler.__name__ = prompt_name
-                return _prompt_handler
-
-            self._mcp.prompt(name=mcp_name, description=description)(
-                _make_handler(ff, mcp_name)
-            )
-            registered.append(mcp_name)
-
-        _log.info(
-            "Prompts registered: %d — %s",
-            len(registered),
-            ", ".join(registered),
-        )
-
     def register_tools(self) -> None:  # noqa: C901
-        """Register all 15 MCP tools — Fase 5.
+        """Register all 13 MCP tools.
 
         Informational: scf_list_agents, scf_get_agent, scf_list_skills,
             scf_get_skill, scf_list_instructions, scf_get_instruction,
@@ -762,14 +619,15 @@ class ScfMcpApplication:
         Singleton docs: scf_get_project_profile, scf_get_global_instructions,
             scf_get_model_policy.
         Execution: scf_run_script (allowlisted, 30s timeout).
+
+        Note: scf_list_prompts and scf_get_prompt are kept as tools so that
+        Agent mode can read prompt file content on demand. They do NOT register
+        MCP Prompts and do not cause slash command duplication.
         """
         inventory = self._inventory
-        ctx = self._ctx
         executor = self._executor
-        catalog = self._catalog
 
         def _ff_to_dict(ff: FrameworkFile) -> dict[str, Any]:
-            """Serialise a FrameworkFile to a plain dict for tool output."""
             return {
                 "name": ff.name,
                 "path": str(ff.path),
@@ -786,10 +644,7 @@ class ScfMcpApplication:
         async def scf_list_agents() -> dict[str, Any]:  # type: ignore[misc]
             """Return all discovered SCF agents with name, path and summary."""
             items = inventory.list_agents()
-            return {
-                "count": len(items),
-                "agents": [_ff_to_dict(ff) for ff in items],
-            }
+            return {"count": len(items), "agents": [_ff_to_dict(ff) for ff in items]}
 
         @self._mcp.tool()
         async def scf_get_agent(name: str) -> dict[str, Any]:  # type: ignore[misc]
@@ -797,9 +652,8 @@ class ScfMcpApplication:
             name_lower = name.lower()
             for ff in inventory.list_agents():
                 if ff.name.lower() == name_lower:
-                    content = ff.path.read_text(encoding="utf-8", errors="replace")
                     result = _ff_to_dict(ff)
-                    result["content"] = content
+                    result["content"] = ff.path.read_text(encoding="utf-8", errors="replace")
                     return result
             return {
                 "error": f"Agent '{name}' not found.",
@@ -814,10 +668,7 @@ class ScfMcpApplication:
         async def scf_list_skills() -> dict[str, Any]:  # type: ignore[misc]
             """Return all discovered SCF skills with name, path and summary."""
             items = inventory.list_skills()
-            return {
-                "count": len(items),
-                "skills": [_ff_to_dict(ff) for ff in items],
-            }
+            return {"count": len(items), "skills": [_ff_to_dict(ff) for ff in items]}
 
         @self._mcp.tool()
         async def scf_get_skill(name: str) -> dict[str, Any]:  # type: ignore[misc]
@@ -825,9 +676,8 @@ class ScfMcpApplication:
             query = name.lower().removesuffix(".skill")
             for ff in inventory.list_skills():
                 if ff.name.lower().removesuffix(".skill") == query:
-                    content = ff.path.read_text(encoding="utf-8", errors="replace")
                     result = _ff_to_dict(ff)
-                    result["content"] = content
+                    result["content"] = ff.path.read_text(encoding="utf-8", errors="replace")
                     return result
             return {
                 "error": f"Skill '{name}' not found.",
@@ -842,10 +692,7 @@ class ScfMcpApplication:
         async def scf_list_instructions() -> dict[str, Any]:  # type: ignore[misc]
             """Return all discovered SCF instruction files with name, path and summary."""
             items = inventory.list_instructions()
-            return {
-                "count": len(items),
-                "instructions": [_ff_to_dict(ff) for ff in items],
-            }
+            return {"count": len(items), "instructions": [_ff_to_dict(ff) for ff in items]}
 
         @self._mcp.tool()
         async def scf_get_instruction(name: str) -> dict[str, Any]:  # type: ignore[misc]
@@ -853,9 +700,8 @@ class ScfMcpApplication:
             query = name.lower().removesuffix(".instructions")
             for ff in inventory.list_instructions():
                 if ff.name.lower().removesuffix(".instructions") == query:
-                    content = ff.path.read_text(encoding="utf-8", errors="replace")
                     result = _ff_to_dict(ff)
-                    result["content"] = content
+                    result["content"] = ff.path.read_text(encoding="utf-8", errors="replace")
                     return result
             return {
                 "error": f"Instruction '{name}' not found.",
@@ -863,28 +709,32 @@ class ScfMcpApplication:
             }
 
         # ----------------------------------------------------------------
-        # Prompt tools
+        # Prompt tools (read-only, no MCP Prompt registration)
         # ----------------------------------------------------------------
 
         @self._mcp.tool()
         async def scf_list_prompts() -> dict[str, Any]:  # type: ignore[misc]
-            """Return all discovered SCF prompt files with MCP name, path and summary."""
+            """Return all SCF prompt files with name, path and summary.
+
+            These are read-only tool results. The actual slash commands (/scf-*)
+            are provided natively by VS Code from .github/prompts/ — no duplication.
+            """
             items = inventory.list_prompts()
-            return {
-                "count": len(items),
-                "prompts": [
-                    {
-                        **_ff_to_dict(ff),
-                        "mcp_name": normalize_prompt_name(ff.path.name),
-                    }
-                    for ff in items
-                ],
-            }
+            return {"count": len(items), "prompts": [_ff_to_dict(ff) for ff in items]}
 
         @self._mcp.tool()
         async def scf_get_prompt(name: str) -> dict[str, Any]:  # type: ignore[misc]
-            """Return rendered content and metadata for a single SCF prompt by MCP name."""
-            return catalog.get_prompt(name)
+            """Return full content of a SCF prompt file by stem name (without extension)."""
+            query = name.lower().removesuffix(".prompt")
+            for ff in inventory.list_prompts():
+                if ff.name.lower().removesuffix(".prompt") == query:
+                    result = _ff_to_dict(ff)
+                    result["content"] = ff.path.read_text(encoding="utf-8", errors="replace")
+                    return result
+            return {
+                "error": f"Prompt '{name}' not found.",
+                "available": [ff.name for ff in inventory.list_prompts()],
+            }
 
         # ----------------------------------------------------------------
         # Script tools
@@ -897,10 +747,7 @@ class ScfMcpApplication:
             return {
                 "count": len(items),
                 "scripts": [
-                    {
-                        **_ff_to_dict(ff),
-                        "allowed": ff.path.name in ScriptExecutor._ALLOWLIST,
-                    }
+                    {**_ff_to_dict(ff), "allowed": ff.path.name in ScriptExecutor._ALLOWLIST}
                     for ff in items
                 ],
             }
@@ -912,11 +759,10 @@ class ScfMcpApplication:
         ) -> dict[str, Any]:
             """Execute an allowlisted script from scripts/ and return captured output.
 
-            Allowed scripts: detect_agent.py, validate_gates.py,
-            ci-local-validate.py, generate-changelog.py,
-            sync-documentation.py, create-project-files.py.
+            Allowed: detect_agent.py, validate_gates.py, ci-local-validate.py,
+            generate-changelog.py, sync-documentation.py, create-project-files.py.
             Excluded: git_runner.py, update_changelog.py, audio_debug.py.
-            Timeout: 30 seconds.
+            Timeout: 30 seconds. Output is plain text, NVDA-safe.
             """
             return executor.run(script_name, args or [])
 
@@ -969,16 +815,15 @@ class ScfMcpApplication:
 
         @self._mcp.tool()
         async def scf_get_framework_version() -> dict[str, Any]:  # type: ignore[misc]
-            """Return the latest SCF framework version extracted from FRAMEWORK_CHANGELOG.md."""
-            version = inventory.get_framework_version()
-            return {"framework_version": version}
+            """Return the latest SCF framework version from FRAMEWORK_CHANGELOG.md."""
+            return {"framework_version": inventory.get_framework_version()}
 
         @self._mcp.tool()
         async def scf_get_workspace_info() -> dict[str, Any]:  # type: ignore[misc]
             """Return workspace paths, initialization state and SCF asset counts."""
-            return build_workspace_info(ctx, inventory)
+            return build_workspace_info(self._ctx, inventory)
 
-        _log.info("Tools registered: 15 total")
+        _log.info("Tools registered: 13 total")
 
 
 # ---------------------------------------------------------------------------
@@ -1006,11 +851,9 @@ def _build_app() -> FastMCP:
     )
 
     executor = ScriptExecutor(context)
-    catalog = PromptCatalog(inventory)
 
-    app = ScfMcpApplication(mcp, context, inventory, executor, catalog)
+    app = ScfMcpApplication(mcp, context, inventory, executor)
     app.register_resources()
-    app.register_prompts()
     app.register_tools()
 
     return mcp
