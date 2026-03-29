@@ -26,7 +26,7 @@ use_parentheses = true
 ensure_newline_before_comments = true
 
 [tool.pytest.ini_options]
-minversion = "7.0"
+minversion = "3.6.0"
 addopts = "-ra -q --strict-markers"
 testpaths = ["tests"]
 
