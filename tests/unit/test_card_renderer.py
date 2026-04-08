@@ -193,3 +193,44 @@ class TestDrawSuitSymbol:
         renderer._draw_suit_symbol(dc, "Xyz", 0, 0, 12, (0, 0, 0))
         texts = [str(c.args[0]) for c in dc.DrawText.call_args_list]
         assert "X" in texts
+
+
+# ---------------------------------------------------------------------------
+# Bitmap rendering
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestBitmapRendering:
+    def test_draw_face_uses_bitmap_when_provided(
+        self, renderer: CardRenderer, dc: MagicMock
+    ) -> None:
+        """draw_card chiama DrawBitmap quando bitmap != None e card face_up."""
+        mock_bitmap = object()
+        renderer.draw_card(dc, _face_up(), 0, 0, 70, 100, THEME_STANDARD, bitmap=mock_bitmap)
+        assert dc.DrawBitmap.called is True
+        texts_drawn = [str(c.args[0]) for c in dc.DrawText.call_args_list]
+        assert len(texts_drawn) == 0
+
+    def test_draw_face_falls_back_to_text_without_bitmap(
+        self, renderer: CardRenderer, dc: MagicMock
+    ) -> None:
+        """draw_card usa rendering testuale quando bitmap è None."""
+        renderer.draw_card(dc, _face_up(), 0, 0, 70, 100, THEME_STANDARD, bitmap=None)
+        texts_drawn = [str(c.args[0]) for c in dc.DrawText.call_args_list]
+        assert len(texts_drawn) > 0
+
+    def test_draw_face_image_draws_bitmap(self, dc: MagicMock) -> None:
+        """_draw_face_image chiama dc.DrawBitmap con le coordinate corrette."""
+        mock_bitmap = object()
+        CardRenderer._draw_face_image(dc, mock_bitmap, 10, 20, 70, 100)
+        assert dc.DrawBitmap.called is True
+        assert dc.DrawBitmap.call_args.args[:2] == (mock_bitmap, 10)
+
+    def test_draw_card_backward_compatible_without_bitmap(
+        self, renderer: CardRenderer, dc: MagicMock
+    ) -> None:
+        """draw_card senza parametro bitmap non genera errori."""
+        renderer.draw_card(dc, _face_up(), 5, 5, 70, 100, THEME_STANDARD)
+        texts_drawn = [str(c.args[0]) for c in dc.DrawText.call_args_list]
+        assert len(texts_drawn) > 0

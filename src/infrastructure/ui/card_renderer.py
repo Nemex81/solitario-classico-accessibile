@@ -50,6 +50,7 @@ class CardRenderer:
         width: int,
         height: int,
         theme: ThemeProperties,
+        bitmap: object | None = None,
         highlighted: bool = False,
         selected: bool = False,
     ) -> None:
@@ -63,11 +64,17 @@ class CardRenderer:
             width: Card width in pixels.
             height: Card height in pixels.
             theme: Visual properties bundle.
+            bitmap: Pre-scaled wx.Bitmap for the card face (optional). When
+                provided and the card is face-up, the bitmap is rendered
+                instead of the textual fallback. Must match width x height.
             highlighted: Draw cursor highlight border when True.
             selected: Draw selection border when True.
         """
         if card.face_up:
-            self._draw_face(dc, card, x, y, width, height, theme)
+            if bitmap is not None:
+                self._draw_face_image(dc, bitmap, x, y, width, height)
+            else:
+                self._draw_face(dc, card, x, y, width, height, theme)
         else:
             self._draw_back(dc, x, y, width, height, theme)
 
@@ -158,6 +165,28 @@ class CardRenderer:
         )
         self._draw_border(dc, x + margin, y + margin, width - margin * 2,
                           height - margin * 2, inner_color, 1)
+
+    @staticmethod
+    def _draw_face_image(
+        dc: object,
+        bitmap: object,
+        x: int,
+        y: int,
+        width: int,
+        height: int,
+    ) -> None:
+        """Draw the card face using a pre-scaled bitmap.
+
+        Args:
+            dc: Device context (wx.DC or compatible mock).
+            bitmap: wx.Bitmap pre-scaled to width x height.
+            x, y: Top-left corner coordinates.
+            width, height: Expected dimensions (wx.Bitmap must match).
+        """
+        try:
+            dc.DrawBitmap(bitmap, x, y)  # type: ignore[attr-defined]
+        except Exception:
+            pass
 
     # -----------------------------------------------------------------------
     # Low-level drawing helpers — thin wrappers around dc calls

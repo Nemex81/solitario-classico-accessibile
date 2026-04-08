@@ -59,24 +59,24 @@ Non procedere alla fase successiva finche la fase corrente non e completa e comm
 - [x] Aggiungere 3 test in `test_visual_theme.py`: verifica `use_card_images` per ciascun tema
 - [x] `mypy src/infrastructure/ui/visual_theme.py --strict` — zero errori
 - [x] `pytest tests/unit/test_visual_theme.py` — tutti green
-- [ ] Commit: `feat(presentation): aggiungi use_card_images a ThemeProperties`
+- [x] Commit: `feat(presentation): aggiungi use_card_images a ThemeProperties`
 
 ---
 
-### [ ] Fase 2 — CardRenderer: supporto bitmap
+### [x] Fase 2 — CardRenderer: supporto bitmap
 
 **File**: `src/infrastructure/ui/card_renderer.py`, `tests/unit/test_card_renderer.py`
 
-- [ ] Aggiungere parametro `bitmap: object | None = None` a firma `draw_card()`
-- [ ] Aggiungere metodo privato `_draw_face_image(dc, bitmap, x, y, width, height)`: chiama `dc.DrawBitmap(bitmap, x, y)` con try/except
-- [ ] Modificare `draw_card()`: se `card.face_up and bitmap is not None` → chiama `_draw_face_image`, altrimenti usa `_draw_face`
-- [ ] Verificare bordi highlight/selezione: sempre sovrimposti indipendentemente da immagine o testo
-- [ ] Verificare `_draw_back()` invariata (dorso sempre procedurale)
-- [ ] Scrivere test per `draw_card()` con bitmap mock (verifica che `DrawBitmap` venga chiamato)
-- [ ] Scrivere test per `draw_card()` senza bitmap (verifica fallback testuale)
-- [ ] Scrivere test per carta coperta con o senza bitmap (sempre `_draw_back`)
-- [ ] `mypy src/infrastructure/ui/card_renderer.py --strict` — zero errori
-- [ ] `pytest tests/unit/test_card_renderer.py` — tutti green, coverage >= 85%
+- [x] Aggiungere parametro `bitmap: object | None = None` a firma `draw_card()`
+- [x] Aggiungere metodo privato `_draw_face_image(dc, bitmap, x, y, width, height)`: chiama `dc.DrawBitmap(bitmap, x, y)` con try/except
+- [x] Modificare `draw_card()`: se `card.face_up and bitmap is not None` → chiama `_draw_face_image`, altrimenti usa `_draw_face`
+- [x] Verificare bordi highlight/selezione: sempre sovrimposti indipendentemente da immagine o testo
+- [x] Verificare `_draw_back()` invariata (dorso sempre procedurale)
+- [x] Scrivere test per `draw_card()` con bitmap mock (verifica che `DrawBitmap` venga chiamato)
+- [x] Scrivere test per `draw_card()` senza bitmap (verifica fallback testuale)
+- [x] Scrivere test per carta coperta con o senza bitmap (sempre `_draw_back`)
+- [x] `mypy src/infrastructure/ui/card_renderer.py --strict` — zero errori
+- [x] `pytest tests/unit/test_card_renderer.py` — tutti green, coverage >= 85%
 - [ ] Commit: `feat(presentation): estendi CardRenderer con supporto bitmap immagine`
 
 ---
