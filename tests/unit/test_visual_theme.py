@@ -148,3 +148,12 @@ class TestThemePropertyValues:
     def test_all_themes_have_positive_card_scale(self) -> None:
         for name in ("standard", "alto_contrasto", "grande"):
             assert get_theme(name).card_scale > 0.0
+
+    def test_standard_uses_card_images(self) -> None:
+        assert THEME_STANDARD.use_card_images is True
+
+    def test_alto_contrasto_not_card_images(self) -> None:
+        assert THEME_ALTO_CONTRASTO.use_card_images is False
+
+    def test_grande_uses_card_images(self) -> None:
+        assert THEME_GRANDE.use_card_images is True

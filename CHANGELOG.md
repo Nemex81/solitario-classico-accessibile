@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `src/infrastructure/ui/card_image_cache.py`: aggiunge CardImageCache per immagini carte.
+
 ---
 
 ## [3.6.0] - 2026-03-29

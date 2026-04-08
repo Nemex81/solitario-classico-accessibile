@@ -44,21 +44,21 @@ Non procedere alla fase successiva finche la fase corrente non e completa e comm
 - [x] Scrivere `tests/unit/test_card_image_cache.py` con mock `wx.Image` e filesystem
 - [x] `mypy src/infrastructure/ui/card_image_cache.py --strict` — zero errori
 - [x] `pytest tests/unit/test_card_image_cache.py` — tutti green, coverage >= 85%
-- [ ] Commit: `feat(presentation): aggiungi CardImageCache per immagini carte`
+- [x] Commit: `feat(presentation): aggiungi CardImageCache per immagini carte`
 
 ---
 
-### [ ] Fase 1 — ThemeProperties: flag `use_card_images`
+### [x] Fase 1 — ThemeProperties: flag `use_card_images`
 
 **File**: `src/infrastructure/ui/visual_theme.py`, `tests/unit/test_visual_theme.py`
 
-- [ ] Aggiungere campo `use_card_images: bool` a `ThemeProperties` dataclass (campo con default per backward compat)
-- [ ] Aggiornare `THEME_STANDARD`: aggiungere `use_card_images=True`
-- [ ] Aggiornare `THEME_ALTO_CONTRASTO`: aggiungere `use_card_images=False`
-- [ ] Aggiornare `THEME_GRANDE`: aggiungere `use_card_images=True`
-- [ ] Aggiungere 3 test in `test_visual_theme.py`: verifica `use_card_images` per ciascun tema
-- [ ] `mypy src/infrastructure/ui/visual_theme.py --strict` — zero errori
-- [ ] `pytest tests/unit/test_visual_theme.py` — tutti green
+- [x] Aggiungere campo `use_card_images: bool` a `ThemeProperties` dataclass (campo con default per backward compat)
+- [x] Aggiornare `THEME_STANDARD`: aggiungere `use_card_images=True`
+- [x] Aggiornare `THEME_ALTO_CONTRASTO`: aggiungere `use_card_images=False`
+- [x] Aggiornare `THEME_GRANDE`: aggiungere `use_card_images=True`
+- [x] Aggiungere 3 test in `test_visual_theme.py`: verifica `use_card_images` per ciascun tema
+- [x] `mypy src/infrastructure/ui/visual_theme.py --strict` — zero errori
+- [x] `pytest tests/unit/test_visual_theme.py` — tutti green
 - [ ] Commit: `feat(presentation): aggiungi use_card_images a ThemeProperties`
 
 ---
@@ -124,7 +124,7 @@ Non procedere alla fase successiva finche la fase corrente non e completa e comm
 
 | Fase | Descrizione | Stato |
 |------|-------------|-------|
-| Fase 0 | CardImageCache | [ ] |
+| Fase 0 | CardImageCache | [x] |
 | Fase 1 | ThemeProperties use_card_images | [ ] |
 | Fase 2 | CardRenderer bitmap support | [ ] |
 | Fase 3 | GameplayPanel integrazione | [ ] |

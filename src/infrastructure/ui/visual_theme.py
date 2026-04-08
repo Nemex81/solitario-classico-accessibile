@@ -27,6 +27,7 @@ class ThemeProperties:
         cursor_width: Pixel width of the cursor/selection border.
         font_size_base: Base font size in points for rank text.
         card_scale: Multiplier for card dimensions (1.0 = standard).
+        use_card_images: True = usa bitmap immagini reali; False = rendering testuale.
     """
 
     bg_color: tuple[int, int, int]
@@ -41,6 +42,7 @@ class ThemeProperties:
     cursor_width: int
     font_size_base: int
     card_scale: float
+    use_card_images: bool
 
 
 # ---------------------------------------------------------------------------
@@ -60,6 +62,7 @@ THEME_STANDARD: ThemeProperties = ThemeProperties(
     cursor_width=3,
     font_size_base=14,
     card_scale=1.0,
+    use_card_images=True,
 )
 
 THEME_ALTO_CONTRASTO: ThemeProperties = ThemeProperties(
@@ -75,6 +78,7 @@ THEME_ALTO_CONTRASTO: ThemeProperties = ThemeProperties(
     cursor_width=4,
     font_size_base=16,
     card_scale=1.0,
+    use_card_images=False,
 )
 
 THEME_GRANDE: ThemeProperties = ThemeProperties(
@@ -90,6 +94,7 @@ THEME_GRANDE: ThemeProperties = ThemeProperties(
     cursor_width=4,
     font_size_base=21,
     card_scale=1.5,
+    use_card_images=True,
 )
 
 # ---------------------------------------------------------------------------
