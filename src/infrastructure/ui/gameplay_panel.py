@@ -23,6 +23,7 @@ import wx
 
 from src.application.board_state import BoardState
 from src.infrastructure.ui.board_layout_manager import BoardLayoutManager
+from src.infrastructure.ui.card_image_cache import CardImageCache
 from src.infrastructure.ui.card_renderer import CardRenderer
 from src.infrastructure.ui.visual_theme import ThemeProperties, get_theme
 
@@ -68,6 +69,7 @@ class GameplayPanel(BasicPanel):
         self._card_renderer: CardRenderer = CardRenderer()
         self._layout_manager: BoardLayoutManager = BoardLayoutManager()
         self._current_theme: ThemeProperties = get_theme(theme_name)
+        self._image_cache: CardImageCache | None = None
         self._cursor_blink_on: bool = True
         self._blink_timer: wx.Timer | None = None
         self._nvda_info_zone: wx.StaticText | None = None
@@ -95,6 +97,21 @@ class GameplayPanel(BasicPanel):
                 gc.set_on_board_changed(self._on_board_changed)
         except Exception:  # pragma: no cover
             _log.debug("Cannot register board observer — controller not ready yet")
+
+    def _get_image_cache(self) -> CardImageCache:
+        """Lazy-initialize the card image cache.
+
+        The assets path is resolved relative to this module's location so the
+        cache works regardless of the current working directory.
+
+        Returns:
+            Shared CardImageCache instance for this panel.
+        """
+        if self._image_cache is None:
+            import pathlib
+            assets = pathlib.Path(__file__).parent.parent.parent.parent / "assets" / "img"
+            self._image_cache = CardImageCache(assets)
+        return self._image_cache
 
     def init_ui_elements(self) -> None:
         """Create UI elements for both modes.
@@ -131,8 +148,18 @@ class GameplayPanel(BasicPanel):
         dc = wx.AutoBufferedPaintDC(self)
         w, h = self.GetClientSize()
         theme = self._current_theme
-        dc.SetBackground(wx.Brush(wx.Colour(*theme.bg_color)))
-        dc.Clear()
+
+        if theme.use_card_images:
+            cache = self._get_image_cache()
+            bg_bmp = cache.get_background_bitmap(w, h)
+            if bg_bmp is not None:
+                dc.DrawBitmap(bg_bmp, 0, 0)
+            else:
+                dc.SetBackground(wx.Brush(wx.Colour(*theme.bg_color)))
+                dc.Clear()
+        else:
+            dc.SetBackground(wx.Brush(wx.Colour(*theme.bg_color)))
+            dc.Clear()
 
         layout = self._layout_manager.calculate_layout(w, h, theme)
         state = self._board_state
@@ -152,8 +179,13 @@ class GameplayPanel(BasicPanel):
                     state.selection_active
                     and state.selected_pile_idx == pile_idx
                 )
+                bitmap: object | None = None
+                if theme.use_card_images and card.face_up:
+                    cache = self._get_image_cache()
+                    bitmap = cache.get_bitmap(card.rank, card.suit, cw, ch)
                 self._card_renderer.draw_card(
                     dc, card, cx, cy, cw, ch, theme,
+                    bitmap=bitmap,
                     highlighted=highlighted,
                     selected=selected,
                 )
@@ -164,6 +196,8 @@ class GameplayPanel(BasicPanel):
 
     def _on_size(self, event: wx.SizeEvent) -> None:
         """Recalculate layout and repaint on panel resize."""
+        if self._image_cache is not None:
+            self._image_cache.invalidate_size_cache()
         self.Refresh()
         event.Skip()
 

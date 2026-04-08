@@ -77,25 +77,25 @@ Non procedere alla fase successiva finche la fase corrente non e completa e comm
 - [x] Scrivere test per carta coperta con o senza bitmap (sempre `_draw_back`)
 - [x] `mypy src/infrastructure/ui/card_renderer.py --strict` — zero errori
 - [x] `pytest tests/unit/test_card_renderer.py` — tutti green, coverage >= 85%
-- [ ] Commit: `feat(presentation): estendi CardRenderer con supporto bitmap immagine`
+- [x] Commit: `feat(presentation): estendi CardRenderer con supporto bitmap immagine`
 
 ---
 
-### [ ] Fase 3 — GameplayPanel: integrazione immagini
+### [x] Fase 3 — GameplayPanel: integrazione immagini
 
 **File**: `src/infrastructure/ui/gameplay_panel.py`
 
-- [ ] Aggiungere import `CardImageCache` in cima al file
-- [ ] Aggiungere attributo `_image_cache: CardImageCache | None = None` in `__init__`
-- [ ] Aggiungere metodo `_get_image_cache() -> CardImageCache`: lazy init con path calcolato da `__file__`
-- [ ] In `_on_size()`: aggiungere `if self._image_cache: self._image_cache.invalidate_size_cache()`
-- [ ] In `_on_paint()`, quando `display_mode == visual`:
-  - [ ] Se `theme.use_card_images`: ottenere `bg_bmp` da cache, disegnare con `dc.DrawBitmap(bg_bmp, 0, 0)`
-  - [ ] Altrimenti: usare `dc.SetBackground` + `dc.Clear()` con `theme.bg_color` (comportamento attuale)
-- [ ] Nel loop rendering carte: se `theme.use_card_images and card.face_up`: ottenere `bitmap` da cache, passare a `draw_card()`
-- [ ] Se `not theme.use_card_images` o carta coperta: passare `bitmap=None`
-- [ ] `mypy src/infrastructure/ui/gameplay_panel.py --strict` — zero errori
-- [ ] `pytest tests/unit/` — tutti green, nessuna regressione
+- [x] Aggiungere import `CardImageCache` in cima al file
+- [x] Aggiungere attributo `_image_cache: CardImageCache | None = None` in `__init__`
+- [x] Aggiungere metodo `_get_image_cache() -> CardImageCache`: lazy init con path calcolato da `__file__`
+- [x] In `_on_size()`: aggiungere `if self._image_cache: self._image_cache.invalidate_size_cache()`
+- [x] In `_on_paint()`, quando `display_mode == visual`:
+  - [x] Se `theme.use_card_images`: ottenere `bg_bmp` da cache, disegnare con `dc.DrawBitmap(bg_bmp, 0, 0)`
+  - [x] Altrimenti: usare `dc.SetBackground` + `dc.Clear()` con `theme.bg_color` (comportamento attuale)
+- [x] Nel loop rendering carte: se `theme.use_card_images and card.face_up`: ottenere `bitmap` da cache, passare a `draw_card()`
+- [x] Se `not theme.use_card_images` o carta coperta: passare `bitmap=None`
+- [x] `mypy src/infrastructure/ui/gameplay_panel.py --strict` — zero nuovi errori
+- [x] `pytest tests/unit/ -m "not gui"` — tutti green, nessuna regressione
 - [ ] Commit: `feat(presentation): integra CardImageCache in GameplayPanel`
 
 ---
