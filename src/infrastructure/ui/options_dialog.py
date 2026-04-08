@@ -305,7 +305,40 @@ class OptionsDialog(wx.Dialog):
         )
         warning_box.Add(self.score_warning_radio, 0, wx.ALL | wx.EXPAND, 5)
         main_sizer.Add(warning_box, 0, wx.ALL | wx.EXPAND, 10)
-        
+
+        # ========================================
+        # OPZIONE 10: MODALITÀ DISPLAY
+        # ========================================
+        display_box = wx.StaticBoxSizer(wx.VERTICAL, self, "Modalità Display")
+        self.display_mode_radio = wx.RadioBox(
+            self,
+            label="Scegli la modalità di visualizzazione del gioco:",
+            choices=[
+                "Solo Audio (solo TTS, nessuna grafica)",
+                "Visiva (rendering grafico delle carte)",
+            ],
+            majorDimension=1,
+            style=wx.RA_SPECIFY_COLS,
+        )
+        display_box.Add(self.display_mode_radio, 0, wx.ALL | wx.EXPAND, 5)
+        main_sizer.Add(display_box, 0, wx.ALL | wx.EXPAND, 10)
+
+        # ========================================
+        # OPZIONE 11: TEMA VISIVO
+        # ========================================
+        theme_box = wx.StaticBoxSizer(wx.VERTICAL, self, "Tema Visivo")
+        theme_label = wx.StaticText(
+            self,
+            label="Tema grafico (usato solo in modalità visiva):",
+        )
+        theme_box.Add(theme_label, 0, wx.ALL, 5)
+        self.visual_theme_choice = wx.Choice(
+            self,
+            choices=["Standard", "Alto Contrasto", "Grande"],
+        )
+        theme_box.Add(self.visual_theme_choice, 0, wx.ALL | wx.EXPAND, 5)
+        main_sizer.Add(theme_box, 0, wx.ALL | wx.EXPAND, 10)
+
         # ========================================
         # PULSANTI SALVA / ANNULLA
         # ========================================
@@ -392,7 +425,16 @@ class OptionsDialog(wx.Dialog):
         }
         warning_selection = warning_level_map.get(settings.score_warning_level, 2)  # Default: BALANCED
         self.score_warning_radio.SetSelection(warning_selection)
-        
+
+        # 10. Modalità Display ("audio_only" -> 0, "visual" -> 1)
+        display_mode = getattr(settings, "display_mode", "audio_only")
+        self.display_mode_radio.SetSelection(0 if display_mode == "audio_only" else 1)
+
+        # 11. Tema Visivo ("standard"->0, "alto_contrasto"->1, "grande"->2)
+        _theme_map = {"standard": 0, "alto_contrasto": 1, "grande": 2}
+        visual_theme = getattr(settings, "visual_theme", "standard")
+        self.visual_theme_choice.SetSelection(_theme_map.get(visual_theme, 0))
+
         # ✅ FIX BUG #67: Update widget lock states after loading
         # This ensures locked widgets are disabled when dialog opens
         self._update_widget_lock_states()
@@ -417,7 +459,13 @@ class OptionsDialog(wx.Dialog):
         self.shuffle_radio.Bind(wx.EVT_RADIOBOX, self.on_setting_changed)
         self.timer_strict_radio.Bind(wx.EVT_RADIOBOX, self.on_setting_changed)
         self.score_warning_radio.Bind(wx.EVT_RADIOBOX, self.on_setting_changed)
-        
+
+        # RadioBox — display mode
+        self.display_mode_radio.Bind(wx.EVT_RADIOBOX, self.on_setting_changed)
+
+        # Choice — visual theme
+        self.visual_theme_choice.Bind(wx.EVT_CHOICE, self.on_setting_changed)
+
         # CheckBox widgets
         self.command_hints_check.Bind(wx.EVT_CHECKBOX, self.on_setting_changed)
         self.scoring_check.Bind(wx.EVT_CHECKBOX, self.on_setting_changed)
@@ -622,7 +670,15 @@ class OptionsDialog(wx.Dialog):
             ScoreWarningLevel.COMPLETE
         ]
         settings.score_warning_level = warning_levels[self.score_warning_radio.GetSelection()]
-    
+
+        # 10. Modalità Display (0->"audio_only", 1->"visual")
+        settings.display_mode = "audio_only" if self.display_mode_radio.GetSelection() == 0 else "visual"
+
+        # 11. Tema Visivo (0->"standard", 1->"alto_contrasto", 2->"grande")
+        _theme_choices = ["standard", "alto_contrasto", "grande"]
+        theme_idx = self.visual_theme_choice.GetSelection()
+        settings.visual_theme = _theme_choices[theme_idx] if 0 <= theme_idx < len(_theme_choices) else "standard"
+
     def _update_widget_lock_states(self) -> None:
         """Update widget enable/disable states based on current preset locks.
         

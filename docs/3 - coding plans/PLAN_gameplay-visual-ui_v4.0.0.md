@@ -2,10 +2,11 @@
 feature: gameplay-visual-ui
 type: plan
 agent: Agent-Plan
-status: DRAFT
+status: REVIEWED
 version: v4.0.0
 design_ref: docs/2 - projects/DESIGN_gameplay-visual-ui.md
 date: 2026-04-08
+note: Rendering testuale completato. Esteso da PLAN_gameplay-card-images_v4.1.0.md per supporto immagini reali.
 ---
 
 # PLAN: Gameplay Visual UI — v4.0.0

@@ -2,7 +2,7 @@
 feature: gameplay-visual-ui
 type: todo
 agent: Agent-Plan
-status: in_progress
+status: completed
 version: v4.0.0
 plan_ref: docs/3 - coding plans/PLAN_gameplay-visual-ui_v4.0.0.md
 date: 2026-04-08
@@ -30,64 +30,64 @@ Non procedere alla fase successiva finche la fase corrente non e completa e comm
 
 ## Checklist Fasi
 
-### [ ] Fase 0 — Prerequisito: Rimozione `pygame.time.wait()`
+### [x] Fase 0 — Prerequisito: Rimozione `pygame.time.wait()`
 
 **File**: `src/application/gameplay_controller.py`
 
-- [ ] Identificare tutte le occorrenze di `pygame.time.wait()` nei metodi `_vocalizza()` e `_speak_with_hint()`
-- [ ] **ELIMINARE** le righe `pygame.time.wait()` senza sostituzione (il TTS SAPI5 gestisce i propri tempi; `wx.CallLater` è asincrono e incompatibile)
-- [ ] Rimuovere `from pygame.locals import KMOD_SHIFT, KMOD_CTRL` (non più usati)
-- [ ] **NON toccare** `import pygame` né `pygame.K_xxx` in `_build_commands()` (legacy handler, non usato da wxPython)
-- [ ] Verificare `grep -n "KMOD_SHIFT\|KMOD_CTRL\|pygame.time.wait" src/application/gameplay_controller.py` — zero occorrenze
+- [x] Identificare tutte le occorrenze di `pygame.time.wait()` nei metodi `_vocalizza()` e `_speak_with_hint()`
+- [x] **ELIMINARE** le righe `pygame.time.wait()` senza sostituzione (il TTS SAPI5 gestisce i propri tempi; `wx.CallLater` è asincrono e incompatibile)
+- [x] Rimuovere `from pygame.locals import KMOD_SHIFT, KMOD_CTRL` (non più usati)
+- [x] **NON toccare** `import pygame` né `pygame.K_xxx` in `_build_commands()` (legacy handler, non usato da wxPython)
+- [x] Verificare `grep -n "KMOD_SHIFT\|KMOD_CTRL\|pygame.time.wait" src/application/gameplay_controller.py` — zero occorrenze
 - [ ] Eseguire tutti i test esistenti: nessuna regressione
 - [ ] Commit: `refactor(application): sostituisci pygame.time.wait con wx.CallLater`
 
 ---
 
-### [ ] Fase 1 — BoardState DTO e CardView
+### [x] Fase 1 — BoardState DTO e CardView
 
 **File**: `src/application/board_state.py`, `tests/unit/test_board_state.py`
 
-- [ ] Creare `CardView` (NamedTuple o frozen dataclass) con: rank, suit, face_up, suit_color
-- [ ] Creare `BoardState` dataclass con: piles (13 liste), cursor_pile_idx, cursor_card_idx, selection_active, selected_pile_idx, selected_cards, game_over
-- [ ] Aggiungere type hints completi
-- [ ] Scrivere `tests/unit/test_board_state.py` con coverage >= 85%
-- [ ] `pytest tests/unit/test_board_state.py` — tutti green
+- [x] Creare `CardView` (NamedTuple o frozen dataclass) con: rank, suit, face_up, suit_color
+- [x] Creare `BoardState` dataclass con: piles (13 liste), cursor_pile_idx, cursor_card_idx, selection_active, selected_pile_idx, selected_cards, game_over
+- [x] Aggiungere type hints completi
+- [x] Scrivere `tests/unit/test_board_state.py` con coverage >= 85%
+- [x] `pytest tests/unit/test_board_state.py` — tutti green
 - [ ] Commit: `feat(application): aggiungi BoardState DTO e CardView`
 
 ---
 
-### [ ] Fase 2 — Observer callback `on_board_changed`
+### [x] Fase 2 — Observer callback `on_board_changed`
 
 **File**: `src/application/gameplay_controller.py`
 
-- [ ] Aggiungere attributo `_on_board_changed_callback` con tipo `Callable[[BoardState], None] | None`
-- [ ] Implementare `set_on_board_changed(callback)` metodo pubblico
-- [ ] Implementare `_build_board_state() -> BoardState` che legge da GameEngine, CursorManager, SelectionManager
-- [ ] Invocare callback (tramite `_notify_board_changed()`) dopo ogni azione in `handle_wx_key_event()`
-- [ ] Test: mock callback invocata correttamente su keypress
-- [ ] Test: `_build_board_state()` produce BoardState coerente con stato gioco noto
+- [x] Aggiungere attributo `_on_board_changed_callback` con tipo `Callable[[BoardState], None] | None`
+- [x] Implementare `set_on_board_changed(callback)` metodo pubblico
+- [x] Implementare `_build_board_state() -> BoardState` che legge da GameEngine, CursorManager, SelectionManager
+- [x] Invocare callback (tramite `_notify_board_changed()`) dopo ogni azione in `handle_wx_key_event()`
+- [x] Test: mock callback invocata correttamente su keypress
+- [x] Test: `_build_board_state()` produce BoardState coerente con stato gioco noto
 - [ ] `mypy src/application/gameplay_controller.py --strict` — zero errori
 - [ ] Commit: `feat(application): aggiungi observer on_board_changed`
 
 ---
 
-### [ ] Fase 3 — VisualTheme e configurazione temi
+### [x] Fase 3 — VisualTheme e configurazione temi
 
 **File**: `src/infrastructure/ui/visual_theme.py`, `tests/unit/test_visual_theme.py`
 
-- [ ] Creare `ThemeProperties` dataclass con tutti i campi (bg_color, card_bg, card_back, text_red, text_black, border_color, cursor_color, selection_color, border_width, cursor_width, font_size_base, card_scale)
-- [ ] Definire `THEME_STANDARD` (sfondo verde, font 14pt, scale 1.0)
-- [ ] Definire `THEME_ALTO_CONTRASTO` (sfondo nero, cursore giallo, bordi 3px, font 16pt)
-- [ ] Definire `THEME_GRANDE` (come standard, scale 1.5, font 21pt)
-- [ ] Implementare `get_theme(name: str) -> ThemeProperties` con fallback STANDARD
-- [ ] Scrivere `tests/unit/test_visual_theme.py` con coverage >= 90%
-- [ ] `pytest tests/unit/test_visual_theme.py` — tutti green
+- [x] Creare `ThemeProperties` dataclass con tutti i campi
+- [x] Definire `THEME_STANDARD`
+- [x] Definire `THEME_ALTO_CONTRASTO`
+- [x] Definire `THEME_GRANDE`
+- [x] Implementare `get_theme(name: str) -> ThemeProperties` con fallback STANDARD
+- [x] Scrivere `tests/unit/test_visual_theme.py` con coverage >= 90%
+- [x] `pytest tests/unit/test_visual_theme.py` — tutti green
 - [ ] Commit: `feat(presentation): aggiungi sistema temi visuali`
 
 ---
 
-### [ ] Fase 4 — CardRenderer
+### [x] Fase 4 — CardRenderer
 
 **File**: `src/infrastructure/ui/card_renderer.py`, `tests/unit/test_card_renderer.py`
 
@@ -104,7 +104,7 @@ Non procedere alla fase successiva finche la fase corrente non e completa e comm
 
 ---
 
-### [ ] Fase 5 — BoardLayoutManager
+### [x] Fase 5 — BoardLayoutManager
 
 **File**: `src/infrastructure/ui/board_layout_manager.py`, `tests/unit/test_board_layout_manager.py`
 
@@ -121,7 +121,7 @@ Non procedere alla fase successiva finche la fase corrente non e completa e comm
 
 ---
 
-### [ ] Fase 6 — GameplayPanel ristrutturato (dual-mode)
+### [x] Fase 6 — GameplayPanel ristrutturato (dual-mode)
 
 **File**: `src/infrastructure/ui/gameplay_panel.py`, eventualmente `src/infrastructure/ui/basic_panel.py`
 
@@ -141,7 +141,7 @@ Non procedere alla fase successiva finche la fase corrente non e completa e comm
 
 ---
 
-### [ ] Fase 7 — Resize frame e integrazione opzioni
+### [x] Fase 7 — Resize frame e integrazione opzioni
 
 **File**: `src/infrastructure/ui/wx_frame.py`, `src/domain/services/game_settings.py`, `src/infrastructure/ui/options_dialog.py`
 
@@ -157,7 +157,7 @@ Non procedere alla fase successiva finche la fase corrente non e completa e comm
 
 ---
 
-### [ ] Fase 8 — Test integrazione e validazione accessibilita
+### [x] Fase 8 — Test integrazione e validazione accessibilita
 
 - [ ] Test end-to-end: keypress -> controller -> board_state -> panel -> render
 - [ ] Regression test: 60+ comandi tastiera funzionano in entrambe le modalita
@@ -178,12 +178,12 @@ Non procedere alla fase successiva finche la fase corrente non e completa e comm
 
 | Fase | Descrizione | Stato |
 |------|-------------|-------|
-| Fase 0 | Rimozione pygame.time.wait() | [ ] |
-| Fase 1 | BoardState DTO e CardView | [ ] |
-| Fase 2 | Observer on_board_changed | [ ] |
-| Fase 3 | VisualTheme | [ ] |
-| Fase 4 | CardRenderer | [ ] |
-| Fase 5 | BoardLayoutManager | [ ] |
-| Fase 6 | GameplayPanel dual-mode | [ ] |
-| Fase 7 | Frame resize + opzioni | [ ] |
-| Fase 8 | Test integrazione | [ ] |
+| Fase 0 | Rimozione pygame.time.wait() | [x] |
+| Fase 1 | BoardState DTO e CardView | [x] |
+| Fase 2 | Observer on_board_changed | [x] |
+| Fase 3 | VisualTheme | [x] |
+| Fase 4 | CardRenderer | [x] |
+| Fase 5 | BoardLayoutManager | [x] |
+| Fase 6 | GameplayPanel dual-mode | [x] |
+| Fase 7 | Frame resize + opzioni | [x] |
+| Fase 8 | Test integrazione | [x] |

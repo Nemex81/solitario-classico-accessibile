@@ -89,6 +89,31 @@ class SolitarioController:
     
     # Double-ESC feature threshold (seconds)
     DOUBLE_ESC_THRESHOLD = 2.0
+
+    def _create_gameplay_panel(self) -> GameplayPanel:
+        """Create the gameplay panel using the current persisted visual settings."""
+        return GameplayPanel(
+            parent=self.frame.panel_container,
+            controller=self,
+            display_mode=self.settings.display_mode,
+            theme_name=self.settings.visual_theme,
+        )
+
+    def _sync_gameplay_panel_settings(self) -> None:
+        """Re-apply current visual settings to the cached gameplay panel."""
+        if not self.view_manager:
+            return
+
+        gameplay_panel = self.view_manager.get_panel('gameplay')
+        if gameplay_panel is None:
+            return
+
+        apply_visual_settings = getattr(gameplay_panel, 'apply_visual_settings', None)
+        if callable(apply_visual_settings):
+            apply_visual_settings(
+                display_mode=self.settings.display_mode,
+                theme_name=self.settings.visual_theme,
+            )
     
     def __init__(self):
         """Initialize application with all components."""
@@ -326,6 +351,8 @@ class SolitarioController:
                 current_panel = self.view_manager.get_panel(current_panel_name)
                 if current_panel:
                     current_panel.Hide()
+
+            self._sync_gameplay_panel_settings()
             
             # Show gameplay panel (logs transition internally)
             self.view_manager.show_panel('gameplay')
@@ -334,6 +361,7 @@ class SolitarioController:
             # Initialize game
             self.engine.reset_game()
             self.engine.new_game()
+            self.gameplay_controller.refresh_board_state()
             self._timer_expired_announced = False
             
             if self.screen_reader:
@@ -1064,10 +1092,7 @@ class SolitarioController:
                 controller=self,
                 audio_manager=self.audio_manager
             )
-            gameplay_panel = GameplayPanel(
-                parent=self.frame.panel_container,
-                controller=self
-            )
+            gameplay_panel = self._create_gameplay_panel()
             
             # Register panels with ViewManager
             self.view_manager.register_panel('menu', menu_panel)

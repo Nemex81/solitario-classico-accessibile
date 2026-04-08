@@ -670,7 +670,9 @@ class OptionsWindowController:
             "shuffle": self.settings.shuffle_discards,
             "command_hints": self.settings.command_hints_enabled,  # v1.5.0
             "timer_strict_mode": self.settings.timer_strict_mode,  # v1.5.2.2
-            "score_warning_level": self.settings.score_warning_level  # v2.6.1
+            "score_warning_level": self.settings.score_warning_level,  # v2.6.1
+            "display_mode": self.settings.display_mode,
+            "visual_theme": self.settings.visual_theme,
         }
     
     def _restore_snapshot(self) -> None:
@@ -682,6 +684,8 @@ class OptionsWindowController:
         self.settings.command_hints_enabled = self.original_settings["command_hints"]  # v1.5.0
         self.settings.timer_strict_mode = self.original_settings["timer_strict_mode"]  # v1.5.2.2
         self.settings.score_warning_level = self.original_settings["score_warning_level"]  # v2.6.1
+        self.settings.display_mode = self.original_settings.get("display_mode", self.settings.display_mode)
+        self.settings.visual_theme = self.original_settings.get("visual_theme", self.settings.visual_theme)
     
     def _reset_state(self) -> None:
         """Reset controller state (close window)."""

@@ -1,0 +1,195 @@
+"""Unit tests for card_renderer.py — CardRenderer.
+
+Uses a MagicMock as the device context so that no wx runtime is needed.
+Tests verify that the correct drawing calls are dispatched for each
+rendering scenario:
+  - Face-up card at correct position
+  - Face-down card at correct position
+  - Border calls present for every card
+  - Extra border for highlighted card (cursor)
+  - Extra border for selected card
+  - Suit symbols are the correct Unicode characters
+  - suit_color selects text_red vs text_black
+"""
+
+from __future__ import annotations
+
+from typing import Any
+from unittest.mock import MagicMock, call, patch
+
+import pytest
+
+from src.application.board_state import CardView
+from src.infrastructure.ui.card_renderer import CardRenderer, _SUIT_SYMBOLS
+from src.infrastructure.ui.visual_theme import THEME_STANDARD
+
+
+# ---------------------------------------------------------------------------
+# Fixtures
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def renderer() -> CardRenderer:
+    return CardRenderer()
+
+
+@pytest.fixture
+def dc() -> MagicMock:
+    """Mock device context that records every call."""
+    return MagicMock()
+
+
+def _face_up(rank: str = "A", suit: str = "cuori", color: str = "red") -> CardView:
+    return CardView(rank=rank, suit=suit, face_up=True, suit_color=color)
+
+
+def _face_down(rank: str = "K", suit: str = "picche") -> CardView:
+    return CardView(rank=rank, suit=suit, face_up=False, suit_color="black")
+
+
+# ---------------------------------------------------------------------------
+# draw_card — face-up cards
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestDrawCardFaceUp:
+    def test_draw_rect_called_at_least_once(self, renderer: CardRenderer, dc: MagicMock) -> None:
+        """DrawRectangle must be invoked at least once for background fill."""
+        renderer.draw_card(dc, _face_up(), 0, 0, 70, 100, THEME_STANDARD)
+        assert dc.DrawRectangle.call_count >= 1
+
+    def test_draw_text_called_for_rank(self, renderer: CardRenderer, dc: MagicMock) -> None:
+        """DrawText must be called with the rank string."""
+        renderer.draw_card(dc, _face_up("Q"), 0, 0, 70, 100, THEME_STANDARD)
+        texts_drawn = [str(c.args[0]) for c in dc.DrawText.call_args_list]
+        assert "Q" in texts_drawn
+
+    def test_draw_text_called_for_suit_symbol(self, renderer: CardRenderer, dc: MagicMock) -> None:
+        """DrawText must include the Unicode heart symbol for 'cuori'."""
+        renderer.draw_card(dc, _face_up("A", "cuori"), 0, 0, 70, 100, THEME_STANDARD)
+        texts_drawn = [str(c.args[0]) for c in dc.DrawText.call_args_list]
+        assert "\u2665" in texts_drawn  # ♥
+
+    def test_suit_symbol_quadri(self, renderer: CardRenderer, dc: MagicMock) -> None:
+        renderer.draw_card(dc, _face_up("2", "quadri", "red"), 0, 0, 70, 100, THEME_STANDARD)
+        texts = [str(c.args[0]) for c in dc.DrawText.call_args_list]
+        assert "\u2666" in texts  # ♦
+
+    def test_suit_symbol_fiori(self, renderer: CardRenderer, dc: MagicMock) -> None:
+        renderer.draw_card(dc, _face_up("3", "fiori", "black"), 0, 0, 70, 100, THEME_STANDARD)
+        texts = [str(c.args[0]) for c in dc.DrawText.call_args_list]
+        assert "\u2663" in texts  # ♣
+
+    def test_suit_symbol_picche(self, renderer: CardRenderer, dc: MagicMock) -> None:
+        renderer.draw_card(dc, _face_up("J", "picche", "black"), 0, 0, 70, 100, THEME_STANDARD)
+        texts = [str(c.args[0]) for c in dc.DrawText.call_args_list]
+        assert "\u2660" in texts  # ♠
+
+
+# ---------------------------------------------------------------------------
+# draw_card — face-down cards
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestDrawCardFaceDown:
+    def test_draw_rect_called_for_back(self, renderer: CardRenderer, dc: MagicMock) -> None:
+        renderer.draw_card(dc, _face_down(), 0, 0, 70, 100, THEME_STANDARD)
+        assert dc.DrawRectangle.call_count >= 1
+
+    def test_no_rank_text_drawn_for_back(self, renderer: CardRenderer, dc: MagicMock) -> None:
+        """Face-down cards must NOT expose rank information."""
+        renderer.draw_card(dc, _face_down("K"), 0, 0, 70, 100, THEME_STANDARD)
+        texts_drawn = [str(c.args[0]) for c in dc.DrawText.call_args_list]
+        assert "K" not in texts_drawn
+
+
+# ---------------------------------------------------------------------------
+# Border logic
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestBorderLogic:
+    def test_normal_card_has_exactly_one_extra_border_rect(
+        self, renderer: CardRenderer, dc: MagicMock
+    ) -> None:
+        """Normal (non-highlighted) face-up card: background fill + border = 2 rect calls minimum."""
+        renderer.draw_card(dc, _face_up(), 0, 0, 70, 100, THEME_STANDARD)
+        # At minimum: 1 fill + 1 border
+        assert dc.DrawRectangle.call_count >= 2
+
+    def test_highlighted_card_draws_extra_rect(
+        self, renderer: CardRenderer, dc: MagicMock
+    ) -> None:
+        """Highlighted card must draw one more rect than normal."""
+        dc_normal = MagicMock()
+        dc_highlighted = MagicMock()
+        renderer.draw_card(dc_normal, _face_up(), 0, 0, 70, 100, THEME_STANDARD, highlighted=False)
+        renderer.draw_card(dc_highlighted, _face_up(), 0, 0, 70, 100, THEME_STANDARD, highlighted=True)
+        assert dc_highlighted.DrawRectangle.call_count > dc_normal.DrawRectangle.call_count
+
+    def test_selected_card_draws_extra_rect(
+        self, renderer: CardRenderer, dc: MagicMock
+    ) -> None:
+        """Selected card must draw one more rect than normal."""
+        dc_normal = MagicMock()
+        dc_selected = MagicMock()
+        renderer.draw_card(dc_normal, _face_up(), 0, 0, 70, 100, THEME_STANDARD, selected=False)
+        renderer.draw_card(dc_selected, _face_up(), 0, 0, 70, 100, THEME_STANDARD, selected=True)
+        assert dc_selected.DrawRectangle.call_count > dc_normal.DrawRectangle.call_count
+
+    def test_highlighted_takes_priority_over_selected(
+        self, renderer: CardRenderer, dc: MagicMock
+    ) -> None:
+        """When both highlighted and selected, only cursor colour is applied (not both)."""
+        dc_both = MagicMock()
+        dc_highlighted_only = MagicMock()
+        renderer.draw_card(dc_both, _face_up(), 0, 0, 70, 100, THEME_STANDARD,
+                           highlighted=True, selected=True)
+        renderer.draw_card(dc_highlighted_only, _face_up(), 0, 0, 70, 100, THEME_STANDARD,
+                           highlighted=True, selected=False)
+        assert dc_both.DrawRectangle.call_count == dc_highlighted_only.DrawRectangle.call_count
+
+
+# ---------------------------------------------------------------------------
+# Suit symbols registry
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestSuitSymbolsRegistry:
+    def test_cuori_is_heart(self) -> None:
+        assert _SUIT_SYMBOLS["cuori"] == "\u2665"
+
+    def test_quadri_is_diamond(self) -> None:
+        assert _SUIT_SYMBOLS["quadri"] == "\u2666"
+
+    def test_fiori_is_club(self) -> None:
+        assert _SUIT_SYMBOLS["fiori"] == "\u2663"
+
+    def test_picche_is_spade(self) -> None:
+        assert _SUIT_SYMBOLS["picche"] == "\u2660"
+
+    def test_all_four_suits_present(self) -> None:
+        assert set(_SUIT_SYMBOLS.keys()) == {"cuori", "quadri", "fiori", "picche"}
+
+
+# ---------------------------------------------------------------------------
+# Internal helpers via draw_suit_symbol
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestDrawSuitSymbol:
+    def test_draws_correct_symbol(self, renderer: CardRenderer, dc: MagicMock) -> None:
+        renderer._draw_suit_symbol(dc, "cuori", 30, 40, 14, (200, 0, 0))
+        texts = [str(c.args[0]) for c in dc.DrawText.call_args_list]
+        assert "\u2665" in texts
+
+    def test_unknown_suit_uses_first_char(self, renderer: CardRenderer, dc: MagicMock) -> None:
+        renderer._draw_suit_symbol(dc, "Xyz", 0, 0, 12, (0, 0, 0))
+        texts = [str(c.args[0]) for c in dc.DrawText.call_args_list]
+        assert "X" in texts

@@ -30,6 +30,10 @@ from src.domain.models.difficulty_preset import DifficultyPreset
 from src.infrastructure.logging import game_logger as log
 
 
+VALID_DISPLAY_MODES = {"audio_only", "visual"}
+VALID_VISUAL_THEMES = {"standard", "alto_contrasto", "grande"}
+
+
 class GameState:
     """Mock game state for validation.
     
@@ -94,7 +98,11 @@ class GameSettings:
         # Feature v2.6.0: Score warning level (graduated TTS warnings)
         from src.domain.models.scoring import ScoreWarningLevel
         self.score_warning_level = ScoreWarningLevel.BALANCED  # Default: balanced warnings
-        
+
+        # Feature v4.0.0: Visual display mode and theme
+        self.display_mode: str = "audio_only"  # "audio_only" or "visual"
+        self.visual_theme: str = "standard"    # "standard", "alto_contrasto", "grande"
+
         # Game state reference for validation
         self.game_state = game_state or GameState()
     
@@ -817,7 +825,7 @@ class GameSettings:
     # PERSISTENCE & VALIDATION (v2.4.0)
     # ========================================
     
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         """Export settings to dictionary for JSON serialization.
         
         Returns:
@@ -840,12 +848,14 @@ class GameSettings:
             "command_hints_enabled": self.command_hints_enabled,
             "scoring_enabled": self.scoring_enabled,
             "timer_strict_mode": self.timer_strict_mode,
+            "display_mode": self.display_mode,
+            "visual_theme": self.visual_theme,
             
             # v2.6.0: Serialize score_warning_level as string for readability
             "score_warning_level": self.score_warning_level.name,  # e.g., "BALANCED"
         }
     
-    def load_from_dict(self, data: dict) -> None:
+    def load_from_dict(self, data: dict[str, object]) -> None:
         """Load settings from dictionary and reapply preset (anti-cheat).
         
         This method loads settings from JSON and then reapplies the difficulty
@@ -867,10 +877,13 @@ class GameSettings:
         
         Version: v2.4.0, v2.6.0 (added score_warning_level retrocompat)
         """
-        # Load all values from dictionary (except score_warning_level, handled separately)
+        # Load all values from dictionary (except fields with dedicated validation)
         for key, value in data.items():
-            if key != "score_warning_level" and hasattr(self, key):
+            if key not in {"score_warning_level", "display_mode", "visual_theme"} and hasattr(self, key):
                 setattr(self, key, value)
+
+        self.display_mode = self._normalize_display_mode(data.get("display_mode"))
+        self.visual_theme = self._normalize_visual_theme(data.get("visual_theme"))
         
         # v2.6.0: Load score_warning_level with retrocompat and error handling
         if "score_warning_level" in data:
@@ -905,3 +918,15 @@ class GameSettings:
         # Reapply difficulty preset to enforce locks (anti-cheat)
         if hasattr(self, 'difficulty_level'):
             self.apply_difficulty_preset(self.difficulty_level)
+
+    def _normalize_display_mode(self, value: object) -> str:
+        """Normalize display mode loaded from persistence."""
+        if isinstance(value, str) and value in VALID_DISPLAY_MODES:
+            return value
+        return "audio_only"
+
+    def _normalize_visual_theme(self, value: object) -> str:
+        """Normalize theme name loaded from persistence."""
+        if isinstance(value, str) and value in VALID_VISUAL_THEMES:
+            return value
+        return "standard"

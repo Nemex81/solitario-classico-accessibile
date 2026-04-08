@@ -3,7 +3,7 @@ feature: gameplay-visual-ui
 type: design
 agent: Agent-Design
 status: REVIEWED
-version: v4.0.0
+version: v4.1.0
 date: 2026-04-08
 ---
 
@@ -11,7 +11,7 @@ date: 2026-04-08
 
 ## 1. Idea in 3 righe
 
-Trasformare la finestra di gameplay da interfaccia puramente audio/testuale a board visiva completa con rendering carte, layout solitaire classico (7 tableau, 4 foundation, stock, waste) e cursore grafico. L'interfaccia opera in dual-mode: modalita visiva per giocatori vedenti e ipovedenti (carte disegnate, highlight cursore, temi alto contrasto) e modalita audio-only per giocatori non vedenti (comportamento attuale preservato integralmente). L'accessibilita NVDA resta garantita in entrambe le modalita tramite due canali paralleli: TTS SAPI5 diretto per il feedback gameplay e accessible descriptions wx per la navigazione widget.
+Trasformare la finestra di gameplay in una board visiva completa che utilizza le immagini fotografiche reali delle carte da gioco presenti in `assets/img/carte francesi/`, replicando l'aspetto del solitaire classico Windows per giocatori vedenti e ipovedenti. L'interfaccia opera in dual-mode: modalita visiva con immagini reali delle carte (fallback testuale per le 6 immagini mancanti), sfondo tavolo verde fotografico e cursore lampeggiante; modalita audio-only per giocatori non vedenti (comportamento attuale preservato integralmente). L'accessibilita NVDA resta garantita in entrambe le modalita tramite canali paralleli: TTS SAPI5 diretto e info-zone off-screen wx.
 
 ---
 
@@ -33,13 +33,16 @@ Trasformare la finestra di gameplay da interfaccia puramente audio/testuale a bo
 
 ### Attori software (nuovi da introdurre)
 
-- CardRenderer: componente presentation-layer responsabile del disegno di una singola carta (fronte con rank/suit/colore, dorso uniforme) tramite wx.DC
+- CardRenderer: componente presentation-layer responsabile del disegno di una singola carta; usa immagini reali (bitmap) se disponibili, altrimenti fallback testuale (rettangolo + simbolo Unicode)
+- CardImageCache: componente presentation-layer che carica, scala e cachea le immagini `.jpg` delle carte da `assets/img/carte francesi/`; gestisce il mapping rank-stringa → numero file; invalida la cache su EVT_SIZE
 - BoardLayoutManager: componente presentation-layer che calcola la posizione e dimensione di ogni pila e carta in base alla dimensione del panel; gestisce il layout responsive
 - BoardState DTO: oggetto leggero di trasferimento dati tra application e presentation che descrive lo stato corrente del board (pile, carte visibili, posizione cursore, selezione attiva) senza esporre il domain model
 
 ### Concetti chiave
 
-- Card rendering: disegno di una carta come rettangolo con rank (testo), suit (simbolo Unicode), colore seme (rosso/nero) e dorso uniforme per carte coperte
+- Card rendering con immagini: disegna `wx.Bitmap` scalata alla dimensione corrente della carta usando `dc.DrawBitmap()`; superpone bordi di highlight/selezione sul bitmap
+- Card rendering testuale (fallback): disegno di una carta come rettangolo con rank (testo), suit (simbolo Unicode), colore seme (rosso/nero); usato per le 6 carte senza immagine o quando `use_card_images=False`
+- Dorso carta procedurale: il dorso delle carte coperte viene disegnato con pattern a rombi wx.DC (nessuna immagine esterna) con colori da ThemeProperties; garantisce rendering coerente senza dipendenza da file esterni
 - Pile layout: disposizione spaziale delle 13 pile sul board; le pile tableau hanno fan-down verticale (carte sovrapposte parzialmente visibili), le foundation e stock/waste mostrano solo la carta in cima
 - Cursor highlight: indicatore visivo della posizione corrente del cursore di navigazione; bordo luminoso attorno alla carta o pila selezionata dal cursore
 - Selection feedback: indicazione visiva della carta o gruppo di carte selezionate per lo spostamento; bordo colorato distinto dal cursor highlight
@@ -179,18 +182,24 @@ Utente conferma, torna al menu
 
 ### 4A. Strategia di rendering
 
-Approccio ibrido: un wx.Panel custom con handler EVT_PAINT e AutoBufferedPaintDC per il disegno delle carte. Il double-buffering tramite AutoBufferedPaintDC elimina il flickering.
+Approccio image-first con fallback testuale: un wx.Panel custom con EVT_PAINT e AutoBufferedPaintDC. Il double-buffering elimina il flickering.
 
-Le carte sono rettangoli disegnati con wx.DC:
-- Carta scoperta: sfondo bianco, rank (testo), simbolo seme Unicode (cuori, quadri, fiori, picche), colore testo rosso o nero secondo il seme
-- Carta coperta: rettangolo con pattern dorso uniforme (colore pieno con bordo)
-- Bordi arrotondati dove supportato dal DC
+Rendering in modalita visual:
+- **Sfondo**: `Sfondo tavolo verde.jpg` scalato alle dimensioni del panel, disegnato come primo layer (`dc.DrawBitmap`)
+- **Carta scoperta con immagine**: `wx.Bitmap` caricata da `assets/img/carte francesi/{rank_num}-{suit}.jpg`, scalata con `wx.IMAGE_QUALITY_HIGH`, disegnata con `dc.DrawBitmap()`; bordi di highlight/selezione sovrimposti
+- **Carta scoperta senza immagine** (6 carte mancanti): fallback testuale — rettangolo bianco + rank (testo) + simbolo seme Unicode centrato, colore rosso/nero
+- **Carta coperta**: pattern dorso procedurale wx.DC a rombi (colore base `card_back` da ThemeProperties); nessuna immagine esterna richiesta
+- **Bordi arrotondati**: dove supportato dal DC
 
-Il rendering usa dirty-rect invalidation: ogni azione di gioco identifica quali pile sono state modificate e chiama Refresh(rect=regione_pila) invece di ridisegnare l'intero board.
+Rendering ausilio ipovedenti:
+- Tema Alto Contrasto: `use_card_images = False` — tutte le carte usano rendering testuale ad alto contrasto (bordi bianchi 3px, testo ingrandito)
+- Tema Grande: `use_card_images = True` + `card_scale = 1.5` — carte grande formato con immagine
 
-Il layer accessibilita e separato e parallelo: un wx.StaticText nascosto off-screen (posizione -10000, -10000 px) viene aggiornato con la descrizione testuale dello stato corrente. NVDA lo legge quando il focus e sul panel. Questo evita il problema di PaintDC non accessibile a screen reader.
+Il rendering usa dirty-rect invalidation: ogni azione chiama `Refresh(rect=regione_pila)` invece di ridisegnare l'intero board.
 
-Motivazione: wx.DC e l'unico approccio che permette rendering custom di carte con posizionamento libero (fan-down tableau) senza dipendenze esterne come OpenGL o Cairo. Il layer accessibilita parallelo mantiene piena compatibilita NVDA senza compromessi sul rendering visivo.
+Il layer accessibilita e separato e parallelo: un `wx.StaticText` off-screen (posizione -10000, -10000 px) aggiornato con descrizione testuale. NVDA lo legge senza interferire col rendering.
+
+Motivazione: le immagini fotografiche reali (disponibili in assets/img) danno all'interfaccia l'aspetto del solitaire classico, riconoscibile da giocatori vedenti e ipovedenti. Il fallback testuale garantisce giocabilita anche per le 6 carte mancanti e per il tema Alto Contrasto.
 
 ### 4B. Layout del board
 
@@ -320,20 +329,50 @@ Motivazione: un thread UI bloccato impedisce il ridisegno della finestra. Senza 
 ### 4H. Temi alto contrasto e ipovedenti
 
 Tre temi disponibili:
-- Standard: sfondo verde tavolo, carte bianche, testo nero/rosso, bordi grigi
-- Alto Contrasto: sfondo nero, carte bianche con bordi spessi bianchi, testo nero/rosso intenso, cursore giallo fluorescente
-- Grande: come Standard ma con carte e font 150% della dimensione base
+- Standard: sfondo verde tavolo fotografico, carte con immagine reale, testo nero/rosso, bordi grigi
+- Alto Contrasto: sfondo nero, carte con rendering testuale ad alto contrasto (nessuna immagine), bordi spessi bianchi, cursore giallo fluorescente — `use_card_images = False`
+- Grande: sfondo verde fotografico, carte con immagine reale a scala 1.5, font 21pt — `use_card_images = True`, `card_scale = 1.5`
 
 Dettagli per ipovedenti:
-- Font rank/suit: scalabile, minimo 14pt in modalita Standard, 21pt in Grande
-- Bordi carta: 2px Standard, 3px Alto Contrasto
-- Simboli seme Unicode grandi e centrati nella carta
-- Cursore: bordo 3px colore contrastante + effetto blink (alternanza colore ogni 500ms tramite wx.Timer)
-- Selezione: bordo colore distinto dal cursore (es. cursore = giallo, selezione = ciano)
+- Font rank/suit (fallback testuale): scalabile, minimo 14pt Standard, 21pt Grande; applicato anche alle 6 carte senza immagine
+- Bordi carta: 2px Standard/Grande, 3px Alto Contrasto
+- Simboli seme Unicode grandi e centrati nella carta (in modalita fallback)
+- Cursore: bordo 3px colore contrastante sovrimposto sull'immagine + effetto blink (500ms)
+- Selezione: bordo colore distinto dal cursore sovrimposto sull'immagine
 
-Il tema si seleziona dalle opzioni di gioco (OptionsDialog esistente) e viene salvato nel profilo utente.
+Il tema si seleziona dalle opzioni di gioco (OptionsDialog) e viene salvato nel profilo utente.
 
-Motivazione: gli utenti ipovedenti necessitano di contrasto elevato, dimensioni ingrandite e feedback visivo forte (blink). I tre temi coprono lo spettro da visione normale a bassa visione severa.
+Motivazione: Standard e Grande usano immagini reali per l'aspetto classico; Alto Contrasto disabilita le immagini per massimizzare leggibilita. Il blink cursore e la scala ingrandita coprono lo spettro da visione normale a bassa visione severa.
+
+---
+
+### 4I. Sistema immagini carte (CardImageCache)
+
+Componente responsabile del caricamento e caching delle immagini carte.
+
+**Posizione file immagini**: `assets/img/carte francesi/{rank_num}-{suit}.jpg`
+- Naming convention: `{rank_num}` e il numero ordinale della carta (1=Asso, 11=Jack/Fante, 12=Regina, 13=Re)
+- `{suit}` e il nome del seme in italiano minuscolo: `cuori`, `fiori`, `picche`, `quadri`
+
+**Mapping CardView.rank → rank_num**:
+- `"A"` → `"1"`, `"J"` → `"11"`, `"Q"` → `"12"`, `"K"` → `"13"`
+- `"2"` ... `"10"` → stessa stringa
+
+**Immagini mancanti** (6 carte): `5-quadri`, `7-cuori`, `8-cuori`, `9-fiori`, `9-picche`, `9-quadri`. La cache restituisce `None` per queste carte; CardRenderer usa il fallback testuale.
+
+**Sfondo tavolo**: `assets/img/Sfondo tavolo verde.jpg` — caricato una sola volta, scalato alle dimensioni del panel su EVT_SIZE.
+
+**Dorso carta**: nessuna immagine disponibile per il mazzo francese. Il dorso viene disegnato proceduralmente con pattern a rombi wx.DC (colore `card_back` da ThemeProperties). Questo garantisce rendering coerente senza file aggiuntivi.
+
+**Ciclo di vita della cache**:
+1. Istanziation: `CardImageCache(assets_base_path)` — nessun file viene caricato
+2. Primo paint: `get_bitmap(rank_str, suit_str, width, height)` — carica e scala lazily
+3. EVT_SIZE → `invalidate_size_cache()` — rimuove tutti i bitmap scalati (le immagini sorgente restano in RAM)
+4. Successive chiamate con stessa `(rank, suit, width, height)` → cache hit
+
+**Thread model**: il caricamento avviene nel thread wx (EVT_PAINT). Non servono lock. Il caricamento di 46 immagini JPEG e veloce (< 100ms totali).
+
+Motivazione: la cache elimina il reload a ogni frame (che sarebbe O(52) letture disco per ogni Refresh). Il lazy loading evita il caricamento al boot, quando la dimensione finale del panel non e ancora nota.
 
 ---
 
@@ -353,8 +392,11 @@ Motivazione: gli utenti ipovedenti necessitano di contrasto elevato, dimensioni 
 4. MEDIO - Frame 600x450 troppo piccolo per 13 pile
    - Mitigazione: minimum size portato a 900x650 (decisione 4F). Layout responsive ricalcola su EVT_SIZE. Aspect ratio carte costante.
 
-5. MEDIO - Performance rendering 52 carte con alpha blending
-   - Mitigazione: dirty-rect invalidation (decisione 4A) assicura che solo le pile modificate vengano ridisegnate. AutoBufferedPaintDC elimina flickering. Non si usa alpha blending: le carte sono rettangoli opachi con bordi, senza trasparenze. Il costo di rendering per azione e O(carte nella pila modificata), non O(52).
+5. MEDIO - Performance rendering 52 carte con immagini
+   - Mitigazione: CardImageCache cachea i bitmap scalati; il reload scala avviene solo su EVT_SIZE. dirty-rect invalidation assicura che solo le pile modificate vengano ridisegnate. AutoBufferedPaintDC elimina flickering. Il costo di rendering per azione e O(carte nella pila modificata), non O(52). Le immagini JPEG sono pre-scalate a dimensioni carte (tipicamente 70x98px) quindi il costo di DrawBitmap per carta e trascurabile.
+
+8. BASSO - Immagini carte parzialmente mancanti (6 su 52)
+   - Mitigazione: CardImageCache restituisce None per le 6 carte senza immagine; CardRenderer usa rendering testuale come fallback trasparente. L'utente vedra queste 6 carte con stile diverso (solo testo) ma il gioco funzionera correttamente. Nel log viene scritto un DEBUG per ogni carta mancante alla prima richiesta.
 
 6. MEDIO - Regressione accessibilita se focus si sposta su widget figli
    - Mitigazione: nessun widget figlio e focusabile (decisione 4E). L'info-zone usa stile non focusabile. Il panel mantiene il focus esclusivo in qualsiasi modalita. event.Skip() non viene chiamato per i tasti gameplay.

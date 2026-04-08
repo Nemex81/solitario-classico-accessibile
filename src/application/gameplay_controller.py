@@ -10,9 +10,9 @@ New in v1.4.2.1 (Bug Fix):
 """
 
 import pygame
-from pygame.locals import KMOD_SHIFT, KMOD_CTRL
 from typing import Dict, Callable, Optional
 
+from src.application.board_state import BoardState, CardView
 from src.application.game_engine import GameEngine
 from src.application.options_controller import OptionsWindowController
 from src.domain.services.game_settings import GameSettings
@@ -77,6 +77,9 @@ class GamePlayController:
         self._just_opened_options = False  # Prevent immediate close due to key repeat
         
         self.callback_dict = self._build_commands()
+
+        # Observer callback for visual board updates (Fase 2, v4.0.0)
+        self._on_board_changed_callback: Callable[[BoardState], None] | None = None
     
     def _vocalizza(self, text: str, interrupt: bool = True) -> None:
         """Wrapper for TTS with delay.
@@ -87,7 +90,114 @@ class GamePlayController:
         """
         if text:
             self.sr.tts.speak(text, interrupt=interrupt)
-            pygame.time.wait(100)
+
+    # === OBSERVER BOARD CHANGED ===
+
+    def set_on_board_changed(self, callback: Callable[[BoardState], None] | None) -> None:
+        """Register or remove the board-changed observer callback.
+
+        Args:
+            callback: Callable that receives a BoardState snapshot whenever
+                the board state changes, or None to unregister.
+        """
+        self._on_board_changed_callback = callback
+
+    def _notify_board_changed(self) -> None:
+        """Build a fresh BoardState and invoke the registered callback."""
+        if self._on_board_changed_callback is None:
+            return
+        try:
+            state = self._build_board_state()
+            self._on_board_changed_callback(state)
+        except Exception:
+            pass  # Never crash the controller due to observer errors
+
+    def refresh_board_state(self) -> None:
+        """Push the current board snapshot to the registered observer, if any."""
+        self._notify_board_changed()
+
+    def _build_board_state(self) -> BoardState:
+        """Create a BoardState snapshot from the current engine state.
+
+        Reads piles from GameTable, cursor position from CursorManager, and
+        selection info from SelectionManager. Converts domain.Card instances
+        into presentation-layer CardView objects.
+
+        Returns:
+            BoardState with current game board reflected.
+        """
+        # ---- Colour mapping: domain uses Italian or English strings ----------
+        _color_map = {"rosso": "red", "red": "red", "nero": "black", "black": "black"}
+
+        def _to_card_view(card: object) -> CardView:
+            raw_color = getattr(card, "color", "black")
+            suit_color = _color_map.get(str(raw_color).lower(), "black")
+            return CardView(
+                rank=str(getattr(card, "_valore", "?")),
+                suit=str(getattr(card, "_seme", "?")),
+                face_up=not bool(getattr(card, "_coperta", True)),
+                suit_color=suit_color,
+            )
+
+        # ---- Build 13 piles -------------------------------------------------
+        piles: list[list[CardView]] = [[] for _ in range(13)]
+        try:
+            table = self.engine.service.table
+            # Tableau piles 0-6
+            for i, pile in enumerate(table.pile_base):
+                piles[i] = [_to_card_view(c) for c in pile.cards]
+            # Foundation piles 7-10
+            for i, pile in enumerate(table.pile_semi):
+                piles[7 + i] = [_to_card_view(c) for c in pile.cards]
+            # Waste pile (index 11)
+            if table.pile_scarti is not None:
+                piles[11] = [_to_card_view(c) for c in table.pile_scarti.cards]
+            # Stock pile (index 12)
+            if table.pile_mazzo is not None:
+                piles[12] = [_to_card_view(c) for c in table.pile_mazzo.cards]
+        except Exception:
+            pass
+
+        # ---- Cursor position ------------------------------------------------
+        cursor_pile_idx = 0
+        cursor_card_idx = 0
+        try:
+            cursor_pile_idx = int(self.engine.cursor.pile_idx)
+            cursor_card_idx = int(self.engine.cursor.card_idx)
+        except Exception:
+            pass
+
+        # ---- Selection state ------------------------------------------------
+        selection_active = False
+        selected_pile_idx: int | None = None
+        selected_cards: list[CardView] | None = None
+        try:
+            sel = self.engine.selection
+            if sel.has_selection():
+                selection_active = True
+                selected_cards = [_to_card_view(c) for c in sel.selected_cards]
+                if sel.origin_pile is not None:
+                    selected_pile_idx = self._map_pile_to_index(sel.origin_pile)
+        except Exception:
+            pass
+
+        # ---- Game over flag -------------------------------------------------
+        game_over = False
+        try:
+            state_info = self.engine.get_game_state()
+            game_over = bool(state_info.get("game_over", {}).get("is_over", False))
+        except Exception:
+            pass
+
+        return BoardState(
+            piles=piles,
+            cursor_pile_idx=cursor_pile_idx,
+            cursor_card_idx=cursor_card_idx,
+            selection_active=selection_active,
+            selected_pile_idx=selected_pile_idx,
+            selected_cards=selected_cards,
+            game_over=game_over,
+        )
     
     def _speak_with_hint(self, message: str, hint: Optional[str]) -> None:
         """Vocalizza messaggio e hint opzionale basato su settings (v1.5.0).
@@ -112,7 +222,6 @@ class GamePlayController:
         
         # Vocalizza hint se abilitato nelle impostazioni
         if self.settings.command_hints_enabled and hint:
-            pygame.time.wait(200)  # Pausa 200ms tra messaggio e hint
             self.sr.tts.speak(hint, interrupt=False)
     
     def _build_commands(self) -> Dict[int, Callable]:
@@ -1003,8 +1112,25 @@ ESC: abbandona partita."""
             pass
     
     # === EVENT HANDLER PRINCIPALE ===
-    
+
     def handle_wx_key_event(self, event) -> bool:
+        """Route wxPython key event to gameplay command and notify board observer.
+
+        Public entry point. Delegates to _dispatch_wx_key_event for routing,
+        then triggers _notify_board_changed so the visual panel can repaint.
+
+        Args:
+            event: wx.KeyEvent from wxPython event loop
+
+        Returns:
+            bool: True if key was handled, False if not recognized
+        """
+        handled = self._dispatch_wx_key_event(event)
+        if handled:
+            self._notify_board_changed()
+        return handled
+
+    def _dispatch_wx_key_event(self, event) -> bool:
         """Handle wxPython keyboard events by routing directly to gameplay methods.
         
         Maps wx.KeyEvent to gameplay commands without pygame conversion.
@@ -1279,14 +1405,14 @@ ESC: abbandona partita."""
             # 🔥 DEBUG: Force victory (CTRL+ALT+W) - v1.6.0
             # ═══════════════════════════════════════════════════════
             if (event.key == pygame.K_w and 
-                (mods & KMOD_CTRL) and 
+                (mods & pygame.KMOD_CTRL) and 
                 (mods & pygame.KMOD_ALT)):
                 msg = self.engine._debug_force_victory()
                 self._vocalizza(msg)
                 return
             
             # === SHIFT MODIFIERS (Priority over normal commands) ===
-            if mods & KMOD_SHIFT:
+            if mods & pygame.KMOD_SHIFT:
                 # SHIFT+1-4: Pile semi (fondazioni)
                 if event.key == pygame.K_1:
                     self._nav_pile_semi(7)  # Cuori

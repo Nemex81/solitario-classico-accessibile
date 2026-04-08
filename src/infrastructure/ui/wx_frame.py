@@ -95,14 +95,15 @@ class SolitarioFrame(wx.Frame):
         self.on_timer_tick = on_timer_tick
         self.on_close = on_close
         
-        # Create visible frame (600x450, normal style)
+        # Create visible frame (900x650, normal style)
         super().__init__(
             parent=parent,
             id=id,
             title=title,
-            size=(600, 450),  # Proper size for single-window UI
+            size=(900, 650),  # Enlarged for visual gameplay mode
             style=wx.DEFAULT_FRAME_STYLE  # Standard frame style
         )
+        self.SetMinSize((900, 650))
         
         # Timer for periodic checks (lazy initialization)
         self._timer: Optional[wx.Timer] = None
