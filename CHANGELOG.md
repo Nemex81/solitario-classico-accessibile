@@ -10,7 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- `src/infrastructure/ui/card_image_cache.py`: aggiunge CardImageCache per immagini carte.
+- `src/infrastructure/ui/card_image_cache.py`: `CardImageCache` — lazy-loading cache per bitmap immagini carte JPEG da `assets/img`. Supporta sfondo fotografico e invalidazione per resize. (Fase 0)
+- `src/infrastructure/ui/visual_theme.py`: campo `use_card_images: bool` a `ThemeProperties`; `THEME_STANDARD` e `THEME_GRANDE` usano immagini reali, `THEME_ALTO_CONTRASTO` mantiene rendering testuale. (Fase 1)
+
+### Changed
+- `src/infrastructure/ui/card_renderer.py`: `draw_card()` accetta parametro opzionale `bitmap: object | None`; se fornito e la carta è scoperta, disegna con `dc.DrawBitmap()` invece del rendering testuale. Compatibilità backward completa. (Fase 2)
+- `src/infrastructure/ui/gameplay_panel.py`: integrazione `CardImageCache` in `GameplayPanel`; in modalità visual con `use_card_images=True` usa sfondo fotografico del tavolo e bitmap reali per ogni carta scoperta; `_on_size()` invalida la size cache al resize. (Fase 3)
 
 ---
 

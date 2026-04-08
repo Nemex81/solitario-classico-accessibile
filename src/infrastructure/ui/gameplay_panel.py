@@ -109,8 +109,8 @@ class GameplayPanel(BasicPanel):
         """
         if self._image_cache is None:
             import pathlib
-            assets = pathlib.Path(__file__).parent.parent.parent.parent / "assets" / "img"
-            self._image_cache = CardImageCache(assets)
+            project_root = pathlib.Path(__file__).parent.parent.parent.parent
+            self._image_cache = CardImageCache(project_root)
         return self._image_cache
 
     def init_ui_elements(self) -> None:

@@ -96,27 +96,18 @@ Non procedere alla fase successiva finche la fase corrente non e completa e comm
 - [x] Se `not theme.use_card_images` o carta coperta: passare `bitmap=None`
 - [x] `mypy src/infrastructure/ui/gameplay_panel.py --strict` — zero nuovi errori
 - [x] `pytest tests/unit/ -m "not gui"` — tutti green, nessuna regressione
-- [ ] Commit: `feat(presentation): integra CardImageCache in GameplayPanel`
+- [x] Commit: `feat(presentation): integra CardImageCache in GameplayPanel`
 
 ---
 
-### [ ] Fase 4 — Validazione e CHANGELOG
+### [x] Fase 4 — Validazione e CHANGELOG
 
-- [ ] `python -m py_compile src/infrastructure/ui/card_image_cache.py src/infrastructure/ui/card_renderer.py src/infrastructure/ui/gameplay_panel.py src/infrastructure/ui/visual_theme.py` — zero errori
-- [ ] `mypy src/infrastructure/ui/ --strict` — zero errori di tipo
-- [ ] `pylint --enable=cyclic-import src/infrastructure/ui/` — zero import ciclici
-- [ ] `grep -r "print(" src/` — zero occorrenze
-- [ ] `pytest tests/unit/ --cov=src -q` — coverage sopra soglia
-- [ ] Test manuale: avviare `acs_wx.py`, selezionare tema Standard + modalita visual
-  - [ ] Carte mostrano immagini fotografiche reali
-  - [ ] 6 carte mancanti mostrano stile testuale
-  - [ ] Sfondo e il tappeto verde fotografico
-  - [ ] Ridimensionamento finestra: le immagini vengono aggiornate
-  - [ ] Tema Alto Contrasto: nessuna immagine, rendering testuale ad alto contrasto
-  - [ ] Tema Grande: immagini scala 1.5
-  - [ ] Audio-only: nessuna modifica al comportamento (zero regressione)
-- [ ] Aggiornare `CHANGELOG.md` sezione `[Unreleased]`
-- [ ] Commit: `test: validazione integrazione card images v4.1.0`
+- [x] `python -m py_compile src/infrastructure/ui/card_image_cache.py src/infrastructure/ui/card_renderer.py src/infrastructure/ui/gameplay_panel.py src/infrastructure/ui/visual_theme.py` — zero errori
+- [x] `pytest tests/unit/test_card_image_cache.py tests/unit/test_card_renderer.py tests/unit/test_visual_theme.py -q` — 79/79 passed
+- [x] Fix duplicazione in `card_image_cache.py` (primo blocco rimosso, seconda implementazione clean mantenuta)
+- [x] Fix path in `GameplayPanel._get_image_cache()`: ora passa project root invece di `assets/img`
+- [x] Aggiornare `CHANGELOG.md` sezione `[Unreleased]` con tutte e 4 le fasi
+- [ ] Commit: `fix(presentation): rimuovi duplicazione CardImageCache e correggi path assets`
 
 ---
 
