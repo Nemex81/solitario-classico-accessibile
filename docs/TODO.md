@@ -27,6 +27,7 @@ stato: attivo
 
 - [DESIGN_audio_system.md](2%20-%20projects/DESIGN_audio_system.md) — sistema audio (completato)
 - [DESIGN_framework-template-bootstrap.md](2%20-%20projects/DESIGN_framework-template-bootstrap.md) — integrazione template framework e bootstrap Agent-Welcome (reviewed)
+- [DESIGN_gameplay-visual-ui.md](2%20-%20projects/DESIGN_gameplay-visual-ui.md) — supporto visivo finestra gameplay (reviewed)
 
 ## Piani
 
@@ -37,6 +38,7 @@ stato: attivo
 - [PLAN_e2e-resilience_v1.10.0.md](3%20-%20coding%20plans/PLAN_e2e-resilience_v1.10.0.md) — gate semantici, rollback, coverage SOT (completed)
 - [PLAN_template-bootstrap-integration_v1.10.3.md](3%20-%20coding%20plans/PLAN_template-bootstrap-integration_v1.10.3.md) — bootstrap documentale core e integrazione template framework (completed)
 - [PLAN_scf-mcp-server_v1.0.0.md](3%20-%20coding%20plans/PLAN_scf-mcp-server_v1.0.0.md) — server MCP locale per esposizione runtime del framework SCF (ready)
+- [PLAN_gameplay-visual-ui_v4.0.0.md](3%20-%20coding%20plans/PLAN_gameplay-visual-ui_v4.0.0.md) — piano implementazione visual UI gameplay (draft)
 
 ## Reports
 
@@ -52,6 +54,7 @@ stato: attivo
 - [TODO_e2e-resilience_v1.10.0.md](5%20-%20todolist/TODO_e2e-resilience_v1.10.0.md) — e2e resilience (completed)
 - [TODO_template-bootstrap-integration_v1.10.3.md](5%20-%20todolist/TODO_template-bootstrap-integration_v1.10.3.md) — implementazione bootstrap template/framework (completed)
 - [TODO_scf-mcp-server_v1.0.0.md](5%20-%20todolist/TODO_scf-mcp-server_v1.0.0.md) — implementazione server MCP SCF (completed)
+- [TODO_gameplay-visual-ui_v4.0.0.md](5%20-%20todolist/TODO_gameplay-visual-ui_v4.0.0.md) — implementazione visual UI gameplay (in corso)
 
 ## Stato Avanzamento
 
