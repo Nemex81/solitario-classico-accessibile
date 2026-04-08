@@ -12,10 +12,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `src/infrastructure/ui/card_image_cache.py`: `CardImageCache` — lazy-loading cache per bitmap immagini carte JPEG da `assets/img`. Supporta sfondo fotografico e invalidazione per resize. (Fase 0)
 - `src/infrastructure/ui/visual_theme.py`: campo `use_card_images: bool` a `ThemeProperties`; `THEME_STANDARD` e `THEME_GRANDE` usano immagini reali, `THEME_ALTO_CONTRASTO` mantiene rendering testuale. (Fase 1)
+ - `src/infrastructure/ui/board_layout_manager.py`: aggiunto `calculate_adaptive_tableau_layout()` per scalare i fan-offset delle pile tableau ed evitare overflow verticale su pannelli di altezza ridotta.
+
+### Fixed
+- `src/infrastructure/ui/gameplay_panel.py`: **BUG CRITICO — interfaccia visiva non mostrava nulla.** La `wx.StaticText` creata da `init_ui_elements()` era una variabile locale mai nascosta e occupava l'intera area del panel, coprendo il rendering delle carte. Salvata come `self._audio_label`; nascosta via `sizer.Show(False)` in modalità visual; mostrata di nuovo in modalità audio. `toggle_display_mode()` e `apply_visual_settings()` aggiornano ora la visibilità della label + `Layout()`.
+- `src/infrastructure/ui/gameplay_panel.py`: **BUG — schermo vuoto al primo avvio in modalità visual.** `_board_state` era `None` al primo `EVT_PAINT` perché `refresh_board_state()` veniva richiamato dopo `show_panel()`. Risolto in `acs_wx.py` riordinando la sequenza.
+- `src/infrastructure/ui/gameplay_panel.py`: **BUG — schermata nera durante l'inizializzazione visual.** Quando `_board_state` non era ancora disponibile, `_on_paint()` eseguiva solo `dc.Clear()` senza impostare il background del tema; su Windows il brush risultante era nero. Ora il panel usa sempre `wx.BG_STYLE_PAINT`, dipinge lo sfondo del tema anche in assenza di stato e mostra un placeholder testuale durante l'attesa del primo snapshot.
+- `src/infrastructure/ui/gameplay_panel.py`: `_try_register_observer()` ora logga esplicitamente successo e fallimento della registrazione del callback board observer (prima il fallimento era silenzioso). `apply_visual_settings()` ritenta la registrazione come safety net.
+- `acs_wx.py` `start_gameplay()`: `reset_game()`, `new_game()`, `refresh_board_state()` ora eseguiti **prima** di `show_panel()` in modo che il panel riceva il primo `EVT_PAINT` già con `_board_state` popolato; un secondo `refresh_board_state()` dopo `show_panel()` copre i timing wx in cui il panel viene dipinto solo dopo essere diventato visibile.
+ - `src/infrastructure/ui/board_layout_manager.py`: risolto overflow verticale delle pile tableau su pannelli di altezza ridotta — le pile tableau non escono più dallo schermo grazie alla funzione adattiva che scala gli offset delle carte.
 
 ### Changed
 - `src/infrastructure/ui/card_renderer.py`: `draw_card()` accetta parametro opzionale `bitmap: object | None`; se fornito e la carta è scoperta, disegna con `dc.DrawBitmap()` invece del rendering testuale. Compatibilità backward completa. (Fase 2)
 - `src/infrastructure/ui/gameplay_panel.py`: integrazione `CardImageCache` in `GameplayPanel`; in modalità visual con `use_card_images=True` usa sfondo fotografico del tavolo e bitmap reali per ogni carta scoperta; `_on_size()` invalida la size cache al resize. (Fase 3)
+- `src/infrastructure/ui/card_renderer.py`: `_draw_face()` migliorato per le carte senza immagine: rank+simbolo in alto sx e basso dx, simbolo grande centrato — layout più simile a una carta vera.
+- `acs_wx.py` `start_gameplay()`: la frame viene massimizzata automaticamente all'avvio della partita in modalità visiva, per massimizzare lo spazio disponibile per le carte.
+- `acs_wx.py` `return_to_menu()`: ripristino finestra dimensione normale al ritorno dal menu.
 
 ---
 

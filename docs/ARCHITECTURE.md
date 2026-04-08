@@ -252,6 +252,7 @@ src/
 │       │   └── timer_combobox.py
 │       ├── menu_panel.py      # Main menu (6 buttons v3.1.0)
 │       ├── gameplay_panel.py  # Gameplay UI
+│       ├── board_layout_manager.py # BoardLayoutManager: calcola geometria pixel delle pile; include metodo adattivo per il tableau
 │       └── profile_menu_panel.py (v3.1.0) # Profile management modal
 └── presentation/        # Presentation Layer
     ├── __init__.py

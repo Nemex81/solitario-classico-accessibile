@@ -73,8 +73,10 @@ class GameplayPanel(BasicPanel):
         self._cursor_blink_on: bool = True
         self._blink_timer: wx.Timer | None = None
         self._nvda_info_zone: wx.StaticText | None = None
+        self._audio_label: wx.StaticText | None = None
 
         super().__init__(parent=parent, controller=controller, **kwargs)
+        self.SetBackgroundStyle(wx.BG_STYLE_PAINT)
 
         # Bind extra events
         self.Bind(wx.EVT_PAINT, self._on_paint)
@@ -95,8 +97,13 @@ class GameplayPanel(BasicPanel):
             gc = getattr(self.controller, "gameplay_controller", None)
             if gc is not None and hasattr(gc, "set_on_board_changed"):
                 gc.set_on_board_changed(self._on_board_changed)
-        except Exception:  # pragma: no cover
-            _log.debug("Cannot register board observer — controller not ready yet")
+                _log.debug("GameplayPanel: board observer registrato correttamente")
+            else:
+                _log.warning(
+                    "GameplayPanel: gameplay_controller non disponibile — observer non registrato"
+                )
+        except Exception as exc:  # pragma: no cover
+            _log.warning("GameplayPanel: impossibile registrare board observer — %s", exc)
 
     def _get_image_cache(self) -> CardImageCache:
         """Lazy-initialize the card image cache.
@@ -123,12 +130,16 @@ class GameplayPanel(BasicPanel):
         The off-screen NVDA info zone is always created so that it can be
         updated from ``_on_board_changed`` regardless of mode.
         """
-        label = wx.StaticText(
+        self._audio_label = wx.StaticText(
             self,
             label="Partita in corso\n\nPremi H per comandi disponibili\nF3: attiva/disattiva modalita visiva",
         )
-        label.SetFont(wx.Font(12, wx.DEFAULT, wx.NORMAL, wx.NORMAL))
-        self.sizer.Add(label, 1, wx.ALIGN_CENTER)
+        self._audio_label.SetFont(wx.Font(12, wx.DEFAULT, wx.NORMAL, wx.NORMAL))
+        self.sizer.Add(self._audio_label, 1, wx.ALIGN_CENTER)
+
+        # In visual mode hide the label immediately so the paint canvas is fully exposed
+        if self._display_mode == _DISPLAY_VISUAL:
+            self.sizer.Show(self._audio_label, False)
 
         # Off-screen NVDA info zone — always created, always invisible to sighted users
         self._nvda_info_zone = wx.StaticText(self, label="", pos=(-10000, -10000))
@@ -138,9 +149,37 @@ class GameplayPanel(BasicPanel):
     # EVT_PAINT
     # -----------------------------------------------------------------------
 
+    def _paint_visual_background(self, dc: wx.DC, width: int, height: int) -> None:
+        """Paint the board background for visual mode.
+
+        Uses the themed bitmap when available, otherwise falls back to the
+        theme solid background color.
+        """
+        theme = self._current_theme
+        if theme.use_card_images:
+            cache = self._get_image_cache()
+            bg_bmp = cache.get_background_bitmap(width, height)
+            if bg_bmp is not None:
+                dc.DrawBitmap(bg_bmp, 0, 0)
+                return
+
+        dc.SetBackground(wx.Brush(wx.Colour(*theme.bg_color)))
+        dc.Clear()
+
+    def _draw_waiting_message(self, dc: wx.DC, width: int, height: int) -> None:
+        """Draw a visible placeholder while the first BoardState is not ready."""
+        theme = self._current_theme
+        dc.SetTextForeground(wx.Colour(255, 255, 255))
+        dc.SetFont(wx.Font(max(theme.font_size_base, 16), wx.DEFAULT, wx.NORMAL, wx.BOLD))
+        message = "Inizializzazione tavolo in corso..."
+        text_width, text_height = dc.GetTextExtent(message)
+        pos_x = max(16, (width - text_width) // 2)
+        pos_y = max(16, (height - text_height) // 2)
+        dc.DrawText(message, pos_x, pos_y)
+
     def _on_paint(self, event: wx.PaintEvent) -> None:
         """Paint handler — renders board in visual mode; no-op in audio_only."""
-        if self._display_mode != _DISPLAY_VISUAL or self._board_state is None:
+        if self._display_mode != _DISPLAY_VISUAL:
             dc = wx.PaintDC(self)  # must consume the event even when skipping
             dc.Clear()
             return
@@ -148,21 +187,27 @@ class GameplayPanel(BasicPanel):
         dc = wx.AutoBufferedPaintDC(self)
         w, h = self.GetClientSize()
         theme = self._current_theme
+        self._paint_visual_background(dc, w, h)
 
-        if theme.use_card_images:
-            cache = self._get_image_cache()
-            bg_bmp = cache.get_background_bitmap(w, h)
-            if bg_bmp is not None:
-                dc.DrawBitmap(bg_bmp, 0, 0)
-            else:
-                dc.SetBackground(wx.Brush(wx.Colour(*theme.bg_color)))
-                dc.Clear()
-        else:
-            dc.SetBackground(wx.Brush(wx.Colour(*theme.bg_color)))
-            dc.Clear()
+        if self._board_state is None:
+            self._draw_waiting_message(dc, w, h)
+            _log.debug("GameplayPanel: paint visual senza board_state, placeholder mostrato")
+            return
 
         layout = self._layout_manager.calculate_layout(w, h, theme)
         state = self._board_state
+
+        # Adatta i fan-offset delle pile tableau per evitare overflow verticale
+        pile_depths = {
+            i: (
+                sum(1 for c in state.piles[i] if not c.face_up),
+                sum(1 for c in state.piles[i] if c.face_up),
+            )
+            for i in range(min(7, len(state.piles)))
+        }
+        layout = self._layout_manager.calculate_adaptive_tableau_layout(
+            layout, pile_depths, h
+        )
 
         for pile_idx, pile in enumerate(state.piles):
             for card_idx, card in enumerate(pile):
@@ -261,11 +306,17 @@ class GameplayPanel(BasicPanel):
             self._display_mode = _DISPLAY_VISUAL
             if self._blink_timer is not None:
                 self._blink_timer.Start(_BLINK_MS)
+            if self._audio_label is not None:
+                self.sizer.Show(self._audio_label, False)
+                self.Layout()
             _log.info("GameplayPanel: modalita visiva attivata")
         else:
             self._display_mode = _DISPLAY_AUDIO
             if self._blink_timer is not None:
                 self._blink_timer.Stop()
+            if self._audio_label is not None:
+                self.sizer.Show(self._audio_label, True)
+                self.Layout()
             _log.info("GameplayPanel: modalita audio attivata")
         self.Refresh()
 
@@ -280,6 +331,14 @@ class GameplayPanel(BasicPanel):
                 self._blink_timer.Start(_BLINK_MS)
             else:
                 self._blink_timer.Stop()
+
+        if self._audio_label is not None:
+            show_label = (self._display_mode == _DISPLAY_AUDIO)
+            self.sizer.Show(self._audio_label, show_label)
+            self.Layout()
+
+        # Re-register observer in case it was missed at construction time
+        self._try_register_observer()
 
         self.Refresh()
 

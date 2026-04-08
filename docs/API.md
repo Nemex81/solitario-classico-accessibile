@@ -398,6 +398,35 @@ TimerManager(
   intervallo configurato (default 5,2,1 minuti).
 - `expired_callback()` invocato una sola volta al termine del timer.
 
+# BoardLayoutManager (Infrastructure / UI)
+
+**Modulo:** `src/infrastructure/ui/board_layout_manager.py`
+**Layer:** Infrastructure (UI)
+
+Classe che calcola la geometria pixel delle pile e delle carte sul pannello di gioco. È una componente pure-Python (no dipendenze wx) utilizzata da `GameplayPanel` per calcolare posizioni e offset delle carte.
+
+### API pubblica
+
+- `calculate_adaptive_tableau_layout(self, base_layout: dict[int, PileGeometry], pile_depths: dict[int, tuple[int, int]], panel_height: int) -> dict[int, PileGeometry]`
+        - `base_layout`: dizionario mappa `pile_index -> PileGeometry` calcolato dal layout di base (`calculate_layout()`);
+        - `pile_depths`: mappa `pile_index -> (face_down_count, face_up_count)` per le pile tableau (tipicamente pile 0-6);
+        - `panel_height`: altezza disponibile del pannello in pixel.
+        - Restituisce un nuovo dizionario `dict[int, PileGeometry]` con i valori `fan_offset_face_down` e `fan_offset_face_up` adattati per ogni pila in modo che tutte le carte rientrino in `panel_height`.
+
+**Comportamento:** riduce dinamicamente i fan-offset delle pile tableau per evitare overflow verticale. Mantiene il rapporto 1:3 tra `face_down` e `face_up` (più spazio alle carte scoperte), e applica soglie minime (_MIN_FAN_FACE_DOWN, _MIN_FAN_FACE_UP) per preservare leggibilità. Integrato in `GameplayPanel._on_paint()` dopo il calcolo del layout base.
+
+**Esempio d'uso:**
+```python
+from src.infrastructure.ui.board_layout_manager import BoardLayoutManager
+
+manager = BoardLayoutManager()
+base = manager.calculate_layout(width, height, theme)
+pile_depths = {i: (face_down_count_i, face_up_count_i) for i in range(7)}
+adapted = manager.calculate_adaptive_tableau_layout(base, pile_depths, panel_height)
+```
+
+**Note:** metodo introdotto in `tableau-adaptive-layout v4.2.0` per evitare che le pile tableau escano dallo schermo su pannelli con altezza ridotta.
+
 Metodi utili: `start()`, `pause()`, `resume()`, `reset()`,
 `check_warnings()`.
 

@@ -48,6 +48,7 @@ class TestGameplayVisualWiring:
     def test_start_gameplay_syncs_preferences_and_refreshes_board(self) -> None:
         controller = object.__new__(SolitarioController)
         controller.settings = MagicMock(display_mode="visual", visual_theme="standard")
+        controller.frame = MagicMock()
         controller.view_manager = MagicMock()
         current_panel = MagicMock()
         gameplay_panel = MagicMock()
@@ -72,7 +73,7 @@ class TestGameplayVisualWiring:
         controller.view_manager.show_panel.assert_called_once_with('gameplay')
         controller.engine.reset_game.assert_called_once_with()
         controller.engine.new_game.assert_called_once_with()
-        controller.gameplay_controller.refresh_board_state.assert_called_once_with()
+        assert controller.gameplay_controller.refresh_board_state.call_count == 2
         controller.screen_reader.tts.speak.assert_called_once()
         assert controller.is_menu_open is False
         assert controller._timer_expired_announced is False

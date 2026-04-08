@@ -353,15 +353,21 @@ class SolitarioController:
                     current_panel.Hide()
 
             self._sync_gameplay_panel_settings()
-            
-            # Show gameplay panel (logs transition internally)
-            self.view_manager.show_panel('gameplay')
-            self.is_menu_open = False  # Sync flag: now in gameplay
-            
-            # Initialize game
+
+            # Initialize game BEFORE showing panel so the first EVT_PAINT
+            # already has a populated _board_state (avoids blank first frame)
             self.engine.reset_game()
             self.engine.new_game()
             self.gameplay_controller.refresh_board_state()
+
+            # Show gameplay panel (logs transition internally)
+            self.view_manager.show_panel('gameplay')
+            self.gameplay_controller.refresh_board_state()
+            self.is_menu_open = False  # Sync flag: now in gameplay
+
+            # Maximize frame in visual mode for better card visibility
+            if self.settings.display_mode == "visual" and self.frame is not None:
+                self.frame.Maximize(True)
             self._timer_expired_announced = False
             
             if self.screen_reader:
@@ -410,9 +416,13 @@ class SolitarioController:
             log.warning_issued("SolitarioController", "ViewManager not initialized")
             return
         
+        # Restore windowed mode when returning to menu
+        if self.frame is not None and self.frame.IsMaximized():
+            self.frame.Maximize(False)
+
         # Show menu panel (logs transition internally)
         self.view_manager.show_panel('menu')
-        
+
         # Update state
         self.is_menu_open = True
         

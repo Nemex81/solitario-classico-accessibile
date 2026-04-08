@@ -40,6 +40,7 @@ stato: attivo
 - [DESIGN_audio_system.md](2%20-%20projects/DESIGN_audio_system.md) — sistema audio (completato)
 - [DESIGN_framework-template-bootstrap.md](2%20-%20projects/DESIGN_framework-template-bootstrap.md) — integrazione template framework e bootstrap Agent-Welcome (reviewed)
 - [DESIGN_gameplay-visual-ui.md](2%20-%20projects/DESIGN_gameplay-visual-ui.md) — supporto visivo finestra gameplay (reviewed)
+- [DESIGN_tableau-adaptive-layout_v4.2.0.md](2%20-%20projects/DESIGN_tableau-adaptive-layout_v4.2.0.md) — layout adattivo tableau: overflow verticale carte (REVIEWED)
 
 ## Piani
 
@@ -52,6 +53,7 @@ stato: attivo
 - [PLAN_scf-mcp-server_v1.0.0.md](3%20-%20coding%20plans/PLAN_scf-mcp-server_v1.0.0.md) — server MCP locale per esposizione runtime del framework SCF (ready)
 - [PLAN_gameplay-visual-ui_v4.0.0.md](3%20-%20coding%20plans/PLAN_gameplay-visual-ui_v4.0.0.md) — piano implementazione visual UI gameplay (reviewed — completato)
 - [PLAN_gameplay-card-images_v4.1.0.md](3%20-%20coding%20plans/PLAN_gameplay-card-images_v4.1.0.md) — immagini reali carte francesi **(ready — in avvio)**
+- [PLAN_tableau-adaptive-layout_v4.2.0.md](3%20-%20coding%20plans/PLAN_tableau-adaptive-layout_v4.2.0.md) — layout adattivo tableau, scaling fan offset per-pila (DRAFT)
 
 ## Reports
 
@@ -70,6 +72,7 @@ stato: attivo
 - [TODO_scf-mcp-server_v1.0.0.md](5%20-%20todolist/TODO_scf-mcp-server_v1.0.0.md) — implementazione server MCP SCF (completed)
 - [TODO_gameplay-visual-ui_v4.0.0.md](5%20-%20todolist/TODO_gameplay-visual-ui_v4.0.0.md) — implementazione visual UI gameplay (completato — rendering testuale)
 - [TODO_gameplay-card-images_v4.1.0.md](5%20-%20todolist/TODO_gameplay-card-images_v4.1.0.md) — immagini reali carte francesi **(prioritario — in avvio)**
+- [TODO_tableau-adaptive-layout_v4.2.0.md](5%20-%20todolist/TODO_tableau-adaptive-layout_v4.2.0.md) — layout adattivo tableau (ACTIVE — 3 fasi)
 
 ## Stato Avanzamento
 

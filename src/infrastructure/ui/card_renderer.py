@@ -111,7 +111,10 @@ class CardRenderer:
         height: int,
         theme: ThemeProperties,
     ) -> None:
-        """Fill card face and draw rank + suit symbol.
+        """Fill card face and draw rank + suit symbol (fallback for missing images).
+
+        Renders a card face with rank label top-left and bottom-right, and a
+        large suit symbol centred — mimicking a real playing card layout.
 
         Args:
             dc: Device context.
@@ -125,15 +128,24 @@ class CardRenderer:
 
         # Text colour based on suit
         text_color = theme.text_red if card.suit_color == "red" else theme.text_black
-
-        # Rank in top-left corner
-        self._set_text_foreground(dc, text_color)
-        self._set_font(dc, theme.font_size_base, bold=True)
-        self._draw_text(dc, card.rank, x + 3, y + 2)
-
-        # Suit symbol centred
         symbol = _SUIT_SYMBOLS.get(card.suit.lower(), card.suit[:1])
-        sym_size = max(theme.font_size_base, 12)
+
+        # Rank + small symbol — top-left corner
+        corner_font = max(theme.font_size_base - 2, 8)
+        self._set_text_foreground(dc, text_color)
+        self._set_font(dc, corner_font, bold=True)
+        self._draw_text(dc, card.rank, x + 3, y + 2)
+        self._set_font(dc, corner_font - 2, bold=False)
+        self._draw_text(dc, symbol, x + 3, y + 2 + corner_font + 1)
+
+        # Rank + small symbol — bottom-right corner (mirrored)
+        self._set_font(dc, corner_font, bold=True)
+        self._draw_text(dc, card.rank, x + width - corner_font - 2, y + height - corner_font * 2 - 4)
+        self._set_font(dc, corner_font - 2, bold=False)
+        self._draw_text(dc, symbol, x + width - corner_font - 2, y + height - corner_font - 2)
+
+        # Large suit symbol centred
+        sym_size = max(int(height * 0.35), theme.font_size_base + 4, 16)
         self._set_font(dc, sym_size, bold=False)
         sym_x = x + (width - sym_size) // 2
         sym_y = y + (height - sym_size) // 2

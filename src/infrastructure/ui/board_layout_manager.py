@@ -55,6 +55,10 @@ class PileGeometry:
 # Number of visual columns across the board
 _NUM_COLS = 7
 
+# Minimum guaranteed fan offsets to maintain readability
+_MIN_FAN_FACE_DOWN: int = 2
+_MIN_FAN_FACE_UP: int = 4
+
 
 class BoardLayoutManager:
     """Computes and caches the pixel layout for a given panel size and theme.
@@ -201,3 +205,73 @@ class BoardLayoutManager:
                 y += geom.fan_offset_face_down
 
         return (x, y, geom.card_width, geom.card_height)
+
+    def calculate_adaptive_tableau_layout(
+        self,
+        base_layout: dict[int, "PileGeometry"],
+        pile_depths: dict[int, tuple[int, int]],
+        panel_height: int,
+    ) -> dict[int, "PileGeometry"]:
+        """Return layout with fan offsets scaled to prevent vertical overflow.
+
+        For each tableau pile (0-6), if the pile's content would extend beyond
+        ``panel_height``, the face-up and face-down fan offsets are scaled
+        proportionally (3:1 ratio preserved) so the last card fits within bounds.
+        Non-tableau piles (7-12) are copied unchanged.
+
+        Args:
+            base_layout: Output of ``calculate_layout()`` for the same panel/theme.
+            pile_depths: Mapping of pile index (0-6) to (n_face_down, n_face_up).
+                Missing keys default to (0, 0).
+            panel_height: Height of the rendering panel in pixels.
+
+        Returns:
+            New ``dict[int, PileGeometry]`` with adapted geometries.
+
+        Raises:
+            ValueError: If ``base_layout`` does not contain keys 0-12.
+        """
+        import dataclasses  # noqa: PLC0415
+        if not all(k in base_layout for k in range(13)):
+            raise ValueError("base_layout must contain keys 0-12")
+
+        result: dict[int, "PileGeometry"] = {}
+
+        for pile_idx, geom in base_layout.items():
+            if pile_idx > 6:
+                # Non-tableau piles: copy unchanged
+                result[pile_idx] = geom
+                continue
+
+            n_fd, n_fu = pile_depths.get(pile_idx, (0, 0))
+
+            # Height needed: top of pile + all fan offsets + one card height
+            needed = (
+                geom.y
+                + n_fd * geom.fan_offset_face_down
+                + n_fu * geom.fan_offset_face_up
+                + geom.card_height
+            )
+
+            if needed <= panel_height:
+                result[pile_idx] = geom
+                continue
+
+            # Scale to fit within available height (preserving 3:1 ratio fu:fd)
+            available_h = max(0, panel_height - geom.y - geom.card_height)
+            total_units = n_fd * 1 + n_fu * 3  # 1 unit per face-down, 3 per face-up
+            if total_units == 0:
+                result[pile_idx] = geom
+                continue
+
+            unit = available_h / total_units
+            new_fd = max(_MIN_FAN_FACE_DOWN, int(unit * 1))
+            new_fu = max(_MIN_FAN_FACE_UP, int(unit * 3))
+
+            result[pile_idx] = dataclasses.replace(
+                geom,
+                fan_offset_face_down=new_fd,
+                fan_offset_face_up=new_fu,
+            )
+
+        return result

@@ -236,3 +236,88 @@ class TestGetCardRect:
         pile: list[Any] = [_FakeCard(False)] * 10
         rects = [manager.get_card_rect(12, i, pile, layout) for i in range(10)]
         assert all(r == rects[0] for r in rects)
+
+
+# ---------------------------------------------------------------------------
+# calculate_adaptive_tableau_layout
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestCalculateAdaptiveTableauLayout:
+    def test_adaptive_layout_cards_within_panel_height(
+        self, manager: BoardLayoutManager
+    ) -> None:
+        """Scaled layout for 13 face-up cards per pile must not exceed panel_height."""
+        panel_h = 400
+        base = manager.calculate_layout(600, panel_h, THEME_STANDARD)
+        pile_depths: dict[int, tuple[int, int]] = {i: (0, 13) for i in range(7)}
+        adapted = manager.calculate_adaptive_tableau_layout(base, pile_depths, panel_h)
+        for i in range(7):
+            geom = adapted[i]
+            total = geom.y + 13 * geom.fan_offset_face_up + geom.card_height
+            assert total <= panel_h, f"pile {i}: total={total} exceeds panel_height={panel_h}"
+
+    def test_adaptive_layout_y_top_unchanged(
+        self, manager: BoardLayoutManager
+    ) -> None:
+        """y (top edge) of each tableau pile must never be altered by adaption."""
+        panel_h = 400
+        base = manager.calculate_layout(600, panel_h, THEME_STANDARD)
+        pile_depths: dict[int, tuple[int, int]] = {i: (5, 8) for i in range(7)}
+        adapted = manager.calculate_adaptive_tableau_layout(base, pile_depths, panel_h)
+        for i in range(7):
+            assert adapted[i].y == base[i].y, f"pile {i}: y changed from {base[i].y} to {adapted[i].y}"
+
+    def test_adaptive_layout_no_overflow_not_modified(
+        self, manager: BoardLayoutManager
+    ) -> None:
+        """When no pile would overflow, offsets must remain identical to base."""
+        panel_h = 1080
+        base = manager.calculate_layout(1920, panel_h, THEME_STANDARD)
+        pile_depths: dict[int, tuple[int, int]] = {i: (0, 2) for i in range(7)}
+        adapted = manager.calculate_adaptive_tableau_layout(base, pile_depths, panel_h)
+        for i in range(7):
+            assert adapted[i].fan_offset_face_up == base[i].fan_offset_face_up, (
+                f"pile {i}: fan_offset_face_up changed"
+            )
+            assert adapted[i].fan_offset_face_down == base[i].fan_offset_face_down, (
+                f"pile {i}: fan_offset_face_down changed"
+            )
+
+    def test_adaptive_layout_minimum_offsets_enforced(
+        self, manager: BoardLayoutManager
+    ) -> None:
+        """Even with extreme constraints, minimum fan offsets must be preserved."""
+        panel_h = 50
+        base = manager.calculate_layout(800, panel_h, THEME_STANDARD)
+        pile_depths: dict[int, tuple[int, int]] = {i: (3, 5) for i in range(7)}
+        adapted = manager.calculate_adaptive_tableau_layout(base, pile_depths, panel_h)
+        for i in range(7):
+            assert adapted[i].fan_offset_face_down >= 2, (
+                f"pile {i}: fan_offset_face_down={adapted[i].fan_offset_face_down} < _MIN=2"
+            )
+            assert adapted[i].fan_offset_face_up >= 4, (
+                f"pile {i}: fan_offset_face_up={adapted[i].fan_offset_face_up} < _MIN=4"
+            )
+
+    def test_adaptive_layout_non_tableau_piles_unchanged(
+        self, manager: BoardLayoutManager
+    ) -> None:
+        """Non-tableau piles (7-12) must be copied verbatim from base_layout."""
+        panel_h = 400
+        base = manager.calculate_layout(600, panel_h, THEME_STANDARD)
+        pile_depths: dict[int, tuple[int, int]] = {i: (3, 8) for i in range(7)}
+        adapted = manager.calculate_adaptive_tableau_layout(base, pile_depths, panel_h)
+        for i in range(7, 13):
+            assert adapted[i] == base[i], f"non-tableau pile {i} was unexpectedly modified"
+
+    def test_adaptive_layout_raises_on_incomplete_layout(
+        self, manager: BoardLayoutManager
+    ) -> None:
+        """ValueError must be raised when base_layout is missing pile keys."""
+        incomplete: dict[int, PileGeometry] = {
+            0: PileGeometry(x=0, y=0, card_width=50, card_height=70, fan_offset_face_up=10, fan_offset_face_down=4)
+        }
+        with pytest.raises(ValueError):
+            manager.calculate_adaptive_tableau_layout(incomplete, {}, 600)
