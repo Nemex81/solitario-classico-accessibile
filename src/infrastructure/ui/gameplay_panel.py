@@ -70,6 +70,8 @@ class GameplayPanel(BasicPanel):
         self._layout_manager: BoardLayoutManager = BoardLayoutManager()
         self._current_theme: ThemeProperties = get_theme(theme_name)
         self._image_cache: CardImageCache | None = None
+        self._current_deck_type: str = ""
+        self._current_deck_type: str = ""
         self._cursor_blink_on: bool = True
         self._blink_timer: wx.Timer | None = None
         self._nvda_info_zone: wx.StaticText | None = None
@@ -105,19 +107,26 @@ class GameplayPanel(BasicPanel):
         except Exception as exc:  # pragma: no cover
             _log.warning("GameplayPanel: impossibile registrare board observer — %s", exc)
 
-    def _get_image_cache(self) -> CardImageCache:
-        """Lazy-initialize the card image cache.
+    def _get_image_cache(self, deck_type: str = "french") -> CardImageCache:
+        """Lazy-initialize (or reinitialize) the card image cache.
+
+        Reinitializes the cache when ``deck_type`` changes so that switching
+        from French to Neapolitan (or vice versa) loads the correct image set.
 
         The assets path is resolved relative to this module's location so the
         cache works regardless of the current working directory.
 
+        Args:
+            deck_type: ``"french"`` or ``"neapolitan"``.
+
         Returns:
             Shared CardImageCache instance for this panel.
         """
-        if self._image_cache is None:
+        if self._image_cache is None or deck_type != self._current_deck_type:
             import pathlib
             project_root = pathlib.Path(__file__).parent.parent.parent.parent
-            self._image_cache = CardImageCache(project_root)
+            self._image_cache = CardImageCache(project_root, deck_type=deck_type)
+            self._current_deck_type = deck_type
         return self._image_cache
 
     def init_ui_elements(self) -> None:
@@ -149,15 +158,23 @@ class GameplayPanel(BasicPanel):
     # EVT_PAINT
     # -----------------------------------------------------------------------
 
-    def _paint_visual_background(self, dc: wx.DC, width: int, height: int) -> None:
+    def _paint_visual_background(
+        self, dc: wx.DC, width: int, height: int, deck_type: str = "french"
+    ) -> None:
         """Paint the board background for visual mode.
 
         Uses the themed bitmap when available, otherwise falls back to the
         theme solid background color.
+
+        Args:
+            dc: Device context to draw onto.
+            width: Panel width in pixels.
+            height: Panel height in pixels.
+            deck_type: Current deck type, used to select the right cache.
         """
         theme = self._current_theme
         if theme.use_card_images:
-            cache = self._get_image_cache()
+            cache = self._get_image_cache(deck_type)
             bg_bmp = cache.get_background_bitmap(width, height)
             if bg_bmp is not None:
                 dc.DrawBitmap(bg_bmp, 0, 0)
@@ -187,7 +204,9 @@ class GameplayPanel(BasicPanel):
         dc = wx.AutoBufferedPaintDC(self)
         w, h = self.GetClientSize()
         theme = self._current_theme
-        self._paint_visual_background(dc, w, h)
+        state = self._board_state
+        current_deck_type = state.deck_type if state is not None else "french"
+        self._paint_visual_background(dc, w, h, current_deck_type)
 
         if self._board_state is None:
             self._draw_waiting_message(dc, w, h)
@@ -225,12 +244,17 @@ class GameplayPanel(BasicPanel):
                     and state.selected_pile_idx == pile_idx
                 )
                 bitmap: object | None = None
-                if theme.use_card_images and card.face_up:
-                    cache = self._get_image_cache()
-                    bitmap = cache.get_bitmap(card.rank, card.suit, cw, ch)
+                back_bitmap: object | None = None
+                if theme.use_card_images:
+                    cache = self._get_image_cache(state.deck_type)
+                    if card.face_up:
+                        bitmap = cache.get_bitmap(card.rank, card.suit, cw, ch)
+                    else:
+                        back_bitmap = cache.get_back_bitmap(cw, ch)
                 self._card_renderer.draw_card(
                     dc, card, cx, cy, cw, ch, theme,
                     bitmap=bitmap,
+                    back_bitmap=back_bitmap,
                     highlighted=highlighted,
                     selected=selected,
                 )

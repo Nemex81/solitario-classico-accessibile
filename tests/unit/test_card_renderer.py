@@ -234,3 +234,43 @@ class TestBitmapRendering:
         renderer.draw_card(dc, _face_up(), 5, 5, 70, 100, THEME_STANDARD)
         texts_drawn = [str(c.args[0]) for c in dc.DrawText.call_args_list]
         assert len(texts_drawn) > 0
+
+
+# ---------------------------------------------------------------------------
+# back_bitmap — new tests for v4.3.0
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestBackBitmapRendering:
+    def test_draw_card_back_uses_back_bitmap_when_provided(
+        self, renderer: CardRenderer, dc: MagicMock
+    ) -> None:
+        """draw_card must call DrawBitmap for a face-down card with back_bitmap."""
+        mock_back = object()
+        renderer.draw_card(
+            dc, _face_down(), 0, 0, 70, 100, THEME_STANDARD, back_bitmap=mock_back
+        )
+        assert dc.DrawBitmap.called is True
+
+    def test_draw_card_back_uses_procedural_when_no_back_bitmap(
+        self, renderer: CardRenderer, dc: MagicMock
+    ) -> None:
+        """draw_card must NOT call DrawBitmap for a face-down card without back_bitmap."""
+        renderer.draw_card(
+            dc, _face_down(), 0, 0, 70, 100, THEME_STANDARD, back_bitmap=None
+        )
+        assert dc.DrawBitmap.called is False
+
+    def test_draw_card_face_up_ignores_back_bitmap(
+        self, renderer: CardRenderer, dc: MagicMock
+    ) -> None:
+        """back_bitmap must have no effect when card is face-up (uses face bitmap path)."""
+        mock_back = object()
+        renderer.draw_card(
+            dc, _face_up(), 0, 0, 70, 100, THEME_STANDARD,
+            bitmap=None, back_bitmap=mock_back
+        )
+        # Face-up without bitmap should use text rendering, not DrawBitmap
+        texts_drawn = [str(c.args[0]) for c in dc.DrawText.call_args_list]
+        assert len(texts_drawn) > 0

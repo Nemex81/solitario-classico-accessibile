@@ -51,6 +51,7 @@ class CardRenderer:
         height: int,
         theme: ThemeProperties,
         bitmap: object | None = None,
+        back_bitmap: object | None = None,
         highlighted: bool = False,
         selected: bool = False,
     ) -> None:
@@ -67,6 +68,9 @@ class CardRenderer:
             bitmap: Pre-scaled wx.Bitmap for the card face (optional). When
                 provided and the card is face-up, the bitmap is rendered
                 instead of the textual fallback. Must match width x height.
+            back_bitmap: Pre-scaled wx.Bitmap for the card back (optional).
+                When provided and the card is face-down, the bitmap is
+                rendered instead of the procedural back drawing.
             highlighted: Draw cursor highlight border when True.
             selected: Draw selection border when True.
         """
@@ -76,7 +80,10 @@ class CardRenderer:
             else:
                 self._draw_face(dc, card, x, y, width, height, theme)
         else:
-            self._draw_back(dc, x, y, width, height, theme)
+            if back_bitmap is not None:
+                self._draw_face_image(dc, back_bitmap, x, y, width, height)
+            else:
+                self._draw_back(dc, x, y, width, height, theme)
 
         # Always draw the normal card border
         self._draw_border(dc, x, y, width, height, theme.border_color, theme.border_width)

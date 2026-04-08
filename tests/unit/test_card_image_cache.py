@@ -347,7 +347,7 @@ class TestLoadSource:
 
     def test_load_source_valid_image_returns_wx_image(self, tmp_path: Path) -> None:
         """Valid file + wx available → returns wx.Image mock."""
-        card_dir = tmp_path / "assets" / "img" / "carte francesi"
+        card_dir = tmp_path / "assets" / "img" / "carte_francesi"
         card_dir.mkdir(parents=True)
         (card_dir / "1-cuori.jpg").write_bytes(b"fake")
 
@@ -365,7 +365,7 @@ class TestLoadSource:
 
     def test_load_source_image_not_ok_returns_none(self, tmp_path: Path) -> None:
         """If wx.Image.IsOk() returns False, _load_source returns None."""
-        card_dir = tmp_path / "assets" / "img" / "carte francesi"
+        card_dir = tmp_path / "assets" / "img" / "carte_francesi"
         card_dir.mkdir(parents=True)
         (card_dir / "7-re.jpg").write_bytes(b"fake")
 
@@ -383,7 +383,7 @@ class TestLoadSource:
 
     def test_load_source_import_error_returns_none(self, tmp_path: Path) -> None:
         """ImportError during wx import → _load_source returns None."""
-        card_dir = tmp_path / "assets" / "img" / "carte francesi"
+        card_dir = tmp_path / "assets" / "img" / "carte_francesi"
         card_dir.mkdir(parents=True)
         (card_dir / "1-cuori.jpg").write_bytes(b"fake")
 
@@ -408,3 +408,203 @@ class TestGetBitmapImportError:
         with patch.dict("sys.modules", {"wx": None}):  # type: ignore[dict-item]
             result = cache.get_bitmap("A", "cuori", 70, 100)
         assert result is None
+
+
+# ---------------------------------------------------------------------------
+# Path fix: carte_francesi (underscore) — new tests for v4.3.0
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestFrenchPathFix:
+    def test_french_path_uses_underscore(self, tmp_path: Path) -> None:
+        """French _load_source_french must look in 'carte_francesi' (underscore)."""
+        card_dir = tmp_path / "assets" / "img" / "carte_francesi"
+        card_dir.mkdir(parents=True)
+        (card_dir / "1-cuori.jpg").write_bytes(b"fake")
+
+        mock_img = MagicMock()
+        mock_img.IsOk.return_value = True
+        mock_wx = MagicMock()
+        mock_wx.Image.return_value = mock_img
+        mock_wx.BITMAP_TYPE_JPEG = 13
+
+        cache = CardImageCache(tmp_path, deck_type="french")
+        with patch.dict("sys.modules", {"wx": mock_wx}):
+            result = cache._load_source("A", "cuori")
+
+        assert result is mock_img
+
+    def test_french_path_space_directory_not_found(self, tmp_path: Path) -> None:
+        """A directory named 'carte francesi' (space) must NOT be found."""
+        card_dir_space = tmp_path / "assets" / "img" / "carte francesi"
+        card_dir_space.mkdir(parents=True)
+        (card_dir_space / "1-cuori.jpg").write_bytes(b"fake")
+
+        cache = CardImageCache(tmp_path, deck_type="french")
+        result = cache._load_source("A", "cuori")
+        assert result is None
+
+
+# ---------------------------------------------------------------------------
+# Neapolitan routing + sequence mapping — new tests for v4.3.0
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestNeapolitanRouting:
+    def test_load_source_routes_to_napoletane_for_neapolitan_deck(
+        self, tmp_path: Path
+    ) -> None:
+        """With deck_type='neapolitan', _load_source must call _load_source_napoletane."""
+        card_dir = tmp_path / "assets" / "img" / "carte_napoletane"
+        card_dir.mkdir(parents=True)
+        (card_dir / "1_Asso_di_bastoni.jpg").write_bytes(b"fake")
+
+        mock_img = MagicMock()
+        mock_img.IsOk.return_value = True
+        mock_wx = MagicMock()
+        mock_wx.Image.return_value = mock_img
+        mock_wx.BITMAP_TYPE_JPEG = 13
+
+        cache = CardImageCache(tmp_path, deck_type="neapolitan")
+        with patch.dict("sys.modules", {"wx": mock_wx}):
+            result = cache._load_source("Asso", "bastoni")
+
+        assert result is mock_img
+
+    def test_napoletane_seq_bastoni_asso(self, tmp_path: Path) -> None:
+        """Asso di bastoni -> seq 1 -> '1_Asso_di_bastoni.jpg'."""
+        card_dir = tmp_path / "assets" / "img" / "carte_napoletane"
+        card_dir.mkdir(parents=True)
+        (card_dir / "1_Asso_di_bastoni.jpg").write_bytes(b"fake")
+
+        mock_img = MagicMock()
+        mock_img.IsOk.return_value = True
+        mock_wx = MagicMock()
+        mock_wx.Image.return_value = mock_img
+        mock_wx.BITMAP_TYPE_JPEG = 13
+
+        cache = CardImageCache(tmp_path, deck_type="neapolitan")
+        with patch.dict("sys.modules", {"wx": mock_wx}):
+            result = cache._load_source_napoletane("Asso", "bastoni")
+
+        assert result is mock_img
+
+    def test_napoletane_seq_coppe_re(self, tmp_path: Path) -> None:
+        """Re di coppe -> offset=10 + pos=10 = seq 20 -> '20_Dieci_di_coppe.jpg'."""
+        card_dir = tmp_path / "assets" / "img" / "carte_napoletane"
+        card_dir.mkdir(parents=True)
+        (card_dir / "20_Dieci_di_coppe.jpg").write_bytes(b"fake")
+
+        mock_img = MagicMock()
+        mock_img.IsOk.return_value = True
+        mock_wx = MagicMock()
+        mock_wx.Image.return_value = mock_img
+        mock_wx.BITMAP_TYPE_JPEG = 13
+
+        cache = CardImageCache(tmp_path, deck_type="neapolitan")
+        with patch.dict("sys.modules", {"wx": mock_wx}):
+            result = cache._load_source_napoletane("Re", "coppe")
+
+        assert result is mock_img
+
+    def test_napoletane_case_exception_bastoni_dieci(self, tmp_path: Path) -> None:
+        """Re di bastoni -> seq 10 -> '10_Dieci_di_Bastoni.jpg' (capital B)."""
+        card_dir = tmp_path / "assets" / "img" / "carte_napoletane"
+        card_dir.mkdir(parents=True)
+        (card_dir / "10_Dieci_di_Bastoni.jpg").write_bytes(b"fake")
+
+        mock_img = MagicMock()
+        mock_img.IsOk.return_value = True
+        mock_wx = MagicMock()
+        mock_wx.Image.return_value = mock_img
+        mock_wx.BITMAP_TYPE_JPEG = 13
+
+        cache = CardImageCache(tmp_path, deck_type="neapolitan")
+        with patch.dict("sys.modules", {"wx": mock_wx}):
+            result = cache._load_source_napoletane("Re", "bastoni")
+
+        assert result is mock_img
+
+    def test_napoletane_unknown_rank_returns_none(self) -> None:
+        """An unrecognised rank must return None without raising."""
+        cache = CardImageCache(Path("."), deck_type="neapolitan")
+        result = cache._load_source_napoletane("X", "bastoni")
+        assert result is None
+
+    def test_napoletane_unknown_suit_returns_none(self) -> None:
+        """An unrecognised suit must return None without raising."""
+        cache = CardImageCache(Path("."), deck_type="neapolitan")
+        result = cache._load_source_napoletane("Asso", "coppe_x")
+        assert result is None
+
+
+# ---------------------------------------------------------------------------
+# get_back_bitmap — new tests for v4.3.0
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestGetBackBitmap:
+    def test_get_back_bitmap_french_returns_none(self) -> None:
+        """French deck -> get_back_bitmap must always return None."""
+        cache = CardImageCache(Path("."), deck_type="french")
+        result = cache.get_back_bitmap(70, 100)
+        assert result is None
+
+    def test_get_back_bitmap_napoletane_file_missing_returns_none(
+        self, tmp_path: Path
+    ) -> None:
+        """Neapolitan deck + no retro file -> returns None."""
+        cache = CardImageCache(tmp_path, deck_type="neapolitan")
+        result = cache.get_back_bitmap(70, 100)
+        assert result is None
+
+    def test_get_back_bitmap_napoletane_returns_bitmap(self, tmp_path: Path) -> None:
+        """When retro file exists, must return a Bitmap."""
+        card_dir = tmp_path / "assets" / "img" / "carte_napoletane"
+        card_dir.mkdir(parents=True)
+        (card_dir / "41_Carte_Napoletane_retro.jpg").write_bytes(b"fake")
+
+        mock_img = MagicMock()
+        mock_img.IsOk.return_value = True
+        mock_img.Copy.return_value = mock_img
+        mock_bmp = MagicMock()
+        mock_wx = MagicMock()
+        mock_wx.Image.return_value = mock_img
+        mock_wx.Bitmap.return_value = mock_bmp
+        mock_wx.IMAGE_QUALITY_HIGH = 2
+        mock_wx.BITMAP_TYPE_JPEG = 13
+
+        cache = CardImageCache(tmp_path, deck_type="neapolitan")
+        with patch.dict("sys.modules", {"wx": mock_wx}):
+            result = cache.get_back_bitmap(70, 100)
+
+        assert result is mock_bmp
+
+    def test_get_back_bitmap_cache_hit_skips_rescale(self, tmp_path: Path) -> None:
+        """Second call with same dimensions must use cache."""
+        mock_bmp = MagicMock()
+        mock_img = _mock_image_source(mock_bmp)
+        mock_wx = _mock_wx(mock_bmp)
+
+        cache = CardImageCache(tmp_path, deck_type="neapolitan")
+        cache._back_source = mock_img
+        with patch.dict("sys.modules", {"wx": mock_wx}):
+            r1 = cache.get_back_bitmap(70, 100)
+            r2 = cache.get_back_bitmap(70, 100)
+
+        assert r1 is mock_bmp
+        assert r2 is mock_bmp
+        assert mock_img.Copy.call_count == 1
+
+    def test_invalidate_clears_back_cache(self) -> None:
+        """invalidate_size_cache must empty _back_cache."""
+        mock_bmp = MagicMock()
+        cache = CardImageCache(Path("."), deck_type="neapolitan")
+        cache._back_cache[(70, 100)] = mock_bmp
+
+        assert len(cache._back_cache) == 1
+        cache.invalidate_size_cache()
+        assert len(cache._back_cache) == 0

@@ -54,6 +54,8 @@ class BoardState:
         selected_cards: List of CardView objects currently selected,
             or None if selection is inactive.
         game_over: True if the game has ended (won or abandoned).
+        deck_type: Deck type identifier: ``"french"`` or ``"neapolitan"``.
+            Determines which card image set is used by the renderer.
     """
 
     piles: list[list[CardView]] = field(default_factory=lambda: [[] for _ in range(13)])
@@ -63,3 +65,4 @@ class BoardState:
     selected_pile_idx: int | None = None
     selected_cards: list[CardView] | None = None
     game_over: bool = False
+    deck_type: str = "french"

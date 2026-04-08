@@ -19,7 +19,11 @@ Per aggiornamento e struttura: .github/skills/docs_manager.skill.md
 
 <!-- Task attivi con priorità massima — espansi qui per visibilità immediata -->
 
-- **[ATTIVO — PRIORITARIO]** [TODO_gameplay-card-images_v4.1.0.md](5%20-%20todolist/TODO_gameplay-card-images_v4.1.0.md)
+- **[ATTIVO — PRIORITARIO]** [TODO_card-assets-integration_v4.3.0.md](5%20-%20todolist/TODO_card-assets-integration_v4.3.0.md)
+  Piano: [PLAN_card-assets-integration_v4.3.0.md](3%20-%20coding%20plans/PLAN_card-assets-integration_v4.3.0.md)
+  Stato: ACTIVE — fix path francesi + carte napoletane + back_bitmap, 4 fasi (v4.3.0)
+
+- **[ATTIVO]** [TODO_gameplay-card-images_v4.1.0.md](5%20-%20todolist/TODO_gameplay-card-images_v4.1.0.md)
   Piano: [PLAN_gameplay-card-images_v4.1.0.md](3%20-%20coding%20plans/PLAN_gameplay-card-images_v4.1.0.md)
   Stato: Fase 0 in avvio — immagini reali carte francesi, 5 fasi (v4.1.0)
 
@@ -54,6 +58,7 @@ stato: attivo
 - [PLAN_gameplay-visual-ui_v4.0.0.md](3%20-%20coding%20plans/PLAN_gameplay-visual-ui_v4.0.0.md) — piano implementazione visual UI gameplay (reviewed — completato)
 - [PLAN_gameplay-card-images_v4.1.0.md](3%20-%20coding%20plans/PLAN_gameplay-card-images_v4.1.0.md) — immagini reali carte francesi **(ready — in avvio)**
 - [PLAN_tableau-adaptive-layout_v4.2.0.md](3%20-%20coding%20plans/PLAN_tableau-adaptive-layout_v4.2.0.md) — layout adattivo tableau, scaling fan offset per-pila (DRAFT)
+- [PLAN_card-assets-integration_v4.3.0.md](3%20-%20coding%20plans/PLAN_card-assets-integration_v4.3.0.md) — fix path carte francesi, carte napoletane, back_bitmap **(READY)**
 
 ## Reports
 
@@ -73,6 +78,7 @@ stato: attivo
 - [TODO_gameplay-visual-ui_v4.0.0.md](5%20-%20todolist/TODO_gameplay-visual-ui_v4.0.0.md) — implementazione visual UI gameplay (completato — rendering testuale)
 - [TODO_gameplay-card-images_v4.1.0.md](5%20-%20todolist/TODO_gameplay-card-images_v4.1.0.md) — immagini reali carte francesi **(prioritario — in avvio)**
 - [TODO_tableau-adaptive-layout_v4.2.0.md](5%20-%20todolist/TODO_tableau-adaptive-layout_v4.2.0.md) — layout adattivo tableau (ACTIVE — 3 fasi)
+- [TODO_card-assets-integration_v4.3.0.md](5%20-%20todolist/TODO_card-assets-integration_v4.3.0.md) — fix path francesi + carte napoletane + back_bitmap **(ACTIVE — 4 fasi)**
 
 ## Stato Avanzamento
 

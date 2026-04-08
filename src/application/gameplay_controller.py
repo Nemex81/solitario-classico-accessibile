@@ -189,6 +189,14 @@ class GamePlayController:
         except Exception:
             pass
 
+        # ---- Deck type -------------------------------------------------------
+        deck_type = "french"
+        try:
+            if self.engine.settings and self.engine.settings.deck_type == "neapolitan":
+                deck_type = "neapolitan"
+        except Exception:
+            pass
+
         return BoardState(
             piles=piles,
             cursor_pile_idx=cursor_pile_idx,
@@ -197,6 +205,7 @@ class GamePlayController:
             selected_pile_idx=selected_pile_idx,
             selected_cards=selected_cards,
             game_over=game_over,
+            deck_type=deck_type,
         )
     
     def _speak_with_hint(self, message: str, hint: Optional[str]) -> None:
