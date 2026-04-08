@@ -107,7 +107,7 @@ Non procedere alla fase successiva finche la fase corrente non e completa e comm
 - [x] Fix duplicazione in `card_image_cache.py` (primo blocco rimosso, seconda implementazione clean mantenuta)
 - [x] Fix path in `GameplayPanel._get_image_cache()`: ora passa project root invece di `assets/img`
 - [x] Aggiornare `CHANGELOG.md` sezione `[Unreleased]` con tutte e 4 le fasi
-- [ ] Commit: `fix(presentation): rimuovi duplicazione CardImageCache e correggi path assets`
+- [x] Commit: `fix(presentation): rimuovi duplicazione CardImageCache e correggi path assets`
 
 ---
 
