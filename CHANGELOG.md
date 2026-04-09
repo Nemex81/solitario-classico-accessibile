@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [3.7.0] - 2026-04-09
+
 ### Added
 - `setup.py`: nuova configurazione root `cx_Freeze` per build Windows di `acs_wx.py` in `dist/solitario-classico/solitario.exe`; include package applicativi, `wx`, `pygame`, `accessible_output2` e duplica `assets/` e `config/` sia nella root della build sia sotto `lib/` per compatibilita con i path runtime correnti. (cx-freeze-setup v4.5.0)
 - `scripts/validate_frozen_build.py`: validazione del bundle cx_Freeze con controllo di `solitario.exe`, `solitario-diag.exe`, struttura minima della build e caricabilità delle DLL SDL2 principali di pygame. (cx-freeze-frozen-runtime v4.5.1)
