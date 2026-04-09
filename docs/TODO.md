@@ -19,6 +19,10 @@ Per aggiornamento e struttura: .github/skills/docs_manager.skill.md
 
 <!-- Task attivi con priorità massima — espansi qui per visibilità immediata -->
 
+- **[ATTIVO — PRIORITARIO]** [TODO_options-tabs-layout_v4.4.0.md](5%20-%20todolist/TODO_options-tabs-layout_v4.4.0.md)
+  Piano: [PLAN_options-tabs-layout_v4.4.0.md](3%20-%20coding%20plans/PLAN_options-tabs-layout_v4.4.0.md)
+  Stato: ACTIVE — refactor finestra opzioni con notebook a tab, focus NVDA e grouping logico (v4.4.0)
+
 - **[ATTIVO — PRIORITARIO]** [TODO_card-assets-integration_v4.3.0.md](5%20-%20todolist/TODO_card-assets-integration_v4.3.0.md)
   Piano: [PLAN_card-assets-integration_v4.3.0.md](3%20-%20coding%20plans/PLAN_card-assets-integration_v4.3.0.md)
   Stato: ACTIVE — fix path francesi + carte napoletane + back_bitmap, 4 fasi (v4.3.0)
@@ -42,6 +46,7 @@ stato: attivo
 <!-- Link relativi ai file attivi in docs/2 - projects/ -->
 
 - [DESIGN_audio_system.md](2%20-%20projects/DESIGN_audio_system.md) — sistema audio (completato)
+- [DESIGN_options-tabs-layout_v4.4.0.md](2%20-%20projects/DESIGN_options-tabs-layout_v4.4.0.md) — refactor dialogo opzioni con tab accessibili e grouping logico (REVIEWED)
 - [DESIGN_framework-template-bootstrap.md](2%20-%20projects/DESIGN_framework-template-bootstrap.md) — integrazione template framework e bootstrap Agent-Welcome (reviewed)
 - [DESIGN_gameplay-visual-ui.md](2%20-%20projects/DESIGN_gameplay-visual-ui.md) — supporto visivo finestra gameplay (reviewed)
 - [DESIGN_tableau-adaptive-layout_v4.2.0.md](2%20-%20projects/DESIGN_tableau-adaptive-layout_v4.2.0.md) — layout adattivo tableau: overflow verticale carte (REVIEWED)
@@ -51,6 +56,7 @@ stato: attivo
 <!-- Link relativi ai file attivi in docs/3 - coding plans/ -->
 
 - [PLAN_document-governance_v1.9.0.md](3%20-%20coding%20plans/PLAN_document-governance_v1.9.0.md) — governance documentale (in corso)
+- [PLAN_options-tabs-layout_v4.4.0.md](3%20-%20coding%20plans/PLAN_options-tabs-layout_v4.4.0.md) — refactor finestra opzioni con notebook accessibile (READY)
 - [PLAN_game-engine-refactoring_v3.6.0.md](3%20-%20coding%20plans/PLAN_game-engine-refactoring_v3.6.0.md) — refactoring engine (legacy)
 - [PLAN_e2e-resilience_v1.10.0.md](3%20-%20coding%20plans/PLAN_e2e-resilience_v1.10.0.md) — gate semantici, rollback, coverage SOT (completed)
 - [PLAN_template-bootstrap-integration_v1.10.3.md](3%20-%20coding%20plans/PLAN_template-bootstrap-integration_v1.10.3.md) — bootstrap documentale core e integrazione template framework (completed)
@@ -70,6 +76,7 @@ stato: attivo
 
 <!-- Link relativi ai file attivi in docs/5 - todolist/ -->
 
+- [TODO_options-tabs-layout_v4.4.0.md](5%20-%20todolist/TODO_options-tabs-layout_v4.4.0.md) — refactor finestra opzioni con tab accessibili (ACTIVE)
 - [TODO_gameplay-visual-ui_v4.0.0.md](5%20-%20todolist/TODO_gameplay-visual-ui_v4.0.0.md) — implementazione visual UI gameplay **(prioritario — in esecuzione)**
 - [TODO_document-governance_v1.9.0.md](5%20-%20todolist/TODO_document-governance_v1.9.0.md) — governance documentale (in corso)
 - [TODO_e2e-resilience_v1.10.0.md](5%20-%20todolist/TODO_e2e-resilience_v1.10.0.md) — e2e resilience (completed)

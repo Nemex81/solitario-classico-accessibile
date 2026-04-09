@@ -88,7 +88,7 @@ class OptionsDialog(wx.Dialog):
         screen_reader: Optional['ScreenReader'] = None,
         audio_manager=None,
         title: str = "Opzioni di gioco",
-        size: tuple = (600, 700)  # Increased for 8 widgets
+        size: tuple[int, int] = (760, 680)
     ):
         """Initialize OptionsDialog with native wx widgets.
         
@@ -133,6 +133,8 @@ class OptionsDialog(wx.Dialog):
         self.options_controller = controller
         self.screen_reader = screen_reader
         self.audio_manager = audio_manager
+        self._options_notebook: wx.Notebook | None = None
+        self._tab_focus_targets: dict[int, wx.Window] = {}
         
         # Create native wx widgets UI
         self._create_ui()
@@ -144,174 +146,110 @@ class OptionsDialog(wx.Dialog):
         self.Centre()
     
     def _create_ui(self) -> None:
-        """Create native wx widgets for all game options.
-        
-        Layout (v1.9.0 - native widgets, ALL 9 options + buttons):
-        - RadioBox for deck type (Francese/Napoletano)
-        - RadioBox for difficulty (5 levels: Principiante to Maestro)
-        - RadioBox for draw count (1/2/3 carte)
-        - TimerComboBox for timer duration (0=disabled, 5-60 minutes)
-        - RadioBox for shuffle mode (Inversione/Mescolata)
-        - CheckBox for command hints (ON/OFF)
-        - CheckBox for scoring system (ON/OFF)
-        - RadioBox for timer strict mode (STRICT/PERMISSIVE)
-        - RadioBox for score warning level (4 levels: DISABLED to COMPLETE)
-        - Buttons: Salva / Annulla
-        
-        Navigation:
-        - TAB to move between widgets (standard wx behavior)
-        - UP/DOWN arrows to change value in RadioBox/ComboBox
-        - SPACE to toggle CheckBox
-        - ENTER to activate focused button
-        
-        Accessibility:
-        - NVDA reads all widgets automatically (native support)
-        - No custom TTS needed - wx handles screen reader communication
-        - All widgets have descriptive labels for screen readers
-        """
+        """Create the options UI grouped into accessible notebook tabs."""
+        from src.infrastructure.ui.widgets.timer_combobox import TimerComboBox
+
         main_sizer = wx.BoxSizer(wx.VERTICAL)
-        
-        # ========================================
-        # OPZIONE 1: TIPO MAZZO
-        # ========================================
-        deck_box = wx.StaticBoxSizer(wx.VERTICAL, self, "Tipo Mazzo")
+        notebook = wx.Notebook(self)
+        self._options_notebook = notebook
+
+        general_page, general_sizer = self._create_notebook_page("Generale")
+        gameplay_page, gameplay_sizer = self._create_notebook_page("Gameplay")
+        audio_page, audio_sizer = self._create_notebook_page("Audio e Accessibilità")
+        visual_page, visual_sizer = self._create_notebook_page("Visuale")
+
         self.deck_type_radio = wx.RadioBox(
-            self,
+            general_page,
             label="Seleziona il tipo di mazzo da usare:",
             choices=["Francese (52 carte)", "Napoletano (40 carte)"],
-            majorDimension=1,  # Vertical layout
-            style=wx.RA_SPECIFY_COLS
+            majorDimension=1,
+            style=wx.RA_SPECIFY_COLS,
         )
-        deck_box.Add(self.deck_type_radio, 0, wx.ALL | wx.EXPAND, 5)
-        main_sizer.Add(deck_box, 0, wx.ALL | wx.EXPAND, 10)
-        
-        # ========================================
-        # OPZIONE 2: DIFFICOLTÀ
-        # ========================================
-        diff_box = wx.StaticBoxSizer(wx.VERTICAL, self, "Difficoltà")
+        self._add_group(general_sizer, general_page, "Tipo Mazzo", self.deck_type_radio)
+
         self.difficulty_radio = wx.RadioBox(
-            self,
+            general_page,
             label="Livello di difficoltà:",
             choices=[
                 "Livello 1 - Principiante",
                 "Livello 2 - Facile",
                 "Livello 3 - Normale",
                 "Livello 4 - Esperto",
-                "Livello 5 - Maestro"
+                "Livello 5 - Maestro",
             ],
-            majorDimension=5,  # Horizontal layout with 5 columns
-            style=wx.RA_SPECIFY_COLS
+            majorDimension=1,
+            style=wx.RA_SPECIFY_COLS,
         )
-        diff_box.Add(self.difficulty_radio, 0, wx.ALL | wx.EXPAND, 5)
-        main_sizer.Add(diff_box, 0, wx.ALL | wx.EXPAND, 10)
-        
-        # ========================================
-        # OPZIONE 3: CARTE PESCATE
-        # ========================================
-        draw_box = wx.StaticBoxSizer(wx.VERTICAL, self, "Carte Pescate per Turno")
+        self._add_group(general_sizer, general_page, "Difficoltà", self.difficulty_radio)
+
         self.draw_count_radio = wx.RadioBox(
-            self,
+            gameplay_page,
             label="Numero di carte pescate dal mazzo ad ogni click:",
             choices=["1 carta", "2 carte", "3 carte"],
-            majorDimension=3,  # Horizontal layout
-            style=wx.RA_SPECIFY_COLS
+            majorDimension=3,
+            style=wx.RA_SPECIFY_COLS,
         )
-        draw_box.Add(self.draw_count_radio, 0, wx.ALL | wx.EXPAND, 5)
-        main_sizer.Add(draw_box, 0, wx.ALL | wx.EXPAND, 10)
-        
-        # ========================================
-        # OPZIONE 4: TIMER
-        # ========================================
-        timer_box = wx.StaticBoxSizer(wx.VERTICAL, self, "Timer Partita")
-        
-        # Label esplicativa (sostituisce CheckBox)
+        self._add_group(gameplay_sizer, gameplay_page, "Carte Pescate per Turno", self.draw_count_radio)
+
+        timer_box = wx.StaticBoxSizer(wx.VERTICAL, gameplay_page, "Timer Partita")
         timer_label = wx.StaticText(
-            self,
-            label="Seleziona durata timer (0 = disattivato):"
+            gameplay_page,
+            label="Seleziona durata timer (0 = disattivato):",
         )
         timer_box.Add(timer_label, 0, wx.ALL, 5)
-        
-        # TimerComboBox SEMPRE ATTIVO con "0 minuti - Timer disattivato" come prima voce
-        from src.infrastructure.ui.widgets.timer_combobox import TimerComboBox
-        self.timer_combo = TimerComboBox(self)
+        self.timer_combo = TimerComboBox(gameplay_page)
         timer_box.Add(self.timer_combo, 0, wx.ALL | wx.EXPAND, 5)
-        
-        main_sizer.Add(timer_box, 0, wx.ALL | wx.EXPAND, 10)
-        
-        # ========================================
-        # OPZIONE 5: RICICLO SCARTI
-        # ========================================
-        shuffle_box = wx.StaticBoxSizer(wx.VERTICAL, self, "Riciclo Scarti")
-        self.shuffle_radio = wx.RadioBox(
-            self,
-            label="Modalità di riciclo quando il tallone è vuoto:",
-            choices=["Inversione (ribalta mazzo scarti)", "Mescolata (rimescola scarti)"],
-            majorDimension=1,  # Vertical layout
-            style=wx.RA_SPECIFY_COLS
-        )
-        shuffle_box.Add(self.shuffle_radio, 0, wx.ALL | wx.EXPAND, 5)
-        main_sizer.Add(shuffle_box, 0, wx.ALL | wx.EXPAND, 10)
-        
-        # ========================================
-        # OPZIONE 6: SUGGERIMENTI COMANDI
-        # ========================================
-        self.command_hints_check = wx.CheckBox(
-            self,
-            label="Suggerimenti comandi attivi (mostra aiuto per comandi disponibili)"
-        )
-        main_sizer.Add(self.command_hints_check, 0, wx.ALL, 10)
-        
-        # ========================================
-        # OPZIONE 7: SISTEMA PUNTI
-        # ========================================
-        self.scoring_check = wx.CheckBox(
-            self,
-            label="Sistema punti attivo (calcola punteggio durante partita)"
-        )
-        main_sizer.Add(self.scoring_check, 0, wx.ALL, 10)
-        
-        # ========================================
-        # OPZIONE 8: MODALITÀ TIMER
-        # ========================================
-        strict_box = wx.StaticBoxSizer(wx.VERTICAL, self, "Modalità Timer")
+        gameplay_sizer.Add(timer_box, 0, wx.ALL | wx.EXPAND, 10)
+
         self.timer_strict_radio = wx.RadioBox(
-            self,
+            gameplay_page,
             label="Comportamento quando il timer scade:",
             choices=[
                 "STRICT (sconfitta automatica)",
-                "PERMISSIVE (penalità punti, partita continua)"
+                "PERMISSIVE (penalità punti, partita continua)",
             ],
-            majorDimension=1,  # Vertical layout
-            style=wx.RA_SPECIFY_COLS
+            majorDimension=1,
+            style=wx.RA_SPECIFY_COLS,
         )
-        strict_box.Add(self.timer_strict_radio, 0, wx.ALL | wx.EXPAND, 5)
-        main_sizer.Add(strict_box, 0, wx.ALL | wx.EXPAND, 10)
-        
-        # ========================================
-        # OPZIONE 9: AVVISI SOGLIE PUNTEGGIO
-        # ========================================
-        warning_box = wx.StaticBoxSizer(wx.VERTICAL, self, "Avvisi Soglie Punteggio")
+        self._add_group(gameplay_sizer, gameplay_page, "Modalità Timer", self.timer_strict_radio)
+
+        self.shuffle_radio = wx.RadioBox(
+            gameplay_page,
+            label="Modalità di riciclo quando il tallone è vuoto:",
+            choices=["Inversione (ribalta mazzo scarti)", "Mescolata (rimescola scarti)"],
+            majorDimension=1,
+            style=wx.RA_SPECIFY_COLS,
+        )
+        self._add_group(gameplay_sizer, gameplay_page, "Riciclo Scarti", self.shuffle_radio)
+
+        self.command_hints_check = wx.CheckBox(
+            audio_page,
+            label="Suggerimenti comandi attivi (mostra aiuto per comandi disponibili)",
+        )
+        self._add_group(audio_sizer, audio_page, "Navigazione Assistita", self.command_hints_check)
+
+        self.scoring_check = wx.CheckBox(
+            audio_page,
+            label="Sistema punti attivo (calcola punteggio durante partita)",
+        )
+        self._add_group(audio_sizer, audio_page, "Sistema Punti", self.scoring_check)
+
         self.score_warning_radio = wx.RadioBox(
-            self,
+            audio_page,
             label="Livello di verbosità degli avvisi TTS per penalità punteggio:",
             choices=[
                 "DISABLED (nessun avviso)",
                 "MINIMAL (solo primo avviso)",
                 "BALANCED (avvisi soglie critiche)",
-                "COMPLETE (tutti gli avvisi)"
+                "COMPLETE (tutti gli avvisi)",
             ],
-            majorDimension=1,  # Vertical layout
-            style=wx.RA_SPECIFY_COLS
+            majorDimension=1,
+            style=wx.RA_SPECIFY_COLS,
         )
-        warning_box.Add(self.score_warning_radio, 0, wx.ALL | wx.EXPAND, 5)
-        main_sizer.Add(warning_box, 0, wx.ALL | wx.EXPAND, 10)
+        self._add_group(audio_sizer, audio_page, "Avvisi Soglie Punteggio", self.score_warning_radio)
 
-        # ========================================
-        # OPZIONE 10: MODALITÀ DISPLAY
-        # ========================================
-        display_box = wx.StaticBoxSizer(wx.VERTICAL, self, "Modalità Display")
         self.display_mode_radio = wx.RadioBox(
-            self,
+            visual_page,
             label="Scegli la modalità di visualizzazione del gioco:",
             choices=[
                 "Solo Audio (solo TTS, nessuna grafica)",
@@ -320,50 +258,81 @@ class OptionsDialog(wx.Dialog):
             majorDimension=1,
             style=wx.RA_SPECIFY_COLS,
         )
-        display_box.Add(self.display_mode_radio, 0, wx.ALL | wx.EXPAND, 5)
-        main_sizer.Add(display_box, 0, wx.ALL | wx.EXPAND, 10)
+        self._add_group(visual_sizer, visual_page, "Modalità Display", self.display_mode_radio)
 
-        # ========================================
-        # OPZIONE 11: TEMA VISIVO
-        # ========================================
-        theme_box = wx.StaticBoxSizer(wx.VERTICAL, self, "Tema Visivo")
-        theme_label = wx.StaticText(
-            self,
+        self.visual_theme_radio = wx.RadioBox(
+            visual_page,
             label="Tema grafico (usato solo in modalità visiva):",
-        )
-        theme_box.Add(theme_label, 0, wx.ALL, 5)
-        self.visual_theme_choice = wx.Choice(
-            self,
             choices=["Standard", "Alto Contrasto", "Grande"],
+            majorDimension=1,
+            style=wx.RA_SPECIFY_COLS,
         )
-        theme_box.Add(self.visual_theme_choice, 0, wx.ALL | wx.EXPAND, 5)
-        main_sizer.Add(theme_box, 0, wx.ALL | wx.EXPAND, 10)
+        self._add_group(visual_sizer, visual_page, "Tema Visivo", self.visual_theme_radio)
 
-        # ========================================
-        # PULSANTI SALVA / ANNULLA
-        # ========================================
+        notebook.AddPage(general_page, "Generale")
+        notebook.AddPage(gameplay_page, "Gameplay")
+        notebook.AddPage(audio_page, "Audio e Accessibilità")
+        notebook.AddPage(visual_page, "Visuale")
+
+        self._tab_focus_targets = {
+            0: self.deck_type_radio,
+            1: self.draw_count_radio,
+            2: self.command_hints_check,
+            3: self.display_mode_radio,
+        }
+
+        main_sizer.Add(notebook, 1, wx.ALL | wx.EXPAND, 10)
+
         button_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        
         self.btn_save = wx.Button(self, id=wx.ID_OK, label="&Salva modifiche")
         self.btn_save.SetToolTip("Salva le modifiche e chiudi la finestra opzioni (ALT+S)")
-        
         self.btn_cancel = wx.Button(self, id=wx.ID_CANCEL, label="&Annulla modifiche")
         self.btn_cancel.SetToolTip("Annulla le modifiche e chiudi la finestra opzioni (ALT+A)")
-        
         button_sizer.Add(self.btn_save, 0, wx.ALL, 5)
         button_sizer.Add(self.btn_cancel, 0, wx.ALL, 5)
-        
         main_sizer.Add(button_sizer, 0, wx.ALIGN_CENTER | wx.ALL, 15)
-        
-        # Set sizer and auto-resize dialog
+
         self.SetSizer(main_sizer)
-        self.Fit()  # Auto-resize to fit all widgets
-        
-        # Load current settings into widgets
+        self.Fit()
+
         self._load_settings_to_widgets()
-        
-        # Bind events for change detection
         self._bind_widget_events()
+        wx.CallAfter(self._set_initial_focus)
+
+    def _create_notebook_page(self, name: str) -> tuple[wx.Panel, wx.BoxSizer]:
+        """Create a notebook page with a vertical layout and accessible name."""
+        if self._options_notebook is None:
+            raise RuntimeError("Notebook non inizializzato")
+        panel = wx.Panel(self._options_notebook)
+        panel.SetName(name)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        panel.SetSizer(sizer)
+        return panel, sizer
+
+    def _add_group(
+        self,
+        page_sizer: wx.BoxSizer,
+        parent: wx.Window,
+        title: str,
+        control: wx.Window,
+    ) -> None:
+        """Add a control inside a labelled static box on the given page."""
+        box = wx.StaticBoxSizer(wx.VERTICAL, parent, title)
+        box.Add(control, 0, wx.ALL | wx.EXPAND, 5)
+        page_sizer.Add(box, 0, wx.ALL | wx.EXPAND, 10)
+
+    def _set_initial_focus(self) -> None:
+        """Move focus to the first logical control of the selected notebook page."""
+        target = self._tab_focus_targets.get(0)
+        if target is not None:
+            target.SetFocus()
+
+    def on_notebook_page_changed(self, event: wx.BookCtrlEvent) -> None:
+        """Keep focus navigation predictable for NVDA when a tab changes."""
+        target = self._tab_focus_targets.get(event.GetSelection())
+        if target is not None:
+            wx.CallAfter(target.SetFocus)
+        event.Skip()
     
     def _load_settings_to_widgets(self) -> None:
         """Load current settings from controller into widgets.
@@ -433,7 +402,7 @@ class OptionsDialog(wx.Dialog):
         # 11. Tema Visivo ("standard"->0, "alto_contrasto"->1, "grande"->2)
         _theme_map = {"standard": 0, "alto_contrasto": 1, "grande": 2}
         visual_theme = getattr(settings, "visual_theme", "standard")
-        self.visual_theme_choice.SetSelection(_theme_map.get(visual_theme, 0))
+        self.visual_theme_radio.SetSelection(_theme_map.get(visual_theme, 0))
 
         # ✅ FIX BUG #67: Update widget lock states after loading
         # This ensures locked widgets are disabled when dialog opens
@@ -463,8 +432,8 @@ class OptionsDialog(wx.Dialog):
         # RadioBox — display mode
         self.display_mode_radio.Bind(wx.EVT_RADIOBOX, self.on_setting_changed)
 
-        # Choice — visual theme
-        self.visual_theme_choice.Bind(wx.EVT_CHOICE, self.on_setting_changed)
+        # RadioBox — visual theme
+        self.visual_theme_radio.Bind(wx.EVT_RADIOBOX, self.on_setting_changed)
 
         # CheckBox widgets
         self.command_hints_check.Bind(wx.EVT_CHECKBOX, self.on_setting_changed)
@@ -476,6 +445,8 @@ class OptionsDialog(wx.Dialog):
         # Buttons
         self.btn_save.Bind(wx.EVT_BUTTON, self.on_save_click)
         self.btn_cancel.Bind(wx.EVT_BUTTON, self.on_cancel_click)
+        if self._options_notebook is not None:
+            self._options_notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_notebook_page_changed)
     
     def on_setting_changed(self, event: wx.Event) -> None:
         """Handle any setting change from widgets.
@@ -576,8 +547,7 @@ class OptionsDialog(wx.Dialog):
         if self.screen_reader and self.screen_reader.tts:
             self.screen_reader.tts.speak(msg, interrupt=True)
         
-        # Close dialog with OK status
-        self.EndModal(wx.ID_OK)
+        self._close_dialog(wx.ID_OK)
     
     def on_cancel_click(self, event: wx.CommandEvent) -> None:
         """Handle Cancel button click.
@@ -611,8 +581,14 @@ class OptionsDialog(wx.Dialog):
         if self.screen_reader and self.screen_reader.tts:
             self.screen_reader.tts.speak(msg, interrupt=True)
         
-        # Close dialog with Cancel status
-        self.EndModal(wx.ID_CANCEL)
+        self._close_dialog(wx.ID_CANCEL)
+
+    def _close_dialog(self, exit_code: int) -> None:
+        """Close the dialog safely in both modal runtime and direct unit tests."""
+        if self.IsModal():
+            self.EndModal(exit_code)
+            return
+        self.Hide()
     
     def _save_widgets_to_settings(self) -> None:
         """Save current widget values back to GameSettings.
@@ -676,7 +652,7 @@ class OptionsDialog(wx.Dialog):
 
         # 11. Tema Visivo (0->"standard", 1->"alto_contrasto", 2->"grande")
         _theme_choices = ["standard", "alto_contrasto", "grande"]
-        theme_idx = self.visual_theme_choice.GetSelection()
+        theme_idx = self.visual_theme_radio.GetSelection()
         settings.visual_theme = _theme_choices[theme_idx] if 0 <= theme_idx < len(_theme_choices) else "standard"
 
     def _update_widget_lock_states(self) -> None:
@@ -743,6 +719,8 @@ class OptionsDialog(wx.Dialog):
         # (always allow user to change these)
         self.deck_type_radio.Enable(True)
         self.difficulty_radio.Enable(True)
+        self.display_mode_radio.Enable(True)
+        self.visual_theme_radio.Enable(True)
     
     def on_key_down(self, event: wx.KeyEvent) -> None:
         """Handle keyboard events for ESC key only.
@@ -780,7 +758,7 @@ class OptionsDialog(wx.Dialog):
                 # Determine exit code based on message content
                 # ("salv" in msg means user chose to save)
                 exit_code = wx.ID_OK if "salv" in msg.lower() else wx.ID_CANCEL
-                self.EndModal(exit_code)
+                self._close_dialog(exit_code)
             else:
                 # Closing cancelled (user pressed Annulla in save dialog)
                 # or fallback mode (no dialog_manager available)

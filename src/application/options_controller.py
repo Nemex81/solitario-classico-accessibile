@@ -666,6 +666,7 @@ class OptionsWindowController:
         self.original_settings = {
             "deck_type": self.settings.deck_type,
             "difficulty": self.settings.difficulty_level,
+            "draw_count": self.settings.draw_count,
             "timer": self.settings.max_time_game,
             "shuffle": self.settings.shuffle_discards,
             "command_hints": self.settings.command_hints_enabled,  # v1.5.0
@@ -679,6 +680,7 @@ class OptionsWindowController:
         """Restore original settings (discard changes)."""
         self.settings.deck_type = self.original_settings["deck_type"]
         self.settings.difficulty_level = self.original_settings["difficulty"]
+        self.settings.draw_count = self.original_settings.get("draw_count", self.settings.draw_count)
         self.settings.max_time_game = self.original_settings["timer"]
         self.settings.shuffle_discards = self.original_settings["shuffle"]
         self.settings.command_hints_enabled = self.original_settings["command_hints"]  # v1.5.0

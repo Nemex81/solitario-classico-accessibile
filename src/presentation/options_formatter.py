@@ -188,12 +188,12 @@ class OptionsFormatter:
         """
         return (
             "Comandi finestra opzioni:  \n"
-            "Frecce su e giù per navigare.  \n"
-            "Tasti da 1 a 5 per accesso rapido.  \n"
-            "INVIO o SPAZIO per modificare opzione.  \n"
-            "Se Timer selezionato: T per attivare o disattivare, + e - per regolare.  \n"
-            "I per leggere tutte le impostazioni.  \n"
-            "ESC per chiudere e tornare al gioco."
+            "TAB e MAIUSC più TAB per spostarti tra i controlli.  \n"
+            "Frecce sinistra e destra per cambiare scheda nel notebook.  \n"
+            "Frecce direzionali per cambiare valore nei gruppi di opzioni.  \n"
+            "SPAZIO per attivare o disattivare le caselle di controllo.  \n"
+            "INVIO per attivare il pulsante selezionato.  \n"
+            "ESC per chiudere; se ci sono modifiche non salvate viene chiesta conferma."
         )
     
     @staticmethod

@@ -8,6 +8,15 @@ from src.domain.services.game_settings import GameSettings
 
 @pytest.mark.unit
 class TestOptionsControllerVisualPreferences:
+    def test_save_snapshot_includes_draw_count(self) -> None:
+        settings = GameSettings()
+        settings.draw_count = 3
+        controller = OptionsWindowController(settings)
+
+        controller._save_snapshot()
+
+        assert controller.original_settings["draw_count"] == 3
+
     def test_save_snapshot_includes_visual_preferences(self) -> None:
         settings = GameSettings()
         settings.display_mode = "visual"
@@ -31,3 +40,15 @@ class TestOptionsControllerVisualPreferences:
 
         assert settings.display_mode == "audio_only"
         assert settings.visual_theme == "standard"
+
+    def test_restore_snapshot_restores_draw_count(self) -> None:
+        settings = GameSettings()
+        settings.draw_count = 1
+        controller = OptionsWindowController(settings)
+
+        controller._save_snapshot()
+        settings.draw_count = 3
+
+        controller._restore_snapshot()
+
+        assert settings.draw_count == 1
