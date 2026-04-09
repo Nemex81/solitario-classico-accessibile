@@ -2,10 +2,10 @@
   "version": "1.0",
   "active_sound_pack": "default",
   "bus_volumes": {
-    "gameplay": 80,
-    "ui": 70,
-    "ambient": 40,
-    "music": 30,
+    "gameplay": 35,
+    "ui": 35,
+    "ambient": 25,
+    "music": 25,
     "voice": 90
   },
   "bus_muted": {
@@ -34,7 +34,6 @@
     "STOCK_DRAW": "gameplay/stock_draw.wav",
     "CARDS_EXHAUSTED": "ui/boundary_hit.wav",
     "MULTI_CARD_MOVE": "gameplay/foundation_drop.wav",
-    
     "UI_NAVIGATE": "ui/navigate.wav",
     "UI_NAVIGATE_FRAME": "ui/navigate_alt.wav",
     "UI_NAVIGATE_PILE": "ui/focus_change.wav",
@@ -46,13 +45,11 @@
     "UI_BOUNDARY_HIT": "ui/boundary_hit.wav",
     "UI_NOTIFICATION": "ui/notification.wav",
     "UI_ERROR": "ui/error.wav",
-    
     "UI_MENU_OPEN": "ui/menu_open.wav",
     "UI_MENU_CLOSE": "ui/menu_close.wav",
     "UI_BUTTON_CLICK": "ui/button_click.wav",
     "UI_BUTTON_HOVER": "ui/button_hover.wav",
     "MIXER_OPENED": "ui/menu_open.wav",
-    
     "SETTING_SAVED": "ui/select.wav",
     "SETTING_CHANGED": "ui/focus_change.wav",
     "SETTING_LEVEL_CHANGED": "ui/focus_change.wav",
@@ -60,21 +57,29 @@
     "SETTING_MUSIC_CHANGED": "ui/focus_change.wav",
     "SETTING_SWITCH_ON": "ui/button_click.wav",
     "SETTING_SWITCH_OFF": "ui/button_hover.wav",
-    
-    "CARD_DROP"    : "gameplay/tableau_drop.wav",
-    "WASTE_DROP"   : "gameplay/stock_draw.wav",
-
+    "CARD_DROP": "gameplay/tableau_drop.wav",
+    "WASTE_DROP": "gameplay/stock_draw.wav",
     "GAME_WON": "voice/victory.wav",
     "WELCOME_MESSAGE": "voice/welcome_italian.wav",
-
     "TIMER_WARNING": "ui/navigate.wav",
     "TIMER_EXPIRED": "ui/cancel.wav",
-
-    "MUSIC_LOOP"   : "music/ambient_music_01.wav",
-    "AMBIENT_LOOP" : "ambient/game_start_ambient.wav"
+    "MUSIC_LOOP": "music/ambient_music_01.wav",
+    "AMBIENT_LOOP": "ambient/game_start_ambient.wav"
   },
   "preload_all_event_sounds": true,
   "enabled_events": {
+    "card_move": true,
+    "card_select": true,
+    "card_flip": true,
+    "card_shuffle": true,
+    "card_shuffle_waste": true,
+    "foundation_drop": true,
+    "invalid_move": true,
+    "tableau_bumper": true,
+    "tableau_drop": true,
+    "stock_draw": true,
+    "cards_exhausted": true,
+    "multi_card_move": true,
     "ui_navigate": true,
     "ui_navigate_frame": true,
     "ui_navigate_pile": true,
@@ -90,18 +95,6 @@
     "ui_menu_close": true,
     "ui_button_click": true,
     "ui_button_hover": true,
-    "card_move": true,
-    "card_flip": true,
-    "card_shuffle": true,
-    "card_shuffle_waste": true,
-    "tableau_drop": true,
-    "cards_exhausted": true,
-    "multi_card_move": true,
-    "game_won": true,
-    "welcome_message": true,
-    "timer_warning": true,
-    "timer_expired": true,
-    "ambient_loop": true,
     "mixer_opened": true,
     "setting_saved": true,
     "setting_changed": true,
@@ -110,13 +103,13 @@
     "setting_music_changed": true,
     "setting_switch_on": true,
     "setting_switch_off": true,
-    "stock_draw"      : true,
-    "foundation_drop" : true,
-    "invalid_move"    : true,
-    "tableau_bumper"  : true,
-    "card_select"     : true,
-    "card_drop"       : true,
-    "waste_drop"      : true,
-    "music_loop"      : true
+    "card_drop": true,
+    "waste_drop": true,
+    "game_won": true,
+    "welcome_message": true,
+    "timer_warning": true,
+    "timer_expired": true,
+    "music_loop": true,
+    "ambient_loop": true
   }
 }

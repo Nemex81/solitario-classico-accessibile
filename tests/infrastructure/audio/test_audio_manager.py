@@ -11,12 +11,17 @@ class DummySound:
 class DummyMixer:
     def __init__(self):
         self.played = []
+        self._volumes = {}
     def play_one_shot(self, sound, bus_name, panning):
         self.played.append((sound, bus_name, panning))
     def pause_loops(self):
         pass
     def resume_loops(self):
         pass
+    def set_bus_volume(self, bus_name, volume):
+        self._volumes[bus_name] = volume
+    def get_bus_volume(self, bus_name):
+        return self._volumes.get(bus_name, 0)
 
 
 @pytest.fixture(autouse=True)
@@ -86,3 +91,36 @@ def test_no_random_imported():
     import inspect, src.infrastructure.audio.audio_manager as ammod
     src = inspect.getsource(ammod.AudioManager.play_event)
     assert "random" not in src
+
+
+def test_effects_volume_updates_all_effect_buses(config):
+    am = AudioManager(config)
+    assert am.initialize()
+    am.set_effects_volume(55)
+    assert am.get_bus_volume("gameplay") == 55
+    assert am.get_bus_volume("ui") == 55
+    assert am.get_bus_volume("ambient") == 0
+
+
+def test_get_effects_volume_returns_average(config):
+    am = AudioManager(config)
+    assert am.initialize()
+    am.set_bus_volume("gameplay", 30)
+    am.set_bus_volume("ui", 60)
+    assert am.get_effects_volume() == 45
+
+
+def test_music_volume_updates_background_buses(config):
+    am = AudioManager(config)
+    assert am.initialize()
+    am.set_music_volume(35)
+    assert am.get_bus_volume("music") == 35
+    assert am.get_bus_volume("ambient") == 35
+
+
+def test_get_music_volume_returns_background_average(config):
+    am = AudioManager(config)
+    assert am.initialize()
+    am.set_bus_volume("music", 20)
+    am.set_bus_volume("ambient", 40)
+    assert am.get_music_volume() == 30

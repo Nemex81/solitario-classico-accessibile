@@ -32,6 +32,7 @@ Usage (v1.8.0):
 """
 
 import wx
+from typing import Any
 from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -133,11 +134,13 @@ class OptionsDialog(wx.Dialog):
         self.options_controller = controller
         self.screen_reader = screen_reader
         self.audio_manager = audio_manager
+        self._audio_snapshot: dict[str, int] = {}
         self._options_notebook: wx.Notebook | None = None
         self._tab_focus_targets: dict[int, wx.Window] = {}
         
         # Create native wx widgets UI
         self._create_ui()
+        self._audio_snapshot = self._capture_audio_snapshot()
         
         # Bind ESC key for smart close
         self.Bind(wx.EVT_CHAR_HOOK, self.on_key_down)
@@ -226,6 +229,30 @@ class OptionsDialog(wx.Dialog):
             audio_page,
             label="Suggerimenti comandi attivi (mostra aiuto per comandi disponibili)",
         )
+        self.music_volume_slider = wx.Slider(
+            audio_page,
+            value=30,
+            minValue=0,
+            maxValue=100,
+            style=wx.SL_HORIZONTAL | wx.SL_LABELS,
+        )
+        self.music_volume_slider.SetName("Volume musica")
+        self.music_volume_slider.SetToolTip("Regola il volume della musica e dei suoni di sottofondo")
+        self.music_volume_slider.SetHelpText("Volume musica. Usa le frecce per modificare la percentuale del sottofondo.")
+        self._add_group(audio_sizer, audio_page, "Volume Musica", self.music_volume_slider)
+
+        self.effects_volume_slider = wx.Slider(
+            audio_page,
+            value=70,
+            minValue=0,
+            maxValue=100,
+            style=wx.SL_HORIZONTAL | wx.SL_LABELS,
+        )
+        self.effects_volume_slider.SetName("Volume effetti sonori")
+        self.effects_volume_slider.SetToolTip("Regola il volume degli effetti sonori del menu e del gameplay")
+        self.effects_volume_slider.SetHelpText("Volume effetti sonori. Usa le frecce per modificare la percentuale degli effetti.")
+        self._add_group(audio_sizer, audio_page, "Volume Effetti Sonori", self.effects_volume_slider)
+
         self._add_group(audio_sizer, audio_page, "Navigazione Assistita", self.command_hints_check)
 
         self.scoring_check = wx.CheckBox(
@@ -277,7 +304,7 @@ class OptionsDialog(wx.Dialog):
         self._tab_focus_targets = {
             0: self.deck_type_radio,
             1: self.draw_count_radio,
-            2: self.command_hints_check,
+            2: self.music_volume_slider,
             3: self.display_mode_radio,
         }
 
@@ -375,6 +402,7 @@ class OptionsDialog(wx.Dialog):
         self.shuffle_radio.SetSelection(shuffle_selection)
         
         # 6. Suggerimenti Comandi
+        self._load_audio_to_widgets()
         self.command_hints_check.SetValue(settings.command_hints_enabled)
         
         # 7. Sistema Punti
@@ -438,6 +466,10 @@ class OptionsDialog(wx.Dialog):
         # CheckBox widgets
         self.command_hints_check.Bind(wx.EVT_CHECKBOX, self.on_setting_changed)
         self.scoring_check.Bind(wx.EVT_CHECKBOX, self.on_setting_changed)
+        self.music_volume_slider.Bind(wx.EVT_SLIDER, self.on_setting_changed)
+        self.effects_volume_slider.Bind(wx.EVT_SLIDER, self.on_setting_changed)
+        self.music_volume_slider.Bind(wx.EVT_SET_FOCUS, self.on_volume_slider_focus)
+        self.effects_volume_slider.Bind(wx.EVT_SET_FOCUS, self.on_volume_slider_focus)
         
         # ComboBox widget (TimerComboBox uses standard handler)
         self.timer_combo.Bind(wx.EVT_COMBOBOX, self.on_setting_changed)
@@ -477,11 +509,27 @@ class OptionsDialog(wx.Dialog):
         # Update GameSettings from current widget values
         self._save_widgets_to_settings()
         
+        audio_event_type = None
+        event_object = event.GetEventObject()
+        if event_object == self.music_volume_slider:
+            self._apply_music_volume_from_widget()
+            from src.infrastructure.audio.audio_events import AudioEventType
+            audio_event_type = AudioEventType.SETTING_MUSIC_CHANGED
+            self._announce_volume_slider(self.music_volume_slider, interrupt=False)
+        elif event_object == self.effects_volume_slider:
+            self._apply_effects_volume_from_widget()
+            from src.infrastructure.audio.audio_events import AudioEventType
+            audio_event_type = AudioEventType.SETTING_VOLUME_CHANGED
+            self._announce_volume_slider(self.effects_volume_slider, interrupt=False)
+        else:
+            from src.infrastructure.audio.audio_events import AudioEventType
+            audio_event_type = AudioEventType.SETTING_CHANGED
+
         # ✨ NUOVO v3.5.0: Play setting changed sound
         if self.audio_manager:
-            from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
+            from src.infrastructure.audio.audio_events import AudioEvent
             self.audio_manager.play_event(AudioEvent(
-                event_type=AudioEventType.SETTING_CHANGED
+                event_type=audio_event_type
             ))
         
         # ✅ FIX BUG #67: Special handling for difficulty change
@@ -540,6 +588,8 @@ class OptionsDialog(wx.Dialog):
             self.audio_manager.play_event(AudioEvent(
                 event_type=AudioEventType.SETTING_SAVED
             ))
+
+        self._commit_audio_changes()
         
         msg = self.options_controller.save_and_close()
         
@@ -574,6 +624,8 @@ class OptionsDialog(wx.Dialog):
             self.audio_manager.play_event(AudioEvent(
                 event_type=AudioEventType.UI_CANCEL
             ))
+
+        self._restore_audio_snapshot()
         
         msg = self.options_controller.discard_and_close()
         
@@ -654,6 +706,96 @@ class OptionsDialog(wx.Dialog):
         _theme_choices = ["standard", "alto_contrasto", "grande"]
         theme_idx = self.visual_theme_radio.GetSelection()
         settings.visual_theme = _theme_choices[theme_idx] if 0 <= theme_idx < len(_theme_choices) else "standard"
+
+    def _capture_audio_snapshot(self) -> dict[str, int]:
+        """Capture current runtime audio slider values for rollback support."""
+        if not self.audio_manager:
+            return {}
+        return {
+            "music_volume": self._safe_audio_call("get_music_volume", default=30),
+            "effects_volume": self._safe_audio_call("get_effects_volume", default=70),
+            "music_bus": self._safe_audio_call("get_bus_volume", "music", default=30),
+            "ambient_bus": self._safe_audio_call("get_bus_volume", "ambient", default=30),
+            "gameplay_bus": self._safe_audio_call("get_bus_volume", "gameplay", default=70),
+            "ui_bus": self._safe_audio_call("get_bus_volume", "ui", default=70),
+        }
+
+    def _load_audio_to_widgets(self) -> None:
+        """Load current audio manager values into the music/effects sliders."""
+        snapshot = self._capture_audio_snapshot()
+        if not snapshot:
+            return
+        self.music_volume_slider.SetValue(snapshot["music_volume"])
+        self.effects_volume_slider.SetValue(snapshot["effects_volume"])
+
+    def _save_audio_from_widgets(self) -> None:
+        """Apply current slider values to the live AudioManager instance."""
+        if not self.audio_manager:
+            return
+        self._apply_music_volume_from_widget()
+        self._apply_effects_volume_from_widget()
+
+    def _apply_music_volume_from_widget(self) -> None:
+        """Apply only the background volume represented by the music slider."""
+        if not self.audio_manager:
+            return
+        self._safe_audio_call("set_music_volume", self.music_volume_slider.GetValue())
+
+    def _apply_effects_volume_from_widget(self) -> None:
+        """Apply only the effect volume represented by the effects slider."""
+        if not self.audio_manager:
+            return
+        self._safe_audio_call("set_effects_volume", self.effects_volume_slider.GetValue())
+
+    def _restore_audio_snapshot(self) -> None:
+        """Restore audio runtime values captured when the dialog was opened."""
+        if not self.audio_manager or not self._audio_snapshot:
+            return
+        self.music_volume_slider.SetValue(self._audio_snapshot["music_volume"])
+        self.effects_volume_slider.SetValue(self._audio_snapshot["effects_volume"])
+        self._safe_audio_call("set_bus_volume", "music", self._audio_snapshot["music_bus"])
+        self._safe_audio_call("set_bus_volume", "ambient", self._audio_snapshot["ambient_bus"])
+        self._safe_audio_call("set_bus_volume", "gameplay", self._audio_snapshot["gameplay_bus"])
+        self._safe_audio_call("set_bus_volume", "ui", self._audio_snapshot["ui_bus"])
+
+    def _commit_audio_changes(self) -> None:
+        """Persist live audio changes and refresh the rollback snapshot."""
+        self._save_audio_from_widgets()
+        if self.audio_manager:
+            self._safe_audio_call("save_settings")
+        self._audio_snapshot = self._capture_audio_snapshot()
+
+    def _safe_audio_call(self, method_name: str, *args: Any, default: int | None = None) -> Any:
+        """Invoke an AudioManager method defensively.
+
+        Returns ``default`` when the audio manager is absent or the method call fails.
+        """
+        if not self.audio_manager:
+            return default
+        method = getattr(self.audio_manager, method_name, None)
+        if not callable(method):
+            return default
+        try:
+            return method(*args)
+        except Exception:
+            return default
+
+    def on_volume_slider_focus(self, event: wx.FocusEvent) -> None:
+        """Announce slider name and current value when it receives focus."""
+        slider = event.GetEventObject()
+        if isinstance(slider, wx.Slider):
+            self._announce_volume_slider(slider, interrupt=True)
+        event.Skip()
+
+    def _announce_volume_slider(self, slider: wx.Slider, interrupt: bool) -> None:
+        """Speak a consistent accessible announcement for volume sliders."""
+        if not self.screen_reader or not getattr(self.screen_reader, "tts", None):
+            return
+        control_name = slider.GetName() or "Controllo volume"
+        self.screen_reader.tts.speak(
+            f"{control_name}, {slider.GetValue()} percento",
+            interrupt=interrupt,
+        )
 
     def _update_widget_lock_states(self) -> None:
         """Update widget enable/disable states based on current preset locks.
@@ -751,6 +893,12 @@ class OptionsDialog(wx.Dialog):
             # Check if dialog was actually closed
             # (controller sets state to CLOSED if user confirmed save/discard)
             if self.options_controller.state == "CLOSED":
+                from src.presentation.options_formatter import OptionsFormatter
+                if msg == OptionsFormatter.format_save_confirmed():
+                    self._commit_audio_changes()
+                elif msg == OptionsFormatter.format_save_discarded():
+                    self._restore_audio_snapshot()
+
                 # Closing confirmed (saved or discarded)
                 if self.screen_reader and self.screen_reader.tts:
                     self.screen_reader.tts.speak(msg, interrupt=True)

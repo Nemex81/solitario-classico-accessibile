@@ -10,7 +10,7 @@ from pathlib import Path
 import pygame
 import logging
 from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
-from src.infrastructure.config.audio_config_loader import AudioConfig
+from src.infrastructure.config.audio_config_loader import AudioConfig, DEFAULT_EVENT_SOUNDS, DEFAULT_ENABLED_EVENTS
 from src.infrastructure.audio.sound_cache import SoundCache
 from src.infrastructure.audio.sound_mixer import SoundMixer
 from src.infrastructure.config.runtime_root import get_runtime_root
@@ -22,6 +22,51 @@ _LOOP_EVENTS = frozenset({
     AudioEventType.AMBIENT_LOOP,
     AudioEventType.MUSIC_LOOP,
 })
+_BACKGROUND_BUSES = ("music", "ambient")
+_EFFECTS_BUSES = ("gameplay", "ui")
+_GAMEPLAY_EVENTS = {
+    AudioEventType.CARD_MOVE,
+    AudioEventType.CARD_SELECT,
+    AudioEventType.CARD_DROP,
+    AudioEventType.CARD_FLIP,
+    AudioEventType.CARD_SHUFFLE,
+    AudioEventType.CARD_SHUFFLE_WASTE,
+    AudioEventType.FOUNDATION_DROP,
+    AudioEventType.INVALID_MOVE,
+    AudioEventType.TABLEAU_BUMPER,
+    AudioEventType.TABLEAU_DROP,
+    AudioEventType.STOCK_DRAW,
+    AudioEventType.WASTE_DROP,
+    AudioEventType.CARDS_EXHAUSTED,
+    AudioEventType.MULTI_CARD_MOVE,
+}
+_UI_EVENTS = {
+    AudioEventType.UI_NAVIGATE,
+    AudioEventType.UI_NAVIGATE_FRAME,
+    AudioEventType.UI_NAVIGATE_PILE,
+    AudioEventType.UI_SELECT,
+    AudioEventType.UI_CANCEL,
+    AudioEventType.UI_CONFIRM,
+    AudioEventType.UI_TOGGLE,
+    AudioEventType.UI_FOCUS_CHANGE,
+    AudioEventType.UI_BOUNDARY_HIT,
+    AudioEventType.UI_NOTIFICATION,
+    AudioEventType.UI_ERROR,
+    AudioEventType.UI_MENU_OPEN,
+    AudioEventType.UI_MENU_CLOSE,
+    AudioEventType.UI_BUTTON_CLICK,
+    AudioEventType.UI_BUTTON_HOVER,
+    AudioEventType.MIXER_OPENED,
+    AudioEventType.SETTING_SAVED,
+    AudioEventType.SETTING_CHANGED,
+    AudioEventType.SETTING_LEVEL_CHANGED,
+    AudioEventType.SETTING_VOLUME_CHANGED,
+    AudioEventType.SETTING_MUSIC_CHANGED,
+    AudioEventType.SETTING_SWITCH_ON,
+    AudioEventType.SETTING_SWITCH_OFF,
+    AudioEventType.TIMER_WARNING,
+    AudioEventType.TIMER_EXPIRED,
+}
 
 
 class AudioManager:
@@ -120,11 +165,43 @@ class AudioManager:
         if self.sound_mixer:
             self.sound_mixer.set_bus_volume(bus_name, volume)
 
+    def set_music_volume(self, volume: int) -> None:
+        """Apply one shared volume value to all background loop buses."""
+        for bus_name in _BACKGROUND_BUSES:
+            self.set_bus_volume(bus_name, volume)
+
+    def get_music_volume(self) -> int:
+        """Return the representative shared volume for background loop buses."""
+        if not self.sound_mixer:
+            return 0
+        volumes = [self.get_bus_volume(bus_name) for bus_name in _BACKGROUND_BUSES]
+        if not volumes:
+            return 0
+        return round(sum(volumes) / len(volumes))
+
+    def set_effects_volume(self, volume: int) -> None:
+        """Apply one shared volume value to the non-musical effects buses.
+
+        This keeps the UI simple by exposing a single "effetti sonori"
+        control while preserving the internal multi-bus mixer structure.
+        """
+        for bus_name in _EFFECTS_BUSES:
+            self.set_bus_volume(bus_name, volume)
+
     def toggle_bus_mute(self, bus_name: str) -> bool:
         return self.sound_mixer.toggle_bus_mute(bus_name) if self.sound_mixer else False
 
     def get_bus_volume(self, bus_name: str) -> int:
         return self.sound_mixer.get_bus_volume(bus_name) if self.sound_mixer else 0
+
+    def get_effects_volume(self) -> int:
+        """Return the representative shared volume for sound effects buses."""
+        if not self.sound_mixer:
+            return 0
+        volumes = [self.get_bus_volume(bus_name) for bus_name in _EFFECTS_BUSES]
+        if not volumes:
+            return 0
+        return round(sum(volumes) / len(volumes))
 
     def is_bus_muted(self, bus_name: str) -> bool:
         return self.sound_mixer.is_bus_muted(bus_name) if self.sound_mixer else False
@@ -140,7 +217,10 @@ class AudioManager:
             "active_sound_pack": self.config.active_sound_pack,
             "bus_volumes": self.sound_mixer._volumes,
             "bus_muted": self.sound_mixer._muted,
-            "mixer_params": self.config.mixer_params
+            "mixer_params": self.config.mixer_params,
+            "event_sounds": getattr(self.config, "event_sounds", {}),
+            "preload_all_event_sounds": getattr(self.config, "preload_all_event_sounds", True),
+            "enabled_events": getattr(self.config, "enabled_events", {}),
         }
         try:
             with open(path, "w", encoding="utf-8") as f:
@@ -178,11 +258,11 @@ class AudioManager:
         mapping: Dict[str, str] = {}
         raw = getattr(self.config, "event_sounds", {}) or {}
         if not raw:
-            _game_logger.error(
-                "AudioManager: 'event_sounds' section missing in config. "
-                "No sounds will be available. Check config/audio_config.json."
+            _game_logger.warning(
+                "AudioManager: 'event_sounds' section missing or empty in config. "
+                "Using built-in default mapping."
             )
-            return {}
+            raw = dict(DEFAULT_EVENT_SOUNDS)
         for key, fname in raw.items():
             evt_value = getattr(AudioEventType, key, None)
             if evt_value is None:
@@ -215,21 +295,15 @@ class AudioManager:
 
     def _get_bus_for_event(self, event_type: str) -> str:
         """Mapping evento → bus audio secondo tabella di mapping."""
-        # Mapping semplificato, da estendere se necessario
-        gameplay = ["card_move", "card_select", "card_drop", "foundation_drop", "invalid_move", "tableau_bumper", "stock_draw", "waste_drop"]
-        ui = ["ui_navigate", "ui_select", "ui_cancel", "mixer_opened", "timer_warning", "timer_expired"]
-        ambient = ["ambient_loop"]
-        music = ["music_loop"]
-        voice = ["game_won"]
-        if event_type in gameplay:
+        if event_type in _GAMEPLAY_EVENTS:
             return "gameplay"
-        if event_type in ui:
+        if event_type in _UI_EVENTS:
             return "ui"
-        if event_type in ambient:
+        if event_type == AudioEventType.AMBIENT_LOOP:
             return "ambient"
-        if event_type in music:
+        if event_type == AudioEventType.MUSIC_LOOP:
             return "music"
-        if event_type in voice:
+        if event_type in {AudioEventType.GAME_WON, AudioEventType.WELCOME_MESSAGE}:
             return "voice"
         return "gameplay"
 
@@ -260,10 +334,22 @@ class _AudioManagerStub:
     def set_bus_volume(self, bus_name: str, volume: int) -> None:
         pass
 
+    def set_music_volume(self, volume: int) -> None:
+        pass
+
+    def get_music_volume(self) -> int:
+        return 0
+
+    def set_effects_volume(self, volume: int) -> None:
+        pass
+
     def toggle_bus_mute(self, bus_name: str) -> bool:
         return False
 
     def get_bus_volume(self, bus_name: str) -> int:
+        return 0
+
+    def get_effects_volume(self) -> int:
         return 0
 
     def is_bus_muted(self, bus_name: str) -> bool:

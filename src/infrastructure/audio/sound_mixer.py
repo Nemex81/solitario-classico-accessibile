@@ -4,6 +4,7 @@ Gestisce i canali pygame.mixer, volumi, mute, panning stereo constant-power.
 """
 
 from typing import Dict
+import math
 import pygame
 import logging
 
@@ -27,7 +28,7 @@ class SoundMixer:
         if self._muted.get(bus_name, False):
             return
         channel = self._channels[bus_name]
-        self._apply_panning(channel, panning)
+        self._apply_panning(channel, panning, self._get_volume(bus_name))
         channel.play(sound)
 
     def play_loop(self, sound: pygame.mixer.Sound, bus_name: str) -> None:
@@ -80,16 +81,12 @@ class SoundMixer:
         """Converte volume int 0-100 in float 0.0-1.0."""
         return max(0.0, min(1.0, self._volumes.get(bus_name, 100) / 100.0))
 
-    def _apply_panning(self, channel: pygame.mixer.Channel, panning: float) -> None:
+    def _apply_panning(self, channel: pygame.mixer.Channel, panning: float, base_volume: float = 1.0) -> None:
         """Applica panning stereo constant-power pan law.
         panning: float -1.0 (sinistra) ... +1.0 (destra)
         """
-        if panning < 0.0:
-            left = 1.0
-            right = 1.0 + panning
-        else:
-            left = 1.0 - panning
-            right = 1.0
-        left = max(0.0, min(1.0, left))
-        right = max(0.0, min(1.0, right))
+        normalized_pan = max(-1.0, min(1.0, panning))
+        angle = (normalized_pan + 1.0) * (math.pi / 4.0)
+        left = max(0.0, min(1.0, math.cos(angle) * base_volume))
+        right = max(0.0, min(1.0, math.sin(angle) * base_volume))
         channel.set_volume(left, right)

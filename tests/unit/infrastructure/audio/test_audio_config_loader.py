@@ -66,8 +66,9 @@ def test_audio_config_loader_missing_file(tmp_path, monkeypatch):
     path = str(tmp_path / "nonexistent.json")
     cfg = AudioConfigLoader.load(path)
     assert isinstance(cfg, AudioConfig)
-    assert cfg.enabled_events == {}
-    assert cfg.event_sounds == {}
+    assert cfg.enabled_events
+    assert cfg.event_sounds
+    assert cfg.event_sounds["CARD_MOVE"] == "gameplay/card_move.wav"
     assert cfg.preload_all_event_sounds is True
 
 
@@ -79,6 +80,20 @@ def test_audio_config_loader_corrupted_json(tmp_path):
     cfg = AudioConfigLoader.load(str(badpath))
     assert isinstance(cfg, AudioConfig)
     # defaults still apply
-    assert cfg.enabled_events == {}
-    assert cfg.event_sounds == {}
+    assert cfg.enabled_events
+    assert cfg.event_sounds
+    assert cfg.event_sounds["UI_MENU_OPEN"] == "ui/menu_open.wav"
     assert cfg.preload_all_event_sounds is True
+
+
+@pytest.mark.unit
+def test_audio_config_loader_empty_sections_fallback_to_defaults(tmp_path):
+    data = {
+        "event_sounds": {},
+        "enabled_events": {},
+        "preload_all_event_sounds": True
+    }
+    path = write_temp_config(tmp_path, data)
+    cfg = AudioConfigLoader.load(path)
+    assert cfg.event_sounds["MUSIC_LOOP"] == "music/ambient_music_01.wav"
+    assert cfg.enabled_events["music_loop"] is True
