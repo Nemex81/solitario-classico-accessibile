@@ -129,7 +129,6 @@ BUILD_EXE_OPTIONS: dict[str, object] = {
         "src.infrastructure",
         "src.presentation",
         "accessible_output2",
-        "pyttsx3",
         "pygame",
         "wx",
     ],

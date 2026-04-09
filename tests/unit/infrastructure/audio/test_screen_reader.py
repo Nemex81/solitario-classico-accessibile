@@ -145,18 +145,19 @@ class TestTtsProvider:
     def test_sapi5_provider_initialization(self) -> None:
         """Test Sapi5Provider initialization on Windows."""
         with patch('sys.platform', 'win32'):
-            with patch('builtins.__import__', side_effect=self._mock_import_pyttsx3):
+            with patch('builtins.__import__', side_effect=self._mock_import_sapi5):
                 provider = Sapi5Provider()
                 
                 assert hasattr(provider, 'engine')
                 assert provider.engine is not None
     
-    def _mock_import_pyttsx3(self, name: str, *args, **kwargs):
-        """Mock pyttsx3 import."""
-        if name == 'pyttsx3':
+    def _mock_import_sapi5(self, name: str, *args, **kwargs):
+        """Mock accessible_output2 SAPI5 import."""
+        if name == 'accessible_output2.outputs':
             mock_module = Mock()
             mock_engine = Mock()
-            mock_module.init = Mock(return_value=mock_engine)
+            mock_module.sapi5 = Mock()
+            mock_module.sapi5.SAPI5 = Mock(return_value=mock_engine)
             return mock_module
         return __import__(name, *args, **kwargs)
     
@@ -261,11 +262,12 @@ class TestTtsProviderMethods:
         with patch('sys.platform', 'win32'):
             mock_engine = Mock()
             with patch('builtins.__import__') as mock_import:
-                # Configure mock to return pyttsx3 with mock engine
+                # Configure mock to return accessible_output2 SAPI5 with mock engine
                 def import_side_effect(name, *args, **kwargs):
-                    if name == 'pyttsx3':
+                    if name == 'accessible_output2.outputs':
                         mock_module = Mock()
-                        mock_module.init = Mock(return_value=mock_engine)
+                        mock_module.sapi5 = Mock()
+                        mock_module.sapi5.SAPI5 = Mock(return_value=mock_engine)
                         return mock_module
                     return __import__(name, *args, **kwargs)
                 
@@ -274,29 +276,29 @@ class TestTtsProviderMethods:
                 provider = Sapi5Provider()
                 provider.speak("test message", interrupt=True)
                 
-                mock_engine.stop.assert_called_once()
-                mock_engine.say.assert_called_once_with("test message")
-                mock_engine.runAndWait.assert_called_once()
+                mock_engine.silence.assert_called_once()
+                mock_engine.speak.assert_called_once_with("test message", interrupt=False)
     
     def test_sapi5_set_rate(self) -> None:
         """Test Sapi5Provider rate setting."""
         with patch('sys.platform', 'win32'):
             mock_engine = Mock()
             with patch('builtins.__import__') as mock_import:
-                # Configure mock to return pyttsx3 with mock engine
+                # Configure mock to return accessible_output2 SAPI5 with mock engine
                 def import_side_effect(name, *args, **kwargs):
-                    if name == 'pyttsx3':
+                    if name == 'accessible_output2.outputs':
                         mock_module = Mock()
-                        mock_module.init = Mock(return_value=mock_engine)
+                        mock_module.sapi5 = Mock()
+                        mock_module.sapi5.SAPI5 = Mock(return_value=mock_engine)
                         return mock_module
                     return __import__(name, *args, **kwargs)
                 
                 mock_import.side_effect = import_side_effect
                 
                 provider = Sapi5Provider()
-                provider.set_rate(5)  # Rate of 5 should map to 225
+                provider.set_rate(5)
                 
-                mock_engine.setProperty.assert_called_with('rate', 225)
+                mock_engine.set_rate.assert_called_with(5)
     
     def test_nvda_speak_with_interrupt(self) -> None:
         """Test NvdaProvider speak method with interrupt."""

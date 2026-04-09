@@ -55,7 +55,7 @@ class TtsProvider(ABC):
 class Sapi5Provider(TtsProvider):
     """Windows SAPI5 TTS provider.
     
-    Uses pyttsx3 library to interface with Windows Speech API (SAPI5).
+    Uses accessible_output2 to interface with Windows Speech API (SAPI5).
     Only available on Windows platforms.
     
     Raises:
@@ -72,8 +72,9 @@ class Sapi5Provider(TtsProvider):
             raise RuntimeError("SAPI5 only available on Windows")
         
         try:
-            import pyttsx3  # type: ignore[import-not-found]
-            self.engine: Any = pyttsx3.init(driverName="sapi5")
+            from accessible_output2.outputs import sapi5
+
+            self.engine: Any = sapi5.SAPI5()
         except Exception as e:
             raise RuntimeError(f"Failed to initialize SAPI5: {e}")
     
@@ -86,23 +87,19 @@ class Sapi5Provider(TtsProvider):
         """
         if interrupt:
             self.stop()
-        self.engine.say(text)
-        self.engine.runAndWait()
+        self.engine.speak(text, interrupt=False)
     
     def stop(self) -> None:
         """Stop current SAPI5 speech."""
-        self.engine.stop()
+        self.engine.silence()
     
     def set_rate(self, rate: int) -> None:
         """Set SAPI5 speech rate.
         
         Args:
-            rate: Speech rate from -10 to 10. Mapped to SAPI5 range 125-250
-                 (default 200)
+            rate: Speech rate from -10 to 10.
         """
-        # SAPI5 rate: 125-250 (default 200)
-        sapi5_rate = 200 + (rate * 5)
-        self.engine.setProperty('rate', sapi5_rate)
+        self.engine.set_rate(rate)
     
     def set_volume(self, volume: float) -> None:
         """Set SAPI5 volume.
@@ -110,7 +107,7 @@ class Sapi5Provider(TtsProvider):
         Args:
             volume: Volume from 0.0 to 1.0
         """
-        self.engine.setProperty('volume', volume)
+        self.engine.set_volume(round(max(0.0, min(1.0, volume)) * 100))
 
 
 class NvdaProvider(TtsProvider):
