@@ -417,6 +417,38 @@ class TestGetBitmapImportError:
 
 @pytest.mark.unit
 class TestFrenchPathFix:
+    @pytest.mark.parametrize(
+        ("rank", "expected_file"),
+        [
+            ("Asso", "1-cuori.jpg"),
+            ("Jack", "11-cuori.jpg"),
+            ("Regina", "12-cuori.jpg"),
+            ("Re", "13-cuori.jpg"),
+        ],
+    )
+    def test_french_legacy_rank_names_resolve_expected_files(
+        self,
+        tmp_path: Path,
+        rank: str,
+        expected_file: str,
+    ) -> None:
+        """Legacy/domain French rank names must resolve to numeric asset filenames."""
+        card_dir = tmp_path / "assets" / "img" / "carte_francesi"
+        card_dir.mkdir(parents=True)
+        (card_dir / expected_file).write_bytes(b"fake")
+
+        mock_img = MagicMock()
+        mock_img.IsOk.return_value = True
+        mock_wx = MagicMock()
+        mock_wx.Image.return_value = mock_img
+        mock_wx.BITMAP_TYPE_JPEG = 13
+
+        cache = CardImageCache(tmp_path, deck_type="french")
+        with patch.dict("sys.modules", {"wx": mock_wx}):
+            result = cache._load_source(rank, "cuori")
+
+        assert result is mock_img
+
     def test_french_path_uses_underscore(self, tmp_path: Path) -> None:
         """French _load_source_french must look in 'carte_francesi' (underscore)."""
         card_dir = tmp_path / "assets" / "img" / "carte_francesi"

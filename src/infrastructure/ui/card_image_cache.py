@@ -24,9 +24,13 @@ _log = logging.getLogger(__name__)
 
 _RANK_MAP: dict[str, str] = {
     "A": "1",
+    "ASSO": "1",
     "J": "11",
+    "JACK": "11",
     "Q": "12",
+    "REGINA": "12",
     "K": "13",
+    "RE": "13",
 }
 
 # --- Neapolitan deck helpers ---
@@ -103,7 +107,8 @@ class CardImageCache:
             Numeric string: ``"A"``→``"1"``, ``"J"``→``"11"``,
             ``"Q"``→``"12"``, ``"K"``→``"13"``, others unchanged.
         """
-        return _RANK_MAP.get(rank, rank)
+        normalized_rank = rank.strip().upper()
+        return _RANK_MAP.get(normalized_rank, rank)
 
     def _load_source(self, rank: str, suit: str) -> object | None:
         """Load a wx.Image for the given card from disk.
