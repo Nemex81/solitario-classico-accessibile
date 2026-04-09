@@ -9,13 +9,14 @@ from pathlib import Path
 from typing import Dict, Optional
 
 from src.domain.models.scoring import ScoringConfig, ScoreEventType
+from src.infrastructure.config.runtime_root import get_runtime_root
 
 
 class ScoringConfigLoader:
     """Loader for scoring configuration with JSON externalization."""
     
-    # Default config path (relative to project root)
-    DEFAULT_CONFIG_PATH = Path("config/scoring_config.json")
+    # Default config path resolved from runtime root
+    DEFAULT_CONFIG_PATH = get_runtime_root() / "config" / "scoring_config.json"
     
     @classmethod
     def load(cls, path: Optional[Path] = None) -> ScoringConfig:

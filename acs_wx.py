@@ -190,7 +190,8 @@ class SolitarioController:
             settings=self.settings,
             use_native_dialogs=True,
             parent_window=None,  # wx dialogs don't need parent
-            profile_service=self.profile_service  # 🆕 NEW v3.1.0
+            profile_service=self.profile_service,  # 🆕 NEW v3.1.0
+            screen_reader=self.screen_reader,
         )
         
         # Inject end game callback for UI state management
@@ -1122,26 +1123,75 @@ class SolitarioController:
         log.debug_state("run", {"phase": "end"})
 
 
-def main():
+def main() -> None:
     """Application entry point."""
-    # Setup logging FIRST (before any other init)
-    setup_logging(
-        level=logging.INFO,      # INFO level for production
-        console_output=False     # Log only to file
-    )
-    
-    log.app_started()
-    
+    # ── Bootstrap diagnostico anticipato (v4.5.1) ─────────────────────────────
+    # Apre startup_diagnostic.log nel runtime root PRIMA di setup_logging() e
+    # prima della costruzione di wx.App, così ogni crash nelle fasi inziali è
+    # sempre osservabile anche con base="Win32GUI" (nessuna console visibile).
+    import datetime
+    import traceback as _traceback_mod
+
     try:
+        from src.infrastructure.config.runtime_root import get_runtime_root as _get_rr
+        _runtime_root = _get_rr()
+    except Exception:
+        # Fallback inline nel caso runtime_root.py non sia importabile
+        if getattr(sys, "frozen", False):
+            from pathlib import Path as _Path
+            _runtime_root = _Path(sys.executable).resolve().parent
+        else:
+            from pathlib import Path as _Path
+            _runtime_root = _Path(__file__).resolve().parent
+
+    _diag_log = _runtime_root / "startup_diagnostic.log"
+    try:
+        _runtime_root.mkdir(parents=True, exist_ok=True)
+        with open(_diag_log, "a", encoding="utf-8") as _diag_f:
+            _diag_f.write(
+                f"\n--- startup {datetime.datetime.now().isoformat()} ---\n"
+                f"runtime_root: {_runtime_root}\n"
+                f"sys.frozen: {getattr(sys, 'frozen', False)}\n"
+                f"sys.executable: {sys.executable}\n"
+            )
+    except Exception:
+        pass  # il log diagnostico non deve mai bloccare l'avvio
+
+    try:
+        # Setup logging FIRST, usando runtime root per la directory log
+        setup_logging(
+            level=logging.INFO,
+            logs_dir=_runtime_root / "logs",
+            console_output=False,
+        )
+        log.app_started()
+
         controller = SolitarioController()
         controller.run()
     except KeyboardInterrupt:
         sys.exit(0)
     except Exception as e:
-        log.error_occurred("Application", "Unhandled exception in main loop", e)
+        _tb = _traceback_mod.format_exc()
+        try:
+            with open(_diag_log, "a", encoding="utf-8") as _diag_f:
+                _diag_f.write(f"EXCEPTION: {e}\n{_tb}\n")
+        except Exception:
+            pass
+        try:
+            log.error_occurred("Application", "Unhandled exception in main loop", e)
+        except Exception:
+            pass
         sys.exit(1)
     finally:
-        log.app_shutdown()
+        try:
+            log.app_shutdown()
+        except Exception:
+            pass
+        try:
+            with open(_diag_log, "a", encoding="utf-8") as _diag_f:
+                _diag_f.write("--- shutdown ---\n")
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":

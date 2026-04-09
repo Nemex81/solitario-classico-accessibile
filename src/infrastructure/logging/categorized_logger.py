@@ -37,9 +37,11 @@ import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
+from src.infrastructure.config.runtime_root import get_runtime_root
+
 # ── Configurazione paths ───────────────────────────────────────────────────────
 
-LOGS_DIR = Path("logs")
+LOGS_DIR = get_runtime_root() / "logs"
 LOG_FILE = LOGS_DIR / "solitario.log"   # root logger (library logs)
 
 # ── Registro categorie ─────────────────────────────────────────────────────────

@@ -73,6 +73,21 @@ class TestGameEngineCreation:
             mock_create_tts.assert_called_once_with("sapi5")
             assert engine.screen_reader is not None
             assert engine.audio_enabled is True
+
+    def test_create_reuses_injected_screen_reader(self):
+        """Test factory method reuses an externally initialized screen reader."""
+        injected_screen_reader = Mock(spec=ScreenReader)
+
+        with patch('src.application.game_engine.create_tts_provider') as mock_create_tts:
+            engine = GameEngine.create(
+                audio_enabled=True,
+                tts_engine="auto",
+                screen_reader=injected_screen_reader,
+            )
+
+        mock_create_tts.assert_not_called()
+        assert engine.screen_reader is injected_screen_reader
+        assert engine.audio_enabled is True
     
     def test_create_with_audio_disabled(self):
         """Test graceful degradation when TTS unavailable."""

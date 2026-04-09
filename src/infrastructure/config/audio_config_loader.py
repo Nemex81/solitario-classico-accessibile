@@ -5,11 +5,14 @@ Degradazione graziosa: fallback ai default se file assente/corrotto.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict
+from typing import Dict, Union
 import json
 import os
+from pathlib import Path
 
-CONFIG_PATH = os.path.join("config", "audio_config.json")
+from src.infrastructure.config.runtime_root import get_runtime_root
+
+CONFIG_PATH: str = str(get_runtime_root() / "config" / "audio_config.json")
 
 @dataclass
 class AudioConfig:
@@ -39,7 +42,7 @@ class AudioConfigLoader:
     Pattern identico a scoring_config_loader.py.
     """
     @classmethod
-    def load(cls, path: str = CONFIG_PATH) -> AudioConfig:
+    def load(cls, path: Union[str, Path] = CONFIG_PATH) -> AudioConfig:
         try:
             with open(path, "r", encoding="utf-8") as f:
                 data = json.load(f)

@@ -8,8 +8,11 @@ Migrated from: src/infrastructure/audio/tts_provider.py (SHA: ad5a7045)
 """
 
 from abc import ABC, abstractmethod
+import logging
 import sys
 from typing import Optional, Any
+
+_tts_logger = logging.getLogger("ui")
 
 
 class TtsProvider(ABC):
@@ -203,49 +206,83 @@ class EspeakTtsProvider(TtsProvider):
         raise NotImplementedError()
 
 
+class DummyTtsProvider(TtsProvider):
+    """No-op TTS provider — fallback when all speech engines are unavailable.
+
+    Every method is a silent no-op so the application starts and runs
+    fully even when neither NVDA nor SAPI5 is available (e.g. headless CI,
+    fresh test VM, or frozen build on a machine without NVDA).
+
+    Version
+    -------
+    v4.5.1: Added for frozen-runtime hardening.
+    """
+
+    def speak(self, text: str, interrupt: bool = False) -> None:
+        pass
+
+    def stop(self) -> None:
+        pass
+
+    def set_rate(self, rate: int) -> None:
+        pass
+
+    def set_volume(self, volume: float) -> None:
+        pass
+
+
 def create_tts_provider(engine: str = "auto") -> TtsProvider:
     """Factory function to create TTS provider.
-    
-    Attempts to create the specified TTS provider, with automatic
-    fallback when engine="auto". The auto mode tries NVDA first
-    (preferred for blind users), then falls back to SAPI5.
-    
+
+    Attempts to create the specified TTS provider with automatic fallback
+    when ``engine="auto"``.  Fallback chain: NVDA → SAPI5 → DummyTtsProvider.
+    Each failed attempt is logged at WARNING level so the operator can see
+    why a provider was skipped; the application never crashes even when all
+    real providers are unavailable.
+
     Args:
-        engine: Engine name. Options:
-            - "auto": Try NVDA first, then SAPI5
-            - "nvda": Use NVDA screen reader
-            - "sapi5": Use Windows SAPI5
-            - "espeak": Use eSpeak (not yet implemented)
-            
+        engine: Engine name.
+            - ``"auto"``: Try NVDA, then SAPI5, then DummyTtsProvider.
+            - ``"nvda"``: Use NVDA screen reader (raises on failure).
+            - ``"sapi5"``: Use Windows SAPI5 (raises on failure).
+            - ``"espeak"``: Use eSpeak (not yet implemented).
+            - ``"dummy"``: Return DummyTtsProvider directly (for testing).
+
     Returns:
-        TTS provider instance
-        
+        TtsProvider instance.
+
     Raises:
-        RuntimeError: If no compatible engine available (auto mode)
-        ValueError: If unknown engine name specified
+        ValueError: If an unknown engine name is specified.
+        RuntimeError: If the requested named engine fails to initialise.
     """
     if engine == "auto":
-        # Try NVDA first (preferred for blind users)
         try:
             return NvdaTtsProvider()
-        except RuntimeError:
-            pass
-        
-        # Fallback to SAPI5
+        except RuntimeError as nvda_err:
+            _tts_logger.warning("TTS: NVDA non disponibile, fallback a SAPI5: %s", nvda_err)
+
         try:
             return Sapi5TtsProvider()
-        except RuntimeError:
-            pass
-        
-        raise RuntimeError("No TTS engine available")
-    
+        except RuntimeError as sapi_err:
+            _tts_logger.warning(
+                "TTS: SAPI5 non disponibile, fallback a DummyTtsProvider: %s", sapi_err
+            )
+
+        _tts_logger.warning(
+            "TTS: nessun motore disponibile, avvio in modalità silenziosa (DummyTtsProvider)."
+        )
+        return DummyTtsProvider()
+
     if engine == "nvda":
         return NvdaTtsProvider()
-    
+
     if engine == "sapi5":
         return Sapi5TtsProvider()
-    
+
     if engine == "espeak":
         return EspeakTtsProvider()
-    
+
+    if engine == "dummy":
+        return DummyTtsProvider()
+
     raise ValueError(f"Unknown TTS engine: {engine}")

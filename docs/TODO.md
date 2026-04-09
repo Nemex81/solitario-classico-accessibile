@@ -19,6 +19,10 @@ Per aggiornamento e struttura: .github/skills/docs_manager.skill.md
 
 <!-- Task attivi con priorità massima — espansi qui per visibilità immediata -->
 
+- ~~[TODO_cx-freeze-setup_v4.5.0.md](5%20-%20todolist/TODO_cx-freeze-setup_v4.5.0.md)~~
+  Piano: [PLAN_cx-freeze-setup_v4.5.0.md](3%20-%20coding%20plans/PLAN_cx-freeze-setup_v4.5.0.md)
+  Stato: COMPLETED — setup.py root creato e build cx_Freeze verificato (v4.5.0)
+
 - **[ATTIVO — PRIORITARIO]** [TODO_options-tabs-layout_v4.4.0.md](5%20-%20todolist/TODO_options-tabs-layout_v4.4.0.md)
   Piano: [PLAN_options-tabs-layout_v4.4.0.md](3%20-%20coding%20plans/PLAN_options-tabs-layout_v4.4.0.md)
   Stato: ACTIVE — refactor finestra opzioni con notebook a tab, focus NVDA e grouping logico (v4.4.0)
@@ -46,6 +50,8 @@ stato: attivo
 <!-- Link relativi ai file attivi in docs/2 - projects/ -->
 
 - [DESIGN_audio_system.md](2%20-%20projects/DESIGN_audio_system.md) — sistema audio (completato)
+- [DESIGN_cx-freeze-setup_v4.5.0.md](2%20-%20projects/DESIGN_cx-freeze-setup_v4.5.0.md) — packaging Windows con setup.py e cx_Freeze (REVIEWED)
+- [DESIGN_cx-freeze-frozen-runtime.md](2%20-%20projects/DESIGN_cx-freeze-frozen-runtime.md) — correttivo runtime/avvio frozen cx_Freeze (DRAFT)
 - [DESIGN_options-tabs-layout_v4.4.0.md](2%20-%20projects/DESIGN_options-tabs-layout_v4.4.0.md) — refactor dialogo opzioni con tab accessibili e grouping logico (REVIEWED)
 - [DESIGN_framework-template-bootstrap.md](2%20-%20projects/DESIGN_framework-template-bootstrap.md) — integrazione template framework e bootstrap Agent-Welcome (reviewed)
 - [DESIGN_gameplay-visual-ui.md](2%20-%20projects/DESIGN_gameplay-visual-ui.md) — supporto visivo finestra gameplay (reviewed)
@@ -56,6 +62,7 @@ stato: attivo
 <!-- Link relativi ai file attivi in docs/3 - coding plans/ -->
 
 - [PLAN_document-governance_v1.9.0.md](3%20-%20coding%20plans/PLAN_document-governance_v1.9.0.md) — governance documentale (in corso)
+- [PLAN_cx-freeze-setup_v4.5.0.md](3%20-%20coding%20plans/PLAN_cx-freeze-setup_v4.5.0.md) — definizione setup.py e validazione build cx_Freeze (READY)
 - [PLAN_options-tabs-layout_v4.4.0.md](3%20-%20coding%20plans/PLAN_options-tabs-layout_v4.4.0.md) — refactor finestra opzioni con notebook accessibile (READY)
 - [PLAN_game-engine-refactoring_v3.6.0.md](3%20-%20coding%20plans/PLAN_game-engine-refactoring_v3.6.0.md) — refactoring engine (legacy)
 - [PLAN_e2e-resilience_v1.10.0.md](3%20-%20coding%20plans/PLAN_e2e-resilience_v1.10.0.md) — gate semantici, rollback, coverage SOT (completed)
@@ -65,6 +72,7 @@ stato: attivo
 - [PLAN_gameplay-card-images_v4.1.0.md](3%20-%20coding%20plans/PLAN_gameplay-card-images_v4.1.0.md) — immagini reali carte francesi **(ready — in avvio)**
 - [PLAN_tableau-adaptive-layout_v4.2.0.md](3%20-%20coding%20plans/PLAN_tableau-adaptive-layout_v4.2.0.md) — layout adattivo tableau, scaling fan offset per-pila (DRAFT)
 - [PLAN_card-assets-integration_v4.3.0.md](3%20-%20coding%20plans/PLAN_card-assets-integration_v4.3.0.md) — fix path carte francesi, carte napoletane, back_bitmap **(READY)**
+- [PLAN_cx-freeze-frozen-runtime_v4.5.1.md](3%20-%20coding%20plans/PLAN_cx-freeze-frozen-runtime_v4.5.1.md) — correttivo avvio/runtime frozen cx_Freeze: bootstrap diagnostico, path resolver, hardening TTS/audio, DLL validation **(DRAFT)**
 
 ## Reports
 
@@ -76,6 +84,7 @@ stato: attivo
 
 <!-- Link relativi ai file attivi in docs/5 - todolist/ -->
 
+- [TODO_cx-freeze-setup_v4.5.0.md](5%20-%20todolist/TODO_cx-freeze-setup_v4.5.0.md) — packaging cx_Freeze con setup.py root (COMPLETED)
 - [TODO_options-tabs-layout_v4.4.0.md](5%20-%20todolist/TODO_options-tabs-layout_v4.4.0.md) — refactor finestra opzioni con tab accessibili (ACTIVE)
 - [TODO_gameplay-visual-ui_v4.0.0.md](5%20-%20todolist/TODO_gameplay-visual-ui_v4.0.0.md) — implementazione visual UI gameplay **(prioritario — in esecuzione)**
 - [TODO_document-governance_v1.9.0.md](5%20-%20todolist/TODO_document-governance_v1.9.0.md) — governance documentale (in corso)
@@ -86,6 +95,7 @@ stato: attivo
 - [TODO_gameplay-card-images_v4.1.0.md](5%20-%20todolist/TODO_gameplay-card-images_v4.1.0.md) — immagini reali carte francesi **(prioritario — in avvio)**
 - [TODO_tableau-adaptive-layout_v4.2.0.md](5%20-%20todolist/TODO_tableau-adaptive-layout_v4.2.0.md) — layout adattivo tableau (ACTIVE — 3 fasi)
 - [TODO_card-assets-integration_v4.3.0.md](5%20-%20todolist/TODO_card-assets-integration_v4.3.0.md) — fix path francesi + carte napoletane + back_bitmap **(ACTIVE — 4 fasi)**
+- [TODO_cx-freeze-frozen-runtime_v4.5.1.md](5%20-%20todolist/TODO_cx-freeze-frozen-runtime_v4.5.1.md) — correttivo avvio frozen: diagnostica, path resolver, hardening TTS/audio, DLL SDL2 **(ACTIVE — 6 fasi)**
 
 ## Stato Avanzamento
 

@@ -7,7 +7,8 @@
 # ============================================================================
 
 # UI Framework - wxPython for native dialogs and event loop
-wxPython==4.1.1
+# 4.2.2 is the verified working version for the current Python 3.11 build env.
+wxPython==4.2.2
 
 # Screen Reader / TTS Support
 accessible-output2==0.16

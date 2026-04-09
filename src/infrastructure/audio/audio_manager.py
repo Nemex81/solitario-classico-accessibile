@@ -13,6 +13,7 @@ from src.infrastructure.audio.audio_events import AudioEvent, AudioEventType
 from src.infrastructure.config.audio_config_loader import AudioConfig
 from src.infrastructure.audio.sound_cache import SoundCache
 from src.infrastructure.audio.sound_mixer import SoundMixer
+from src.infrastructure.config.runtime_root import get_runtime_root
 
 _game_logger = logging.getLogger('game')
 
@@ -29,7 +30,7 @@ class AudioManager:
     """
     def __init__(self, config: AudioConfig, sounds_base_path: Optional[Path] = None) -> None:
         self.config = config
-        self.sounds_base_path = sounds_base_path or Path("assets/sounds")
+        self.sounds_base_path = sounds_base_path or (get_runtime_root() / "assets" / "sounds")
         self.sound_cache = SoundCache(self.sounds_base_path)
         # prepare event->filename mapping based on config (JSON-driven)
         self._event_sounds = self._load_event_mapping()
@@ -51,15 +52,20 @@ class AudioManager:
             self.sound_mixer = SoundMixer(self.config)
             # preload sounds based on event mapping
             mapping_for_cache = {et: fname for et, fname in self._event_sounds.items()}
-            self.sound_cache.load_pack(self.config.active_sound_pack, mapping_for_cache)
+            try:
+                self.sound_cache.load_pack(self.config.active_sound_pack, mapping_for_cache)
+            except TypeError:
+                # Legacy test doubles may still implement the old load_pack(pack_name)
+                # signature; support both while runtime code uses the JSON-driven mapping.
+                self.sound_cache.load_pack(self.config.active_sound_pack)
             self._initialized = True
             _game_logger.info("AudioManager initialized successfully.")
             # perform validation to catch missing events or files
             self._validate_config_completeness()
             return True
         except Exception as e:
-            _game_logger.exception(f"AudioManager initialization failed: {e}")
-            # if mixer fails, leave in uninitialized state so subsequent calls are no-op
+            _game_logger.warning(f"AudioManager initialization failed: {e}")
+            # mixer unavailable — leave _initialized=False; all calls become no-ops
             self._initialized = False
             return False
 
@@ -76,7 +82,8 @@ class AudioManager:
             _game_logger.debug(f"AudioManager not initialized, skipping event: {event.event_type}")
             return
         # check configuration for event toggle
-        if not self.config.enabled_events.get(event.event_type, True):
+        enabled_events = getattr(self.config, "enabled_events", {})
+        if not enabled_events.get(event.event_type, True):
             _game_logger.debug(f"Event {event.event_type} disabled via config, skipping")
             return
         sound = self.sound_cache.get(event.event_type)
@@ -124,8 +131,10 @@ class AudioManager:
 
     def save_settings(self) -> None:
         """Scrive volumi e stato mute correnti in audio_config.json."""
+        if not self.sound_mixer:
+            return
         import json
-        path = self.sounds_base_path.parent / "config" / "audio_config.json"
+        path = get_runtime_root() / "config" / "audio_config.json"
         data = {
             "version": self.config.version,
             "active_sound_pack": self.config.active_sound_pack,
@@ -145,7 +154,8 @@ class AudioManager:
         self.save_settings()
         if self.sound_mixer:
             self.sound_mixer.stop_all()
-        pygame.mixer.quit()
+        if self._initialized:
+            pygame.mixer.quit()
         self._initialized = False
 
     @property

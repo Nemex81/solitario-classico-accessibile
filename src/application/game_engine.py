@@ -161,7 +161,8 @@ class GameEngine:
         settings: Optional[GameSettings] = None,
         use_native_dialogs: bool = False,  # ✨ NEW v1.6.0
         parent_window = None,  # 🆕 NEW v1.6.2 - pygame screen for modal dialogs
-        profile_service: Optional['ProfileService'] = None  # 🆕 NEW v3.1.0
+        profile_service: Optional['ProfileService'] = None,  # 🆕 NEW v3.1.0
+        screen_reader: Optional[ScreenReader] = None,
     ) -> "GameEngine":
         """Factory method to create fully initialized game engine.
         
@@ -174,6 +175,9 @@ class GameEngine:
             parent_window: pygame.display surface for modal dialog parenting (NEW v1.6.2)
                            If provided, wxDialogs won't appear in ALT+TAB switcher
             profile_service: Optional profile service for session tracking (NEW v3.1.0)
+            screen_reader: Pre-configured screen reader to reuse for gameplay.
+                When provided, the factory skips internal TTS creation and keeps
+                menu/gameplay vocalization on the same provider instance.
             
         Returns:
             Initialized GameEngine instance ready to play
@@ -244,8 +248,7 @@ class GameEngine:
         score_storage = ScoreStorage()
         
         # Create infrastructure (optional)
-        screen_reader = None
-        if audio_enabled:
+        if screen_reader is None and audio_enabled:
             try:
                 tts = create_tts_provider(tts_engine)
                 screen_reader = ScreenReader(tts, enabled=True, verbose=verbose)
