@@ -4,6 +4,7 @@ import re
 import shutil
 import stat
 import sys
+from distutils.command.build import build as _DistBuild
 from pathlib import Path
 
 from cx_Freeze import Executable, setup
@@ -11,6 +12,7 @@ from cx_Freeze import Executable, setup
 
 ROOT_DIR = Path(__file__).resolve().parent
 DIST_DIR = ROOT_DIR / "dist" / "solitario-classico"
+BUILD_DIR = ROOT_DIR / "build"
 
 
 def _handle_remove_readonly(
@@ -25,16 +27,31 @@ def _handle_remove_readonly(
     func(path)
 
 
+class _BuildAlias(_DistBuild):
+    """Alias 'python setup.py build' to the cx_Freeze 'build_exe' command.
+
+    Prevents distutils from creating a stale build/lib tree when the user
+    runs the commonly expected ``python setup.py build`` invocation.
+    """
+
+    def run(self) -> None:  # type: ignore[override]
+        self.run_command("build_exe")
+
+
 def _prepare_build_dir() -> None:
-    """Remove the previous frozen build before cx_Freeze tries to clean it.
+    """Remove previous frozen build artefacts before cx_Freeze runs.
+
+    Cleans both ``dist/solitario-classico`` (the frozen output) and the
+    distutils ``build/`` directory so that no stale files from a previous
+    partial or mis-targeted build survive into the new bundle.
 
     cx_Freeze performs a plain ``shutil.rmtree`` on ``build_exe`` and aborts if
     that fails. Under Windows, OneDrive-managed directories can surface files or
     folders with restrictive attributes that require a permission reset first.
     """
-    if not DIST_DIR.exists():
-        return
-    shutil.rmtree(DIST_DIR, onerror=_handle_remove_readonly)
+    for target in (DIST_DIR, BUILD_DIR):
+        if target.exists():
+            shutil.rmtree(target, onerror=_handle_remove_readonly)
 
 
 def _read_version() -> str:
@@ -84,6 +101,18 @@ def _collect_include_files() -> list[tuple[str, str]]:
         source_path = ROOT_DIR / source_name
         if source_path.exists():
             include_pairs.append((str(source_path), target_name))
+
+    # accessible_output2 native DLLs (nvdaControllerClient, SAPI, PCTKUSR, …)
+    # Must be present both at the bundle root (accessible_output2/lib) so the
+    # package can locate them via relative paths at runtime.
+    try:
+        import accessible_output2 as _ao2_pkg  # noqa: F401
+        _ao2_lib = Path(_ao2_pkg.__file__).parent / "lib"
+        if _ao2_lib.exists():
+            include_pairs.append((str(_ao2_lib), "accessible_output2/lib"))
+    except ImportError:
+        pass
+
     return include_pairs
 
 
@@ -100,6 +129,7 @@ BUILD_EXE_OPTIONS: dict[str, object] = {
         "src.infrastructure",
         "src.presentation",
         "accessible_output2",
+        "pyttsx3",
         "pygame",
         "wx",
     ],
@@ -112,6 +142,8 @@ BUILD_EXE_OPTIONS: dict[str, object] = {
         "wx.html",
         "wx.lib.agw.aui",
         "src.infrastructure.audio.audio_events",
+        "src.infrastructure.accessibility.screen_reader",
+        "src.infrastructure.accessibility.tts_provider",
         "src.infrastructure.config.audio_config_loader",
         "src.infrastructure.config.scoring_config_loader",
         "src.infrastructure.ui.widgets.timer_combobox",
@@ -146,6 +178,7 @@ setup(
     long_description=_read_long_description(),
     long_description_content_type="text/markdown",
     author="Nemex81",
+    cmdclass={"build": _BuildAlias},
     options={"build_exe": BUILD_EXE_OPTIONS},
     executables=[
         Executable(

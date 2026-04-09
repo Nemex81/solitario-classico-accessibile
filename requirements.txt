@@ -13,6 +13,12 @@ wxPython==4.2.2
 # Screen Reader / TTS Support
 accessible-output2==0.16
 
+# SAPI5 TTS engine (Windows) — required by Sapi5TtsProvider in
+# src/infrastructure/accessibility/tts_provider.py. Falls back to
+# DummyTtsProvider at runtime when absent, but MUST be present in the
+# build environment for cx_Freeze to bundle it into the frozen binary.
+pyttsx3>=2.90
+
 # Windows API (required for NVDA integration on Windows)
 # These are dependencies of accessible-output2
 pywin32==304

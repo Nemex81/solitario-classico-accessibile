@@ -35,8 +35,8 @@ from src.domain.services.scoring_service import ScoringService
 from src.infrastructure.config.scoring_config_loader import ScoringConfigLoader  # 🆕 MISSING
 from src.domain.rules.solitaire_rules import SolitaireRules
 from src.domain.models.scoring import ScoringConfig, ScoreWarningLevel  # ✅ v2.6.0: Added ScoreWarningLevel
-from src.infrastructure.audio.screen_reader import ScreenReader
-from src.infrastructure.audio.tts_provider import create_tts_provider
+from src.infrastructure.accessibility.screen_reader import ScreenReader
+from src.infrastructure.accessibility.tts_provider import create_tts_provider
 from src.infrastructure.storage.score_storage import ScoreStorage
 from src.presentation.game_formatter import GameFormatter
 from src.presentation.formatters.score_formatter import ScoreFormatter

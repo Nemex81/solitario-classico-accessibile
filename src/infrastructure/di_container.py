@@ -242,7 +242,8 @@ class DIContainer:
         if "screen_reader" not in self._instances:
             # Late import to avoid circular dependency
             from src.infrastructure.accessibility.screen_reader import ScreenReader
-            self._instances["screen_reader"] = ScreenReader()
+            from src.infrastructure.accessibility.tts_provider import create_tts_provider
+            self._instances["screen_reader"] = ScreenReader(tts=create_tts_provider())
         return self._instances["screen_reader"]
     
     # ========================================================================
