@@ -899,3 +899,5 @@ class TestAutoRecycleWaste:
         assert success2 is True
         assert service.recycle_waste.call_count == 2
         assert service.draw_cards.call_count == 2
+
+

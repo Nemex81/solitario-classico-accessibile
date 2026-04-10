@@ -2,10 +2,10 @@
   "version": "1.0",
   "active_sound_pack": "default",
   "bus_volumes": {
-    "gameplay": 35,
-    "ui": 35,
-    "ambient": 25,
-    "music": 25,
+    "gameplay": 30,
+    "ui": 30,
+    "ambient": 15,
+    "music": 15,
     "voice": 90
   },
   "bus_muted": {

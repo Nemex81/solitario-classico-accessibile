@@ -61,6 +61,7 @@ Gestisce la traduzione di eventi tastiera pygame in `GameCommand`.
 
 - `handle_event(event: pygame.event.Event) -> Optional[GameCommand]`
   - Traduce l'evento in `GameCommand` secondo la tabella di binding.
+    - `GameCommand.CANCEL_SELECTION` è associato a `Backspace`.
   - Se `audio_manager` è presente, chiama `audio_manager.play_event(...)`
     con `AudioEventType.UI_NAVIGATE`, `UI_SELECT` o `UI_CANCEL` come appropriato.
 

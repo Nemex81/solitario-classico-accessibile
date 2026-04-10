@@ -24,7 +24,7 @@ class GameCommand(Enum):
     
     Selection:
         SELECT_CARD: Select card at cursor (ENTER)
-        CANCEL_SELECTION: Cancel current selection (DELETE)
+        CANCEL_SELECTION: Cancel current selection (BACKSPACE)
     
     Card Actions:
         DRAW_CARDS: Draw from stock pile (ENTER on mazzo)
@@ -154,7 +154,7 @@ class InputHandler:
         
         # Selection
         self.key_bindings[(pygame.K_RETURN, False, False)] = GameCommand.SELECT_CARD
-        self.key_bindings[(pygame.K_DELETE, False, False)] = GameCommand.CANCEL_SELECTION
+        self.key_bindings[(pygame.K_BACKSPACE, False, False)] = GameCommand.CANCEL_SELECTION
         
         # Card actions
         self.key_bindings[(pygame.K_a, False, False)] = GameCommand.AUTO_MOVE

@@ -73,14 +73,26 @@ class TestRankToNum:
     def test_rank_to_num_asso(self) -> None:
         assert FakeCardImageCache()._rank_to_num("A") == "1"
 
+    def test_rank_to_num_asso_nome_italiano(self) -> None:
+        assert FakeCardImageCache()._rank_to_num("Asso") == "1"
+
     def test_rank_to_num_fante(self) -> None:
         assert FakeCardImageCache()._rank_to_num("J") == "11"
+
+    def test_rank_to_num_jack_nome_italiano(self) -> None:
+        assert FakeCardImageCache()._rank_to_num("Jack") == "11"
 
     def test_rank_to_num_donna(self) -> None:
         assert FakeCardImageCache()._rank_to_num("Q") == "12"
 
+    def test_rank_to_num_regina_nome_italiano(self) -> None:
+        assert FakeCardImageCache()._rank_to_num("Regina") == "12"
+
     def test_rank_to_num_re(self) -> None:
         assert FakeCardImageCache()._rank_to_num("K") == "13"
+
+    def test_rank_to_num_re_nome_italiano(self) -> None:
+        assert FakeCardImageCache()._rank_to_num("Re") == "13"
 
     def test_rank_to_num_numero(self) -> None:
         assert FakeCardImageCache()._rank_to_num("7") == "7"
@@ -171,6 +183,24 @@ class TestGetBitmap:
             cache.get_bitmap("2", "quadri", 70, 100)
 
         assert ("2", "quadri", 70, 100) in cache._cache
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "filename",
+    [
+        "5-quadri.jpg",
+        "7-cuori.jpg",
+        "8-cuori.jpg",
+        "9-fiori.jpg",
+        "9-picche.jpg",
+        "9-quadri.jpg",
+    ],
+)
+def test_missing_french_assets_now_present(filename: str) -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+    asset_path = repo_root / "assets" / "img" / "carte_francesi" / filename
+    assert asset_path.exists(), f"Asset francese mancante: {filename}"
 
 
 # ---------------------------------------------------------------------------

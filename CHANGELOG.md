@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `src/application/input_handler.py`, `src/application/gameplay_controller.py`, `src/presentation/game_formatter.py`, `src/domain/services/selection_manager.py`: il comando di annullamento selezione usa ora `Backspace` come tasto primario in input pygame, help e messaggi vocali; il pathway wx accetta anche `Delete` come alias per non rompere tastiere o binding esistenti.
+- `src/application/game_engine.py`: una nuova selezione sostituisce in modo atomico quella precedente invece di bloccare l'utente; il feedback vocale annuncia quale carta o gruppo viene rimpiazzato e ripristina la vecchia selezione se il nuovo tentativo fallisce.
+- `assets/img/carte_francesi/`: completato il set di 52 asset francesi aggiungendo i file mancanti `5-quadri.jpg`, `7-cuori.jpg`, `8-cuori.jpg`, `9-fiori.jpg`, `9-picche.jpg`, `9-quadri.jpg`; i test di cache verificano ora sia i rank italiani sia la presenza dei file critici.
+
 
 ## [3.7.0] - 2026-04-09
 

@@ -269,7 +269,7 @@ class GameFormatter:
             "Comandi di gioco. "
             "Navigazione: Frecce per muovere cursore. "
             "INVIO per selezionare carta. "
-            "CANC per annullare selezione. "
+            "Backspace per annullare selezione. "
             "Accesso rapido: Tasti da 1 a 7 per pile base. "
             "SHIFT più tasti da 1 a 4 per pile fondazione. "
             "SHIFT più S per scarti. "

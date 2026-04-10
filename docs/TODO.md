@@ -52,6 +52,7 @@ stato: attivo
 - [DESIGN_audio_system.md](2%20-%20projects/DESIGN_audio_system.md) — sistema audio (completato)
 - [DESIGN_cx-freeze-setup_v4.5.0.md](2%20-%20projects/DESIGN_cx-freeze-setup_v4.5.0.md) — packaging Windows con setup.py e cx_Freeze (REVIEWED)
 - [DESIGN_cx-freeze-frozen-runtime.md](2%20-%20projects/DESIGN_cx-freeze-frozen-runtime.md) — correttivo runtime/avvio frozen cx_Freeze (DRAFT)
+- [DESIGN_selection-backspace-french-card-mapping_v4.3.1.md](2%20-%20projects/DESIGN_selection-backspace-french-card-mapping_v4.3.1.md) — backspace per annullamento selezione, replacement descrittivo e mapping carte francesi (DRAFT)
 - [DESIGN_options-tabs-layout_v4.4.0.md](2%20-%20projects/DESIGN_options-tabs-layout_v4.4.0.md) — refactor dialogo opzioni con tab accessibili e grouping logico (REVIEWED)
 - [DESIGN_framework-template-bootstrap.md](2%20-%20projects/DESIGN_framework-template-bootstrap.md) — integrazione template framework e bootstrap Agent-Welcome (reviewed)
 - [DESIGN_gameplay-visual-ui.md](2%20-%20projects/DESIGN_gameplay-visual-ui.md) — supporto visivo finestra gameplay (reviewed)
@@ -73,6 +74,7 @@ stato: attivo
 - [PLAN_tableau-adaptive-layout_v4.2.0.md](3%20-%20coding%20plans/PLAN_tableau-adaptive-layout_v4.2.0.md) — layout adattivo tableau, scaling fan offset per-pila (DRAFT)
 - [PLAN_card-assets-integration_v4.3.0.md](3%20-%20coding%20plans/PLAN_card-assets-integration_v4.3.0.md) — fix path carte francesi, carte napoletane, back_bitmap **(READY)**
 - [PLAN_cx-freeze-frozen-runtime_v4.5.1.md](3%20-%20coding%20plans/PLAN_cx-freeze-frozen-runtime_v4.5.1.md) — correttivo avvio/runtime frozen cx_Freeze: bootstrap diagnostico, path resolver, hardening TTS/audio, DLL validation **(DRAFT)**
+- **[NUOVO]** [PLAN_selection-backspace-french-card-mapping_v4.3.1.md](3%20-%20coding%20plans/PLAN_selection-backspace-french-card-mapping_v4.3.1.md) — Backspace annulla selezione + annuncio vocale + fix mapping immagini francesi **(DRAFT)**
 
 ## Reports
 
@@ -96,6 +98,7 @@ stato: attivo
 - [TODO_tableau-adaptive-layout_v4.2.0.md](5%20-%20todolist/TODO_tableau-adaptive-layout_v4.2.0.md) — layout adattivo tableau (ACTIVE — 3 fasi)
 - [TODO_card-assets-integration_v4.3.0.md](5%20-%20todolist/TODO_card-assets-integration_v4.3.0.md) — fix path francesi + carte napoletane + back_bitmap **(ACTIVE — 4 fasi)**
 - [TODO_cx-freeze-frozen-runtime_v4.5.1.md](5%20-%20todolist/TODO_cx-freeze-frozen-runtime_v4.5.1.md) — correttivo avvio frozen: diagnostica, path resolver, hardening TTS/audio, DLL SDL2 **(ACTIVE — 6 fasi)**
+- **[NUOVO]** [TODO_selection-backspace-french-card-mapping_v4.3.1.md](5%20-%20todolist/TODO_selection-backspace-french-card-mapping_v4.3.1.md) — Backspace annulla selezione + annuncio vocale + fix mapping immagini francesi **(DRAFT — 4 fasi)**
 
 ## Stato Avanzamento
 

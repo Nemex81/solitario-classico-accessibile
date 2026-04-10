@@ -47,7 +47,7 @@ def test_select_and_cancel_generate_ui():
     assert cmd == GameCommand.SELECT_CARD
     assert audio.events[-1].event_type == AudioEventType.UI_SELECT
 
-    cmd = handler.handle_event(make_key_event(pygame.K_DELETE))
+    cmd = handler.handle_event(make_key_event(pygame.K_BACKSPACE))
     assert cmd == GameCommand.CANCEL_SELECTION
     assert audio.events[-1].event_type == AudioEventType.UI_CANCEL
 

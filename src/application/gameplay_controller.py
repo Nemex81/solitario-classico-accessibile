@@ -263,6 +263,7 @@ class GamePlayController:
             # Azioni carte
             pygame.K_RETURN: self._select_card,
             pygame.K_SPACE: self._move_cards,
+            pygame.K_BACKSPACE: self._cancel_selection,
             pygame.K_DELETE: self._cancel_selection,
             
             # Pesca carte (due alias)
@@ -779,7 +780,7 @@ class GamePlayController:
                     pass
     
     def _cancel_selection(self) -> None:
-        """DELETE: Cancel current card selection."""
+        """BACKSPACE: Cancel current card selection."""
         self.engine.clear_selection()
         # AUDIO
         if self._audio:
@@ -904,7 +905,7 @@ Frecce: navigazione carte e pile.
 SHIFT più 1 a 4: vai alla pila semi.
 INVIO: seleziona carta.
 SPAZIO: sposta carte selezionate.
-CANC: annulla selezione.
+Backspace: annulla selezione.
 D o P: pesca dal mazzo.
 F: posizione cursore.
 X: info carta.
@@ -1160,7 +1161,7 @@ ESC: abbandona partita."""
             - Arrow keys: Cursor navigation
             - HOME/END: First/last card in pile
             - TAB: Jump to different pile type
-            - DELETE: Cancel selection
+            - BACKSPACE: Cancel selection
             
             Actions:
             - ENTER/RETURN: Select card
@@ -1278,7 +1279,7 @@ ESC: abbandona partita."""
             return True
         
         # ═══════════════════════════════════════════════════════════
-        # ADVANCED NAVIGATION: HOME/END/TAB/DELETE
+        # ADVANCED NAVIGATION: HOME/END/TAB/BACKSPACE
         # ═══════════════════════════════════════════════════════════
         elif key_code == wx.WXK_HOME:
             self._cursor_home()
@@ -1289,7 +1290,7 @@ ESC: abbandona partita."""
         elif key_code == wx.WXK_TAB:
             self._cursor_tab()
             return True
-        elif key_code == wx.WXK_DELETE:
+        elif key_code in (wx.WXK_BACK, wx.WXK_DELETE):
             self._cancel_selection()
             return True
         

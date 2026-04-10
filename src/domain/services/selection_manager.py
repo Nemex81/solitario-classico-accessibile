@@ -62,7 +62,7 @@ class SelectionManager:
             Feedback message with selected cards
         """
         if self.has_selection():
-            return "Hai già selezionato le carte da spostare! Premi CANC per annullare.\n"
+            return "Hai già selezionato le carte da spostare! Premi Backspace per annullare.\n"
         
         if pile.is_empty():
             return "La pila è vuota!\n"
@@ -100,7 +100,7 @@ class SelectionManager:
             Feedback message
         """
         if self.has_selection():
-            return "Hai già selezionato le carte da spostare! Premi CANC per annullare.\n"
+            return "Hai già selezionato le carte da spostare! Premi Backspace per annullare.\n"
         
         if waste_pile.is_empty():
             return "La pila scarti è vuota!\n"

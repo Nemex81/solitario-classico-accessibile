@@ -659,32 +659,21 @@ class GameEngine:
         
         Behavior:
             First tap: Move cursor to pile top card + announce pile info + hint
-            Second tap (tableau/foundation): 
-                - Cancel previous selection if present (silent)
+            Second tap (tableau/foundation):
                 - Auto-select top card
-                - Announce: "Selezione precedente annullata. carte selezionate: 1. [nome carta]"
+                - Replace previous selection with spoken feedback when needed
             Second tap (stock/waste): No action (hint only)
         """
         # Get cursor movement feedback, auto-selection flag, and hint (v1.5.0)
         msg, should_auto_select, hint = self.cursor.jump_to_pile(pile_idx, enable_double_tap=True)
+        already_spoken = False
         
         # ═══════════════════════════════════════════════════════════
         # 🔥 SECOND TAP: Execute automatic card selection
         # ═══════════════════════════════════════════════════════════
         if should_auto_select:
-            msg_deselect = ""
-            
-            # ─────────────────────────────────────────────────────
-            # Cancel previous selection if present (silent reset)
-            # ─────────────────────────────────────────────────────
-            if self.selection.has_selection():
-                self.selection.clear_selection()
-                msg_deselect = "Selezione precedente annullata. "
-            
-            # ─────────────────────────────────────────────────────
-            # Execute automatic selection
-            # ─────────────────────────────────────────────────────
             success, msg_select = self.select_card_at_cursor()
+            already_spoken = True
             
             # Log auto-selection ONLY if successful
             if success:
@@ -693,14 +682,13 @@ class GameEngine:
                     f"Double-tap on pile_{pile_idx}"
                 )
             
-            # Combine messages: deselection (if any) + selection feedback
-            msg = msg_deselect + msg_select
+            msg = msg_select
             hint = None  # No hint after auto-selection
         
         # ═══════════════════════════════════════════════════════════
         # 🔊 Vocal announcement
         # ═══════════════════════════════════════════════════════════
-        if self.screen_reader and msg:
+        if self.screen_reader and msg and not already_spoken:
             self.screen_reader.tts.speak(msg, interrupt=True)
         
         return (msg, hint)
@@ -794,6 +782,75 @@ class GameEngine:
     # ========================================
     # SELECTION METHODS (5)
     # ========================================
+
+    def _snapshot_selection_state(
+        self,
+    ) -> Tuple[List[Card], Optional[Pile], Optional[Card]]:
+        """Capture current selection so it can be restored on failed replacement."""
+        return (
+            list(self.selection.selected_cards),
+            self.selection.origin_pile,
+            self.selection.target_card,
+        )
+
+    def _restore_selection_state(
+        self,
+        state: Tuple[List[Card], Optional[Pile], Optional[Card]],
+    ) -> None:
+        """Restore a previously captured selection state."""
+        cards, origin_pile, target_card = state
+        self.selection.selected_cards = list(cards)
+        self.selection.origin_pile = origin_pile
+        self.selection.target_card = target_card
+
+    @staticmethod
+    def _describe_selected_cards(cards: List[Card]) -> str:
+        """Return a short spoken description for a selected card group."""
+        if not cards:
+            return "nessuna carta"
+
+        first_name = getattr(cards[0], "get_name", "carta sconosciuta")
+        if callable(first_name):
+            first_name = first_name()
+        first_name = str(first_name)
+
+        if len(cards) == 1:
+            return first_name
+        if len(cards) == 2:
+            return f"{first_name} e un'altra carta"
+        return f"{first_name} e altre {len(cards) - 1} carte"
+
+    def _select_with_replacement(self, selector: Callable[[], str]) -> Tuple[bool, str]:
+        """Select cards, replacing an existing selection with rollback on failure."""
+        previous_state: Optional[Tuple[List[Card], Optional[Pile], Optional[Card]]] = None
+        previous_description = ""
+
+        if self.selection.has_selection():
+            previous_state = self._snapshot_selection_state()
+            previous_description = self._describe_selected_cards(previous_state[0])
+            self.selection.clear_selection()
+
+        message = selector()
+        success = self.selection.has_selection()
+
+        if previous_state is not None and not success:
+            self._restore_selection_state(previous_state)
+            return False, message
+
+        if previous_state is not None and success:
+            new_description = self._describe_selected_cards(self.selection.selected_cards)
+            if len(previous_state[0]) == 1 and len(self.selection.selected_cards) == 1:
+                message = (
+                    "Attenzione, si sta sostituendo la carta selezionata "
+                    f"{previous_description} con {new_description} selezionata.\n"
+                )
+            else:
+                message = (
+                    "Attenzione, si sta sostituendo la selezione "
+                    f"{previous_description} con {new_description}.\n"
+                )
+
+        return success, message
     
     def select_card_at_cursor(self) -> Tuple[bool, str]:
         """Select card at current cursor position.
@@ -816,8 +873,9 @@ class GameEngine:
             return False, msg
         
         # Select card
-        msg = self.selection.select_card_sequence(pile, card_idx)
-        success = self.selection.has_selection()
+        success, msg = self._select_with_replacement(
+            lambda: self.selection.select_card_sequence(pile, card_idx)
+        )
         
         # Log successful selection
         if success:
@@ -842,8 +900,9 @@ class GameEngine:
         Returns:
             Tuple of (success, message)
         """
-        msg = self.selection.select_top_card_from_waste(self.table.pile_scarti)
-        success = self.selection.has_selection()
+        success, msg = self._select_with_replacement(
+            lambda: self.selection.select_top_card_from_waste(self.table.pile_scarti)
+        )
         
         # Log successful selection from waste
         if success:
