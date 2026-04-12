@@ -11,6 +11,10 @@ Versioning: [SemVer](https://semver.org/lang/it/)
 
 <!-- Le voci non rilasciate vanno inserite qui. Rimane vuoto dopo la release. -->
 
+### Added
+
+- `.github/agents/spark-assistant.agent.md`: aggiunge il bootstrap SPARK base con instruction dedicata e prompt `scf-*` nel workspace.
+
 ## [v1.11.0] - 2026-03-29
 
 ### Added
