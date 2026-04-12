@@ -4,5 +4,19 @@
 			"path": "."
 		}
 	],
-	"settings": {}
+	"settings": {},
+	"mcp": {
+		"servers": {
+			"sparkFrameworkEngine": {
+				"type": "stdio",
+				"command": "C:\\Users\\nemex\\OneDrive\\Documenti\\GitHub\\spark-framework-engine\\.venv\\Scripts\\python.exe",
+				"args": [
+					"C:\\Users\\nemex\\OneDrive\\Documenti\\GitHub\\spark-framework-engine\\spark-framework-engine.py"
+				],
+				"env": {
+					"WORKSPACE_FOLDER": "C:\\Users\\nemex\\OneDrive\\Documenti\\GitHub\\solitario-classico-accessibile"
+				}
+			}
+		}
+	}
 }
